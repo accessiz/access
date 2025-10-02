@@ -1,11 +1,21 @@
 
 import type { Metadata } from "next";
-// Importamos la fuente Geist Sans
 import { GeistSans } from 'geist/font/sans';
+import { Antonio } from 'next/font/google';
 import "./globals.css";
 
+// Configuración de la fuente Antonio
+const antonio = Antonio({
+  subsets: ['latin'],
+  weight: ['400', '700'],
+  variable: '--font-antonio', // La pasamos como variable CSS
+});
+
+// Geist es el default, lo aplicamos en el body
+const geist = GeistSans;
+
 export const metadata: Metadata = {
-  title: "IZ Access",
+  title: "IZ ACCESS",
   description: "Portal de Gestión para IZ Management.",
 };
 
@@ -15,9 +25,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" suppressHydrationWarning>
-      {/* Aplicamos la fuente Geist a toda la aplicación */}
-      <body className={GeistSans.className}>{children}</body>
+    <html lang="es">
+      {/* Combinamos las clases de las fuentes */}
+      <body className={`${geist.className} ${antonio.variable}`}>
+        {children}
+      </body>
     </html>
   );
 }
