@@ -1,93 +1,102 @@
+/* Layout Principal */
 .footer {
-  /* visibility: hidden; <- ELIMINA O COMENTA ESTA LÍNEA */
-  width: 100%;
-  padding: 4rem var(--spacing-lg);
-  background-color: var(--color-bg);
-  color: var(--color-text);
+  /* composes eliminado */
+  padding: 4rem var(--md-sys-spacing-xl);
+  background-color: var(--md-sys-color-background);
+  color: var(--md-sys-color-on-background);
   display: grid;
-
-  /* Grid de 2 filas y 4 columnas */
   grid-template-columns: repeat(4, 1fr);
-  grid-template-rows: auto minmax(4.5rem, auto); /* segunda fila un poco más alta (~48px) */
-  row-gap: 1.5rem; /* espacio vertical entre filas = 24px */
-
+  grid-template-rows: auto auto;
+  row-gap: 1.5rem;
   text-transform: uppercase;
   margin-top: 20vh;
-  align-items: stretch;
 }
 
-/* Columna base (sin flex por defecto) */
-.column {
-  gap: 0.8rem;
-}
-
-/* Primer columna con redes + copyright en segunda fila */
-.columnFirst {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 0;
-  grid-row: 1 / 3; /* Ocupa ambas filas para controlar todo su contenido */
-}
-
-/* Texto de copyright */
-.copyright {
-  font-size: var(--font-size-ui);
-  align-self: flex-start;     /* alinea a la izquierda dentro del .columnFirst */
-  margin-top: auto;           /* lo empuja hacia abajo en la columna */
-}
-
-/* Redes sociales */
-.socialLinks {
+/* Columnas: Texto por defecto a 12px */
+.footer__column {
   display: flex;
   flex-direction: column;
   gap: 0.8rem;
+  font-size: var(--md-typescale-body-small-size);
 }
 
-/* Otros enlaces dentro de columnas */
-.column a,
-.column span {
-  font-size: var(--font-size-ui);
-  display: block;
+/* Redes Sociales */
+.footer__social_links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  font-size: var(--md-typescale-body-small-size);
 }
 
-/* Columna 4: Call to Action */
-.columnRight {
-  text-align: right;
+/* Copyright */
+.footer__copyright {
+  font-size: var(--md-typescale-body-small-size);
+  grid-row: 2;
+  grid-column: 1;
+  align-self: end;
+}
+
+/* Call to Action */
+.footer__column--right {
+  /* composes eliminado */
+  align-items: flex-end;
   justify-self: end;
-  height: 100%;
+  grid-column: 4;
+  grid-row: 1 / span 2;
 }
 
-/* CTA interno */
-.ctaWrapper {
+/* CTA Wrapper */
+.footer__cta_wrapper {
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
   align-items: flex-end;
   height: 100%;
+  justify-content: flex-start;
 }
 
-/* Título del CTA */
-.columnRight h3 {
-  font-size: 2rem;
-  font-weight: 400;
+/* Título del Call to Action */
+.footer__cta_title {
+  font-size: var(--md-typescale-headline-medium-size);
+  line-height: var(--md-typescale-headline-medium-line-height);
+  font-weight: var(--md-typescale-headline-large-weight);
   margin: 0 0 1rem 0;
-  line-height: 1.1;
+  text-transform: uppercase;
+  text-align: right;
 }
 
-.stack {
-  display: flex;
-  flex-direction: column;
-  gap: 0.8rem; /* mismo que .socialLinks */
-}
+/* Responsividad */
+@media (max-width: 768px) {
+  .footer {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    padding: 2rem var(--md-sys-spacing-lg);
+  }
 
-/* Botón */
-.button {
-  background-color: var(--color-text);
-  color: var(--color-bg);
-  padding: 0.75rem 1.5rem;
-  border-radius: 0;
-  font-weight: 700;
-  text-align: center;
-  white-space: nowrap;
+  .footer__column,
+  .footer__column--right {
+    grid-row: auto;
+    text-align: center;
+    align-items: center;
+  }
+
+  .footer__column--right {
+    justify-self: center;
+    grid-column: auto;
+  }
+
+  .footer__cta_wrapper {
+    align-items: center;
+  }
+
+  .footer__cta_title {
+    text-align: center;
+  }
+
+  .footer__copyright {
+    grid-row: auto;
+    grid-column: auto;
+    align-self: center;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+  }
 }

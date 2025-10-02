@@ -1,22 +1,24 @@
 
 .header {
-  width: 100%;
+  composes: w-full from global;
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
+  gap: var(--md-sys-spacing-md);
 }
 
 .line {
-    width: 100%;
+    composes: w-full from global;
     height: 1px;
-    background-color: var(--color-text);
+    background-color: var(--md-sys-color-on-background);
     transform-origin: left;
 }
 
 .nav {
-    width: 100%;
+    composes: w-full from global;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    font-size: var(--md-typescale-body-small-size); /* Aplicar tamaño pequeño a la navegación */
+    text-transform: uppercase;
 }

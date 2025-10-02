@@ -1,50 +1,117 @@
-:root {
-  --font-family-geist: 'Geist', sans-serif;
-  
-  --font-size-display: clamp(3rem, 12vw, 15rem);
-  --font-size-ui: 0.75rem; /* 12px */
-  
-  --font-weight-regular: 400;
-  --font-weight-bold: 700;
 
-  --spacing-md: 24px;
-  --spacing-lg: 32px;
+/*
+ * globals.css - Style Guide simplificado para NYXA
+ * Basado en Material Design 3 (M3) y WCAG, inspirado en Vercel/X.com.
+ * Paleta: Grises, blancos suaves, negros, y color de error rojo.
+ * Tipografía: Escala mínima para h1 ("IZ ACCESS"), h2, h3, body.
+ * Uso: Importa variables en CSS Modules (Hero.module.css, Footer.module.css).
+ */
 
-  --color-bg: #0A0A0A;
-  --color-text: #F5F5F5;
+/* Reset base */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
 html {
-    scroll-behavior: smooth;
+  scroll-behavior: smooth;
+  font-size: 100%; /* 16px base */
 }
 
 body {
-  font-family: var(--font-family-geist);
-  font-size: var(--font-size-ui);
-  font-weight: var(--font-weight-regular);
-  color: var(--color-text);
-  background-color: var(--color-bg);
-  margin: 0;
+  font-family: var(--md-sys-font-family);
+  line-height: 1.5;
+  background-color: var(--md-sys-color-background);
+  color: var(--md-sys-color-on-background);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
 }
 
-/* Clase para bloquear el scroll vertical del body
-  mientras la animación del Hero está en curso.
-*/
 body.no-scroll {
   overflow-y: hidden;
 }
 
-*, *::before, *::after {
-  box-sizing: border-box;
+/* FIX: Corregir el estilo por defecto de la etiqueta <address> */
+address {
+    font-style: normal;
+}
+
+/* Variables - Light Mode (Default) */
+:root {
+  --md-theme-mode: light;
+  --md-sys-font-family: 'Geist', sans-serif;
+
+  /* Colores */
+  --md-sys-color-primary: #333333;
+  --md-sys-color-on-primary: #FFFFFF;
+  --md-sys-color-background: #F5F5F5;
+  --md-sys-color-on-background: #1A1A1A;
+  --md-sys-color-surface: #FFFFFF;
+  --md-sys-color-on-surface: #1A1A1A;
+  --md-sys-color-error: #B3261E;
+  --md-sys-color-on-error: #FFFFFF;
+
+  /* Tipografía */
+  --md-typescale-display-large-size: clamp(3rem, 12vw, 3.5625rem);
+  --md-typescale-display-large-line-height: 4rem;
+  --md-typescale-display-large-weight: 400;
+  --md-typescale-display-large-letter-spacing: -0.015625rem;
+
+  --md-typescale-headline-large-size: clamp(1.5rem, 5vw, 2rem);
+  --md-typescale-headline-large-line-height: 2.5rem;
+  --md-typescale-headline-large-weight: 400;
+
+  --md-typescale-headline-medium-size: clamp(1.25rem, 4vw, 1.75rem);
+  --md-typescale-headline-medium-line-height: 2.25rem;
+  --md-typescale-headline-medium-weight: 400;
+
+  --md-typescale-body-medium-size: 0.875rem; /* 14px */
+  --md-typescale-body-medium-line-height: 1.25rem;
+  --md-typescale-body-medium-weight: 400;
+  --md-typescale-body-medium-letter-spacing: 0.015625rem;
+  
+  /* NEW: Añadida tipografía "Body Small" para textos secundarios */
+  --md-typescale-body-small-size: 0.75rem; /* 12px */
+  --md-typescale-body-small-line-height: 1rem;
+  --md-typescale-body-small-weight: 400;
+  --md-typescale-body-small-letter-spacing: 0.025rem;
+
+  /* Spacing */
+  --md-sys-spacing-sm: 8px;
+  --md-sys-spacing-md: 16px;
+  --md-sys-spacing-lg: 24px;
+  --md-sys-spacing-xl: 32px;
+
+  /* Elevation */
+  --md-sys-elevation-level1: 0 1px 3px 0 rgba(0,0,0,0.12), 0 1px 2px 0 rgba(0,0,0,0.24);
+}
+
+/* Dark Mode */
+[data-theme="dark"] {
+    --md-theme-mode: dark;
+    --md-sys-color-primary: #CCCCCC;
+    --md-sys-color-on-primary: #0A0A0A;
+    --md-sys-color-background: #0A0A0A;
+    --md-sys-color-on-background: #FFFFFF;
+    --md-sys-color-surface: #1C2526;
+    --md-sys-color-on-surface: #FFFFFF;
+    --md-sys-color-error: #F2B8B5;
+    --md-sys-color-on-error: #1A1A1A;
+    --md-sys-elevation-level1: 0 1px 3px 0 rgba(0,0,0,0.30), 0 1px 2px 0 rgba(0,0,0,0.15);
+}
+
+/* Clases reutilizables */
+.w-full {
+  width: 100%;
 }
 
 a {
-    color: inherit;
+    color: var(--md-sys-color-on-background);
     text-decoration: none;
     transition: opacity 0.2s ease;
+    font-size: var(--md-typescale-body-small-size);
 }
 
 a:hover {

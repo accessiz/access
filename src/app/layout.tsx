@@ -1,19 +1,18 @@
+
 import type { Metadata } from "next";
 import { GeistSans } from 'geist/font/sans';
 import "./globals.css";
 
-// Geist es el default, lo aplicamos en el body
 const geist = GeistSans;
 
-// #5. Metadatos mejorados para SEO y redes sociales
 export const metadata: Metadata = {
   title: "IZ ACCESS",
   description: "Portal de Gestión para IZ Management.",
   openGraph: {
     title: "IZ ACCESS",
     description: "Portal de Gestión para IZ Management.",
-    images: ['/images/hero-albino-woman.jpeg'], // Asegúrate que esta ruta es accesible públicamente
-    url: 'https://nyxa.app', // Cambia esto a tu URL de producción
+    images: ['/images/hero-photo-cover.jpg'],
+    url: 'https://nyxa.app',
     siteName: 'IZ ACCESS',
     locale: 'es_ES',
     type: 'website',
@@ -22,7 +21,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'IZ ACCESS',
     description: 'Portal de Gestión para IZ Management.',
-    images: ['/images/hero-albino-woman.jpeg'], // Asegúrate que esta ruta es accesible públicamente
+    images: ['/images/hero-photo-cover.jpg'],
   },
 };
 
@@ -32,7 +31,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es">
+    // Se añade data-theme="dark" para activar el modo oscuro por defecto
+    <html lang="es" data-theme="dark">
       <body className={geist.className}>
         {children}
       </body>
