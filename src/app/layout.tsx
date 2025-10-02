@@ -1,7 +1,7 @@
-
 import type { Metadata } from "next";
 import { GeistSans } from 'geist/font/sans';
 import "./globals.css";
+import { AuthProvider } from "@/hooks/useAuth"; // Importamos el AuthProvider
 
 const geist = GeistSans;
 
@@ -31,11 +31,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    // Se añade data-theme="dark" para activar el modo oscuro por defecto
-    <html lang="es" data-theme="dark">
+    <html lang="es" className="dark">
       <body className={geist.className}>
-        {children}
+        {/* Envolvemos toda la aplicación con el AuthProvider */}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );
 }
+
