@@ -1,10 +1,9 @@
 "use client";
-
 import { useRef, useState, useCallback, useEffect } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import Hero from "@/components/organisms/Hero/Hero";
-import Footer from "@/components/organisms/Footer/Footer";
+import Hero from "@/components/organisms/Hero";
+import Footer from "@/components/organisms/Footer";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -12,8 +11,6 @@ export default function Home() {
   const mainRef = useRef<HTMLDivElement>(null);
   const [isHeroAnimationComplete, setIsHeroAnimationComplete] = useState(false);
 
-  // 1. Bloquear/desbloquear el scroll del body
-  // Este efecto se encarga únicamente de la clase 'no-scroll'.
   useEffect(() => {
     if (!isHeroAnimationComplete) {
       document.body.classList.add("no-scroll");
@@ -22,15 +19,10 @@ export default function Home() {
     }
   }, [isHeroAnimationComplete]);
 
-
-  // 2. Usamos useCallback para evitar que esta función se recree en cada render,
-  // lo que causaba que la animación del Hero se repitiera.
   const handleAnimationComplete = useCallback(() => {
     setIsHeroAnimationComplete(true);
   }, []);
 
-  // 3. Este efecto se ejecuta SÓLO cuando el footer está en el DOM.
-  // Se encarga de la animación de aparición del footer.
   useEffect(() => {
     if (isHeroAnimationComplete) {
       const ctx = gsap.context(() => {
@@ -54,7 +46,6 @@ export default function Home() {
     }
   }, [isHeroAnimationComplete]);
 
-
   return (
     <main ref={mainRef}>
       <Hero onAnimationComplete={handleAnimationComplete} />
@@ -62,4 +53,3 @@ export default function Home() {
     </main>
   );
 }
-
