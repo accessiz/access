@@ -10,6 +10,7 @@
     "test": "jest"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.58.0",
     "critters": "^0.0.25",
     "framer-motion": "^12.23.22",
     "geist": "^1.5.1",
@@ -36,4 +37,3 @@
     "react-dom": "18.2.0"
   }
 }
-
