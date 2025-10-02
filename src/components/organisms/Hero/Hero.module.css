@@ -1,4 +1,3 @@
-
 .heroSection {
     height: 100vh;
     width: 100%;
@@ -13,13 +12,14 @@
   z-index: 1;
 }
 
+/* #3. Ajustes para Next/Image */
 .backgroundImage {
     width: 100%;
     height: 100%;
-    background-image: url('/images/hero-albino-woman.jpeg');
-    background-size: cover;
-    background-position: center;
+    object-fit: cover;
+    object-position: center;
     will-change: clip-path;
+    opacity: 0.5;
 }
 
 .backgroundImage::after {

@@ -6,10 +6,11 @@ const Header = () => {
   return (
     <header className={styles.header}>
       <nav className={styles.nav}>
-        <a href="#">IZ ACCESS</a>
-        <a href="#">IZ Management</a>
-        <a href="#">IZ Boost</a>
-        <a href="#">Iniciar Sesión</a>
+        {/* #4. Añadidos atributos aria-label por accesibilidad */}
+        <a href="#" aria-label="Ir a la página de IZ Access">IZ ACCESS</a>
+        <a href="#" aria-label="Ir a la página de IZ Management">IZ Management</a>
+        <a href="#" aria-label="Ir a la página de IZ Boost">IZ Boost</a>
+        <a href="#" aria-label="Iniciar sesión en la plataforma">Iniciar Sesión</a>
       </nav>
       <div className={`${styles.line} line`}></div>
     </header>

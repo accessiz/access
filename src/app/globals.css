@@ -31,6 +31,13 @@ body {
   overflow-x: hidden;
 }
 
+/* Clase para bloquear el scroll vertical del body
+  mientras la animación del Hero está en curso.
+*/
+body.no-scroll {
+  overflow-y: hidden;
+}
+
 *, *::before, *::after {
   box-sizing: border-box;
 }

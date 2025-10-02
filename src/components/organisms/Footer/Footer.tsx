@@ -5,25 +5,40 @@ import styles from './Footer.module.css';
 const Footer = () => {
   return (
     <footer className={`${styles.footer} site-footer`}>
-        <div className={styles.column}>
-            <a href="#">Instagram</a>
-            <a href="#">LinkedIn</a>
-            <a href="#">Twitter</a>
+        {/* Columna 1: Redes Sociales y Copyright */}
+        <div className={`${styles.column} ${styles.columnFirst}`}>
+            <div className={styles.socialLinks}>
+                <a href="#" aria-label="Visita nuestro perfil de Instagram">Instagram</a>
+                <a href="#" aria-label="Visita nuestro perfil de LinkedIn">LinkedIn</a>
+                <a href="#" aria-label="Visita nuestro perfil de Twitter">Twitter</a>
+            </div>
+            <span>2025 © IZ Management</span>
         </div>
-        <div className={styles.column}>
-            <span>250 Park Avenue Street</span>
-            <span>New York, NY 10003</span>
-            <span>United States</span>
+
+        {/* Columna 2: Dirección */}
+        <div className={`${styles.column} ${styles.stack}`}>
+        <span>Zona 10</span>
+        <span>Ciudad de Guatemala</span>
+        <span>Guatemala</span>
         </div>
+
+        
+        {/* Columna 3: Dirección */}
+        <div className={styles.column}>
+            <span>info@izmanagementglobal.com</span>
+        </div>
+
+        {/* Columna 4: Call to Action */}
         <div className={`${styles.column} ${styles.columnRight}`}>
-            <h3>Do you like<br/>What you see?</h3>
+        <div className={styles.ctaWrapper}>
+            <h3>Do you like<br />What you see?</h3>
             <a href="#" className={styles.button}>Let's Connect</a>
         </div>
-        <div className={styles.bottomRow}>
-            <span>2024 © IZ Management</span>
         </div>
+
     </footer>
   );
 };
 
 export default Footer;
+
