@@ -69,7 +69,6 @@
 
 /* Título del CTA */
 .columnRight h3 {
-  font-family: var(--font-antonio);
   font-size: 2rem;
   font-weight: 400;
   margin: 0 0 1rem 0;

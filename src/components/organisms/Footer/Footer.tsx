@@ -32,7 +32,7 @@ const Footer = () => {
         <div className={`${styles.column} ${styles.columnRight}`}>
         <div className={styles.ctaWrapper}>
             <h3>Do you like<br />What you see?</h3>
-            <a href="#" className={styles.button}>Let's Connect</a>
+            <a href="#" className={styles.button}>Let&apos;s Connect</a>
         </div>
         </div>
 

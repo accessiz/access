@@ -1,6 +1,5 @@
 :root {
   --font-family-geist: 'Geist', sans-serif;
-  --font-family-antonio: 'Antonio', sans-serif;
   
   --font-size-display: clamp(3rem, 12vw, 15rem);
   --font-size-ui: 0.75rem; /* 12px */
