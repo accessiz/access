@@ -14,6 +14,7 @@ const Hero: React.FC<HeroProps> = ({ onAnimationComplete }) => {
   const [time, setTime] = useState('');
   const heroRef = useRef<HTMLElement>(null);
   const [isReady, setIsReady] = useState(false);
+  const [animationError, setAnimationError] = useState(false);
 
   useEffect(() => {
     const updateClock = () => {
@@ -31,41 +32,47 @@ const Hero: React.FC<HeroProps> = ({ onAnimationComplete }) => {
   useLayoutEffect(() => {
     setIsReady(true);
     
-    const ctx = gsap.context(() => {
-        // #8. Añadido chequeo para 'prefers-reduced-motion' por accesibilidad
-        const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    try {
+      const ctx = gsap.context(() => {
+          // #8. Añadido chequeo para 'prefers-reduced-motion' por accesibilidad
+          const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-        if (prefersReducedMotion) {
-            gsap.set(['.imageMask', '.centerText', '.header-anim', '.footer-anim', '.line'], { autoAlpha: 1, y: 0, scaleX: 1, clipPath: 'inset(0% 0% 0% 0%)' });
-            onAnimationComplete();
-            return;
-        }
+          if (prefersReducedMotion || animationError) {
+              gsap.set(['.imageMask', '.centerText', '.header-anim', '.footer-anim', '.line'], { autoAlpha: 1, y: 0, scaleX: 1, clipPath: 'inset(0% 0% 0% 0%)' });
+              onAnimationComplete();
+              return;
+          }
 
-        gsap.set('.imageMask', { clipPath: 'inset(0% 0% 100% 0%)' });
-        gsap.set('.centerText', { autoAlpha: 0, y: 30 });
-        gsap.set('.header-anim', { autoAlpha: 0, y: -20 });
-        gsap.set('.footer-anim', { autoAlpha: 0, y: -20 });
-        gsap.set('.line', { scaleX: 0 });
+          gsap.set('.imageMask', { clipPath: 'inset(0% 0% 100% 0%)' });
+          gsap.set('.centerText', { autoAlpha: 0, y: 30 });
+          gsap.set('.header-anim', { autoAlpha: 0, y: -20 });
+          gsap.set('.footer-anim', { autoAlpha: 0, y: -20 });
+          gsap.set('.line', { scaleX: 0 });
 
-        const tl = gsap.timeline({ 
-          delay: 0.5,
-          onComplete: onAnimationComplete
-        });
-        
-        tl.to(".imageMask", { 
-            clipPath: 'inset(0% 0% 0% 0%)', 
-            duration: 1.5, 
-            ease: 'power3.inOut' 
-        })
-        .to(".centerText", { autoAlpha: 1, y: 0, duration: 1.2, ease: 'power3.out' }, "-=0.2")
-        .to(".header-anim", { autoAlpha: 1, y: 0, duration: 0.8, ease: 'power2.out' }, ">-0.4")
-        .to(".line", { scaleX: 1, duration: 1, ease: 'power2.out' }, "<")
-        .to(".footer-anim", { autoAlpha: 1, y: 0, duration: 0.8, ease: 'power2.out' }, ">-0.6");
+          const tl = gsap.timeline({ 
+            delay: 0.5,
+            onComplete: onAnimationComplete
+          });
+          
+          tl.to(".imageMask", { 
+              clipPath: 'inset(0% 0% 0% 0%)', 
+              duration: 1.5, 
+              ease: 'power3.inOut' 
+          })
+          .to(".centerText", { autoAlpha: 1, y: 0, duration: 1.2, ease: 'power3.out' }, "-=0.2")
+          .to(".header-anim", { autoAlpha: 1, y: 0, duration: 0.8, ease: 'power2.out' }, ">-0.4")
+          .to(".line", { scaleX: 1, duration: 1, ease: 'power2.out' }, "<")
+          .to(".footer-anim", { autoAlpha: 1, y: 0, duration: 0.8, ease: 'power2.out' }, ">-0.6");
 
-    }, heroRef);
-    
-    return () => ctx.revert();
-  }, [onAnimationComplete]);
+      }, heroRef);
+      
+      return () => ctx.revert();
+    } catch (e) {
+      console.error("GSAP animation failed", e);
+      setAnimationError(true);
+      onAnimationComplete(); // Asegura que la UI no se quede bloqueada si falla la animación.
+    }
+  }, [onAnimationComplete, animationError]);
 
   return (
     <section 

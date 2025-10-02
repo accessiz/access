@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+    "test": "jest"
   },
   "dependencies": {
     "critters": "^0.0.25",
@@ -35,3 +36,4 @@
     "react-dom": "18.2.0"
   }
 }
+
