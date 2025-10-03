@@ -1,9 +1,9 @@
+
 "use client";
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useAuth } from '@/hooks/useAuth';
 
 export function LoginForm() {
@@ -16,21 +16,18 @@ export function LoginForm() {
     e.preventDefault();
     setError('');
     try {
+      // No necesitamos redirigir desde aquí, el hook se encargará
       await signIn(email, password);
     } catch (err: any) {
       setError(err.message || 'Ocurrió un error al iniciar sesión.');
+      if (err.message.includes("Invalid login credentials")) {
+        setError("Correo o contraseña incorrectos.");
+      }
     }
   };
 
   return (
-    <Card className="w-full max-w-sm">
-      <CardHeader>
-        <CardTitle className="text-2xl">Login</CardTitle>
-        <CardDescription>
-          Ingresa tu correo para acceder a tu panel.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="grid gap-4">
+    <div className="mx-auto grid w-full max-w-sm gap-6">
         <form onSubmit={handleSubmit} className="grid gap-4">
           <div className="grid gap-2">
             <Label htmlFor="email">Email</Label>
@@ -59,12 +56,11 @@ export function LoginForm() {
               required
             />
           </div>
-          {error && <p className="text-sm text-red-500">{error}</p>}
+          {error && <p className="text-sm text-destructive">{error}</p>}
           <Button disabled={loading} className="w-full">
             {loading ? 'Ingresando...' : 'Iniciar Sesión'}
           </Button>
         </form>
-      </CardContent>
-    </Card>
+    </div>
   );
 }

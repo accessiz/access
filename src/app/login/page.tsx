@@ -1,33 +1,22 @@
-"use client";
+// Este es un componente de servidor ahora para mejorar la carga inicial y la seguridad.
+import { createClient } from '@/lib/supabase/server'; // Importamos el nuevo cliente de servidor
+import { redirect } from 'next/navigation';
 import { GalleryVerticalEnd } from "lucide-react";
 import { LoginForm } from "@/components/organisms/LoginForm";
-import { useAuth } from '@/hooks/useAuth';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
 import Image from 'next/image';
 
-export default function LoginPage() {
-  const { user, loading } = useAuth();
-  const router = useRouter();
+export default async function LoginPage() {
+  // Usamos el nuevo cliente que maneja cookies correctamente
+  const supabase = createClient();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
 
-  useEffect(() => {
-    // Si el usuario ya está logueado, redirigir al dashboard
-    if (!loading && user) {
-      router.push('/dashboard');
-    }
-  }, [user, loading, router]);
-
-  // Muestra un estado de carga mientras se verifica la sesión
-  if (loading) {
-    return (
-      <div className="flex min-h-screen w-full items-center justify-center bg-background">
-        Cargando...
-      </div>
-    );
+  // Si el usuario ya está logueado, lo redirigimos desde el servidor.
+  // Esto previene el bucle y que un usuario logueado vea la página de login.
+  if (session) {
+    redirect('/dashboard/models');
   }
-
-  // No renderiza nada si el usuario ya está autenticado para evitar un parpadeo
-  if (user) return null;
 
   return (
     <div className="w-full min-h-screen lg:grid lg:grid-cols-2">
@@ -47,7 +36,7 @@ export default function LoginPage() {
             </p>
           </div>
           
-          {/* Componente del Formulario de Login */}
+          {/* El componente del formulario sigue siendo un Client Component, lo cual es correcto */}
           <LoginForm />
         </div>
       </div>
@@ -70,4 +59,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
