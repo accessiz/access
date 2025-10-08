@@ -1,41 +1,49 @@
-import { createClient } from '@/lib/supabase/server'; // Importamos el nuevo cliente de servidor
-import { redirect } from 'next/navigation';
-import Link from 'next/link';
-import { GalleryVerticalEnd, Users, FolderKanban, LogOut } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
-export default async function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const supabase = createClient(); // Usamos el nuevo cliente
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  if (!session) {
-    redirect('/login');
-  }
-
+export default function DashboardPage() {
   return (
-    <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-      <div className="hidden border-r bg-muted/40 md:block">
-        {/* ... Contenido de la barra lateral ... */}
-      </div>
-      <div className="flex flex-col">
-        <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
-           <div className="w-full flex-1"></div>
-           <p className="text-sm text-muted-foreground">{session.user.email}</p>
-           <form action="/auth/signout" method="post">
-              <Button variant="ghost" size="icon">
-                <LogOut className="h-5 w-5" />
-              </Button>
-            </form>
-        </header>
-        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
-          {children}
-        </main>
+    <div>
+      <h1 className="text-3xl font-bold tracking-tight mb-6">Dashboard</h1>
+      <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
+        <Card>
+          <CardHeader>
+            <CardTitle>Proyectos Activos</CardTitle>
+            <CardDescription>
+              Resumen de los castings que requieren tu atención.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p>Aquí se mostrarán los proyectos activos.</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Actividad Reciente</CardTitle>
+            <CardDescription>
+              Últimas actualizaciones en la plataforma.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p>Aquí se mostrará un feed de actividad.</p>
+          </CardContent>
+        </Card>
+         <Card>
+          <CardHeader>
+            <CardTitle>Búsqueda Rápida</CardTitle>
+            <CardDescription>
+              Encuentra un talento al instante.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p>Aquí irá el widget de búsqueda rápida.</p>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
