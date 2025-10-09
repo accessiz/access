@@ -4,80 +4,98 @@
 
 @layer base {
   :root {
-    /* Your existing CSS variables */
-    --background: 10 10 10; /* #0A0A0A */
-    --foreground: 255 255 255; /* #FFFFFF */
-    --card: 16 19 19; 
-    --card-foreground: 255 255 255;
-    --popover: 28 37 38;
-    --popover-foreground: 255 255 255;
-    --primary: 204 204 204; /* #CCCCCC */
-    --primary-foreground: 10 10 10;
-    --secondary: 117 117 117; /* #757575 */
-    --secondary-foreground: 224 224 224;
-    --muted: 66 66 66; /* #424242 */
-    --muted-foreground: 176 190 197;
-    --accent: 66 66 66;
-    --accent-foreground: 224 224 224;
-    --destructive: 242 184 181; /* #F2B8B5 */
-    --destructive-foreground: 26 26 26;
-    --border: 97 97 97; /* #616161 */
-    --input: 97 97 97;
-    --ring: 176 190 197;
-    --radius: 0.625rem;
-    --md-sys-font-family: 'Geist', sans-serif;
-    --md-typescale-body-small-size: 0.75rem; /* 12px */
-    --md-sys-spacing-md: 16px;
-    --md-sys-color-on-background: hsl(var(--foreground));
-    --md-sys-color-background: hsl(var(--background));
-  }
+    /* ====================================================== */
+    /* ==   MODO CLARO (LIGHT THEME) - Final Definitivo     == */
+    /* ====================================================== */
 
-  .light {
-    --background: 245 245 245; /* #F5F5F5 */
-    --foreground: 26 26 26; /* #1A1A1A */
+    /* Fondo principal: Blanco puro para máxima limpieza */
+    --background: 255 255 255; 
+    /* Texto principal: Un gris muy oscuro de tu nueva escala (#1c1a1d) */
+    --foreground: 28 26 29;
+
+    /* Fondos de elementos flotantes */
     --card: 255 255 255;
-    --card-foreground: 26 26 26;
+    --card-foreground: 28 26 29;
     --popover: 255 255 255;
-    --popover-foreground: 26 26 26;
-    --primary: 51 51 51; /* #333333 */
-    --primary-foreground: 255 255 255;
-    --secondary: 204 204 204;
-    --secondary-foreground: 26 26 26;
-    --muted: 224 224 224;
-    --muted-foreground: 74 74 74;
-    --accent: 224 224 224;
-    --accent-foreground: 26 26 26;
-    --destructive: 179 38 30; /* #B3261E */
-    --destructive-foreground: 255 255 255;
-    --border: 224 224 224;
-    --input: 224 224 224;
-    --ring: 117 117 117;
+    --popover-foreground: 28 26 29;
+
+    /* Color de acento principal: Tu morado */
+    --primary: 135 24 157;
+    --primary-foreground: 250 250 250;
+
+    /* Color secundario: Un gris muy claro de tu nueva escala (#e6e6e6) */
+    --secondary: 230 230 230;
+    --secondary-foreground: 28 26 29;
+
+    /* Texto sutil: Un gris medio de tu nueva escala (#747374) */
+    --muted: 230 230 230;
+    --muted-foreground: 116 115 116;
+
+    /* Acento secundario */
+    --accent: 135 24 157;
+    --accent-foreground: 250 250 250;
+
+    /* Color destructivo/peligro */
+    --destructive: 220 38 38;
+    --destructive-foreground: 250 250 250;
+
+    /* Borde e input: Un gris claro de tu nueva escala (#cdcccd) */
+    --border: 205 204 205;
+    --input: 205 204 205;
+    --ring: 135 24 157;
+
+    --radius: 0.625rem; 
   }
 
+  .dark {
+    /* ==================================================== */
+    /* ==   MODO OSCURO (DARK THEME) - Paleta Final       == */
+    /* ==================================================== */
+
+    /* Fondo principal: Un tono muy oscuro de tu paleta (#000000) */
+    --background: 3 3 3; 
+    /* Texto principal: Un blanco suave (#e6e6e6) */
+    --foreground: 230 230 230; 
+
+    /* Tarjetas: Un gris oscuro para contraste sutil (#020103) */
+    --card: 13 13 13;
+    --card-foreground: 230 230 230;
+    --popover: 1 0 1;
+    --popover-foreground: 230 230 230;
+
+    /* Color de acento principal */
+    --primary: 135 24 157;
+    --primary-foreground: 250 250 250;
+
+    /* Secundario: Para hovers y elementos activos (#3e0b48) */
+    --secondary: 91 16 106;
+    --secondary-foreground: 230 230 230;
+
+    /* Barra Lateral y Cabecera: Tu nuevo color principal (#030104) */
+    --muted: 13 13 13;
+    --muted-foreground: 116 115 116;
+
+    /* Acento secundario */
+    --accent: 135 24 157;
+    --accent-foreground: 250 250 250;
+
+    /* Color destructivo/peligro */
+    --destructive: 153 27 27;
+    --destructive-foreground: 230 230 230;
+
+    /* Borde e input: Un gris muy oscuro para una apariencia integrada (#100e10) */
+    --border: 32 32 32;
+    --input: 16 14 16;
+    --ring: 135 24 157;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
   body {
     @apply bg-background text-foreground;
-    font-family: var(--md-sys-font-family);
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    overflow-x: hidden;
-  }
-
-  body.no-scroll {
-    overflow-y: hidden;
-  }
-
-  address {
-    font-style: normal;
-  }
-
-  a {
-    color: var(--md-sys-color-on-background);
-    text-decoration: none;
-    transition: opacity 0.2s ease;
-    font-size: var(--md-typescale-body-small-size);
-  }
-
-  a:hover {
-    opacity: 0.7;
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
 }

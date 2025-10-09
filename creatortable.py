@@ -16,14 +16,14 @@ def normalize_name(name):
             words.append(word.capitalize())
     return ' '.join(words).strip()
 
-def normalize_phone_number(phone, nationality):
+def normalize_phone_number(phone, country):
     """Convierte un número de teléfono al formato E.164 (+502xxxxxxxx)."""
     if pd.isna(phone):
         return ""
     # Elimina todo excepto números y el signo '+'
     cleaned_phone = re.sub(r'[^\d+]', '', str(phone))
     
-    if nationality == 'Guatemalteca':
+    if country == 'Guatemala':
         # Si es de GT, tiene 8 dígitos y no tiene prefijo, se lo añadimos
         if len(cleaned_phone) == 8 and not cleaned_phone.startswith('+'):
             return f"+502{cleaned_phone}"
@@ -32,7 +32,7 @@ def normalize_phone_number(phone, nationality):
     if cleaned_phone.startswith('+'):
         return cleaned_phone
         
-    # Para otros casos, simplemente devolvemos el número limpio (puede requerir revisión manual)
+    # Para otros casos, simplemente devolvemos el número limpio
     return cleaned_phone
 
 def clean_numeric_value(value):
@@ -59,7 +59,7 @@ def get_column_by_keyword(df, keywords):
                 return df[col]
     return pd.Series([None] * len(df))
 
-def clean_and_transform_data(df, nationality):
+def clean_and_transform_data(df, country):
     """Limpia y transforma un DataFrame de modelos para que coincida con la estructura de Supabase."""
     
     data = {
@@ -87,7 +87,7 @@ def clean_and_transform_data(df, nationality):
     # --- Aplicar Estandarización ---
     clean_df['full_name'] = clean_df['full_name'].apply(normalize_name)
     clean_df['alias'] = clean_df['alias'].apply(normalize_name)
-    clean_df['phone_number'] = clean_df.apply(lambda row: normalize_phone_number(row['phone_number'], nationality), axis=1)
+    clean_df['phone_number'] = clean_df.apply(lambda row: normalize_phone_number(row['phone_number'], country), axis=1)
 
     # Crear alias si está vacío
     clean_df['alias'] = clean_df.apply(
@@ -98,8 +98,8 @@ def clean_and_transform_data(df, nationality):
     numeric_cols = ['height_cm', 'shoulders_cm', 'chest_cm', 'bust_cm', 'waist_cm', 'hips_cm', 'shoe_size_eu']
     for col in numeric_cols:
         clean_df[col] = clean_df[col].apply(clean_numeric_value)
-        if col == 'height_cm':
-            clean_df.loc[clean_df['height_cm'] < 10, 'height_cm'] *= 100
+        if col == 'height_cm' and not clean_df[col].empty:
+            clean_df.loc[clean_df[col] < 10, col] *= 100
 
     for col in ['top_size', 'pants_size']:
         clean_df[col] = normalize_text_column(clean_df[col])
@@ -111,11 +111,11 @@ def clean_and_transform_data(df, nationality):
     clean_df['birth_date'] = pd.to_datetime(clean_df['birth_date'], errors='coerce').dt.strftime('%Y-%m-%d')
     clean_df['birth_date'] = clean_df['birth_date'].replace({pd.NaT: None, 'NaT': None})
 
-    clean_df['nationality'] = nationality
+    clean_df['country'] = country
     clean_df['status'] = 'active'
     
     final_columns = [
-        'alias', 'full_name', 'national_id', 'status', 'gender', 'birth_date', 'nationality',
+        'alias', 'full_name', 'national_id', 'status', 'gender', 'birth_date', 'country',
         'height_cm', 'shoulders_cm', 'chest_cm', 'bust_cm', 'waist_cm', 'hips_cm',
         'top_size', 'pants_size', 'shoe_size_eu', 'eye_color', 'hair_color',
         'instagram', 'tiktok', 'email', 'phone_number', 'date_joined_agency'
@@ -135,22 +135,24 @@ def main():
         print(f"✅ Archivo Excel encontrado: {excel_file_path}")
 
         xls = pd.ExcelFile(excel_file_path)
+        
+        # Se mapean las hojas a los nombres de los países
         sheets_to_process = {
-            'LISTADO GENERAL GT': 'Guatemalteca',
-            'LISTADO GENERAL SV': 'Salvadoreña',
-            'LISTADO GENERAL CR': 'Costarricense'
+            'LISTADO GENERAL GT': 'Guatemala',
+            'LISTADO GENERAL SV': 'El Salvador',
+            'LISTADO GENERAL CR': 'Costa Rica'
         }
         
         all_models_df = pd.DataFrame()
         
-        for sheet_name, nationality in sheets_to_process.items():
+        for sheet_name, country in sheets_to_process.items():
             if sheet_name in xls.sheet_names:
                 print(f"📄 Procesando hoja: '{sheet_name}'...")
                 df = pd.read_excel(xls, sheet_name=sheet_name, dtype=str)
                 df.dropna(subset=[df.columns[0]], how='all', inplace=True)
                 
                 if not df.empty:
-                    clean_df = clean_and_transform_data(df, nationality)
+                    clean_df = clean_and_transform_data(df, country)
                     all_models_df = pd.concat([all_models_df, clean_df], ignore_index=True)
         
         all_models_df.dropna(subset=['full_name'], inplace=True)
@@ -167,3 +169,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
