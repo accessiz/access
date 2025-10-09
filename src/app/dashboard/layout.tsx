@@ -20,7 +20,7 @@ export default async function DashboardLayout({
 
   return (
     // Se establece una altura fija a la pantalla para controlar el scroll
-    <div className="grid h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
+    <div className="grid h-screen w-full md:grid-cols-[180px_1fr] lg:grid-cols-[220px_1fr]">
       <Sidebar />
       {/* Este contenedor ahora maneja el overflow para que el scroll no afecte al sidebar */}
       <div className="flex flex-col overflow-hidden">
