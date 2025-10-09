@@ -12,6 +12,7 @@ import { Progress } from "@/components/ui/progress";
 import { PlusCircle, ExternalLink, Download } from 'lucide-react';
 import { ModelsToolbar } from '@/components/organisms/ModelsToolbar';
 import Link from 'next/link';
+import { Skeleton } from '@/components/ui/skeleton';
 
 // Este componente ahora manejará el estado de carga y los datos
 export default function ModelsPage() {
@@ -108,7 +109,17 @@ export default function ModelsPage() {
           </TableHeader>
           <TableBody>
             {loading ? (
-                <TableRow><TableCell colSpan={7} className="h-24 text-center">Cargando talentos...</TableCell></TableRow>
+                Array.from({ length: 8 }).map((_, index) => (
+                  <TableRow key={index}>
+                    <TableCell><Skeleton className="h-10 w-10 rounded-full" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-28" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-28" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                    <TableCell><Skeleton className="h-8 w-32" /></TableCell>
+                  </TableRow>
+                ))
             ) : models.length > 0 ? (
               models.map((model) => {
                 const imageUrl = `${publicUrl}/${model.id}/cover.jpg`;
