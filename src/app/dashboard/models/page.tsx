@@ -1,27 +1,15 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-// Importamos la lógica de fetching y los tipos
 import { getModels, getUniqueCountries } from '@/lib/api/models';
 import { Model } from '@/lib/types';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { PlusCircle } from 'lucide-react';
+import { Progress } from "@/components/ui/progress"; // Importado de shadcn
+import { PlusCircle, ExternalLink } from 'lucide-react';
 import { ModelsToolbar } from '@/components/organisms/ModelsToolbar';
+import Link from 'next/link';
 
 export default async function ModelsPage({
   searchParams,
@@ -34,33 +22,20 @@ export default async function ModelsPage({
   };
 }) {
   const supabase = createClient();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  const { data: { session } } = await supabase.auth.getSession();
 
   if (!session) {
     redirect('/login');
   }
 
-  const searchQuery = searchParams?.q || '';
-  const countryQuery = searchParams?.country || '';
-  const minHeightQuery = searchParams?.minHeight || '';
-  const maxHeightQuery = searchParams?.maxHeight || '';
+  const { q, country, minHeight, maxHeight } = searchParams || {};
 
-  // Usamos las nuevas funciones para obtener los datos en paralelo
   const [uniqueCountries, { data: modelsData, count }] = await Promise.all([
     getUniqueCountries(),
-    getModels({
-      query: searchQuery,
-      country: countryQuery,
-      minHeight: minHeightQuery,
-      maxHeight: maxHeightQuery,
-    }),
+    getModels({ query: q, country, minHeight, maxHeight }),
   ]);
 
-  // Hacemos un type assertion para asegurar a TypeScript que los datos son del tipo Model[]
   const models = modelsData as Model[] | null;
-
   const { data: publicUrlData } = supabase.storage.from('models').getPublicUrl('');
 
   return (
@@ -88,7 +63,9 @@ export default async function ModelsPage({
               <TableHead>Alias</TableHead>
               <TableHead>País</TableHead>
               <TableHead>Altura</TableHead>
-              <TableHead className="hidden md:table-cell">Instagram</TableHead>
+              <TableHead className="hidden lg:table-cell">Instagram</TableHead>
+              <TableHead className="hidden md:table-cell">TikTok</TableHead>
+              <TableHead>Perfil</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -108,22 +85,34 @@ export default async function ModelsPage({
                     <TableCell className="font-medium">{model.alias}</TableCell>
                     <TableCell>{model.country}</TableCell>
                     <TableCell>{model.height_cm ? `${model.height_cm} cm` : '-'}</TableCell>
+                    <TableCell className="hidden lg:table-cell">
+                      {model.instagram || '-'}
+                    </TableCell>
                     <TableCell className="hidden md:table-cell">
-                      {model.instagram}
+                      {model.tiktok ? (
+                        <Link href={`https://tiktok.com/@${model.tiktok}`} target="_blank" className="flex items-center gap-1 hover:underline">
+                          @{model.tiktok} <ExternalLink className="h-3 w-3" />
+                        </Link>
+                      ) : '-'}
+                    </TableCell>
+                     <TableCell>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground font-mono">
+                          {model.profile_completion || 0}%
+                        </span>
+                        <Progress value={model.profile_completion || 0} className="w-[80px]" />
+                      </div>
                     </TableCell>
                   </TableRow>
                 );
               })
             ) : (
               <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center">
+                <TableCell colSpan={7} className="h-24 text-center">
                   No se encontraron modelos para los filtros aplicados.
                 </TableCell>
               </TableRow>
             )}
-            {/* El manejo de errores ahora está dentro de getModels, 
-                así que un `error.tsx` en esta ruta lo capturaría.
-                Ya no necesitamos renderizar el error aquí. */}
           </TableBody>
         </Table>
       </CardContent>

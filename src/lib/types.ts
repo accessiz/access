@@ -24,4 +24,6 @@ export interface Model {
   email: string | null;
   phone_number: string | null;
   created_at: string;
+  // Campo calculado, añadido en el servidor
+  profile_completion?: number;
 }
