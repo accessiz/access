@@ -1,5 +1,8 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
+// Importamos la lógica de fetching y los tipos
+import { getModels, getUniqueCountries } from '@/lib/api/models';
+import { Model } from '@/lib/types';
 import {
   Table,
   TableBody,
@@ -23,7 +26,12 @@ import { ModelsToolbar } from '@/components/organisms/ModelsToolbar';
 export default async function ModelsPage({
   searchParams,
 }: {
-  searchParams?: { q?: string; country?: string; };
+  searchParams?: { 
+    q?: string; 
+    country?: string;
+    minHeight?: string;
+    maxHeight?: string;
+  };
 }) {
   const supabase = createClient();
   const {
@@ -36,29 +44,22 @@ export default async function ModelsPage({
 
   const searchQuery = searchParams?.q || '';
   const countryQuery = searchParams?.country || '';
+  const minHeightQuery = searchParams?.minHeight || '';
+  const maxHeightQuery = searchParams?.maxHeight || '';
 
-  // Construimos la consulta de forma dinámica
-  let query = supabase
-    .from('models')
-    .select('*', { count: 'exact' });
+  // Usamos las nuevas funciones para obtener los datos en paralelo
+  const [uniqueCountries, { data: modelsData, count }] = await Promise.all([
+    getUniqueCountries(),
+    getModels({
+      query: searchQuery,
+      country: countryQuery,
+      minHeight: minHeightQuery,
+      maxHeight: maxHeightQuery,
+    }),
+  ]);
 
-  if (searchQuery) {
-    query = query.ilike('alias', `%${searchQuery}%`);
-  }
-
-  if (countryQuery) {
-    query = query.eq('country', countryQuery);
-  }
-
-  const { data: models, error, count } = await query.order('alias', { ascending: true });
-
-  // Obtenemos la lista de países únicos para poblar el filtro
-  const { data: countriesData } = await supabase
-    .from('models')
-    .select('country')
-    .neq('country', null);
-  
-  const uniqueCountries = [...new Set(countriesData?.map(item => item.country) || [])].sort();
+  // Hacemos un type assertion para asegurar a TypeScript que los datos son del tipo Model[]
+  const models = modelsData as Model[] | null;
 
   const { data: publicUrlData } = supabase.storage.from('models').getPublicUrl('');
 
@@ -92,7 +93,7 @@ export default async function ModelsPage({
           </TableHeader>
           <TableBody>
             {models && models.length > 0 ? (
-              models.map((model: any) => {
+              models.map((model) => {
                 const imageUrl = `${publicUrlData.publicUrl}/${model.id}/cover.jpg`;
                 const fallbackText = model.alias?.substring(0, 2) || 'IZ';
 
@@ -100,7 +101,7 @@ export default async function ModelsPage({
                   <TableRow key={model.id}>
                     <TableCell>
                       <Avatar className="h-9 w-9">
-                        <AvatarImage src={imageUrl} alt={model.alias} />
+                        <AvatarImage src={imageUrl} alt={model.alias || 'Avatar'} />
                         <AvatarFallback>{fallbackText}</AvatarFallback>
                       </Avatar>
                     </TableCell>
@@ -120,19 +121,12 @@ export default async function ModelsPage({
                 </TableCell>
               </TableRow>
             )}
-            {/* --- LA CORRECCIÓN ESTÁ AQUÍ --- */}
-            {/* Usamos un ternario para asegurar que no se renderice nada si no hay error */}
-            {error ? (
-               <TableRow>
-                <TableCell colSpan={5} className="text-center text-destructive">
-                  Error al cargar los modelos: {error.message}
-                </TableCell>
-              </TableRow>
-            ) : null}
+            {/* El manejo de errores ahora está dentro de getModels, 
+                así que un `error.tsx` en esta ruta lo capturaría.
+                Ya no necesitamos renderizar el error aquí. */}
           </TableBody>
         </Table>
       </CardContent>
     </Card>
   );
 }
-
