@@ -110,7 +110,7 @@ export function AddTalentSheet({ children }: { children: React.ReactNode }) {
       <SheetContent className="flex flex-col p-0">
         {/* Contenedor principal para alinear todo el contenido */}
         <div className="w-full max-w-5xl mx-auto flex flex-col h-full">
-          <SheetHeader className="p-6 pb-4 shrink-0">
+          <SheetHeader className="px-8 pt-16 pb-4 shrink-0">
             <SheetTitle>Añadir Nuevo Talento</SheetTitle>
             <SheetDescription>
               Rellena los datos para crear un nuevo perfil. Los campos marcados con * son obligatorios.
@@ -118,7 +118,7 @@ export function AddTalentSheet({ children }: { children: React.ReactNode }) {
           </SheetHeader>
 
           <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
-            <div className="flex-1 overflow-y-auto px-6">
+            <div className="flex-1 overflow-y-auto px-8">
                <div className="space-y-6 py-6">
                   {/* --- Sección de Información Básica --- */}
                   <div className="space-y-4">
@@ -195,7 +195,7 @@ export function AddTalentSheet({ children }: { children: React.ReactNode }) {
                   </div>
                </div>
             </div>
-            <SheetFooter className="p-6 border-t mt-auto shrink-0">
+            <SheetFooter className="px-8 pt-6 pb-16 border-t mt-auto shrink-0">
               <SheetClose asChild>
                 <Button type="button" variant="outline">Cancelar</Button>
               </SheetClose>
