@@ -14,7 +14,7 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink, Paginati
 import Link from 'next/link';
 import { ArrowUp, ArrowDown, Download, ExternalLink } from 'lucide-react';
 
-const ITEMS_PER_PAGE = 12;
+const ITEMS_PER_PAGE = 24;
 
 type SortConfig = {
   key: keyof Model;
@@ -226,7 +226,7 @@ export default function ModelsPage() {
         </div>
 
         {totalPages > 1 && (
-          <footer className="flex items-center justify-between pt-6">
+          <footer className="flex items-center justify-between py-6">
             {/* Contenedor del slider con control local de alineación */}
             <div className="flex justify-start w-full max-w-[300px]">
               <Pagination>
