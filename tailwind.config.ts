@@ -20,14 +20,14 @@ const config: Config = {
     },
     extend: {
       fontSize: {
-          'xs': '0.833rem', // 10px
-          'sm': '0.917rem', // 11px
-          'base': '1rem',    // 12px (base)
-          'lg': '1.167rem', // 14px
-          'xl': '1.333rem', // 16px
-          '2xl': '1.667rem', // 20px
-          '3xl': '2rem',     // 24px
-          '4xl': '2.5rem',   // 30px
+          'xs': '0.852rem', // ~12px
+          'sm': '0.923rem', // ~13px
+          'base': '1rem',    // ~14.08px (base)
+          'lg': '1.136rem', // ~16px
+          'xl': '1.278rem', // ~18px
+          '2xl': '1.562rem', // ~22px
+          '3xl': '1.846rem', // ~26px
+          '4xl': '2.272rem', // ~32px
       },
       colors: {
         border: "rgb(var(--border) / <alpha-value>)",

@@ -81,8 +81,8 @@
 
 @layer base {
   html {
-    /* Establece 12px como el tamaño de fuente base (12px / 16px = 75%) */
-    font-size: 75%; 
+    /* Establece ~14.08px como el tamaño de fuente base (16px * 88%) */
+    font-size: 88%; 
   }
   * {
     @apply border-border;
@@ -90,7 +90,7 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
-    /* Base font size in rem, which now equals 12px */
+    /* Base font size in rem, which now equals ~14.08px */
     font-size: 1rem;
   }
 }
