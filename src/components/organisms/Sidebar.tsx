@@ -46,7 +46,7 @@ export function Sidebar() {
                         ))}
                     </nav>
                 </div>
-                 <div className="mt-auto p-8">
+                 <div className="mt-auto p-4">
                     <nav className="grid items-start text-sm font-medium">
                          <Link
                             href={settingsLink.href}

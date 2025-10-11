@@ -125,16 +125,19 @@ export default function ModelsPage() {
     </TableHead>
   );
 
-  // El JSX se mantiene casi idéntico, solo ajustando el tipado
   return (
     <div className="h-full flex flex-col bg-background">
-        <div className="flex-1 overflow-y-auto p-6 lg:p-8 space-y-6">
+        <div className="p-6 lg:p-8 space-y-6">
             <div>
                 <h1 className="text-3xl font-bold tracking-tight">Talento</h1>
                 <p className="text-muted-foreground">Gestiona, filtra y explora la base de datos de modelos.</p>
             </div>
             <ModelsToolbar countries={countries} modelCount={count} />
-            <div className="flex-1">
+        </div>
+
+        {/* Este es el nuevo contenedor que controlará el scroll */}
+        <div className="flex-1 overflow-y-auto px-6 lg:px-8">
+            <div className="pb-6">
                 {loading ? (
                     view === 'grid' ? (
                         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
@@ -161,36 +164,36 @@ export default function ModelsPage() {
                         <div className="border rounded-lg">
                             <Table>
                                 <TableHeader><TableRow>
-    <TableHead className="w-[80px]"></TableHead>
-    <SortableHeader tkey="alias" label="Alias" />
-    <SortableHeader tkey="country" label="País" />
-    <SortableHeader tkey="height_cm" label="Estatura" />
-    <TableHead>Instagram</TableHead>
-    <TableHead>TikTok</TableHead>
-    <TableHead>Perfil</TableHead>
-    <TableHead className="text-right">Acciones</TableHead>
-</TableRow></TableHeader>
+                                    <TableHead className="w-[80px]"></TableHead>
+                                    <SortableHeader tkey="alias" label="Alias" />
+                                    <SortableHeader tkey="country" label="País" />
+                                    <SortableHeader tkey="height_cm" label="Estatura" />
+                                    <TableHead>Instagram</TableHead>
+                                    <TableHead>TikTok</TableHead>
+                                    <TableHead>Perfil</TableHead>
+                                    <TableHead className="text-right">Acciones</TableHead>
+                                </TableRow></TableHeader>
                                 <TableBody>
                                     {models.map((model) => (
                                         <TableRow key={model.id} onClick={() => handleRowClick(model.id)} className="cursor-pointer">
-    <TableCell><Avatar><AvatarImage src={`${publicUrl}/${model.id}/cover/cover.jpg`} /><AvatarFallback>{model.alias?.substring(0, 2) || 'IZ'}</AvatarFallback></Avatar></TableCell>
-    <TableCell className="font-medium">{model.alias}</TableCell>
-    <TableCell>{model.country}</TableCell>
-    <TableCell>{model.height_cm} cm</TableCell>
-    <TableCell>{model.instagram && <Link href={`https://instagram.com/${model.instagram}`} target="_blank" onClick={(e) => e.stopPropagation()} className="flex items-center gap-1.5 hover:underline text-muted-foreground hover:text-foreground">@{model.instagram} <ExternalLink className="h-3.5 w-3.5" /></Link>}</TableCell>
-    <TableCell>{model.tiktok && <Link href={`https://tiktok.com/@${model.tiktok}`} target="_blank" onClick={(e) => e.stopPropagation()} className="flex items-center gap-1.5 hover:underline text-muted-foreground hover:text-foreground">@{model.tiktok} <ExternalLink className="h-3.5 w-3.5" /></Link>}</TableCell>
-    <TableCell>
-        <div className="flex items-center gap-2">
-            <Progress value={model.profile_completion || 0} className="w-20 h-1.5" />
-            <span className="text-xs text-muted-foreground">{`${Math.round(model.profile_completion || 0)}%`}</span>
-        </div>
-    </TableCell>
-    <TableCell className="text-right">
-        <div className="flex justify-end">
-            <Download className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" onClick={(e) => { e.stopPropagation(); alert('Próximamente'); }} />
-        </div>
-    </TableCell>
-</TableRow>
+                                            <TableCell><Avatar><AvatarImage src={`${publicUrl}/${model.id}/cover/cover.jpg`} /><AvatarFallback>{model.alias?.substring(0, 2) || 'IZ'}</AvatarFallback></Avatar></TableCell>
+                                            <TableCell className="font-medium">{model.alias}</TableCell>
+                                            <TableCell>{model.country}</TableCell>
+                                            <TableCell>{model.height_cm} cm</TableCell>
+                                            <TableCell>{model.instagram && <Link href={`https://instagram.com/${model.instagram}`} target="_blank" onClick={(e) => e.stopPropagation()} className="flex items-center gap-1.5 hover:underline text-muted-foreground hover:text-foreground">@{model.instagram} <ExternalLink className="h-3.5 w-3.5" /></Link>}</TableCell>
+                                            <TableCell>{model.tiktok && <Link href={`https://tiktok.com/@${model.tiktok}`} target="_blank" onClick={(e) => e.stopPropagation()} className="flex items-center gap-1.5 hover:underline text-muted-foreground hover:text-foreground">@{model.tiktok} <ExternalLink className="h-3.5 w-3.5" /></Link>}</TableCell>
+                                            <TableCell>
+                                                <div className="flex items-center gap-2">
+                                                    <Progress value={model.profile_completion || 0} className="w-20 h-1.5" />
+                                                    <span className="text-xs text-muted-foreground">{`${Math.round(model.profile_completion || 0)}%`}</span>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <div className="flex justify-end">
+                                                    <Download className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" onClick={(e) => { e.stopPropagation(); alert('Próximamente'); }} />
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
                                     ))}
                                 </TableBody>
                             </Table>
@@ -203,8 +206,9 @@ export default function ModelsPage() {
                 )}
             </div>
         </div>
+
         {totalPages > 1 && (
-          <footer className="flex items-baseline justify-between border-t px-6 lg:px-8 py-8">
+          <footer className="flex items-baseline justify-between border-t px-6 lg:px-8 py-4">
             {/* Contenedor paginación alineado a la izquierda */}
             <div className="flex justify-start">
               <Pagination>
