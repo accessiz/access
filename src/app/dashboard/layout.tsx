@@ -1,4 +1,3 @@
-
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { LogOut } from 'lucide-react';
@@ -35,10 +34,11 @@ export default async function DashboardLayout({
               </Button>
             </form>
         </header>
-        <main className="flex-1 overflow-y-auto p-6 lg:p-8">
+        <main className="flex-1 overflow-y-auto">
           {children}
         </main>
       </div>
     </div>
   );
 }
+
