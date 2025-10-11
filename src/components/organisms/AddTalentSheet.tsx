@@ -22,18 +22,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '../../lib/supabase/client';
 import { toast } from 'sonner';
 import { Model } from '@/lib/types';
 
+// Define el tipo para los datos del formulario, excluyendo campos autogenerados.
 type FormData = Omit<Model, 'id' | 'created_at' | 'profile_completion' | 'status'>;
 
+// Estado inicial vacío para el formulario.
 const initialState: FormData = {
     alias: '',
     full_name: '',
@@ -65,20 +61,24 @@ export function AddTalentSheet({ children }: { children: React.ReactNode }) {
   const supabase = createClient();
   const router = useRouter();
 
+  // Maneja cambios en los inputs de texto y número.
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     const isNumeric = ['height_cm', 'shoulders_cm', 'chest_cm', 'bust_cm', 'waist_cm', 'hips_cm', 'shoe_size_eu'].includes(name);
     setFormData(prev => ({ ...prev, [name]: value === '' ? null : (isNumeric ? Number(value) : value) }));
   };
 
+  // Maneja cambios en los campos de selección (Select).
   const handleSelectChange = (name: keyof FormData, value: string) => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  // Envía el formulario a Supabase.
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
+    // Limpia los datos, eliminando claves con valores nulos o vacíos antes de enviar.
     const cleanedData: Partial<FormData> = {};
     for (const key in formData) {
       if (formData[key as keyof FormData] !== null && formData[key as keyof FormData] !== '') {
@@ -99,30 +99,31 @@ export function AddTalentSheet({ children }: { children: React.ReactNode }) {
         description: `${formData.alias || formData.full_name} ha sido añadido a la base de datos.`,
       });
       setIsOpen(false);
-      setFormData(initialState);
-      router.refresh();
+      setFormData(initialState); // Resetea el formulario
+      router.refresh(); // Refresca los datos en la página de talentos
     }
   };
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       {children}
-      <SheetContent className="flex flex-col">
-        <SheetHeader>
-          <SheetTitle>Añadir Nuevo Talento</SheetTitle>
-          <SheetDescription>
-            Rellena los datos para crear un nuevo perfil. Los campos marcados con * son obligatorios.
-          </SheetDescription>
-        </SheetHeader>
-        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
-          <div className="flex-1 overflow-y-auto">
-            {/* LA SOLUCIÓN: Padding en el contenedor para alinear todo y evitar el corte */}
-            <div className="px-4 pr-6">
-                <Accordion type="multiple" defaultValue={['item-1', 'item-2']} className="w-full">
-                  <AccordionItem value="item-1">
-                    <AccordionTrigger>Información Básica</AccordionTrigger>
-                    <AccordionContent className="space-y-4 pt-1">
-                      <div className="grid md:grid-cols-2 gap-x-6 gap-y-4">
+      <SheetContent className="flex flex-col p-0">
+        {/* Contenedor principal para alinear todo el contenido */}
+        <div className="w-full max-w-5xl mx-auto flex flex-col h-full">
+          <SheetHeader className="p-6 pb-4 shrink-0">
+            <SheetTitle>Añadir Nuevo Talento</SheetTitle>
+            <SheetDescription>
+              Rellena los datos para crear un nuevo perfil. Los campos marcados con * son obligatorios.
+            </SheetDescription>
+          </SheetHeader>
+
+          <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+            <div className="flex-1 overflow-y-auto px-6">
+               <div className="space-y-6 py-6">
+                  {/* --- Sección de Información Básica --- */}
+                  <div className="space-y-4">
+                      <h3 className="text-lg font-medium">Información Básica</h3>
+                      <div className="grid md:grid-cols-2 gap-x-6 gap-y-4 p-6 border rounded-lg">
                         <div className="grid gap-2">
                           <Label htmlFor="alias">Alias *</Label>
                           <Input id="alias" name="alias" value={formData.alias || ''} onChange={handleChange} required />
@@ -162,12 +163,12 @@ export function AddTalentSheet({ children }: { children: React.ReactNode }) {
                           </Select>
                         </div>
                       </div>
-                    </AccordionContent>
-                  </AccordionItem>
+                  </div>
 
-                  <AccordionItem value="item-2">
-                    <AccordionTrigger>Medidas y Tallas</AccordionTrigger>
-                    <AccordionContent className="grid md:grid-cols-2 gap-x-6 gap-y-4 pt-1">
+                  {/* --- Sección de Medidas y Tallas --- */}
+                  <div className="space-y-4">
+                      <h3 className="text-lg font-medium">Medidas y Tallas</h3>
+                      <div className="grid md:grid-cols-3 gap-x-6 gap-y-4 p-6 border rounded-lg">
                         <div className="grid gap-2"><Label htmlFor="height_cm">Estatura (cm)</Label><Input id="height_cm" name="height_cm" type="number" placeholder="180" value={formData.height_cm || ''} onChange={handleChange} /></div>
                         <div className="grid gap-2"><Label htmlFor="shoulders_cm">Hombros (cm)</Label><Input id="shoulders_cm" name="shoulders_cm" type="number" placeholder="45" value={formData.shoulders_cm || ''} onChange={handleChange} /></div>
                         <div className="grid gap-2"><Label htmlFor="chest_cm">Pecho (cm)</Label><Input id="chest_cm" name="chest_cm" type="number" placeholder="95" value={formData.chest_cm || ''} onChange={handleChange} /></div>
@@ -177,40 +178,33 @@ export function AddTalentSheet({ children }: { children: React.ReactNode }) {
                         <div className="grid gap-2"><Label htmlFor="top_size">Talla Superior</Label><Input id="top_size" name="top_size" placeholder="S, M..." value={formData.top_size || ''} onChange={handleChange} /></div>
                         <div className="grid gap-2"><Label htmlFor="pants_size">Pantalón</Label><Input id="pants_size" name="pants_size" placeholder="28, 30..." value={formData.pants_size || ''} onChange={handleChange} /></div>
                         <div className="grid gap-2"><Label htmlFor="shoe_size_eu">Zapato (EU)</Label><Input id="shoe_size_eu" name="shoe_size_eu" type="number" placeholder="39" value={formData.shoe_size_eu || ''} onChange={handleChange} /></div>
-                    </AccordionContent>
-                  </AccordionItem>
+                      </div>
+                  </div>
 
-                  <AccordionItem value="item-3">
-                    <AccordionTrigger>Apariencia</AccordionTrigger>
-                    <AccordionContent className="grid md:grid-cols-2 gap-x-6 gap-y-4 pt-1">
-                        <div className="grid gap-2"><Label htmlFor="hair_color">Color de Cabello</Label><Input id="hair_color" name="hair_color" value={formData.hair_color || ''} onChange={handleChange} /></div>
-                        <div className="grid gap-2"><Label htmlFor="eye_color">Color de Ojos</Label><Input id="eye_color" name="eye_color" value={formData.eye_color || ''} onChange={handleChange} /></div>
-                    </AccordionContent>
-                  </AccordionItem>
-
-                  <AccordionItem value="item-4">
-                    <AccordionTrigger>Redes y Contacto</AccordionTrigger>
-                    <AccordionContent className="space-y-4 pt-1">
-                       <div className="grid md:grid-cols-2 gap-x-6 gap-y-4">
+                  {/* --- Sección de Apariencia y Contacto --- */}
+                  <div className="space-y-4">
+                      <h3 className="text-lg font-medium">Apariencia y Contacto</h3>
+                      <div className="grid md:grid-cols-2 gap-x-6 gap-y-4 p-6 border rounded-lg">
+                         <div className="grid gap-2"><Label htmlFor="hair_color">Color de Cabello</Label><Input id="hair_color" name="hair_color" value={formData.hair_color || ''} onChange={handleChange} /></div>
+                         <div className="grid gap-2"><Label htmlFor="eye_color">Color de Ojos</Label><Input id="eye_color" name="eye_color" value={formData.eye_color || ''} onChange={handleChange} /></div>
                          <div className="grid gap-2"><Label htmlFor="instagram">Instagram</Label><Input id="instagram" name="instagram" placeholder="usuario" value={formData.instagram || ''} onChange={handleChange} /></div>
                          <div className="grid gap-2"><Label htmlFor="tiktok">TikTok</Label><Input id="tiktok" name="tiktok" placeholder="usuario" value={formData.tiktok || ''} onChange={handleChange} /></div>
                          <div className="grid gap-2"><Label htmlFor="email">Email</Label><Input id="email" name="email" type="email" placeholder="correo@ejemplo.com" value={formData.email || ''} onChange={handleChange} /></div>
                          <div className="grid gap-2"><Label htmlFor="phone_number">Teléfono</Label><Input id="phone_number" name="phone_number" placeholder="+502 1234 5678" value={formData.phone_number || ''} onChange={handleChange} /></div>
-                       </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
+                      </div>
+                  </div>
+               </div>
             </div>
-          </div>
-          <SheetFooter className="pt-6 border-t mt-auto">
-            <SheetClose asChild>
-              <Button type="button" variant="outline">Cancelar</Button>
-            </SheetClose>
-            <Button type="submit" disabled={loading}>
-              {loading ? 'Guardando...' : 'Guardar Perfil'}
-            </Button>
-          </SheetFooter>
-        </form>
+            <SheetFooter className="p-6 border-t mt-auto shrink-0">
+              <SheetClose asChild>
+                <Button type="button" variant="outline">Cancelar</Button>
+              </SheetClose>
+              <Button type="submit" disabled={loading}>
+                {loading ? 'Guardando...' : 'Guardar Perfil'}
+              </Button>
+            </SheetFooter>
+          </form>
+        </div>
       </SheetContent>
     </Sheet>
   );

@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -50,6 +49,7 @@ const AccordionContent = React.forwardRef<
     className="overflow-hidden text-sm transition-all data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down"
     {...props}
   >
+    {/* CORRECCIÓN: Quitamos el padding horizontal ("p-4") para que la alineación sea perfecta */}
     <div className={cn("pb-4 pt-0", className)}>{children}</div>
   </AccordionPrimitive.Content>
 ))
