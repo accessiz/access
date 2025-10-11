@@ -1,3 +1,4 @@
+
 import type { Config } from 'tailwindcss'
 
 const config: Config = {
@@ -6,7 +7,7 @@ const config: Config = {
     './pages/**/*.{ts,tsx}',
     './components/**/*.{ts,tsx}',
     './app/**/*.{ts,tsx}',
-    './src/**/*.{ts,tsx,css}', // Added css files for scanning
+    './src/**/*.{ts,tsx,css}',
   ],
   prefix: "",
   theme: {
@@ -18,12 +19,24 @@ const config: Config = {
       },
     },
     extend: {
+      fontSize: {
+          'xs': '0.833rem', // 10px
+          'sm': '0.917rem', // 11px
+          'base': '1rem',    // 12px (base)
+          'lg': '1.167rem', // 14px
+          'xl': '1.333rem', // 16px
+          '2xl': '1.667rem', // 20px
+          '3xl': '2rem',     // 24px
+          '4xl': '2.5rem',   // 30px
+      },
       colors: {
         border: "rgb(var(--border) / <alpha-value>)",
         input: "rgb(var(--input) / <alpha-value>)",
         ring: "rgb(var(--ring) / <alpha-value>)",
         background: "rgb(var(--background) / <alpha-value>)",
         foreground: "rgb(var(--foreground) / <alpha-value>)",
+        "nav-background": "rgb(var(--nav-background) / <alpha-value>)",
+        "nav-foreground": "rgb(var(--nav-foreground) / <alpha-value>)",
         primary: {
           DEFAULT: "rgb(var(--primary) / <alpha-value>)",
           foreground: "rgb(var(--primary-foreground) / <alpha-value>)",

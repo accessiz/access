@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -5,97 +6,91 @@
 @layer base {
   :root {
     /* ====================================================== */
-    /* ==   MODO CLARO (LIGHT THEME) - Final Definitivo     == */
+    /* ==   MODO CLARO (LIGHT THEME) - REFINADO            == */
     /* ====================================================== */
+    --background: 249 249 249; /* Un blanco roto muy sutil */
+    --foreground: 20 20 20;
 
-    /* Fondo principal: Blanco puro para máxima limpieza */
-    --background: 255 255 255; 
-    /* Texto principal: Un gris muy oscuro de tu nueva escala (#1c1a1d) */
-    --foreground: 28 26 29;
+    --nav-background: 255 255 255; /* Blanco puro para la barra lateral y header */
+    --nav-foreground: 20 20 20;
 
-    /* Fondos de elementos flotantes */
     --card: 255 255 255;
-    --card-foreground: 28 26 29;
-    --popover: 255 255 255;
-    --popover-foreground: 28 26 29;
+    --card-foreground: 20 20 20;
 
-    /* Color de acento principal: Tu morado */
+    --popover: 255 255 255;
+    --popover-foreground: 20 20 20;
+
     --primary: 135 24 157;
     --primary-foreground: 250 250 250;
 
-    /* Color secundario: Un gris muy claro de tu nueva escala (#e6e6e6) */
-    --secondary: 230 230 230;
+    --secondary: 242 242 242; /* Un gris muy claro para elementos secundarios */
     --secondary-foreground: 28 26 29;
 
-    /* Texto sutil: Un gris medio de tu nueva escala (#747374) */
-    --muted: 230 230 230;
-    --muted-foreground: 116 115 116;
+    --muted: 242 242 242;
+    --muted-foreground: 120 120 120;
 
-    /* Acento secundario */
-    --accent: 135 24 157;
-    --accent-foreground: 250 250 250;
+    --accent: 242 242 242;
+    --accent-foreground: 28 26 29;
 
-    /* Color destructivo/peligro */
     --destructive: 220 38 38;
     --destructive-foreground: 250 250 250;
 
-    /* Borde e input: Un gris claro de tu nueva escala (#cdcccd) */
-    --border: 205 204 205;
-    --input: 205 204 205;
+    --border: 230 230 230;
+    --input: 230 230 230;
     --ring: 135 24 157;
 
-    --radius: 0.625rem; 
+    --radius: 0.5rem; /* Bordes ligeramente menos redondeados para un look más serio */
   }
 
   .dark {
     /* ==================================================== */
-    /* ==   MODO OSCURO (DARK THEME) - Paleta Final       == */
+    /* ==   MODO OSCURO (DARK THEME) - REFINADO          == */
     /* ==================================================== */
+    --background: 10 10 10; /* Fondo principal casi negro */
+    --foreground: 235 235 235;
 
-    /* Fondo principal: Un tono muy oscuro de tu paleta (#000000) */
-    --background: 3 3 3; 
-    /* Texto principal: Un blanco suave (#e6e6e6) */
-    --foreground: 230 230 230; 
+    --nav-background: 19 19 19; /* Sidebar y Header ligeramente más claros */
+    --nav-foreground: 235 235 235;
 
-    /* Tarjetas: Un gris oscuro para contraste sutil (#020103) */
-    --card: 13 13 13;
-    --card-foreground: 230 230 230;
-    --popover: 1 0 1;
-    --popover-foreground: 230 230 230;
+    --card: 19 19 19;
+    --card-foreground: 235 235 235;
 
-    /* Color de acento principal */
+    --popover: 19 19 19;
+    --popover-foreground: 235 235 235;
+
     --primary: 135 24 157;
     --primary-foreground: 250 250 250;
 
-    /* Secundario: Para hovers y elementos activos (#3e0b48) */
-    --secondary: 91 16 106;
-    --secondary-foreground: 230 230 230;
+    --secondary: 35 35 35; /* Gris oscuro para elementos activos/hover */
+    --secondary-foreground: 250 250 250;
 
-    /* Barra Lateral y Cabecera: Tu nuevo color principal (#030104) */
-    --muted: 13 13 13;
-    --muted-foreground: 116 115 116;
+    --muted: 35 35 35;
+    --muted-foreground: 160 160 160;
 
-    /* Acento secundario */
-    --accent: 135 24 157;
+    --accent: 35 35 35;
     --accent-foreground: 250 250 250;
 
-    /* Color destructivo/peligro */
     --destructive: 153 27 27;
-    --destructive-foreground: 230 230 230;
+    --destructive-foreground: 235 235 235;
 
-    /* Borde e input: Un gris muy oscuro para una apariencia integrada (#100e10) */
-    --border: 32 32 32;
-    --input: 16 14 16;
+    --border: 35 35 35;
+    --input: 35 35 35;
     --ring: 135 24 157;
   }
 }
 
 @layer base {
+  html {
+    /* Establece 12px como el tamaño de fuente base (12px / 16px = 75%) */
+    font-size: 75%; 
+  }
   * {
     @apply border-border;
   }
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+    /* Base font size in rem, which now equals 12px */
+    font-size: 1rem;
   }
 }
