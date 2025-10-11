@@ -1,7 +1,9 @@
+
 import type { Metadata } from "next";
 import { GeistSans } from 'geist/font/sans';
 import "./globals.css";
-import { AuthProvider } from "@/hooks/useAuth"; // Importamos el AuthProvider
+import { AuthProvider } from "@/hooks/useAuth";
+import { Toaster } from "@/components/ui/sonner"; // Importamos el Toaster
 
 const geist = GeistSans;
 
@@ -33,12 +35,11 @@ export default function RootLayout({
   return (
     <html lang="es" className="dark">
       <body className={geist.className}>
-        {/* Envolvemos toda la aplicación con el AuthProvider */}
         <AuthProvider>
           {children}
+          <Toaster />
         </AuthProvider>
       </body>
     </html>
   );
 }
-

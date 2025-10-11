@@ -8,6 +8,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Search, ListFilter, Ruler, LayoutGrid, List, PlusCircle } from 'lucide-react';
 import { useDebouncedCallback } from 'use-debounce';
 import { useMemo } from 'react';
+import { AddTalentSheet } from './AddTalentSheet'; // Importamos el nuevo componente
+import { SheetTrigger } from '@/components/ui/sheet'; // Importamos el Trigger
 
 const heightRanges = [
   { label: "Cualquier Estatura", min: null, max: null },
@@ -108,12 +110,16 @@ export function ModelsToolbar({ countries, modelCount }: { countries: string[]; 
           <Button variant={view === 'list' ? 'secondary' : 'ghost'} size="icon" onClick={() => setView('list')} className="h-8 w-8"><List className="h-4 w-4" /></Button>
           <Button variant={view === 'grid' ? 'secondary' : 'ghost'} size="icon" onClick={() => setView('grid')} className="h-8 w-8"><LayoutGrid className="h-4 w-4" /></Button>
         </div>
-         <Button size="sm" className="h-10 gap-2 w-full sm:w-auto">
-            <PlusCircle className="h-4 w-4" />
-            Añadir Talento
-        </Button>
+        {/* Aquí integramos el nuevo componente */}
+        <AddTalentSheet>
+            <SheetTrigger asChild>
+                <Button size="sm" className="h-10 gap-2 w-full sm:w-auto">
+                    <PlusCircle className="h-4 w-4" />
+                    Añadir Talento
+                </Button>
+            </SheetTrigger>
+        </AddTalentSheet>
       </div>
     </div>
   );
 }
-
