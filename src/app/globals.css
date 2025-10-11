@@ -1,128 +1,107 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    /* ====================================================== */
-    /* ==   MODO CLARO (LIGHT THEME) - REFINADO            == */
-    /* ====================================================== */
-    --background: 249 249 249; /* Un blanco roto muy sutil */
+    /* MODO CLARO (SIN CAMBIOS) */
+    --background: 249 249 249;
     --foreground: 20 20 20;
-
-    --nav-background: 255 255 255; /* Blanco puro para la barra lateral y header */
+    --nav-background: 255 255 255;
     --nav-foreground: 20 20 20;
-
     --card: 255 255 255;
     --card-foreground: 20 20 20;
-
     --popover: 255 255 255;
     --popover-foreground: 20 20 20;
-
     --primary: 135 24 157;
     --primary-foreground: 250 250 250;
-
-    --secondary: 242 242 242; /* Un gris muy claro para elementos secundarios */
+    --secondary: 242 242 242;
     --secondary-foreground: 28 26 29;
-
     --muted: 242 242 242;
     --muted-foreground: 120 120 120;
-
     --accent: 242 242 242;
     --accent-foreground: 28 26 29;
-
     --destructive: 220 38 38;
     --destructive-foreground: 250 250 250;
-
     --border: 230 230 230;
     --input: 230 230 230;
     --ring: 135 24 157;
-
-    --radius: 0.5rem; /* Bordes ligeramente menos redondeados para un look más serio */
+    --radius: 0.5rem;
   }
 
   .dark {
-    /* ==================================================== */
-    /* ==   MODO OSCURO (DARK THEME) - REFINADO          == */
-    /* ==================================================== */
-    --background: 10 10 10; /* Fondo principal casi negro */
-    --foreground: 235 235 235;
+    /* ======================================================= */
+    /* ==   NUEVO TEMA OSCURO REFINADO (ESTILO VERCEL)      == */
+    /* ======================================================= */
+    --background: 16 16 16;           /* Fondo principal (gris muy oscuro) */
+    --foreground: 235 235 235;         /* Texto principal (casi blanco) */
 
-    --nav-background: 19 19 19; /* Sidebar y Header ligeramente más claros */
+    /* Paneles que "flotan" sobre el fondo */
+    --nav-background: 24 24 24;       /* Sidebar, Header */
     --nav-foreground: 235 235 235;
 
-    --card: 19 19 19;
+    --card: 24 24 24;                 /* Tarjetas, Popovers */
     --card-foreground: 235 235 235;
 
-    --popover: 19 19 19;
+    --popover: 24 24 24;
     --popover-foreground: 235 235 235;
 
-    --primary: 135 24 157;
+    --primary: 135 24 157;            /* Color primario (sin cambios) */
     --primary-foreground: 250 250 250;
 
-    --secondary: 35 35 35; /* Gris oscuro para elementos activos/hover */
+    /* Colores para estados y elementos secundarios */
+    --secondary: 50 50 50;            /* Hover, elementos activos */
     --secondary-foreground: 250 250 250;
 
-    --muted: 35 35 35;
-    --muted-foreground: 160 160 160;
+    --muted: 50 50 50;
+    --muted-foreground: 160 160 160;   /* Texto secundario/apagado */
 
-    --accent: 35 35 35;
+    --accent: 50 50 50;
     --accent-foreground: 250 250 250;
 
     --destructive: 153 27 27;
     --destructive-foreground: 235 235 235;
 
-    --border: 35 35 35;
-    --input: 35 35 35;
-    --ring: 135 24 157;
+    /* Bordes e inputs sutiles */
+    --border: 40 40 40;
+    --input: 40 40 40;
+    --ring: 135 24 157;               /* Anillo de foco (sin cambios) */
   }
 }
 
 @layer base {
   html {
-    /* Establece ~14.08px como el tamaño de fuente base (16px * 88%) */
-    font-size: 88%;
+    font-size: 88%; 
   }
-
   * {
     @apply border-border;
   }
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
-    /* Base font size in rem, which now equals ~14.08px */
     font-size: 1rem;
   }
 }
 
-/* ================================================================== */
-/* ==   CUSTOM SCROLLBAR - ESTILO MINIMALISTA Y ELEGANTE           == */
-/* ================================================================== */
-
-/* --- Para Firefox --- */
+/* Estilos de Scrollbar (sin cambios) */
 * {
   scrollbar-width: thin;
   scrollbar-color: hsl(var(--muted-foreground) / 0.5) transparent;
 }
-
-/* --- Para WebKit (Chrome, Safari, Edge) --- */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
-
 ::-webkit-scrollbar-track {
   background: transparent;
 }
-
 ::-webkit-scrollbar-thumb {
-  background-color: hsl(var(--muted-foreground) / 0.5); /* Usamos un gris medio del tema */
+  background-color: hsl(var(--muted-foreground) / 0.5);
   border-radius: 10px;
   border: 2px solid transparent;
   background-clip: content-box;
 }
-
 ::-webkit-scrollbar-thumb:hover {
   background-color: hsl(var(--primary));
 }
-
