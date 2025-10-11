@@ -227,22 +227,48 @@ export default function ModelsPage() {
 
         {totalPages > 1 && (
           <footer className="flex items-center justify-between pt-6">
-              <div className="text-xs text-muted-foreground">
-                  Página {currentPage} de {totalPages}
-              </div>
+            {/* Contenedor del slider con control local de alineación */}
+            <div className="flex justify-start w-full max-w-[300px]">
               <Pagination>
-                  <PaginationContent>
-                      <PaginationItem><PaginationPrevious href={createPageURL(currentPage - 1)} className={currentPage <= 1 ? "pointer-events-none opacity-50" : ""}/></PaginationItem>
-                      {paginationItems.map((page, index) => (
-                          <PaginationItem key={index}>
-                          {page === '...' ? <PaginationEllipsis /> : <PaginationLink href={createPageURL(page as number)} isActive={currentPage === page}>{page}</PaginationLink>}
-                          </PaginationItem>
-                      ))}
-                      <PaginationItem><PaginationNext href={createPageURL(currentPage + 1)} className={currentPage >= totalPages ? "pointer-events-none opacity-50" : ""}/></PaginationItem>
-                  </PaginationContent>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      href={createPageURL(currentPage - 1)}
+                      className={currentPage <= 1 ? "pointer-events-none opacity-50" : ""}
+                    />
+                  </PaginationItem>
+                  {paginationItems.map((page, index) => (
+                    <PaginationItem key={index}>
+                      {page === '...' ? (
+                        <PaginationEllipsis />
+                      ) : (
+                        <PaginationLink
+                          href={createPageURL(page as number)}
+                          isActive={currentPage === page}
+                        >
+                          {page}
+                        </PaginationLink>
+                      )}
+                    </PaginationItem>
+                  ))}
+                  <PaginationItem>
+                    <PaginationNext
+                      href={createPageURL(currentPage + 1)}
+                      className={currentPage >= totalPages ? "pointer-events-none opacity-50" : ""}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
               </Pagination>
+            </div>
+
+            {/* Texto de página actual */}
+            <div className="text-xs text-muted-foreground">
+              Página {currentPage} de {totalPages}
+            </div>
           </footer>
         )}
+
+
     </div>
   );
 }
