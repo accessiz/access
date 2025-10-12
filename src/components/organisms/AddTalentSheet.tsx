@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from 'react';
@@ -22,9 +21,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { createClient } from '../../lib/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 import { Model } from '@/lib/types';
+import { countries } from '@/lib/countries';
 
 type FormData = Omit<Model, 'id' | 'created_at' | 'profile_completion' | 'status'>;
 
@@ -101,7 +101,22 @@ export function AddTalentSheet({ children }: { children: React.ReactNode }) {
                         <div className="grid gap-2"><Label htmlFor="alias">Alias *</Label><Input id="alias" name="alias" value={formData.alias || ''} onChange={handleChange} required /></div>
                         <div className="grid gap-2"><Label htmlFor="full_name">Nombre Completo *</Label><Input id="full_name" name="full_name" value={formData.full_name || ''} onChange={handleChange} required /></div>
                         <div className="grid gap-2"><Label htmlFor="birth_date">Nacimiento</Label><Input id="birth_date" name="birth_date" type="date" value={formData.birth_date || ''} onChange={handleChange} /></div>
-                        <div className="grid gap-2"><Label htmlFor="country">País</Label><Select onValueChange={(value) => handleSelectChange('country', value)} value={formData.country || undefined}><SelectTrigger><SelectValue placeholder="Seleccionar..." /></SelectTrigger><SelectContent><SelectItem value="Guatemala">Guatemala</SelectItem><SelectItem value="El Salvador">El Salvador</SelectItem><SelectItem value="Costa Rica">Costa Rica</SelectItem></SelectContent></Select></div>
+                        {/* CAMBIO: Usamos el Select simple para el país */}
+                        <div className="grid gap-2">
+                          <Label htmlFor="country">País</Label>
+                          <Select onValueChange={(value) => handleSelectChange('country', value)} value={formData.country || undefined}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Seleccionar país..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {countries.sort((a, b) => a.label.localeCompare(b.label)).map(country => (
+                                <SelectItem key={country.value} value={country.value}>
+                                  {country.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
                         <div className="grid gap-2"><Label htmlFor="national_id">Documento ID</Label><Input id="national_id" name="national_id" value={formData.national_id || ''} onChange={handleChange} /></div>
                         <div className="grid gap-2"><Label htmlFor="gender">Género</Label><Select onValueChange={(value) => handleSelectChange('gender', value)} value={formData.gender || undefined}><SelectTrigger><SelectValue placeholder="Seleccionar..." /></SelectTrigger><SelectContent><SelectItem value="Female">Femenino</SelectItem><SelectItem value="Male">Masculino</SelectItem><SelectItem value="Other">Otro</SelectItem></SelectContent></Select></div>
                       </div>
@@ -147,3 +162,4 @@ export function AddTalentSheet({ children }: { children: React.ReactNode }) {
     </Sheet>
   );
 }
+

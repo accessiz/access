@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -45,7 +44,21 @@ const SheetContent = React.forwardRef<React.ElementRef<typeof SheetPrimitive.Con
   ({ side = "right", className, children, ...props }, ref) => (
     <SheetPortal>
       <SheetOverlay />
-      <SheetPrimitive.Content ref={ref} className={cn(sheetVariants({ side }), "bg-background", className)} {...props}>
+      <SheetPrimitive.Content
+        ref={ref}
+        className={cn(sheetVariants({ side }), "bg-background", className)}
+        // --- INICIO DE LA CORRECCIÓN ---
+        // Esta función evita que el panel se cierre si haces clic en el
+        // menú desplegable del Combobox.
+        onPointerDownOutside={(e) => {
+          const target = e.target as HTMLElement;
+          if (target.closest('[data-radix-popper-content-wrapper]')) {
+            e.preventDefault();
+          }
+        }}
+        // --- FIN DE LA CORRECCIÓN ---
+        {...props}
+      >
         {children}
         <SheetPrimitive.Close className="absolute right-8 top-16 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
           <X className="h-4 w-4" />
