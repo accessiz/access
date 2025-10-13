@@ -1,10 +1,9 @@
-
 'use client'
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { deleteModel } from '@/lib/actions/models'
+import { deleteModel } from '../../lib/actions/models'
 
 import {
   AlertDialog,
@@ -16,8 +15,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import { Button } from '@/components/ui/button'
+} from "../ui/alert-dialog"
+import { Button } from '../ui/button'
 
 interface DeleteModelDialogProps {
   modelId: string;
@@ -36,12 +35,11 @@ export const DeleteModelDialog = ({ modelId, modelAlias, children }: DeleteModel
     if (result.success) {
       toast.success('Modelo eliminado', { description: `${modelAlias} ha sido eliminado de la base de datos.` });
 
-      // --- INICIO DE LA CORRECCIÓN ---
-      // Simplemente navegamos a la lista. La server action ya se encargó de
-      // invalidar la caché, por lo que la lista se mostrará actualizada.
+      // Forzamos la navegación a la página de modelos.
+      // Esto previene que la página actual intente recargarse con un ID que ya no existe.
       router.push('/dashboard/models');
-      // La línea `router.refresh()` ha sido eliminada para prevenir el error.
-      // --- FIN DE LA CORRECCIÓN ---
+      // Adicionalmente, refrescamos para asegurar que la lista esté actualizada.
+      router.refresh();
 
     } else {
       toast.error('Error al eliminar', { description: result.error });

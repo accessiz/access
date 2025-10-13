@@ -4,17 +4,17 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { Model } from '@/lib/types';
-import { ModelFormData } from '@/lib/schemas';
-import { updateModel } from '@/lib/actions/models';
+import { Model } from '../../../../lib/types';
+import { ModelFormData } from '../../../../lib/schemas';
+import { updateModel } from '../../../../lib/actions/models';
 
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from '../../../../components/ui/button';
+import { Label } from '../../../../components/ui/label';
+import { Avatar, AvatarFallback, AvatarImage } from "../../../../components/ui/avatar";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../../components/ui/card";
 import { ChevronLeft, FilePenLine } from 'lucide-react';
-import { DeleteModelDialog } from '@/components/organisms/DeleteModelDialog';
-import { ModelForm } from '@/components/organisms/ModelForm';
+import { DeleteModelDialog } from '../../../../components/organisms/DeleteModelDialog';
+import { ModelForm } from '../../../../components/organisms/ModelForm';
 
 // --- COMPONENTES DE VISUALIZACIÓN ---
 
@@ -121,7 +121,13 @@ export default function ModelProfilePageClient({ initialModel, publicUrl }: { in
     const result = await updateModel(model.id, data);
     if (result.success) {
       toast.success('Perfil actualizado');
-      setModel({ ...model, ...data });
+      
+      const dataForState = {
+        ...data,
+        pants_size: data.pants_size !== null ? String(data.pants_size) : null,
+      };
+
+      setModel({ ...model, ...dataForState });
       setIsEditing(false);
     } else {
       toast.error('Error al actualizar', { description: result.error });
@@ -182,4 +188,3 @@ export default function ModelProfilePageClient({ initialModel, publicUrl }: { in
     </div>
   );
 }
-

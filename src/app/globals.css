@@ -30,48 +30,43 @@
   }
 
   .dark {
-    /* ======================================================= */
-    /* ==   NUEVO TEMA OSCURO REFINADO (ESTILO VERCEL)      == */
-    /* ======================================================= */
-    --background: 16 16 16;           /* Fondo principal (gris muy oscuro) */
-    --foreground: 235 235 235;         /* Texto principal (casi blanco) */
+    --background: 11 11 11;
+    --foreground: 230 230 230;
 
-    /* Paneles que "flotan" sobre el fondo */
-    --nav-background: 24 24 24;       /* Sidebar, Header */
-    --nav-foreground: 235 235 235;
+    --nav-background: 17 17 17;
+    --nav-foreground: 230 230 230;
 
-    --card: 24 24 24;                 /* Tarjetas, Popovers */
-    --card-foreground: 235 235 235;
+    --card: 20 20 20;
+    --card-foreground: 230 230 230;
 
-    --popover: 24 24 24;
-    --popover-foreground: 235 235 235;
+    --popover: 20 20 20;
+    --popover-foreground: 230 230 230;
 
-    --primary: 135 24 157;            /* Color primario (sin cambios) */
+    --primary: 135 24 157;
     --primary-foreground: 250 250 250;
 
-    /* Colores para estados y elementos secundarios */
-    --secondary: 50 50 50;            /* Hover, elementos activos */
-    --secondary-foreground: 250 250 250;
+    --secondary: 30 30 30;
+    --secondary-foreground: 230 230 230;
 
-    --muted: 50 50 50;
-    --muted-foreground: 160 160 160;   /* Texto secundario/apagado */
+    --muted: 30 30 30;
+    --muted-foreground: 140 140 140;
 
-    --accent: 50 50 50;
-    --accent-foreground: 250 250 250;
+    --accent: 30 30 30;
+    --accent-foreground: 230 230 230;
 
     --destructive: 153 27 27;
-    --destructive-foreground: 235 235 235;
+    --destructive-foreground: 230 230 230;
 
-    /* Bordes e inputs sutiles */
-    --border: 40 40 40;
-    --input: 40 40 40;
-    --ring: 135 24 157;               /* Anillo de foco (sin cambios) */
+    --border: 28 28 28;
+    --input: 28 28 28;
+    --ring: 135 24 157;
   }
+
 }
 
 @layer base {
   html {
-    font-size: 88%; 
+    font-size: 88%;
   }
   * {
     @apply border-border;
@@ -83,7 +78,7 @@
   }
 }
 
-/* Estilos de Scrollbar (sin cambios) */
+/* Scrollbar (sin cambios) */
 * {
   scrollbar-width: thin;
   scrollbar-color: hsl(var(--muted-foreground) / 0.5) transparent;
@@ -105,37 +100,25 @@
   background-color: hsl(var(--primary));
 }
 
-
-/* Estiliza las flechas en navegadores WebKit (Chrome, Safari, Edge) */
+/* Inputs WebKit */
 input[type=number]::-webkit-inner-spin-button, 
 input[type=number]::-webkit-outer-spin-button {
-  /* Aquí podríamos aplicar estilos si quisiéramos, pero
-     la práctica común es ocultarlas y usar botones personalizados si es necesario.
-     Por ahora, las dejamos con el estilo por defecto del navegador, 
-     ya que el problema principal es de color y Tailwind/shadcn ya lo maneja.
-     Si el problema persiste, sería un conflicto de estilos a nivel de componente.
-     Vamos a intentar una solución más directa en el componente Input.
-  */
+  /* Default */
 }
 
-/* Forzamos el esquema de color del navegador para los inputs en modo oscuro */
 .dark input {
-    color-scheme: dark;
+  color-scheme: dark;
 }
 
-
-/* Estiliza las flechas en navegadores WebKit (Chrome, Safari, Edge) */
 .dark input[type=number]::-webkit-inner-spin-button,
 .dark input[type=number]::-webkit-outer-spin-button {
-  opacity: 1; /* Asegura que sean visibles */
+  opacity: 1;
 }
 
-/* Estiliza la flecha de "subir" */
 .dark input[type=number]::-webkit-inner-spin-button {
-  filter: invert(0.5) brightness(1.5); /* Ajusta el color del ícono para que sea un gris claro */
+  filter: invert(0.5) brightness(1.5);
 }
 
-/* Estiliza la flecha de "bajar" */
 .dark input[type=number]::-webkit-outer-spin-button {
-   filter: invert(0.5) brightness(1.5); /* Mismo filtro para consistencia */
+  filter: invert(0.5) brightness(1.5);
 }
