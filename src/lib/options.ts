@@ -1,3 +1,4 @@
+
 // Este archivo centraliza las opciones para los selects y otros controles.
 
 // Opciones para el género de los modelos
@@ -5,6 +6,13 @@ export const genderOptions = [
   { value: 'Female', label: 'Femenino' },
   { value: 'Male', label: 'Masculino' },
   { value: 'Other', label: 'Otro' },
+];
+
+// Opciones para el estado del modelo en la agencia
+export const statusOptions = [
+    { value: 'active', label: 'Activo' },
+    { value: 'inactive', label: 'Inactivo' },
+    { value: 'archived', label: 'Archivado' },
 ];
 
 // Opciones para el color de ojos

@@ -1,12 +1,12 @@
-// Basado en tu script de Python y la tabla de la base de datos
+
 export interface Model {
-  id: string; // O number, dependiendo de tu base de datos
+  id: string; 
   alias: string | null;
   full_name: string | null;
   national_id: string | null;
   status: 'active' | 'inactive' | 'archived';
   gender: 'Male' | 'Female' | 'Other' | null;
-  birth_date: string | null; // Formato YYYY-MM-DD
+  birth_date: string | null;
   country: string | null;
   height_cm: number | null;
   shoulders_cm: number | null;
@@ -24,6 +24,7 @@ export interface Model {
   email: string | null;
   phone_number: string | null;
   created_at: string;
-  // Campo calculado, añadido en el servidor
+  user_id: string | null;
+  date_joined_agency: string | null;
   profile_completion?: number;
 }
