@@ -42,18 +42,34 @@ export const ModelForm = ({ model, onSubmit, isSubmitting }: ModelFormProps) => 
       waist_cm: model?.waist_cm || null,
       hips_cm: model?.hips_cm || null,
       top_size: model?.top_size || null,
-      pants_size: model?.pants_size || null, // Modificado de '' a null
+      pants_size: model?.pants_size || null,
       shoe_size_eu: model?.shoe_size_eu || null,
       eye_color: model?.eye_color || null,
       hair_color: model?.hair_color || null,
       instagram: model?.instagram || '',
       tiktok: model?.tiktok || '',
       email: model?.email || '',
-      phone_number: model?.phone_number || '',
+      phone_number: model?.phone_number || '', // Revertido: El valor ahora incluye el '+' si el usuario lo escribe
       status: model?.status || 'active',
       date_joined_agency: model?.date_joined_agency ? new Date(model.date_joined_agency).toISOString().split('T')[0] : '',
     }
   });
+
+  // --- Validaciones proactivas (se mantienen) ---
+  const preventNonNumericInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const isControlKey = ['Backspace', 'Tab', 'ArrowLeft', 'ArrowRight', 'Delete', 'Enter', 'Home', 'End'].includes(e.key) || e.ctrlKey || e.metaKey;
+    const isDigit = /[0-9]/.test(e.key);
+    if (!isDigit && !isControlKey) {
+      e.preventDefault();
+    }
+  };
+
+  const preventNumericInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (/[0-9]/.test(e.key)) {
+      e.preventDefault();
+    }
+  };
+  // --- Fin de las mejoras que se mantienen ---
 
   const FieldError = ({ name }: { name: keyof ModelFormData }) => {
     const error = errors[name];
@@ -71,21 +87,19 @@ export const ModelForm = ({ model, onSubmit, isSubmitting }: ModelFormProps) => 
           step="1"
           placeholder={placeholder}
           value={field.value ?? ''}
-          onChange={e => field.onChange(e.target.value === '' ? null : Number(e.target.value))}
+          onKeyDown={preventNonNumericInput} // Bloqueo proactivo
+          onChange={e => {
+            const value = e.target.value;
+            field.onChange(value === '' ? null : Number(value));
+          }}
           disabled={isSubmitting}
         />
       )}
     />
   );
 
-  // Función para prevenir la entrada de números en campos de texto
-  const preventNumericInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (/[0-9]/.test(e.key)) {
-      e.preventDefault();
-    }
-  };
-
   return (
+    // Revertido: Se quita el 'handleFormSubmit'
     <form id={formId} onSubmit={handleSubmit(onSubmit)} className="space-y-12">
         <div className="space-y-4">
             <h2 className="text-lg font-semibold">Información Básica</h2>
@@ -124,10 +138,8 @@ export const ModelForm = ({ model, onSubmit, isSubmitting }: ModelFormProps) => 
                 <div><Label>Email</Label><Input id="email" type="email" {...register("email")} disabled={isSubmitting} /><FieldError name="email" /></div>
                 <div>
                     <Label htmlFor="phone_number">Teléfono</Label>
-                    <div className="relative flex items-center">
-                        <span className="pointer-events-none absolute left-3 text-sm text-muted-foreground">+</span>
-                        <Input id="phone_number" type="tel" className="pl-6" {...register("phone_number")} disabled={isSubmitting} />
-                    </div>
+                    {/* Revertido al Input simple */}
+                    <Input id="phone_number" type="tel" {...register("phone_number")} disabled={isSubmitting} />
                     <FieldError name="phone_number" />
                 </div>
           </div>
