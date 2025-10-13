@@ -1,4 +1,3 @@
-
 'use client'
 
 import React, { useState } from 'react'
@@ -56,13 +55,32 @@ export const AddTalentSheet = React.memo(function AddTalentSheet({ children }: {
   });
 
   const onSubmit: SubmitHandler<ModelFormData> = async (data) => {
+    // --- INICIO DE LA CORRECCIÓN ---
+    // 1. Obtenemos el usuario actual que ha iniciado sesión.
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      toast.error('Error de autenticación', { description: 'No se pudo identificar al usuario. Por favor, inicia sesión de nuevo.' });
+      return;
+    }
+    // --- FIN DE LA CORRECCIÓN ---
+
     let sanitizedPhoneNumber = null;
     if (data.phone_number) {
         const digits = data.phone_number.replace(/\D/g, '');
         if (digits) { sanitizedPhoneNumber = `+${digits}`; }
     }
-    const sanitizedData = { ...data, full_name: toTitleCase(data.full_name), national_id: sanitizeNumeric(data.national_id), phone_number: sanitizedPhoneNumber };
-    const { error } = await supabase.from('models').insert([sanitizedData]);
+    
+    // 2. Añadimos el ID del usuario a los datos que se van a insertar.
+    const dataToInsert = { 
+        ...data, 
+        user_id: user.id, // Aquí asignamos la propiedad
+        full_name: toTitleCase(data.full_name), 
+        national_id: sanitizeNumeric(data.national_id), 
+        phone_number: sanitizedPhoneNumber 
+    };
+
+    const { error } = await supabase.from('models').insert([dataToInsert]);
 
     if (error) {
       toast.error('Error al crear el perfil', { description: error.message });
@@ -74,7 +92,7 @@ export const AddTalentSheet = React.memo(function AddTalentSheet({ children }: {
     }
   };
 
-  // --- Helper Components for Form Fields ---
+  // --- Helper Components for Form Fields (sin cambios) ---
   const FieldError = ({ name }: { name: keyof ModelFormData }) => {
     const error = errors[name];
     return error ? <p className="text-sm text-destructive mt-1">{error.message}</p> : null;
@@ -163,3 +181,4 @@ export const AddTalentSheet = React.memo(function AddTalentSheet({ children }: {
     </Sheet>
   );
 });
+
