@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
@@ -14,6 +13,7 @@ import { Progress } from "@/components/ui/progress";
 import Link from 'next/link';
 import { ArrowUp, ArrowDown, Download, ExternalLink } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { toast } from "sonner"; // Importamos toast para las notificaciones
 
 const ITEMS_PER_PAGE = 24;
 
@@ -68,12 +68,19 @@ export default function ModelsPage() {
       const apiUrl = `/api/models?${searchParams.toString()}`;
       try {
         const response = await fetch(apiUrl);
-        if (!response.ok) throw new Error('Network response was not ok');
+        if (!response.ok) {
+            // Lanza un error para que el catch lo capture
+            throw new Error('No se pudieron cargar los datos desde la API.');
+        }
         const { data, count } = await response.json();
         setModels(data || []);
         setCount(count || 0);
       } catch (error) {
         console.error("Error fetching models via API:", error);
+        // ✨ CAMBIO APLICADO: Muestra un toast al usuario en caso de error
+        toast.error("Error al cargar los talentos", {
+            description: "Ocurrió un problema de conexión. Por favor, intenta recargar la página."
+        });
         setModels([]);
         setCount(0);
       } finally {
@@ -189,21 +196,49 @@ export default function ModelsPage() {
         </div>
 
         {totalPages > 1 && (
-          <footer className="flex items-center justify-between pt-4">
-            <div className="text-sm text-muted-foreground">Página {currentPage} de {totalPages}</div>
-            <Pagination>
-              <PaginationContent>
-                <PaginationItem><PaginationPrevious href={createPageURL(currentPage - 1)} className={currentPage <= 1 ? "pointer-events-none opacity-50" : ""} /></PaginationItem>
-                {paginationItems.map((page, index) => (
-                  <PaginationItem key={index}>
-                    {page === '...' ? <PaginationEllipsis /> : <PaginationLink href={createPageURL(page as number)} isActive={currentPage === page}>{page}</PaginationLink>}
+          <footer className="flex justify-between items-center pt-4 w-full">
+            {/* Paginación alineada a la izquierda */}
+            <div className="flex-1">
+              <Pagination>
+                <PaginationContent className="justify-start"> {/* <-- Aquí el cambio */}
+                  <PaginationItem>
+                    <PaginationPrevious
+                      href={createPageURL(currentPage - 1)}
+                      className={currentPage <= 1 ? "pointer-events-none opacity-50" : ""}
+                    />
                   </PaginationItem>
-                ))}
-                <PaginationItem><PaginationNext href={createPageURL(currentPage + 1)} className={currentPage >= totalPages ? "pointer-events-none opacity-50" : ""} /></PaginationItem>
-              </PaginationContent>
-            </Pagination>
+                  {paginationItems.map((page, index) => (
+                    <PaginationItem key={index}>
+                      {page === "..." ? (
+                        <PaginationEllipsis />
+                      ) : (
+                        <PaginationLink
+                          href={createPageURL(page as number)}
+                          isActive={currentPage === page}
+                        >
+                          {page}
+                        </PaginationLink>
+                      )}
+                    </PaginationItem>
+                  ))}
+                  <PaginationItem>
+                    <PaginationNext
+                      href={createPageURL(currentPage + 1)}
+                      className={currentPage >= totalPages ? "pointer-events-none opacity-50" : ""}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+
+            {/* Texto alineado a la derecha */}
+            <div className="text-sm text-muted-foreground whitespace-nowrap ml-4">
+              Página {currentPage} de {totalPages}
+            </div>
           </footer>
         )}
+
+
     </div>
   );
 }
