@@ -1,4 +1,3 @@
-
 import { z } from 'zod';
 
 // Regex para nombres: permite letras (incluyendo acentos), espacios y apóstrofes.
@@ -6,8 +5,17 @@ const nameRegex = /^[\p{L}'\s]+$/u;
 // Regex para teléfono: exige un '+' al inicio, seguido de 7 a 15 dígitos.
 const phoneRegex = /^\+\d{7,15}$/;
 
+// Función para transformar valores vacíos a null, ideal para campos opcionales.
+const emptyStringToNull = z.preprocess((val) => {
+  if (typeof val === 'string' && val.trim() === '') {
+    return null;
+  }
+  return val;
+}, z.any());
+
+
 export const modelFormSchema = z.object({
-  // Reglas para nombres y alias (sin cambios, ya eran correctas)
+  // --- CAMPOS REQUERIDOS ---
   alias: z.string()
     .min(2, "El alias debe tener al menos 2 caracteres.")
     .regex(nameRegex, "El alias solo puede contener letras y espacios."),
@@ -15,38 +23,36 @@ export const modelFormSchema = z.object({
     .min(3, "El nombre completo es obligatorio.")
     .regex(nameRegex, "El nombre solo puede contener letras y espacios."),
 
-  national_id: z.string().optional().nullable(),
-  gender: z.enum(['Male', 'Female', 'Other']).nullable(),
-  birth_date: z.string().optional().nullable(),
-  country: z.string().nullable(),
+  // --- CAMPOS OPCIONALES ---
+  national_id: emptyStringToNull.pipe(z.string().nullable()),
+  gender: emptyStringToNull.pipe(z.enum(['Male', 'Female', 'Other']).nullable()),
+  
+  // SOLUCIÓN: Usamos el preprocesador para convertir "" a null ANTES de validar la fecha.
+  birth_date: emptyStringToNull.pipe(z.string().nullable()),
+  date_joined_agency: emptyStringToNull.pipe(z.string().nullable()),
 
-  // Campos numéricos forzados a ser enteros
-  height_cm: z.number({ coerce: true, invalid_type_error: "Debe ser un número." }).int("Debe ser un número entero.").positive("Debe ser un número positivo.").nullable(),
-  shoulders_cm: z.number({ coerce: true, invalid_type_error: "Debe ser un número." }).int("Debe ser un número entero.").positive("Debe ser un número positivo.").nullable(),
-  chest_cm: z.number({ coerce: true, invalid_type_error: "Debe ser un número." }).int("Debe ser un número entero.").positive("Debe ser un número positivo.").nullable(),
-  bust_cm: z.number({ coerce: true, invalid_type_error: "Debe ser un número." }).int("Debe ser un número entero.").positive("Debe ser un número positivo.").nullable(),
-  waist_cm: z.number({ coerce: true, invalid_type_error: "Debe ser un número." }).int("Debe ser un número entero.").positive("Debe ser un número positivo.").nullable(),
-  hips_cm: z.number({ coerce: true, invalid_type_error: "Debe ser un número." }).int("Debe ser un número entero.").positive("Debe ser un número positivo.").nullable(),
-  shoe_size_eu: z.number({ coerce: true, invalid_type_error: "Debe ser un número." }).int("Debe ser un número entero.").positive("Debe ser un número positivo.").nullable(),
+  country: emptyStringToNull.pipe(z.string().nullable()),
+  
+  height_cm: emptyStringToNull.pipe(z.coerce.number().int().positive().nullable()),
+  shoulders_cm: emptyStringToNull.pipe(z.coerce.number().int().positive().nullable()),
+  chest_cm: emptyStringToNull.pipe(z.coerce.number().int().positive().nullable()),
+  bust_cm: emptyStringToNull.pipe(z.coerce.number().int().positive().nullable()),
+  waist_cm: emptyStringToNull.pipe(z.coerce.number().int().positive().nullable()),
+  hips_cm: emptyStringToNull.pipe(z.coerce.number().int().positive().nullable()),
+  shoe_size_eu: emptyStringToNull.pipe(z.coerce.number().int().positive().nullable()),
+  pants_size: emptyStringToNull.pipe(z.coerce.number().int().positive().nullable()),
+  
+  top_size: emptyStringToNull.pipe(z.string().nullable()),
+  eye_color: emptyStringToNull.pipe(z.string().nullable()),
+  hair_color: emptyStringToNull.pipe(z.string().nullable()),
+  
+  instagram: emptyStringToNull.pipe(z.string().nullable()),
+  tiktok: emptyStringToNull.pipe(z.string().nullable()),
 
-  // --- INICIO DE LA MODIFICACIÓN ---
-  // 'pants_size' ahora es también un campo numérico entero.
-  pants_size: z.number({ coerce: true, invalid_type_error: "Debe ser un número." }).int("Debe ser un número entero.").positive("Debe ser un número positivo.").nullable(),
-  // --- FIN DE LA MODIFICACIÓN ---
-
-  top_size: z.string().nullable(),
-  eye_color: z.string().nullable(),
-  hair_color: z.string().nullable(),
-  instagram: z.string().optional().nullable(),
-  tiktok: z.string().optional().nullable(),
-
-  email: z.string().email("El formato del email no es válido.").optional().or(z.literal('')).nullable(),
-  phone_number: z.string()
-    .regex(phoneRegex, "El teléfono debe empezar con + y solo contener números (ej: +50212345678).")
-    .optional().or(z.literal('')).nullable(),
+  email: emptyStringToNull.pipe(z.string().email("El formato del email no es válido.").nullable()),
+  phone_number: emptyStringToNull.pipe(z.string().regex(phoneRegex, "El teléfono debe empezar con + y solo contener números.").nullable()),
 
   status: z.enum(['active', 'inactive', 'archived']).default('active'),
-  date_joined_agency: z.string().optional().nullable(),
 });
 
 export type ModelFormData = z.infer<typeof modelFormSchema>;

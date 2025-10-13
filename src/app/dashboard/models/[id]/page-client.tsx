@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { Model } from '../../../../lib/types';
 import { ModelFormData } from '../../../../lib/schemas';
 import { updateModel } from '../../../../lib/actions/models';
-import { type SubmitHandler } from 'react-hook-form'; // Importar SubmitHandler
+import { type SubmitHandler } from 'react-hook-form';
 
 import { Button } from '../../../../components/ui/button';
 import { Label } from '../../../../components/ui/label';
@@ -17,7 +17,7 @@ import { ChevronLeft, FilePenLine } from 'lucide-react';
 import { DeleteModelDialog } from '../../../../components/organisms/DeleteModelDialog';
 import { ModelForm } from '../../../../components/organisms/ModelForm';
 
-// --- COMPONENTES DE VISUALIZACIÓN ---
+// --- (Los componentes de visualización StaticInfoDisplay, DataPoint, etc. no cambian) ---
 
 const DataPoint = ({ label, value, children }: { label: string, value?: string | number | null, children?: React.ReactNode }) => (
     <div className="flex flex-col gap-1.5">
@@ -109,7 +109,6 @@ const DangerZone = ({ modelId, modelAlias }: { modelId: string, modelAlias: stri
     </Card>
 );
 
-
 export default function ModelProfilePageClient({ initialModel, publicUrl }: { initialModel: Model | null, publicUrl: string }) {
   const [isEditing, setIsEditing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -117,15 +116,20 @@ export default function ModelProfilePageClient({ initialModel, publicUrl }: { in
 
   if (!model) { return <div className="text-center py-20"><p>No se encontró el modelo.</p></div>; }
 
-  // --- CORRECCIÓN ---
-  // Se tipa explícitamente la función con SubmitHandler para que coincida
-  // con lo que espera el componente ModelForm.
+  // === LA CORRECCIÓN CLAVE ESTÁ AQUÍ ===
+  // 1. Se tipa explícitamente la función con `SubmitHandler<ModelFormData>`.
+  // 2. Se actualiza el estado local (`setModel`) convirtiendo `pants_size` de nuevo a string.
   const handleSubmit: SubmitHandler<ModelFormData> = async (data) => {
     setIsSubmitting(true);
     const result = await updateModel(model.id, data);
+    
     if (result.success) {
-      toast.success('Perfil actualizado');
+      toast.success('Perfil actualizado!', {
+        description: `Los cambios en ${data.alias} han sido guardados.`
+      });
       
+      // Preparamos los datos para actualizar el estado de React.
+      // El tipo `Model` espera `pants_size` como string, así que lo convertimos.
       const dataForState = {
         ...data,
         pants_size: data.pants_size !== null ? String(data.pants_size) : null,
@@ -138,10 +142,9 @@ export default function ModelProfilePageClient({ initialModel, publicUrl }: { in
     }
     setIsSubmitting(false);
   };
-  // --- FIN DE LA CORRECCIÓN ---
-
+  
   const fallbackText = model.alias?.substring(0, 2) || 'IZ';
-  const imageUrl = `${publicUrl}/${model.id}/cover.jpg`;
+  const imageUrl = `${publicUrl}/${model.id}/cover/cover.jpg`;
 
   return (
     <div className="space-y-8">

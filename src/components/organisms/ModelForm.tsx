@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Model } from '@/lib/types'
-import { FormField } from '@/components/molecules/FormField' // Importamos la nueva molécula
+import { FormField } from '@/components/molecules/FormField'
 
 interface ModelFormProps {
   model?: Model | null;
@@ -32,8 +32,8 @@ export const ModelForm = ({ model, onSubmit, isSubmitting }: ModelFormProps) => 
     return isNaN(parsed) ? null : parsed;
   };
 
-  // --- INICIO DE LA CORRECCIÓN ---
-  // Creamos una variable para los valores iniciales y le asignamos explícitamente el tipo.
+  // === LA CORRECCIÓN CLAVE ESTÁ AQUÍ ===
+  // Creamos una variable para los valores iniciales del formulario.
   // Esto resuelve la discrepancia entre el `string` de la DB y el `number` del formulario.
   const initialValues: ModelFormData = {
     alias: model?.alias || '',
@@ -63,11 +63,13 @@ export const ModelForm = ({ model, onSubmit, isSubmitting }: ModelFormProps) => 
 
   const { register, handleSubmit, control, formState: { errors } } = useForm<ModelFormData>({
     resolver: zodResolver(modelFormSchema),
-    // Usamos la variable con el tipo explícito
     defaultValues: initialValues,
   });
-  // --- FIN DE LA CORRECCIÓN ---
-
+  
+  // ... (El resto del componente sigue igual)
+  // ...
+  // --- El resto del código del componente no necesita cambios ---
+  
   const preventNonNumericInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
     const isControlKey = ['Backspace', 'Tab', 'ArrowLeft', 'ArrowRight', 'Delete', 'Enter', 'Home', 'End'].includes(e.key) || e.ctrlKey || e.metaKey;
     const isDigit = /[0-9]/.test(e.key);
