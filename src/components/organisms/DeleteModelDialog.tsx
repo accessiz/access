@@ -35,11 +35,11 @@ export const DeleteModelDialog = ({ modelId, modelAlias, children }: DeleteModel
     if (result.success) {
       toast.success('Modelo eliminado', { description: `${modelAlias} ha sido eliminado de la base de datos.` });
 
-      // Forzamos la navegación a la página de modelos.
-      // Esto previene que la página actual intente recargarse con un ID que ya no existe.
+      // CORRECCIÓN: Simplificamos la navegación.
+      // Un simple `router.push` es suficiente para redirigir al usuario.
+      // La revalidación de datos ya la hace la server action, por lo que
+      // `router.refresh()` no es necesario y puede contribuir a la race condition.
       router.push('/dashboard/models');
-      // Adicionalmente, refrescamos para asegurar que la lista esté actualizada.
-      router.refresh();
 
     } else {
       toast.error('Error al eliminar', { description: result.error });

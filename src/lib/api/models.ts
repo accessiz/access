@@ -79,7 +79,12 @@ export async function getModelById(id: string): Promise<Model | null> {
         .single();
 
     if (error) {
-        console.error(`Error fetching model ${id}:`, error);
+        // CORRECCIÓN: En lugar de un error genérico, verificamos si es un error
+        // de "no encontrado" (código 'PGRST116'), que es esperado después de eliminar.
+        // Si es así, lo manejamos silenciosamente. Para cualquier otro error, sí lo mostramos.
+        if (error.code !== 'PGRST116') {
+          console.error(`Error fetching model ${id}:`, error);
+        }
         return null;
     }
 
