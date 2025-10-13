@@ -42,7 +42,7 @@ export const ModelForm = ({ model, onSubmit, isSubmitting }: ModelFormProps) => 
       waist_cm: model?.waist_cm || null,
       hips_cm: model?.hips_cm || null,
       top_size: model?.top_size || null,
-      pants_size: model?.pants_size || '',
+      pants_size: model?.pants_size || null, // Modificado de '' a null
       shoe_size_eu: model?.shoe_size_eu || null,
       eye_color: model?.eye_color || null,
       hair_color: model?.hair_color || null,
@@ -68,6 +68,7 @@ export const ModelForm = ({ model, onSubmit, isSubmitting }: ModelFormProps) => 
         <Input
           {...field}
           type="number"
+          step="1"
           placeholder={placeholder}
           value={field.value ?? ''}
           onChange={e => field.onChange(e.target.value === '' ? null : Number(e.target.value))}
@@ -77,13 +78,20 @@ export const ModelForm = ({ model, onSubmit, isSubmitting }: ModelFormProps) => 
     />
   );
 
+  // Función para prevenir la entrada de números en campos de texto
+  const preventNumericInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (/[0-9]/.test(e.key)) {
+      e.preventDefault();
+    }
+  };
+
   return (
     <form id={formId} onSubmit={handleSubmit(onSubmit)} className="space-y-12">
         <div className="space-y-4">
             <h2 className="text-lg font-semibold">Información Básica</h2>
             <div className="border bg-card rounded-lg p-6 grid md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
-                <div><Label htmlFor="alias">Alias *</Label><Input id="alias" {...register("alias")} disabled={isSubmitting} /><FieldError name="alias" /></div>
-                <div><Label htmlFor="full_name">Nombre Completo *</Label><Input id="full_name" {...register("full_name")} disabled={isSubmitting} /><FieldError name="full_name" /></div>
+                <div><Label htmlFor="alias">Alias *</Label><Input id="alias" {...register("alias")} onKeyDown={preventNumericInput} disabled={isSubmitting} /><FieldError name="alias" /></div>
+                <div><Label htmlFor="full_name">Nombre Completo *</Label><Input id="full_name" {...register("full_name")} onKeyDown={preventNumericInput} disabled={isSubmitting} /><FieldError name="full_name" /></div>
                 <div><Label htmlFor="birth_date">Fecha de Nacimiento</Label><Input id="birth_date" type="date" {...register("birth_date")} disabled={isSubmitting} /><FieldError name="birth_date" /></div>
                 <div><Label>País</Label><Controller name="country" control={control} render={({ field }) => (<Select onValueChange={field.onChange} value={field.value || undefined} disabled={isSubmitting}><SelectTrigger><SelectValue placeholder="Seleccionar..." /></SelectTrigger><SelectContent>{countries.map(c => (<SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>))}</SelectContent></Select>)} /><FieldError name="country" /></div>
                 <div><Label htmlFor="national_id">Documento ID</Label><Input id="national_id" {...register("national_id")} disabled={isSubmitting} /></div>
@@ -101,7 +109,7 @@ export const ModelForm = ({ model, onSubmit, isSubmitting }: ModelFormProps) => 
                 <div><Label>Cintura (cm)</Label><NumericInputController name="waist_cm" control={control} /><FieldError name="waist_cm" /></div>
                 <div><Label>Cadera (cm)</Label><NumericInputController name="hips_cm" control={control} /><FieldError name="hips_cm" /></div>
                 <div><Label>Talla Superior</Label><Controller name="top_size" control={control} render={({ field }) => (<Select onValueChange={field.onChange} value={field.value || undefined} disabled={isSubmitting}><SelectTrigger><SelectValue placeholder="Seleccionar..." /></SelectTrigger><SelectContent>{topSizeOptions.map(o => (<SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>))}</SelectContent></Select>)} /><FieldError name="top_size" /></div>
-                <div><Label htmlFor="pants_size">Pantalón</Label><Input id="pants_size" {...register("pants_size")} disabled={isSubmitting} /></div>
+                <div><Label>Pantalón</Label><NumericInputController name="pants_size" control={control} /><FieldError name="pants_size" /></div>
                 <div><Label>Zapato (EU)</Label><NumericInputController name="shoe_size_eu" control={control} /><FieldError name="shoe_size_eu" /></div>
             </div>
         </div>
@@ -114,7 +122,14 @@ export const ModelForm = ({ model, onSubmit, isSubmitting }: ModelFormProps) => 
                 <div><Label>Instagram</Label><Input id="instagram" {...register("instagram")} disabled={isSubmitting} /></div>
                 <div><Label>TikTok</Label><Input id="tiktok" {...register("tiktok")} disabled={isSubmitting} /></div>
                 <div><Label>Email</Label><Input id="email" type="email" {...register("email")} disabled={isSubmitting} /><FieldError name="email" /></div>
-                <div><Label>Teléfono</Label><Input id="phone_number" type="tel" {...register("phone_number")} disabled={isSubmitting} /><FieldError name="phone_number" /></div>
+                <div>
+                    <Label htmlFor="phone_number">Teléfono</Label>
+                    <div className="relative flex items-center">
+                        <span className="pointer-events-none absolute left-3 text-sm text-muted-foreground">+</span>
+                        <Input id="phone_number" type="tel" className="pl-6" {...register("phone_number")} disabled={isSubmitting} />
+                    </div>
+                    <FieldError name="phone_number" />
+                </div>
           </div>
         </div>
 
