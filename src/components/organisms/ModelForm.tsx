@@ -25,34 +25,48 @@ interface ModelFormProps {
 export const ModelForm = ({ model, onSubmit, isSubmitting }: ModelFormProps) => {
   const formId = model ? "model-edit-form" : "model-create-form";
 
+  // Helper para convertir de forma segura un string a número o null.
+  const safeParseInt = (value: string | number | null | undefined): number | null => {
+    if (value === null || value === undefined || value === '') return null;
+    const parsed = parseInt(String(value), 10);
+    return isNaN(parsed) ? null : parsed;
+  };
+
+  // --- INICIO DE LA CORRECCIÓN ---
+  // Creamos una variable para los valores iniciales y le asignamos explícitamente el tipo.
+  // Esto resuelve la discrepancia entre el `string` de la DB y el `number` del formulario.
+  const initialValues: ModelFormData = {
+    alias: model?.alias || '',
+    full_name: model?.full_name || '',
+    national_id: model?.national_id || '',
+    gender: model?.gender || null,
+    birth_date: model?.birth_date ? new Date(model.birth_date).toISOString().split('T')[0] : '',
+    country: model?.country || null,
+    height_cm: model?.height_cm || null,
+    shoulders_cm: model?.shoulders_cm || null,
+    chest_cm: model?.chest_cm || null,
+    bust_cm: model?.bust_cm || null,
+    waist_cm: model?.waist_cm || null,
+    hips_cm: model?.hips_cm || null,
+    top_size: model?.top_size || null,
+    pants_size: safeParseInt(model?.pants_size), // Convertimos el string a número aquí
+    shoe_size_eu: model?.shoe_size_eu || null,
+    eye_color: model?.eye_color || null,
+    hair_color: model?.hair_color || null,
+    instagram: model?.instagram || '',
+    tiktok: model?.tiktok || '',
+    email: model?.email || '',
+    phone_number: model?.phone_number || '',
+    status: model?.status || 'active',
+    date_joined_agency: model?.date_joined_agency ? new Date(model.date_joined_agency).toISOString().split('T')[0] : '',
+  };
+
   const { register, handleSubmit, control, formState: { errors } } = useForm<ModelFormData>({
     resolver: zodResolver(modelFormSchema),
-    defaultValues: {
-      alias: model?.alias || '',
-      full_name: model?.full_name || '',
-      national_id: model?.national_id || '',
-      gender: model?.gender || null,
-      birth_date: model?.birth_date ? new Date(model.birth_date).toISOString().split('T')[0] : '',
-      country: model?.country || null,
-      height_cm: model?.height_cm || null,
-      shoulders_cm: model?.shoulders_cm || null,
-      chest_cm: model?.chest_cm || null,
-      bust_cm: model?.bust_cm || null,
-      waist_cm: model?.waist_cm || null,
-      hips_cm: model?.hips_cm || null,
-      top_size: model?.top_size || null,
-      pants_size: model?.pants_size || null,
-      shoe_size_eu: model?.shoe_size_eu || null,
-      eye_color: model?.eye_color || null,
-      hair_color: model?.hair_color || null,
-      instagram: model?.instagram || '',
-      tiktok: model?.tiktok || '',
-      email: model?.email || '',
-      phone_number: model?.phone_number || '',
-      status: model?.status || 'active',
-      date_joined_agency: model?.date_joined_agency ? new Date(model.date_joined_agency).toISOString().split('T')[0] : '',
-    }
+    // Usamos la variable con el tipo explícito
+    defaultValues: initialValues,
   });
+  // --- FIN DE LA CORRECCIÓN ---
 
   const preventNonNumericInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
     const isControlKey = ['Backspace', 'Tab', 'ArrowLeft', 'ArrowRight', 'Delete', 'Enter', 'Home', 'End'].includes(e.key) || e.ctrlKey || e.metaKey;

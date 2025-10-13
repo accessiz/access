@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { Model } from '../../../../lib/types';
 import { ModelFormData } from '../../../../lib/schemas';
 import { updateModel } from '../../../../lib/actions/models';
+import { type SubmitHandler } from 'react-hook-form'; // Importar SubmitHandler
 
 import { Button } from '../../../../components/ui/button';
 import { Label } from '../../../../components/ui/label';
@@ -116,7 +117,10 @@ export default function ModelProfilePageClient({ initialModel, publicUrl }: { in
 
   if (!model) { return <div className="text-center py-20"><p>No se encontró el modelo.</p></div>; }
 
-  const handleSubmit: (data: ModelFormData) => Promise<void> = async (data) => {
+  // --- CORRECCIÓN ---
+  // Se tipa explícitamente la función con SubmitHandler para que coincida
+  // con lo que espera el componente ModelForm.
+  const handleSubmit: SubmitHandler<ModelFormData> = async (data) => {
     setIsSubmitting(true);
     const result = await updateModel(model.id, data);
     if (result.success) {
@@ -134,6 +138,7 @@ export default function ModelProfilePageClient({ initialModel, publicUrl }: { in
     }
     setIsSubmitting(false);
   };
+  // --- FIN DE LA CORRECCIÓN ---
 
   const fallbackText = model.alias?.substring(0, 2) || 'IZ';
   const imageUrl = `${publicUrl}/${model.id}/cover.jpg`;
