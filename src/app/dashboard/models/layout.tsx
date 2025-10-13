@@ -9,7 +9,7 @@ export default function ModelsLayout({ children }: { children: React.ReactNode }
       {/* El contenedor principal ahora vive aquí */}
       <div className="flex-1 overflow-y-auto">
         {/* El padding se aplica aquí para ser consistente en todas las sub-páginas */}
-        <div className="p-6 lg:p-8">
+        <div className="p-8 md:p-12">
           {children}
         </div>
       </div>

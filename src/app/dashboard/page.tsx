@@ -9,8 +9,8 @@ import {
 export default function DashboardPage() {
   return (
     <div>
-      <h1 className="text-3xl font-bold tracking-tight mb-6">Dashboard</h1>
-      <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
+      <h1 className="text-3xl font-bold tracking-tight mb-8">Dashboard</h1>
+      <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader>
             <CardTitle>Proyectos Activos</CardTitle>

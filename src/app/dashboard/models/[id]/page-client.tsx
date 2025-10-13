@@ -31,7 +31,7 @@ const DataPoint = ({ label, value, children }: { label: string, value?: string |
 
 const StaticInfoDisplay = ({ model }: { model: Model }) => {
     return (
-        <div className="space-y-6">
+        <div className="space-y-8">
             <Card>
                 <CardHeader>
                     <CardTitle>Información Básica</CardTitle>
@@ -139,7 +139,7 @@ export default function ModelProfilePageClient({ initialModel, publicUrl }: { in
   const imageUrl = `${publicUrl}/${model.id}/cover.jpg`;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <header className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-4">
           <Button variant="outline" size="icon" className="h-10 w-10 flex-shrink-0" asChild>
@@ -171,13 +171,13 @@ export default function ModelProfilePageClient({ initialModel, publicUrl }: { in
         </div>
       </header>
 
-      <main className="mx-auto w-full space-y-8">
+      <main className="mx-auto w-full space-y-12">
         {isEditing ? (
           <ModelForm model={model} onSubmit={handleSubmit} isSubmitting={isSubmitting} />
         ) : (
           <>
             <StaticInfoDisplay model={model} />
-            <div className="grid gap-6 lg:grid-cols-2">
+            <div className="grid gap-8 lg:grid-cols-2">
               <Card><CardHeader><CardTitle>Gestión de Comp Card</CardTitle><CardDescription>Administra las fotos de la comp card.</CardDescription></CardHeader><CardContent><div className="flex items-center justify-center text-center h-48 rounded-lg border-2 border-dashed"><p className="text-muted-foreground">Próximamente...</p></div></CardContent></Card>
               <Card><CardHeader><CardTitle>Portafolio</CardTitle><CardDescription>Gestiona las imágenes del portafolio.</CardDescription></CardHeader><CardContent><div className="flex items-center justify-center text-center h-48 rounded-lg border-2 border-dashed"><p className="text-muted-foreground">Próximamente...</p></div></CardContent></Card>
             </div>
