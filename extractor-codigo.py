@@ -1,7 +1,7 @@
 import os
 
 # Rutas
-ROOT_DIR = r"C:\Users\Evo-minidesk\Desktop\nyxa"
+ROOT_DIR = r"C:\Users\Evo-minidesk\Desktop\nyxa\src"
 OUTPUT_FILE = r"C:\Users\Evo-minidesk\Desktop\nyxa_dump.md"
 
 # Exclusiones absolutas (carpetas o archivos)

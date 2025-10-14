@@ -13,9 +13,12 @@ import { Progress } from "@/components/ui/progress";
 import Link from 'next/link';
 import { ArrowUp, ArrowDown, Download, ExternalLink } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
-import { toast } from "sonner"; // Importamos toast para las notificaciones
+import { toast } from "sonner";
 
 const ITEMS_PER_PAGE = 24;
+// --- CORRECCIÓN CLAVE ---
+// Usamos el nombre correcto del bucket aquí también.
+const BUCKET_NAME = 'Book_Completo_IZ_Management';
 
 type ModelWithCompletion = Model & { profile_completion?: number };
 type SortConfig = { key: keyof Model; direction: 'asc' | 'desc'; };
@@ -50,8 +53,10 @@ export default function ModelsPage() {
 
   useEffect(() => {
     const supabase = createClient();
-    const { data: urlData } = supabase.storage.from('models').getPublicUrl('');
+    // Usamos la constante BUCKET_NAME
+    const { data: urlData } = supabase.storage.from(BUCKET_NAME).getPublicUrl('');
     setPublicUrl(urlData.publicUrl);
+
     async function fetchCountries() {
         const { data: countryData } = await supabase.from('models').select('country').neq('country', null);
         setCountries([...new Set(countryData?.map(item => item.country) || [])]);
@@ -69,7 +74,6 @@ export default function ModelsPage() {
       try {
         const response = await fetch(apiUrl);
         if (!response.ok) {
-            // Lanza un error para que el catch lo capture
             throw new Error('No se pudieron cargar los datos desde la API.');
         }
         const { data, count } = await response.json();
@@ -77,7 +81,6 @@ export default function ModelsPage() {
         setCount(count || 0);
       } catch (error) {
         console.error("Error fetching models via API:", error);
-        // ✨ CAMBIO APLICADO: Muestra un toast al usuario en caso de error
         toast.error("Error al cargar los talentos", {
             description: "Ocurrió un problema de conexión. Por favor, intenta recargar la página."
         });
@@ -143,7 +146,8 @@ export default function ModelsPage() {
                         {models.map((model) => (
                             <Card key={model.id} onClick={() => handleRowClick(model.id)} className="cursor-pointer hover:border-primary transition-colors group overflow-hidden">
                                 <div className="aspect-[3/4] relative bg-muted">
-                                    <Avatar className="h-full w-full rounded-none"><AvatarImage src={`${publicUrl}/${model.id}/cover/cover.jpg`} className="object-cover group-hover:scale-105 transition-transform duration-300" /><AvatarFallback className="rounded-none text-2xl bg-transparent">{model.alias?.substring(0, 2) || 'IZ'}</AvatarFallback></Avatar>
+                                    {/* Usamos la constante BUCKET_NAME para construir la URL pública */}
+                                    <Avatar className="h-full w-full rounded-none"><AvatarImage src={`${publicUrl}/${model.id}/Portada/cover.jpg`} className="object-cover group-hover:scale-105 transition-transform duration-300" /><AvatarFallback className="rounded-none text-2xl bg-transparent">{model.alias?.substring(0, 2) || 'IZ'}</AvatarFallback></Avatar>
                                 </div>
                                 <div className="p-3"><p className="font-semibold truncate">{model.alias}</p><p className="text-sm text-muted-foreground">{model.country}</p></div>
                             </Card>
@@ -165,7 +169,7 @@ export default function ModelsPage() {
                             <TableBody>
                                 {models.map((model) => (
                                     <TableRow key={model.id} onClick={() => handleRowClick(model.id)} className="cursor-pointer">
-                                        <TableCell><Avatar><AvatarImage src={`${publicUrl}/${model.id}/cover/cover.jpg`} /><AvatarFallback>{model.alias?.substring(0, 2) || 'IZ'}</AvatarFallback></Avatar></TableCell>
+                                        <TableCell><Avatar><AvatarImage src={`${publicUrl}/${model.id}/Portada/cover.jpg`} /><AvatarFallback>{model.alias?.substring(0, 2) || 'IZ'}</AvatarFallback></Avatar></TableCell>
                                         <TableCell className="font-medium">{model.alias}</TableCell>
                                         <TableCell>{model.country}</TableCell>
                                         <TableCell>{model.height_cm} cm</TableCell>
@@ -197,10 +201,9 @@ export default function ModelsPage() {
 
         {totalPages > 1 && (
           <footer className="flex justify-between items-center pt-4 w-full">
-            {/* Paginación alineada a la izquierda */}
             <div className="flex-1">
               <Pagination>
-                <PaginationContent className="justify-start"> {/* <-- Aquí el cambio */}
+                <PaginationContent className="justify-start">
                   <PaginationItem>
                     <PaginationPrevious
                       href={createPageURL(currentPage - 1)}
@@ -231,14 +234,11 @@ export default function ModelsPage() {
               </Pagination>
             </div>
 
-            {/* Texto alineado a la derecha */}
             <div className="text-sm text-muted-foreground whitespace-nowrap ml-4">
               Página {currentPage} de {totalPages}
             </div>
           </footer>
         )}
-
-
     </div>
   );
 }

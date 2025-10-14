@@ -24,7 +24,10 @@ type SearchParams = {
  */
 export async function getModelsEnriched(searchParams: SearchParams) {
   noStore(); // Evita que Next.js cachee los resultados de esta función
-  const supabase = createClient();
+
+  // ✅ CORRECCIÓN: crear el cliente de forma asíncrona
+  const supabase = await createClient();
+
   const currentPage = searchParams.currentPage || 1;
 
   // Empezamos a construir la consulta. Pedimos los datos Y el conteo total.
@@ -34,7 +37,9 @@ export async function getModelsEnriched(searchParams: SearchParams) {
 
   // 1. Aplicar Filtros
   if (searchParams.query) {
-    queryBuilder = queryBuilder.or(`alias.ilike.%${searchParams.query}%,full_name.ilike.%${searchParams.query}%`);
+    queryBuilder = queryBuilder.or(
+      `alias.ilike.%${searchParams.query}%,full_name.ilike.%${searchParams.query}%`
+    );
   }
   if (searchParams.country) {
     queryBuilder = queryBuilder.eq('country', searchParams.country);
@@ -68,25 +73,28 @@ export async function getModelsEnriched(searchParams: SearchParams) {
   return { data: data || [], count: count || 0 };
 }
 
-// También actualizamos la función para obtener un solo modelo por ID
+/**
+ * Obtiene un modelo individual por ID.
+ */
 export async function getModelById(id: string): Promise<Model | null> {
-    noStore();
-    const supabase = createClient();
-    const { data, error } = await supabase
-        .from('models')
-        .select('*')
-        .eq('id', id)
-        .single();
+  noStore();
 
-    if (error) {
-        // CORRECCIÓN: En lugar de un error genérico, verificamos si es un error
-        // de "no encontrado" (código 'PGRST116'), que es esperado después de eliminar.
-        // Si es así, lo manejamos silenciosamente. Para cualquier otro error, sí lo mostramos.
-        if (error.code !== 'PGRST116') {
-          console.error(`Error fetching model ${id}:`, error);
-        }
-        return null;
+  // ✅ CORRECCIÓN: crear el cliente de forma asíncrona
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from('models')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (error) {
+    // Solo mostrar errores que no sean "no encontrado"
+    if (error.code !== 'PGRST116') {
+      console.error(`Error fetching model ${id}:`, error);
     }
+    return null;
+  }
 
-    return data;
+  return data;
 }

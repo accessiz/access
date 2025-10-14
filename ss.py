@@ -1,3 +1,161 @@
+import os
+
+# --- CONTENIDO DE LOS ARCHIVOS CORREGIDOS ---
+# Este diccionario contiene las rutas relativas de los archivos y su nuevo contenido completo.
+file_contents = {
+    # 1. API Route para OBTENER imágenes (Solo GET)
+    'src/app/api/models/[modelId]/route.ts': r"""
+import { NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
+
+export const dynamic = 'force-dynamic'; // <-- CORRECCIÓN: Asegura que la ruta sea siempre dinámica
+
+const BUCKET_NAME = 'models'; // <-- RECUERDA CAMBIAR SI TU BUCKET SE LLAMA DIFERENTE
+
+// --- FUNCIÓN GET para obtener las URLs firmadas ---
+export async function GET(
+  req: Request,
+  { params }: { params: { modelId: string } }
+) {
+  const supabase = createClient();
+  const { modelId } = params;
+
+  if (!modelId) {
+    return NextResponse.json({ success: false, error: 'Model ID is required.' }, { status: 400 });
+  }
+
+  let coverUrl: string | null = null;
+  let compCardUrls: string[] = [];
+
+  // 1. Intentar obtener la URL de la portada
+  const { data: coverSignedUrl, error: coverError } = await supabase
+    .storage
+    .from(BUCKET_NAME)
+    .createSignedUrl(`${modelId}/Portada/cover.jpg`, 300); // 5 minutos de validez
+
+  if (coverError && coverError.message.includes('not found')) {
+    // Es normal que no se encuentre, no es un error fatal.
+  } else if (coverError) {
+    console.error(`Error al obtener URL de portada para ${modelId}:`, coverError);
+  } else if (coverSignedUrl) {
+    coverUrl = coverSignedUrl.signedUrl;
+  }
+
+  // 2. Intentar obtener las URLs de la contraportada
+  const { data: fileList, error: listError } = await supabase
+    .storage
+    .from(BUCKET_NAME)
+    .list(`${modelId}/Contraportada/`, {
+      limit: 4,
+      sortBy: { column: 'name', order: 'asc' },
+    });
+
+  if (listError) {
+    console.error(`Error al listar contraportadas para ${modelId}:`, listError);
+  }
+
+  if (fileList && fileList.length > 0) {
+    const filePaths = fileList.map(file => `${modelId}/Contraportada/${file.name}`);
+    const { data: signedUrlsData, error: signedUrlError } = await supabase
+      .storage
+      .from(BUCKET_NAME)
+      .createSignedUrls(filePaths, 300);
+
+    if (signedUrlError) {
+      console.error(`Error al firmar URLs de contraportada para ${modelId}:`, signedUrlError);
+    } else if (signedUrlsData) {
+      compCardUrls = signedUrlsData.map(item => item?.signedUrl).filter(Boolean) as string[];
+    }
+  }
+  
+  // 3. Devolver siempre una respuesta JSON válida
+  return NextResponse.json({
+    success: true,
+    coverUrl,
+    compCardUrls,
+  });
+}
+""",
+    # 2. NUEVA API Route para SUBIR y BORRAR (POST y DELETE)
+    'src/app/api/models/[modelId]/storage/route.ts': r"""
+import { NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
+
+export const dynamic = 'force-dynamic'; // <-- CORRECCIÓN: Asegura que la ruta sea siempre dinámica
+
+const BUCKET_NAME = 'models'; // <-- RECUERDA CAMBIAR SI TU BUCKET SE LLAMA DIFERENTE
+
+// --- FUNCIÓN POST para subir archivos ---
+export async function POST(
+  req: Request,
+  { params }: { params: { modelId: string } }
+) {
+  const supabase = createClient();
+  const formData = await req.formData();
+  const file = formData.get('file') as File | null;
+  const type = formData.get('type') as 'cover' | 'comp-card';
+  const slotIndex = formData.get('slotIndex') as string | null;
+
+  if (!file) {
+    return NextResponse.json({ error: 'No se encontró el archivo.' }, { status: 400 });
+  }
+
+  let filePath = '';
+  if (type === 'cover') {
+    filePath = `${params.modelId}/Portada/cover.jpg`;
+  } else if (type === 'comp-card' && slotIndex !== null) {
+    filePath = `${params.modelId}/Contraportada/comp_${slotIndex}.jpg`;
+  } else {
+    return NextResponse.json({ error: 'Tipo de imagen o índice no válido.' }, { status: 400 });
+  }
+
+  const { error } = await supabase.storage
+    .from(BUCKET_NAME)
+    .upload(filePath, file, {
+      cacheControl: '3600',
+      upsert: true, // Esto permite sobreescribir si ya existe
+    });
+
+  if (error) {
+    console.error('Supabase upload error:', error);
+    return NextResponse.json({ error: 'Error al subir el archivo a Supabase.' }, { status: 500 });
+  }
+
+  return NextResponse.json({ success: true, path: filePath });
+}
+
+
+// --- FUNCIÓN DELETE para borrar archivos ---
+export async function DELETE(
+  req: Request,
+  { params }: { params: { modelId: string } }
+) {
+    const supabase = createClient();
+    const { filePath } = await req.json();
+
+    if (!filePath) {
+        return NextResponse.json({ error: 'Falta la ruta del archivo a eliminar.' }, { status: 400 });
+    }
+
+    // Medida de seguridad: solo permitir borrar archivos dentro de la carpeta del modelo actual
+    if (!filePath.startsWith(params.modelId)) {
+        return NextResponse.json({ error: 'No tienes permiso para eliminar este archivo.' }, { status: 403 });
+    }
+
+    const { error } = await supabase.storage
+        .from(BUCKET_NAME)
+        .remove([filePath]);
+
+    if (error) {
+        console.error('Supabase delete error:', error);
+        return NextResponse.json({ error: 'Error al eliminar el archivo de Supabase.' }, { status: 500 });
+    }
+    
+    return NextResponse.json({ success: true });
+}
+""",
+    # 3. Componente Hijo, sin cambios respecto a la versión anterior pero incluido por completitud
+    'src/components/organisms/CompCardManager.tsx': r"""
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -172,3 +330,40 @@ export function CompCardManager({ modelId }: CompCardManagerProps) {
         </Card>
     );
 }
+"""
+}
+
+# --- SCRIPT DE EJECUCIÓN ---
+def apply_fixes():
+    """
+    Recorre el diccionario file_contents y aplica los cambios a los archivos del proyecto.
+    """
+    project_root = os.getcwd()
+    print(f"Ejecutando script en el directorio: {project_root}\n")
+
+    for relative_path, new_content in file_contents.items():
+        # Normalizamos la ruta para que funcione en Windows, Mac y Linux
+        full_path = os.path.join(project_root, *relative_path.split('/'))
+        
+        try:
+            # Asegurarse de que el directorio exista
+            dir_name = os.path.dirname(full_path)
+            if not os.path.exists(dir_name):
+                os.makedirs(dir_name)
+                print(f"Directorio creado: {dir_name}")
+
+            # Escribir el nuevo contenido en el archivo
+            with open(full_path, 'w', encoding='utf-8', newline='\n') as f:
+                f.write(new_content.strip())
+            
+            print(f"✅ Archivo actualizado con éxito: {relative_path}")
+
+        except Exception as e:
+            print(f"❌ Error al actualizar el archivo {relative_path}: {e}")
+
+if __name__ == "__main__":
+    print("--- Iniciando la corrección automática del proyecto ---")
+    apply_fixes()
+    print("\n--- Proceso completado. ---")
+    print("Se han actualizado los archivos. Por favor, reinicia tu servidor de desarrollo.")
+

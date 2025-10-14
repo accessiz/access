@@ -7,7 +7,7 @@ import Image from 'next/image';
 
 export default async function LoginPage() {
   // Usamos el nuevo cliente que maneja cookies correctamente
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { session },
   } = await supabase.auth.getSession();

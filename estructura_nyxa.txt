@@ -1,0 +1,80 @@
+├── src
+│   ├── middleware.ts
+│   ├── app
+│   │   ├── favicon.ico
+│   │   ├── globals.css
+│   │   ├── layout.tsx
+│   │   ├── page.tsx
+│   │   ├── api
+│   │   │   ├── models
+│   │   │   │   ├── route.ts
+│   │   │   │   ├── [modelId]
+│   │   │   │   │   ├── route.ts
+│   │   │   │   │   ├── storage
+│   │   │   │   │   │   ├── route.ts
+│   │   ├── auth
+│   │   │   ├── signout
+│   │   │   │   ├── route.ts
+│   │   ├── dashboard
+│   │   │   ├── layout.tsx
+│   │   │   ├── page.tsx
+│   │   │   ├── models
+│   │   │   │   ├── layout.tsx
+│   │   │   │   ├── page.tsx
+│   │   │   │   ├── new
+│   │   │   │   │   ├── page.tsx
+│   │   │   │   ├── [id]
+│   │   │   │   │   ├── page-client.tsx
+│   │   │   │   │   ├── page.tsx
+│   │   ├── login
+│   │   │   ├── page.tsx
+│   ├── components
+│   │   ├── molecules
+│   │   │   ├── FormField.tsx
+│   │   │   ├── InfoFooter.tsx
+│   │   ├── organisms
+│   │   │   ├── CompCardManager.tsx
+│   │   │   ├── DeleteModelDialog.tsx
+│   │   │   ├── Footer.tsx
+│   │   │   ├── Header.tsx
+│   │   │   ├── Hero.tsx
+│   │   │   ├── LoginForm.tsx
+│   │   │   ├── ModelForm.tsx
+│   │   │   ├── ModelsToolbar.tsx
+│   │   │   ├── Sidebar.tsx
+│   │   ├── ui
+│   │   │   ├── accordion.tsx
+│   │   │   ├── alert-dialog.tsx
+│   │   │   ├── avatar.tsx
+│   │   │   ├── button.tsx
+│   │   │   ├── card.tsx
+│   │   │   ├── combobox.tsx
+│   │   │   ├── command.tsx
+│   │   │   ├── dialog.tsx
+│   │   │   ├── dropdown-menu.tsx
+│   │   │   ├── input.tsx
+│   │   │   ├── label.tsx
+│   │   │   ├── pagination.tsx
+│   │   │   ├── popover.tsx
+│   │   │   ├── progress.tsx
+│   │   │   ├── select.tsx
+│   │   │   ├── separator.tsx
+│   │   │   ├── sheet.tsx
+│   │   │   ├── skeleton.tsx
+│   │   │   ├── sonner.tsx
+│   │   │   ├── table.tsx
+│   ├── hooks
+│   │   ├── useAuth.tsx
+│   ├── lib
+│   │   ├── countries.ts
+│   │   ├── options.ts
+│   │   ├── schemas.ts
+│   │   ├── types.ts
+│   │   ├── utils.ts
+│   │   ├── actions
+│   │   │   ├── models.ts
+│   │   ├── api
+│   │   │   ├── models.ts
+│   │   ├── supabase
+│   │   │   ├── client.ts
+│   │   │   ├── server.ts
