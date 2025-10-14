@@ -1,3 +1,4 @@
+
 'use client'
 
 import { useState } from 'react';
@@ -16,8 +17,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../..
 import { ChevronLeft, FilePenLine } from 'lucide-react';
 import { DeleteModelDialog } from '../../../../components/organisms/DeleteModelDialog';
 import { ModelForm } from '../../../../components/organisms/ModelForm';
-
-// --- (Los componentes de visualización StaticInfoDisplay, DataPoint, etc. no cambian) ---
+import { CompCardManager } from '../../../../components/organisms/CompCardManager';
 
 const DataPoint = ({ label, value, children }: { label: string, value?: string | number | null, children?: React.ReactNode }) => (
     <div className="flex flex-col gap-1.5">
@@ -46,7 +46,7 @@ const StaticInfoDisplay = ({ model }: { model: Model }) => {
                     <DataPoint label="Género" value={model.gender} />
                 </CardContent>
             </Card>
-            
+
             <Card>
                 <CardHeader>
                     <CardTitle>Medidas y Tallas</CardTitle>
@@ -64,7 +64,7 @@ const StaticInfoDisplay = ({ model }: { model: Model }) => {
                     <DataPoint label="Zapato (EU)" value={model.shoe_size_eu} />
                 </CardContent>
             </Card>
-            
+
             <Card>
                 <CardHeader>
                     <CardTitle>Contacto y Redes Sociales</CardTitle>
@@ -116,20 +116,15 @@ export default function ModelProfilePageClient({ initialModel, publicUrl }: { in
 
   if (!model) { return <div className="text-center py-20"><p>No se encontró el modelo.</p></div>; }
 
-  // === LA CORRECCIÓN CLAVE ESTÁ AQUÍ ===
-  // 1. Se tipa explícitamente la función con `SubmitHandler<ModelFormData>`.
-  // 2. Se actualiza el estado local (`setModel`) convirtiendo `pants_size` de nuevo a string.
   const handleSubmit: SubmitHandler<ModelFormData> = async (data) => {
     setIsSubmitting(true);
     const result = await updateModel(model.id, data);
-    
+
     if (result.success) {
       toast.success('Perfil actualizado!', {
         description: `Los cambios en ${data.alias} han sido guardados.`
       });
-      
-      // Preparamos los datos para actualizar el estado de React.
-      // El tipo `Model` espera `pants_size` como string, así que lo convertimos.
+
       const dataForState = {
         ...data,
         pants_size: data.pants_size !== null ? String(data.pants_size) : null,
@@ -142,9 +137,9 @@ export default function ModelProfilePageClient({ initialModel, publicUrl }: { in
     }
     setIsSubmitting(false);
   };
-  
+
   const fallbackText = model.alias?.substring(0, 2) || 'IZ';
-  const imageUrl = `${publicUrl}/${model.id}/cover/cover.jpg`;
+  const imageUrl = `${publicUrl}/Book_Completo_iZ_Management/${model.gender === 'Male' ? 'Hombres' : 'Mujeres'}/${model.id}/Portada/cover.jpg`;
 
   return (
     <div className="space-y-8">
@@ -185,9 +180,20 @@ export default function ModelProfilePageClient({ initialModel, publicUrl }: { in
         ) : (
           <>
             <StaticInfoDisplay model={model} />
-            <div className="grid gap-8 lg:grid-cols-2">
-              <Card><CardHeader><CardTitle>Gestión de Comp Card</CardTitle><CardDescription>Administra las fotos de la comp card.</CardDescription></CardHeader><CardContent><div className="flex items-center justify-center text-center h-48 rounded-lg border-2 border-dashed"><p className="text-muted-foreground">Próximamente...</p></div></CardContent></Card>
-              <Card><CardHeader><CardTitle>Portafolio</CardTitle><CardDescription>Gestiona las imágenes del portafolio.</CardDescription></CardHeader><CardContent><div className="flex items-center justify-center text-center h-48 rounded-lg border-2 border-dashed"><p className="text-muted-foreground">Próximamente...</p></div></CardContent></Card>
+            <div className="grid gap-8">
+              <CompCardManager model={model} />
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Portafolio Completo</CardTitle>
+                  <CardDescription>Gestiona las imágenes principales del portafolio.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-center text-center h-48 rounded-lg border-2 border-dashed">
+                    <p className="text-muted-foreground">Próximamente...</p>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
             <DangerZone modelId={model.id} modelAlias={model.alias || 'este modelo'} />
           </>
