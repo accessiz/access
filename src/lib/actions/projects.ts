@@ -11,9 +11,8 @@ type FormState = {
   success: boolean;
 };
 
-// CORRECCIÓN: La función ahora acepta 'prevState' como primer argumento,
-// como lo requiere el hook useActionState. También se asegura de devolver
-// el mismo tipo de estado (FormState).
+// La función ahora acepta 'prevState' como primer argumento,
+// como lo requiere el hook useActionState.
 export async function createProject(
   prevState: FormState,
   formData: FormData
@@ -28,10 +27,20 @@ export async function createProject(
   const rawData = Object.fromEntries(formData.entries());
   const validation = projectFormSchema.safeParse(rawData);
 
+  // --- INICIO DE LA CORRECCIÓN ---
   if (!validation.success) {
-    console.error('Validation Error:', validation.error.flatten().fieldErrors);
-    return { success: false, error: 'Los datos enviados no son válidos.' };
+    // Aplanamos los errores de Zod para acceder a ellos fácilmente.
+    const fieldErrors = validation.error.flatten().fieldErrors;
+    
+    // Unimos todos los mensajes de error en un solo string para mostrarlo.
+    const errorMessage = Object.values(fieldErrors).flat().join('. ');
+
+    console.error('Validation Error:', fieldErrors);
+    
+    // Devolvemos el mensaje de error específico de Zod.
+    return { success: false, error: errorMessage || 'Los datos enviados no son válidos.' };
   }
+  // --- FIN DE LA CORRECCIÓN ---
   
   const { password, ...projectData } = validation.data;
 
@@ -54,8 +63,6 @@ export async function createProject(
 
   revalidatePath('/dashboard/projects');
   
-  // En caso de éxito, redirigimos al usuario a la página del nuevo proyecto.
-  // El formulario no necesita un estado de "éxito" porque la navegación lo confirma.
   redirect(`/dashboard/projects/${newProject.id}`);
 }
 
