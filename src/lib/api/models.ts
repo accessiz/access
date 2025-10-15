@@ -2,6 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import { unstable_noStore as noStore } from 'next/cache';
 import { Model } from "@/lib/types";
 
+// ✅ CORRECCIÓN 1: Nombre del bucket actualizado.
+const BUCKET_NAME = 'Book_Completo_iZ_Management';
 const ITEMS_PER_PAGE = 24;
 
 type SearchParams = {
@@ -12,29 +14,25 @@ type SearchParams = {
   sortKey?: keyof Model;
   sortDir?: 'asc' | 'desc';
   currentPage?: number;
-  limit?: number; // 👈 añadido
+  limit?: number;
 };
 
-/**
- * Obtiene los modelos con filtros, ordenamiento y paginación.
- */
 export async function getModelsEnriched(searchParams: SearchParams) {
   noStore();
-
   const supabase = await createClient();
-
   const currentPage = searchParams.currentPage || 1;
-  const limit = searchParams.limit || ITEMS_PER_PAGE; // 👈 usa el limit enviado por el frontend
+  const limit = searchParams.limit || ITEMS_PER_PAGE;
 
-  // 1️⃣ Construcción base
   let queryBuilder = supabase
     .from('models')
     .select('*', { count: 'exact' });
 
-  // 2️⃣ Filtros
   if (searchParams.query) {
+    // ✅ CORRECCIÓN 2: Lógica de búsqueda ajustada.
+    // Ahora busca textos que EMPIECEN con el término de búsqueda.
+    const searchQuery = `${searchParams.query}%`;
     queryBuilder = queryBuilder.or(
-      `alias.ilike.%${searchParams.query}%,full_name.ilike.%${searchParams.query}%`
+      `alias.ilike.${searchQuery},full_name.ilike.${searchQuery}`
     );
   }
   if (searchParams.country) {
@@ -47,28 +45,24 @@ export async function getModelsEnriched(searchParams: SearchParams) {
     queryBuilder = queryBuilder.lte('height_cm', Number(searchParams.maxHeight));
   }
 
-  // 3️⃣ Ordenamiento
   const sortKey = searchParams.sortKey || 'alias';
   const sortDir = searchParams.sortDir || 'asc';
   queryBuilder = queryBuilder.order(sortKey, { ascending: sortDir === 'asc' });
 
-  // 4️⃣ Paginación
   const from = (currentPage - 1) * limit;
   const to = from + limit - 1;
   queryBuilder = queryBuilder.range(from, to);
 
-  // 5️⃣ Ejecutar
   const { data, error, count } = await queryBuilder;
   if (error) {
     console.error('Error fetching models:', error);
     throw new Error('Could not fetch models data.');
   }
 
-  // 6️⃣ (Opcional pero recomendable) Generar URL de portada
   const enrichedData = await Promise.all(
     (data || []).map(async (model) => {
-      const { data: img } = await supabase.storage
-        .from("Book_Completo_iZ_Management")
+      const { data: img } = supabase.storage // No es necesario 'await' aquí
+        .from(BUCKET_NAME)
         .getPublicUrl(`${model.id}/Portada/cover.jpg`);
       return { ...model, coverUrl: img?.publicUrl || null };
     })
@@ -77,13 +71,9 @@ export async function getModelsEnriched(searchParams: SearchParams) {
   return { data: enrichedData, count: count || 0 };
 }
 
-/**
- * Obtiene un modelo por ID
- */
 export async function getModelById(id: string): Promise<Model | null> {
   noStore();
   const supabase = await createClient();
-
   const { data, error } = await supabase
     .from('models')
     .select('*')
