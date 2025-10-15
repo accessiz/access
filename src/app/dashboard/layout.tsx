@@ -10,11 +10,14 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }) {
   const supabase = await createClient();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
 
-  if (!session) {
+  // SOLUCIÓN: Se cambia getSession() por getUser() para validar
+  // la sesión de forma segura contra el servidor de Supabase.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
     redirect('/login');
   }
 
@@ -26,7 +29,8 @@ export default async function DashboardLayout({
            <div className="w-full flex-1">
              {/* Placeholder for future breadcrumbs or global search */}
            </div>
-           <p className="text-sm text-muted-foreground hidden sm:block">{session.user.email}</p>
+           {/* Se actualiza para usar el objeto 'user' en lugar de 'session' */}
+           <p className="text-sm text-muted-foreground hidden sm:block">{user.email}</p>
            <form action="/auth/signout" method="post">
               <Button variant="ghost" size="icon">
                 <LogOut className="h-5 w-5" />
@@ -41,4 +45,3 @@ export default async function DashboardLayout({
     </div>
   );
 }
-

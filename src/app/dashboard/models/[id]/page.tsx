@@ -3,22 +3,30 @@ import { redirect } from 'next/navigation';
 import { getModelById } from '@/lib/api/models';
 import ModelProfilePageClient from './page-client';
 
-// ✅ Marca como async y accede a params correctamente
-export default async function ModelProfilePage({ params }: { params: { id: string } }) {
-  const supabase = await createClient();
+// Forzamos el renderizado dinámico para evitar problemas con params
+export const dynamic = 'force-dynamic';
 
-  // ⚠️ Mejora de seguridad: Usa getUser() en lugar de getSession()
-  const { data: { user }, error } = await supabase.auth.getUser();
+type PageProps = {
+  params: Promise<{
+    id: string;
+  }>;
+};
+
+export default async function ModelProfilePage({ params }: PageProps) {
+  // ✅ params ahora es una Promise, así que lo resolvemos antes de usarlo
+  const { id } = await params;
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
 
   if (!user || error) {
     redirect('/login');
   }
 
-  const model = await getModelById(params.id);
+  const model = await getModelById(id);
 
-  return (
-    <ModelProfilePageClient 
-      initialModel={model} 
-    />
-  );
+  return <ModelProfilePageClient initialModel={model} />;
 }

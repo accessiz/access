@@ -8,13 +8,15 @@ import Image from 'next/image';
 export default async function LoginPage() {
   // Usamos el nuevo cliente que maneja cookies correctamente
   const supabase = await createClient();
+
+  // SOLUCIÓN: Se cambia getSession() por getUser() para mayor seguridad.
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
   // Si el usuario ya está logueado, lo redirigimos desde el servidor.
-  // Esto previene el bucle y que un usuario logueado vea la página de login.
-  if (session) {
+  // Se actualiza la comprobación de 'session' a 'user'.
+  if (user) {
     redirect('/dashboard/models');
   }
 

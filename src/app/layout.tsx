@@ -1,4 +1,3 @@
-
 import type { Metadata } from "next";
 import { GeistSans } from 'geist/font/sans';
 import "./globals.css";
@@ -8,6 +7,9 @@ import { Toaster } from "@/components/ui/sonner"; // Importamos el Toaster
 const geist = GeistSans;
 
 export const metadata: Metadata = {
+  // Solución final para la advertencia de metadataBase:
+  // Se utiliza la variable de entorno para construir la URL base dinámicamente.
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
   title: "IZ ACCESS",
   description: "Portal de Gestión para IZ Management.",
   openGraph: {
@@ -43,3 +45,4 @@ export default function RootLayout({
     </html>
   );
 }
+
