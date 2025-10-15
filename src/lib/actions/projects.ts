@@ -5,17 +5,23 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { projectFormSchema } from '../schemas/projects';
 
-// ✅ CORRECCIÓN: Se añade el parámetro 'prevState' que espera el hook useFormState.
-// Este es el cambio clave que soluciona el error de TypeScript.
+// Se define un tipo para el estado del formulario que será consistente
+type FormState = {
+  error: string | null;
+  success: boolean;
+};
+
+// CORRECCIÓN: La función ahora acepta 'prevState' como primer argumento,
+// como lo requiere el hook useActionState. También se asegura de devolver
+// el mismo tipo de estado (FormState).
 export async function createProject(
-  prevState: { error: string | null; success: boolean }, 
+  prevState: FormState,
   formData: FormData
-) {
+): Promise<FormState> {
   const supabase = await createClient();
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
-    // Es importante retornar un objeto compatible con el estado del formulario.
     return { success: false, error: 'No se pudo autenticar al usuario.' };
   }
 
@@ -24,14 +30,14 @@ export async function createProject(
 
   if (!validation.success) {
     console.error('Validation Error:', validation.error.flatten().fieldErrors);
-    return { success: false, error: 'Los datos enviados no son válidos. Revisa el nombre del proyecto.' };
+    return { success: false, error: 'Los datos enviados no son válidos.' };
   }
   
   const { password, ...projectData } = validation.data;
 
   const dataToInsert = {
     ...projectData,
-    password: password || null, 
+    password: password || null, // Guarda null si la contraseña está vacía
     user_id: user.id,
   };
 
@@ -48,10 +54,8 @@ export async function createProject(
 
   revalidatePath('/dashboard/projects');
   
-  // La redirección se maneja correctamente al final de una server action exitosa.
+  // En caso de éxito, redirigimos al usuario a la página del nuevo proyecto.
+  // El formulario no necesita un estado de "éxito" porque la navegación lo confirma.
   redirect(`/dashboard/projects/${newProject.id}`);
-
-  // Aunque la redirección ocurre antes, TypeScript necesita que la función retorne algo.
-  // Este retorno nunca se alcanzará en caso de éxito debido al redirect.
-  // return { success: true, error: null };
 }
+

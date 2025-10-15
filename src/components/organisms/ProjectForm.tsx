@@ -1,39 +1,65 @@
 'use client'
 
 import { useFormState, useFormStatus } from 'react-dom';
+import { useEffect } from 'react';
+import Link from 'next/link';
+import { toast } from 'sonner';
 import { createProject } from '@/lib/actions/projects';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import Link from 'next/link';
 
 // Componente para el botón de envío que muestra un estado de carga.
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" disabled={pending}>
+    <Button type="submit" disabled={pending} form="project-create-form">
       {pending ? 'Creando...' : 'Crear Proyecto'}
     </Button>
   );
 }
 
 export function ProjectForm() {
-  const initialState = { error: null, success: false };
-  // `useFormState` es un hook de React para manejar estados de formularios que usan Server Actions.
+  // CORRECCIÓN: Se define explícitamente el tipo del estado inicial
+  // para que coincida con la firma de la server action. El error puede ser nulo o un string.
+  const initialState: { error: string | null; success: boolean } = { error: null, success: false };
   const [state, dispatch] = useFormState(createProject, initialState);
 
+  useEffect(() => {
+    if (state?.error) {
+      toast.error('Error al crear el proyecto', {
+        description: state.error,
+      });
+    }
+    // El redirect en la server action se encarga del caso de éxito.
+  }, [state]);
+
   return (
-    <form action={dispatch}>
-      <Card>
-        <CardHeader>
-          <CardTitle>Detalles del Proyecto</CardTitle>
-          <CardDescription>
-            Rellena la información básica para tu nuevo casting. Podrás añadir modelos más adelante.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
+    // El formulario ahora es el componente principal y tiene el espaciado general.
+    <form id="project-create-form" action={dispatch} className="space-y-8">
+      {/* --- Encabezado --- */}
+      <header className="flex items-center justify-between gap-4 pb-6 border-b">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Crear Nuevo Proyecto</h1>
+          <p className="text-muted-foreground">Rellena los detalles para tu nuevo casting.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" asChild>
+            <Link href="/dashboard/projects">
+               Cancelar
+            </Link>
+          </Button>
+          <SubmitButton />
+        </div>
+      </header>
+
+      {/* --- Contenedor de Campos del Formulario --- */}
+      <div className="space-y-4">
+        <h2 className="text-lg font-semibold">Detalles del Proyecto</h2>
+        <div className="border bg-card rounded-lg p-8 grid md:grid-cols-2 gap-x-8 gap-y-6">
+          
+          {/* Nombre del Proyecto */}
           <div className="space-y-2">
             <Label htmlFor="project_name">Nombre del Proyecto *</Label>
             <Input 
@@ -43,6 +69,8 @@ export function ProjectForm() {
               required 
             />
           </div>
+          
+          {/* Nombre del Cliente */}
           <div className="space-y-2">
             <Label htmlFor="client_name">Nombre del Cliente</Label>
             <Input 
@@ -51,15 +79,20 @@ export function ProjectForm() {
               placeholder="Ej: Tiendas El Sol" 
             />
           </div>
-          <div className="space-y-2">
+
+          {/* Descripción */}
+          <div className="space-y-2 md:col-span-2">
             <Label htmlFor="description">Descripción</Label>
             <Textarea 
               id="description" 
               name="description" 
               placeholder="Notas internas sobre el proyecto, perfil buscado, etc."
+              className="min-h-[120px]"
             />
           </div>
-           <div className="space-y-2">
+
+          {/* Contraseña */}
+          <div className="space-y-2">
             <Label htmlFor="password">Contraseña (Opcional)</Label>
             <Input 
               id="password" 
@@ -71,17 +104,8 @@ export function ProjectForm() {
               Si dejas esto en blanco, el enlace será público.
             </p>
           </div>
-        </CardContent>
-        <CardFooter className="justify-between border-t pt-6">
-           <Button variant="outline" asChild>
-            <Link href="/dashboard/projects">
-               Cancelar
-            </Link>
-          </Button>
-          <SubmitButton />
-        </CardFooter>
-      </Card>
-       {state?.error && <p className="text-sm text-destructive mt-4">{state.error}</p>}
+        </div>
+      </div>
     </form>
   );
 }

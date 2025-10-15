@@ -25,7 +25,7 @@ export default async function DashboardLayout({
     <div className="grid h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
       <Sidebar />
       <div className="flex flex-col overflow-hidden">
-        <header className="flex h-20 items-center gap-4 border-b bg-nav-background px-8">
+        <header className="flex h-16 items-center gap-4 border-b bg-nav-background px-8">
            <div className="w-full flex-1">
              {/* Placeholder for future breadcrumbs or global search */}
            </div>
