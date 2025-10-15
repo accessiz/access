@@ -1,7 +1,9 @@
 'use client'
 
-import { useFormState, useFormStatus } from 'react-dom';
-import { useEffect } from 'react';
+// 1. CORRECCIÓN: Importamos `useActionState` desde 'react' en lugar de `useFormState`
+import { useActionState, useEffect } from 'react';
+// `useFormStatus` sigue viniendo de 'react-dom', lo cual es correcto.
+import { useFormStatus } from 'react-dom';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { createProject } from '@/lib/actions/projects';
@@ -21,10 +23,12 @@ function SubmitButton() {
 }
 
 export function ProjectForm() {
-  // CORRECCIÓN: Se define explícitamente el tipo del estado inicial
-  // para que coincida con la firma de la server action. El error puede ser nulo o un string.
+  // Se define explícitamente el tipo del estado inicial
+  // para que coincida con la firma de la server action.
   const initialState: { error: string | null; success: boolean } = { error: null, success: false };
-  const [state, dispatch] = useFormState(createProject, initialState);
+  
+  // 2. CORRECCIÓN: Usamos `useActionState` en lugar de `useFormState`
+  const [state, dispatch] = useActionState(createProject, initialState);
 
   useEffect(() => {
     if (state?.error) {
@@ -32,7 +36,7 @@ export function ProjectForm() {
         description: state.error,
       });
     }
-    // El redirect en la server action se encarga del caso de éxito.
+    // El redirect en la server action se encarga del caso de éxito, por eso no manejamos `state.success` aquí.
   }, [state]);
 
   return (
