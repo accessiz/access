@@ -1,14 +1,13 @@
-
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { modelFormSchema, ModelFormData } from '@/lib/schemas'
 import { z } from 'zod'
-import { redirect } from 'next/navigation'
 
 export async function createModel(data: ModelFormData) {
-  const supabase = createClient();
+  // ✅ SOLUCIÓN: Añadimos 'await' al crear el cliente.
+  const supabase = await createClient();
   const validation = modelFormSchema.safeParse(data);
   if (!validation.success) {
     console.error('Validation Error:', validation.error.flatten().fieldErrors);
@@ -29,7 +28,8 @@ export async function createModel(data: ModelFormData) {
 }
 
 export async function updateModel(modelId: string, data: ModelFormData) {
-  const supabase = createClient()
+  // ✅ SOLUCIÓN: Añadimos 'await' al crear el cliente.
+  const supabase = await createClient()
   const validation = modelFormSchema.safeParse(data);
   if (!validation.success) {
     console.error('Validation Error:', validation.error.flatten().fieldErrors);
@@ -46,7 +46,8 @@ export async function updateModel(modelId: string, data: ModelFormData) {
 }
 
 export async function deleteModel(modelId: string) {
-  const supabase = createClient();
+  // ✅ SOLUCIÓN: Añadimos 'await' al crear el cliente.
+  const supabase = await createClient();
   if (!z.string().uuid().safeParse(modelId).success) {
      return { success: false, error: 'ID de modelo inválido.' };
   }
