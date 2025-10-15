@@ -1,22 +1,50 @@
-// TODO: Implementar la página de detalle del proyecto.
+import { redirect } from 'next/navigation';
+import { createClient } from '@/lib/supabase/server';
+import { getProjectById, getModelsForProject } from '@/lib/api/projects';
+import { getModelsEnriched } from '@/lib/api/models';
+import ProjectDetailClient from './project-detail-client';
 
-// 1. Convertimos el componente en una función asíncrona (async)
-export default async function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  
-  // 2. Esperamos a que la promesa de 'params' se resuelva para obtener el 'id'
+// Forzamos el renderizado dinámico para esta página
+export const dynamic = 'force-dynamic';
+
+type PageProps = {
+  params: Promise<{ id: string }>;
+};
+
+export default async function ProjectDetailPage({ params }: PageProps) {
+  // Resolvemos la promesa para obtener el ID
   const { id } = await params;
 
+  // Autenticación de usuario
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    redirect('/login');
+  }
+
+  // Obtenemos todos los datos necesarios en paralelo para optimizar la carga
+  const [project, selectedModels, { data: allModels }] = await Promise.all([
+    getProjectById(id),
+    getModelsForProject(id),
+    getModelsEnriched({ limit: 1000 }) // Obtenemos todos los modelos para la selección
+  ]);
+
+  if (!project) {
+    return (
+      <div className="p-8 md:p-12 text-center">
+        <h1 className="text-2xl font-bold">Proyecto no encontrado</h1>
+        <p className="text-muted-foreground">El proyecto que buscas no existe o no tienes permiso para verlo.</p>
+      </div>
+    );
+  }
+
+  // Pasamos los datos al componente de cliente para que se encargue de la interactividad
   return (
-    <div className="p-8 md:p-12">
-      <header className="pb-6 border-b">
-        <h1 className="text-3xl font-bold tracking-tight">Detalle del Proyecto</h1>
-        {/* 3. Usamos el 'id' ya resuelto */}
-        <p className="text-muted-foreground">ID del Proyecto: {id}</p>
-      </header>
-      <main className="py-8">
-        <p>Aquí se mostrará la información detallada del proyecto, la selección de talentos y otras opciones.</p>
-      </main>
-    </div>
+    <ProjectDetailClient 
+      project={project} 
+      initialSelectedModels={selectedModels}
+      allModels={allModels}
+    />
   );
 }
 
