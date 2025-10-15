@@ -1,4 +1,3 @@
-
 export interface Model {
   id: string; 
   alias: string | null;
@@ -26,5 +25,10 @@ export interface Model {
   created_at: string;
   user_id: string | null;
   date_joined_agency: string | null;
+  
+  // Campos opcionales que se añaden dinámicamente
   profile_completion?: number;
+  
+  // ✅ SOLUCIÓN: Añadimos la propiedad que faltaba.
+  coverUrl?: string | null; 
 }
