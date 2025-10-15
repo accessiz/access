@@ -53,7 +53,7 @@ export default async function ModelsPage({
 
   // Obtener URL pública del storage
   const { data: urlData } = supabase.storage
-    .from('Book_Completo_IZ_Management')
+    .from('Book_Completo_iZ_Management')
     .getPublicUrl('');
 
   const initialData: InitialData = {

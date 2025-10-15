@@ -68,7 +68,7 @@ export async function getModelsEnriched(searchParams: SearchParams) {
   const enrichedData = await Promise.all(
     (data || []).map(async (model) => {
       const { data: img } = await supabase.storage
-        .from("Book_Completo_IZ_Management")
+        .from("Book_Completo_iZ_Management")
         .getPublicUrl(`${model.id}/Portada/cover.jpg`);
       return { ...model, coverUrl: img?.publicUrl || null };
     })
