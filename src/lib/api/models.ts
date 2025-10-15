@@ -2,7 +2,6 @@ import { createClient } from "@/lib/supabase/server";
 import { unstable_noStore as noStore } from 'next/cache';
 import { Model } from "@/lib/types";
 
-// ✅ CORRECCIÓN 1: Nombre del bucket actualizado.
 const BUCKET_NAME = 'Book_Completo_iZ_Management';
 const ITEMS_PER_PAGE = 24;
 
@@ -28,8 +27,6 @@ export async function getModelsEnriched(searchParams: SearchParams) {
     .select('*', { count: 'exact' });
 
   if (searchParams.query) {
-    // ✅ CORRECCIÓN 2: Lógica de búsqueda ajustada.
-    // Ahora busca textos que EMPIECEN con el término de búsqueda.
     const searchQuery = `${searchParams.query}%`;
     queryBuilder = queryBuilder.or(
       `alias.ilike.${searchQuery},full_name.ilike.${searchQuery}`
@@ -59,14 +56,26 @@ export async function getModelsEnriched(searchParams: SearchParams) {
     throw new Error('Could not fetch models data.');
   }
 
+  // --- INICIO DE LA CORRECCIÓN ---
+  // Cambiamos getPublicUrl por createSignedUrl para generar URLs seguras y temporales.
   const enrichedData = await Promise.all(
     (data || []).map(async (model) => {
-      const { data: img } = supabase.storage // No es necesario 'await' aquí
+      const imagePath = `${model.id}/Portada/cover.jpg`;
+      const { data: signedUrlData, error: signedUrlError } = await supabase
+        .storage
         .from(BUCKET_NAME)
-        .getPublicUrl(`${model.id}/Portada/cover.jpg`);
-      return { ...model, coverUrl: img?.publicUrl || null };
+        .createSignedUrl(imagePath, 300); // 300 segundos (5 minutos) de validez
+
+      if (signedUrlError) {
+        // Si hay un error al firmar (ej. el archivo no existe), no rompemos la app,
+        // simplemente no asignamos una URL.
+        return { ...model, coverUrl: null };
+      }
+      
+      return { ...model, coverUrl: signedUrlData.signedUrl };
     })
   );
+  // --- FIN DE LA CORRECCIÓN ---
 
   return { data: enrichedData, count: count || 0 };
 }
