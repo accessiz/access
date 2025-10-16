@@ -28,7 +28,18 @@ export interface Model {
   
   // Campos opcionales que se añaden dinámicamente
   profile_completion?: number;
-  
-  // ✅ SOLUCIÓN: Añadimos la propiedad que faltaba.
   coverUrl?: string | null; 
 }
+
+// ✅ INICIO DE LA CORRECCIÓN: Añadimos la definición que faltaba
+export interface Project {
+  id: string;
+  created_at: string;
+  user_id: string;
+  project_name: string | null;
+  client_name: string | null;
+  description: string | null;
+  status: 'draft' | 'sent' | 'completed' | 'archived';
+  password?: string | null;
+}
+// ✅ FIN DE LA CORRECCIÓN

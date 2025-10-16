@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useMemo } from 'react';
 import { toast } from 'sonner';
-import { Model, Project } from '@/lib/types'; // Asumo que tienes un tipo Project
+import { Model, Project } from '@/lib/types';
 import { addModelToProject, removeModelFromProject } from '@/lib/actions/projects_models';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,10 +12,11 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { PlusCircle, XCircle, Search, Loader2 } from 'lucide-react';
+import { DeleteProjectDialog } from '@/components/organisms/DeleteProjectDialog';
 
 // Tipos locales para claridad
 type ProjectDetailClientProps = {
-  project: Project; // Necesitarás definir el tipo Project en `types.ts`
+  project: Project;
   initialSelectedModels: Model[];
   allModels: Model[];
 };
@@ -38,13 +39,35 @@ const TalentRow = ({ model, onAction, isPending, actionType }: {
         </div>
         <Button size="icon" variant="ghost" onClick={onAction} disabled={isPending} className="h-8 w-8">
             {isPending ? <Loader2 className="animate-spin" /> : (
-                actionType === 'add' 
-                ? <PlusCircle className="text-green-500" /> 
+                actionType === 'add'
+                ? <PlusCircle className="text-green-500" />
                 : <XCircle className="text-destructive" />
             )}
         </Button>
     </div>
 );
+
+// Componente para la Zona de Peligro
+const DangerZone = ({ project }: { project: Project }) => (
+    <Card className="border-destructive">
+      <CardHeader>
+        <CardTitle className="text-destructive">Zona de Peligro</CardTitle>
+        <CardDescription>Estas acciones son permanentes y no se pueden deshacer.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="flex items-center justify-between rounded-lg border border-destructive bg-destructive/5 p-4">
+          <div>
+            <p className="font-semibold text-foreground">Eliminar este proyecto</p>
+            <p className="text-sm text-muted-foreground">Toda la información y selección de talentos se perderá.</p>
+          </div>
+          <DeleteProjectDialog projectId={project.id} projectName={project.project_name || 'este proyecto'}>
+            <Button variant="destructive">Eliminar</Button>
+          </DeleteProjectDialog>
+        </div>
+      </CardContent>
+    </Card>
+);
+
 
 export default function ProjectDetailClient({ project, initialSelectedModels, allModels }: ProjectDetailClientProps) {
     const [selectedModels, setSelectedModels] = useState(initialSelectedModels);
@@ -56,7 +79,7 @@ export default function ProjectDetailClient({ project, initialSelectedModels, al
         const selectedIds = new Set(selectedModels.map(m => m.id));
         return allModels
             .filter(model => !selectedIds.has(model.id))
-            .filter(model => 
+            .filter(model =>
                 model.alias?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 model.full_name?.toLowerCase().includes(searchQuery.toLowerCase())
             );
@@ -117,7 +140,7 @@ export default function ProjectDetailClient({ project, initialSelectedModels, al
                         <ScrollArea className="h-96">
                             <div className="space-y-2 pr-4">
                                 {availableModels.length > 0 ? availableModels.map(model => (
-                                    <TalentRow 
+                                    <TalentRow
                                         key={model.id}
                                         model={model}
                                         onAction={() => handleAddModel(model.id)}
@@ -144,7 +167,7 @@ export default function ProjectDetailClient({ project, initialSelectedModels, al
                         <ScrollArea className="h-[28.5rem]">
                             <div className="space-y-2 pr-4">
                                 {selectedModels.length > 0 ? selectedModels.map(model => (
-                                    <TalentRow 
+                                    <TalentRow
                                         key={model.id}
                                         model={model}
                                         onAction={() => handleRemoveModel(model.id)}
@@ -159,6 +182,9 @@ export default function ProjectDetailClient({ project, initialSelectedModels, al
                     </CardContent>
                 </Card>
             </div>
+
+            {/* Nueva sección de Danger Zone */}
+            <DangerZone project={project} />
         </div>
     );
 }

@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { projectFormSchema } from '../schemas/projects';
+import { z } from 'zod';
 
 // Se define un tipo para el estado del formulario que será consistente
 type FormState = {
@@ -27,20 +28,14 @@ export async function createProject(
   const rawData = Object.fromEntries(formData.entries());
   const validation = projectFormSchema.safeParse(rawData);
 
-  // --- INICIO DE LA CORRECCIÓN ---
   if (!validation.success) {
-    // Aplanamos los errores de Zod para acceder a ellos fácilmente.
     const fieldErrors = validation.error.flatten().fieldErrors;
-    
-    // Unimos todos los mensajes de error en un solo string para mostrarlo.
     const errorMessage = Object.values(fieldErrors).flat().join('. ');
-
     console.error('Validation Error:', fieldErrors);
     
-    // Devolvemos el mensaje de error específico de Zod.
-    return { success: false, error: errorMessage || 'Los datos enviados no son válidos.' };
+    // Devolvemos el mensaje de error Y los datos que el usuario envió
+    return { success: false, error: errorMessage || 'Los datos enviados no son válidos.', data: rawData };
   }
-  // --- FIN DE LA CORRECCIÓN ---
   
   const { password, ...projectData } = validation.data;
 
@@ -64,5 +59,31 @@ export async function createProject(
   revalidatePath('/dashboard/projects');
   
   redirect(`/dashboard/projects/${newProject.id}`);
+}
+
+/**
+ * Elimina un proyecto de la base de datos.
+ * @param projectId - El ID del proyecto a eliminar.
+ * @returns Un objeto indicando el éxito o el error de la operación.
+ */
+export async function deleteProject(projectId: string) {
+  const supabase = await createClient();
+  
+  // Validación básica para asegurar que es un UUID
+  if (!z.string().uuid().safeParse(projectId).success) {
+     return { success: false, error: 'ID de proyecto inválido.' };
+  }
+
+  // Eliminar el proyecto
+  const { error } = await supabase.from('projects').delete().eq('id', projectId);
+
+  if (error) {
+    console.error('Supabase delete error:', error);
+    return { success: false, error: 'Error de base de datos al eliminar el proyecto.' };
+  }
+
+  // Revalidamos la ruta principal de proyectos para que la lista se actualice
+  revalidatePath('/dashboard/projects');
+  return { success: true };
 }
 

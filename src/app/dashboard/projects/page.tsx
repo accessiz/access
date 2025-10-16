@@ -90,7 +90,7 @@ export default async function ProjectsPage() {
                         {projects.map((project) => (
                         <TableRow key={project.id} className="cursor-pointer hover:bg-muted/50">
                             <TableCell>
-                              <Link href={`/dashboard/projects/${project.id}`} className="font-medium text-primary hover:underline">
+                              <Link href={`/dashboard/projects/${project.id}`} className="font-medium text-foreground no-underline hover:text-muted-foreground transition-colors">
                                 {project.project_name}
                               </Link>
                             </TableCell>
@@ -108,4 +108,3 @@ export default async function ProjectsPage() {
     </div>
   );
 }
-
