@@ -22,9 +22,10 @@ interface DeleteProjectDialogProps {
   projectId: string;
   projectName: string;
   children: React.ReactNode;
+  onProjectDeleted?: () => void; // Callback opcional
 }
 
-export const DeleteProjectDialog = ({ projectId, projectName, children }: DeleteProjectDialogProps) => {
+export const DeleteProjectDialog = ({ projectId, projectName, children, onProjectDeleted }: DeleteProjectDialogProps) => {
   const [isDeleting, setIsDeleting] = useState(false);
   const router = useRouter();
 
@@ -36,7 +37,13 @@ export const DeleteProjectDialog = ({ projectId, projectName, children }: Delete
       toast.success('Proyecto eliminado', { 
         description: `El proyecto "${projectName}" ha sido eliminado.` 
       });
-      router.push('/dashboard/projects');
+
+      if (onProjectDeleted) {
+        onProjectDeleted(); // Llama al callback si existe
+      } else {
+        router.push('/dashboard/projects'); // Comportamiento por defecto
+      }
+
     } else {
       toast.error('Error al eliminar', { description: result.error });
       setIsDeleting(false);

@@ -5,15 +5,14 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { projectFormSchema } from '../schemas/projects';
 import { z } from 'zod';
+import { Project } from '@/lib/types';
 
-// Se define un tipo para el estado del formulario que será consistente
 type FormState = {
   error: string | null;
   success: boolean;
+  data?: any;
 };
 
-// La función ahora acepta 'prevState' como primer argumento,
-// como lo requiere el hook useActionState.
 export async function createProject(
   prevState: FormState,
   formData: FormData
@@ -31,9 +30,6 @@ export async function createProject(
   if (!validation.success) {
     const fieldErrors = validation.error.flatten().fieldErrors;
     const errorMessage = Object.values(fieldErrors).flat().join('. ');
-    console.error('Validation Error:', fieldErrors);
-    
-    // Devolvemos el mensaje de error Y los datos que el usuario envió
     return { success: false, error: errorMessage || 'Los datos enviados no son válidos.', data: rawData };
   }
   
@@ -41,7 +37,7 @@ export async function createProject(
 
   const dataToInsert = {
     ...projectData,
-    password: password || null, // Guarda null si la contraseña está vacía
+    password: password || null,
     user_id: user.id,
   };
 
@@ -57,24 +53,20 @@ export async function createProject(
   }
 
   revalidatePath('/dashboard/projects');
-  
   redirect(`/dashboard/projects/${newProject.id}`);
 }
 
 /**
+ * ✅ CORRECCIÓN: Añadimos 'export' para que la función sea pública.
  * Elimina un proyecto de la base de datos.
- * @param projectId - El ID del proyecto a eliminar.
- * @returns Un objeto indicando el éxito o el error de la operación.
  */
 export async function deleteProject(projectId: string) {
   const supabase = await createClient();
   
-  // Validación básica para asegurar que es un UUID
   if (!z.string().uuid().safeParse(projectId).success) {
      return { success: false, error: 'ID de proyecto inválido.' };
   }
 
-  // Eliminar el proyecto
   const { error } = await supabase.from('projects').delete().eq('id', projectId);
 
   if (error) {
@@ -82,8 +74,32 @@ export async function deleteProject(projectId: string) {
     return { success: false, error: 'Error de base de datos al eliminar el proyecto.' };
   }
 
-  // Revalidamos la ruta principal de proyectos para que la lista se actualice
   revalidatePath('/dashboard/projects');
   return { success: true };
 }
 
+/**
+ * ✅ CORRECCIÓN: Añadimos 'export' a esta también por si acaso.
+ * Actualiza el estado de un proyecto.
+ */
+export async function updateProjectStatus(projectId: string, newStatus: Project['status']) {
+  const supabase = await createClient();
+
+  if (!z.string().uuid().safeParse(projectId).success) {
+     return { success: false, error: 'ID de proyecto inválido.' };
+  }
+
+  const { error } = await supabase
+    .from('projects')
+    .update({ status: newStatus })
+    .eq('id', projectId);
+
+  if (error) {
+    console.error('Supabase status update error:', error);
+    return { success: false, error: 'No se pudo actualizar el estado del proyecto.' };
+  }
+
+  revalidatePath(`/dashboard/projects/${projectId}`);
+  revalidatePath('/dashboard/projects');
+  return { success: true };
+}

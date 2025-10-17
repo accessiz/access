@@ -36,7 +36,7 @@
     --nav-background: 17 17 17;
     --nav-foreground: 230 230 230;
 
-    --card: 20 20 20;
+    --card: 16 16 16;
     --card-foreground: 230 230 230;
 
     --popover: 20 20 20;
@@ -54,7 +54,7 @@
     --accent: 30 30 30;
     --accent-foreground: 230 230 230;
 
-    --destructive: 153 27 27;
+    --destructive: 255 30 30;
     --destructive-foreground: 230 230 230;
 
     --border: 28 28 28;
