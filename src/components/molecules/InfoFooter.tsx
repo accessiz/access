@@ -10,9 +10,9 @@ const infoFooterStyles = {
     fontSize: 'var(--md-typescale-body-small-size)',
     textTransform: 'uppercase' as 'uppercase',
   },
-  left: { justifySelf: 'start' },
-  center: { justifySelf: 'center' },
-  right: { justifySelf: 'end' },
+  left: { justifySelf: 'start' as const },
+  center: { justifySelf: 'center' as const },
+  right: { justifySelf: 'end' as const },
 };
 
 interface InfoFooterProps {

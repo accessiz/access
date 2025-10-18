@@ -73,7 +73,6 @@ export default function ModelProfilePageClient({ initialModel }: { initialModel:
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [avatarLoading, setAvatarLoading] = useState(true);
 
-  // ✅ Fetch del avatar con manejo seguro
   useEffect(() => {
     const fetchAvatar = async () => {
       if (!model?.id) return;
@@ -81,7 +80,7 @@ export default function ModelProfilePageClient({ initialModel }: { initialModel:
 
       try {
         const response = await fetch(`/api/models/${model.id}`);
-        let data: any = null;
+        let data: { success: boolean, coverUrl?: string | null } | null = null;
 
         try {
           data = await response.json();
@@ -95,7 +94,6 @@ export default function ModelProfilePageClient({ initialModel }: { initialModel:
         }
 
         if (data?.success && data?.coverUrl) {
-          // ✅ Evitar cache agregando timestamp
           setAvatarUrl(`${data.coverUrl}&t=${Date.now()}`);
         } else {
           setAvatarUrl(null);

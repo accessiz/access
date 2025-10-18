@@ -1,49 +1,40 @@
-// Este es un componente de servidor ahora para mejorar la carga inicial y la seguridad.
-import { createClient } from '@/lib/supabase/server'; // Importamos el nuevo cliente de servidor
+import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { GalleryVerticalEnd } from "lucide-react";
 import { LoginForm } from "@/components/organisms/LoginForm";
 import Image from 'next/image';
+import Link from 'next/link';
 
 export default async function LoginPage() {
-  // Usamos el nuevo cliente que maneja cookies correctamente
   const supabase = await createClient();
 
-  // SOLUCIÓN: Se cambia getSession() por getUser() para mayor seguridad.
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Si el usuario ya está logueado, lo redirigimos desde el servidor.
-  // Se actualiza la comprobación de 'session' a 'user'.
   if (user) {
     redirect('/dashboard/models');
   }
 
   return (
     <div className="w-full min-h-screen lg:grid lg:grid-cols-2">
-      {/* Columna del Formulario (Izquierda) */}
       <div className="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="mx-auto grid w-[350px] gap-6">
-          {/* Encabezado con Logo */}
           <div className="grid gap-2 text-center">
-            <a href="/" className="flex items-center justify-center gap-2 font-semibold text-lg">
+            <Link href="/" className="flex items-center justify-center gap-2 font-semibold text-lg">
               <div className="bg-primary text-primary-foreground flex size-7 items-center justify-center rounded-md">
                 <GalleryVerticalEnd className="size-5" />
               </div>
               IZ Access
-            </a>
+            </Link>
             <p className="text-balance text-muted-foreground mt-2">
               Bienvenido de nuevo. Accede a tu panel de gestión.
             </p>
           </div>
-          
-          {/* El componente del formulario sigue siendo un Client Component, lo cual es correcto */}
           <LoginForm />
         </div>
       </div>
 
-      {/* Columna de la Imagen (Derecha) */}
       <div className="hidden lg:block relative">
         <Image
             src="/images/JMTS_13.jpg"

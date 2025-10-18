@@ -3,19 +3,14 @@ import { createClient } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
 
-// Usa el nombre correcto de tu bucket
 const BUCKET_NAME = 'Book_Completo_iZ_Management';
 
-// --- FUNCIÓN GET corregida ---
 export async function GET(
   req: Request,
   context: { params: Promise<{ modelId: string }> }
 ) {
   try {
-    // ✅ Esperamos los parámetros dinámicos
     const { modelId } = await context.params;
-
-    // ✅ Esperamos el cliente Supabase
     const supabase = await createClient();
 
     if (!supabase) {
@@ -33,7 +28,6 @@ export async function GET(
     let compCardUrls: string[] = [];
     let portfolioUrl: string | null = null;
 
-    // --- 1. Obtener la portada ---
     const { data: coverList, error: coverListError } = await supabase
       .storage
       .from(BUCKET_NAME)
@@ -54,7 +48,6 @@ export async function GET(
       }
     }
 
-    // --- 2. Obtener la imagen de Portafolio ---
     const { data: portfolioList, error: portfolioListError } = await supabase
       .storage
       .from(BUCKET_NAME)
@@ -75,7 +68,6 @@ export async function GET(
       }
     }
 
-    // --- 3. Obtener contraportadas ---
     const { data: fileList, error: listError } = await supabase
       .storage
       .from(BUCKET_NAME)
@@ -104,7 +96,6 @@ export async function GET(
       }
     }
 
-    // --- 4. Respuesta final ---
     return NextResponse.json({
       success: true,
       coverUrl,
@@ -112,10 +103,11 @@ export async function GET(
       compCardUrls,
     });
 
-  } catch (error: any) {
-    console.error('🔥 Error general en /api/models/[modelId]:', error.message);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Ocurrió un error desconocido.';
+    console.error('🔥 Error general en /api/models/[modelId]:', errorMessage);
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     );
   }

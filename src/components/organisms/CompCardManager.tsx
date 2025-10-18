@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { UploadCloud, Trash2, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import Image from 'next/image';
 
 interface CompCardManagerProps {
   modelId: string;
@@ -26,7 +27,7 @@ const PhotoSlot = ({ className, imageUrl, onFileSelect, onDelete, label, isUploa
     <div className={cn("relative group bg-muted/50 border-2 border-dashed border-border rounded-lg flex items-center justify-center overflow-hidden transition-all", className)}>
       {imageUrl ? (
         <>
-          <img src={imageUrl} alt={label} className="w-full h-full object-cover" />
+          <Image src={imageUrl} alt={label} fill className="object-cover" />
           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
             <Button variant="destructive" size="icon" onClick={onDelete} disabled={isUploading}><Trash2 /></Button>
           </div>
@@ -52,12 +53,11 @@ export function CompCardManager({ modelId }: CompCardManagerProps) {
     const [isLoading, setIsLoading] = useState(true);
     const [uploadingState, setUploadingState] = useState({ cover: false, compCards: [false, false, false, false], portfolio: false });
 
-    // Función para recargar las imágenes desde la API GET
     const loadImages = async () => {
       if (!modelId) return;
       setIsLoading(true);
       try {
-        const response = await fetch(`/api/models/${modelId}`); // Llama a la API de GET
+        const response = await fetch(`/api/models/${modelId}`);
         const data = await response.json();
         if (data.success) {
           setCoverUrl(data.coverUrl || null);
@@ -95,14 +95,14 @@ export function CompCardManager({ modelId }: CompCardManagerProps) {
         if (slotIndex !== undefined) formData.append('slotIndex', String(slotIndex));
 
         try {
-            // *** CAMBIO CLAVE: Llama a la nueva API de STORAGE ***
             const response = await fetch(`/api/models/${modelId}/storage`, { method: 'POST', body: formData });
             const result = await response.json();
             if (!response.ok) throw new Error(result.error || 'Respuesta no válida del servidor');
             toast.success('Imagen subida correctamente.');
-            await loadImages(); // Recarga las imágenes para ver el cambio
-        } catch (error: any) {
-            toast.error('Error al subir la imagen', { description: error.message });
+            await loadImages();
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Ocurrió un error.';
+            toast.error('Error al subir la imagen', { description: message });
         } finally {
             if (type === 'cover') setUploadingState(p => ({ ...p, cover: false }));
             else if (type === 'portfolio') setUploadingState(p => ({ ...p, portfolio: false }));
@@ -121,7 +121,6 @@ export function CompCardManager({ modelId }: CompCardManagerProps) {
             : `${modelId}/Contraportada/comp_${slotIndex}.jpg`;
 
         try {
-            // *** CAMBIO CLAVE: Llama a la nueva API de STORAGE ***
             const response = await fetch(`/api/models/${modelId}/storage`, {
                 method: 'DELETE', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ filePath }),
@@ -129,9 +128,10 @@ export function CompCardManager({ modelId }: CompCardManagerProps) {
             const result = await response.json();
             if (!response.ok) throw new Error(result.error || 'Respuesta no válida del servidor');
             toast.success('Imagen eliminada.');
-            await loadImages(); // Recarga las imágenes para ver el cambio
-        } catch (error: any) {
-            toast.error('Error al eliminar la imagen', { description: error.message });
+            await loadImages();
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Ocurrió un error.';
+            toast.error('Error al eliminar la imagen', { description: message });
         }
     };
 

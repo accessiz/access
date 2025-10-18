@@ -43,7 +43,7 @@ export default function PasswordProtect({ projectId, projectName }: PasswordProt
             </div>
           <CardTitle>Proyecto Protegido</CardTitle>
           <CardDescription>
-            Ingresa la contraseña para acceder a la selección del proyecto "{projectName}".
+            Ingresa la contraseña para acceder a la selección del proyecto &quot;{projectName}&quot;.
           </CardDescription>
         </CardHeader>
         <CardContent>

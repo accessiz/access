@@ -17,9 +17,6 @@ type SearchParams = {
   limit?: number;
 };
 
-/**
- * Obtiene los proyectos del usuario con filtros, búsqueda y paginación.
- */
 export async function getProjectsForUser(searchParams: SearchParams = {}) {
   noStore();
   const supabase = await createClient();
@@ -36,9 +33,8 @@ export async function getProjectsForUser(searchParams: SearchParams = {}) {
   let queryBuilder = supabase
     .from('projects')
     .select('*', { count: 'exact' })
-    .eq('user_id', user.id); // ✅ CRÍTICO: Se reintroduce el filtro por usuario.
+    .eq('user_id', user.id);
 
-  // Filtro por búsqueda de texto en nombre de proyecto O cliente.
   if (searchParams.query) {
     const searchQuery = `%${searchParams.query}%`;
     queryBuilder = queryBuilder.or(
@@ -46,7 +42,6 @@ export async function getProjectsForUser(searchParams: SearchParams = {}) {
     );
   }
 
-  // Filtro por fecha usando rangos para mayor precisión.
   if (searchParams.year && searchParams.month) {
     const year = parseInt(searchParams.year);
     const month = parseInt(searchParams.month);
@@ -60,12 +55,10 @@ export async function getProjectsForUser(searchParams: SearchParams = {}) {
      queryBuilder = queryBuilder.gte('created_at', startDate).lte('created_at', endDate);
   }
 
-  // Ordenamiento
   const sortKey = searchParams.sortKey || 'created_at';
   const sortDir = searchParams.sortDir || 'desc';
   queryBuilder = queryBuilder.order(sortKey, { ascending: sortDir === 'asc' });
 
-  // Paginación
   const from = (currentPage - 1) * limit;
   const to = from + limit - 1;
   queryBuilder = queryBuilder.range(from, to);
@@ -80,16 +73,13 @@ export async function getProjectsForUser(searchParams: SearchParams = {}) {
   return { data: data || [], count: count || 0 };
 }
 
-/**
- * Obtiene un proyecto por su ID o public_id
- */
 export async function getProjectById(projectId: string): Promise<Project | null> {
   noStore();
   const supabase = await createClient();
   const { data, error } = await supabase
     .from('projects')
     .select('*')
-    .or(`id.eq.${projectId},public_id.eq.${projectId}`) // ✅ Se mantiene tu mejora.
+    .or(`id.eq.${projectId},public_id.eq.${projectId}`)
     .single();
 
   if (error) {
@@ -99,9 +89,6 @@ export async function getProjectById(projectId: string): Promise<Project | null>
   return data as Project;
 }
 
-/**
- * Obtiene todos los modelos asociados a un proyecto
- */
 export async function getModelsForProject(projectId: string): Promise<Model[]> {
   noStore();
   const supabase = await createClient();
@@ -148,9 +135,6 @@ export async function getModelsForProject(projectId: string): Promise<Model[]> {
   return enrichedModels;
 }
 
-/**
- * Obtiene un modelo específico dentro de un proyecto
- */
 export async function getModelForProject(projectId: string, modelId: string): Promise<Model | null> {
   noStore();
   const supabase = await createClient();
@@ -175,9 +159,8 @@ export async function getModelForProject(projectId: string, modelId: string): Pr
     return null;
   }
 
-  let model = modelData as unknown as Model;
+  const model = modelData as unknown as Model;
 
-  // ✅ Se reintroduce la obtención de la URL del portafolio.
   const [coverUrlResult, portfolioUrlResult] = await Promise.all([
     supabase.storage.from(BUCKET_NAME).createSignedUrl(`${model.id}/Portada/cover.jpg`, 300),
     supabase.storage.from(BUCKET_NAME).createSignedUrl(`${model.id}/Portfolio/portfolio.jpg`, 300)
@@ -190,4 +173,3 @@ export async function getModelForProject(projectId: string, modelId: string): Pr
     portfolioUrl: portfolioUrlResult.error ? null : portfolioUrlResult.data.signedUrl,
   };
 }
-

@@ -1,4 +1,3 @@
-
 "use client";
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
@@ -16,11 +15,11 @@ export function LoginForm() {
     e.preventDefault();
     setError('');
     try {
-      // No necesitamos redirigir desde aquí, el hook se encargará
       await signIn(email, password);
-    } catch (err: any) {
-      setError(err.message || 'Ocurrió un error al iniciar sesión.');
-      if (err.message.includes("Invalid login credentials")) {
+    } catch (err: unknown) {
+      const error = err as Error;
+      setError(error.message || 'Ocurrió un error al iniciar sesión.');
+      if (error.message.includes("Invalid login credentials")) {
         setError("Correo o contraseña incorrectos.");
       }
     }

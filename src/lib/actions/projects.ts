@@ -11,10 +11,9 @@ import { cookies } from 'next/headers';
 type FormState = {
   error: string | null;
   success: boolean;
-  data?: any;
+  data?: Record<string, FormDataEntryValue | undefined>;
 };
 
-// --- createProject (sin cambios) ---
 export async function createProject(prevState: FormState, formData: FormData): Promise<FormState> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -37,7 +36,6 @@ export async function createProject(prevState: FormState, formData: FormData): P
   redirect(`/dashboard/projects/${newProject.id}`);
 }
 
-// --- deleteProject (sin cambios) ---
 export async function deleteProject(projectId: string) {
   const supabase = await createClient();
   if (!z.string().uuid().safeParse(projectId).success) { return { success: false, error: 'ID de proyecto inválido.' }; }
@@ -50,7 +48,6 @@ export async function deleteProject(projectId: string) {
   return { success: true };
 }
 
-// --- updateProjectStatus (sin cambios) ---
 export async function updateProjectStatus(projectId: string, newStatus: Project['status']) {
   const supabase = await createClient();
   if (!z.string().uuid().safeParse(projectId).success) { return { success: false, error: 'ID de proyecto inválido.' }; }
@@ -64,9 +61,6 @@ export async function updateProjectStatus(projectId: string, newStatus: Project[
   return { success: true };
 }
 
-/**
- * Verifica la contraseña de un proyecto y guarda un token en una cookie si es correcta.
- */
 export async function verifyProjectPassword(projectId: string, password_input: string) {
   const supabase = await createClient();
   const { data: project, error } = await supabase.from('projects').select('password').eq('id', projectId).single();
@@ -77,12 +71,8 @@ export async function verifyProjectPassword(projectId: string, password_input: s
 
   if (project.password === password_input) {
     const cookieName = `project_access_${projectId}`;
-    
-    // ✅ INICIO DE LA CORRECCIÓN: Usamos 'await' para resolver la promesa de cookies
-    const cookieStore = await cookies();
+    const cookieStore = cookies();
     cookieStore.set(cookieName, 'true', { maxAge: 60 * 60 * 24, httpOnly: true, path: '/' });
-    // ✅ FIN DE LA CORRECCIÓN
-
     return { success: true };
   } else {
     return { success: false, error: 'Contraseña incorrecta.' };
