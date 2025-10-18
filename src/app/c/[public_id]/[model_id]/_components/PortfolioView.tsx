@@ -52,15 +52,13 @@ export default function PortfolioView({ project, model: initialModel }: Portfoli
 
       {/* Contenido principal con la imagen */}
       <main className="flex-1 flex items-center justify-center p-4 pt-24 pb-32">
-        {/* ✅ Contenedor ajustado para imagen horizontal */}
         <div className="relative w-full max-w-4xl aspect-[4/3]">
-          {/* ✅ Se usa portfolioUrl en lugar de coverUrl */}
           {model.portfolioUrl ? (
             <Image
               src={model.portfolioUrl}
               alt={`Portafolio de ${model.alias}`}
               fill
-              className="object-contain rounded-lg shadow-2xl"
+              className="object-contain rounded-lg"
               priority
             />
           ) : (
@@ -107,4 +105,3 @@ export default function PortfolioView({ project, model: initialModel }: Portfoli
     </div>
   );
 }
-
