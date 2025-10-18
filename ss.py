@@ -1,3 +1,11 @@
+import os
+
+# Define la ruta base de tu proyecto.
+PROJECT_BASE_PATH = "." 
+
+# Diccionario con la única corrección necesaria.
+corrections = {
+    "src/app/api/models/[modelId]/storage/route.ts": r"""
 import { NextResponse, NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
@@ -75,3 +83,34 @@ export async function DELETE(
 
   return NextResponse.json({ success: true });
 }
+"""
+}
+
+def apply_final_fix():
+    base_path = os.path.abspath(PROJECT_BASE_PATH)
+    print(f"Aplicando corrección final en: {base_path}\n")
+
+    if not os.path.isdir(base_path):
+        print(f"❌ ERROR: La ruta base '{base_path}' no es un directorio válido.")
+        return
+
+    for relative_path, new_content in corrections.items():
+        file_path_parts = relative_path.replace("\\", "/").split("/")
+        absolute_path = os.path.join(base_path, *file_path_parts)
+        
+        try:
+            if os.path.exists(absolute_path):
+                content_to_write = new_content.lstrip('\n')
+                with open(absolute_path, 'w', encoding='utf-8') as f:
+                    f.write(content_to_write)
+                print(f"✅ Archivo corregido: {relative_path}")
+            else:
+                print(f"⚠️  ADVERTENCIA: No se encontró el archivo: {relative_path}")
+
+        except Exception as e:
+            print(f"❌ ERROR al procesar el archivo {relative_path}: {e}")
+
+if __name__ == "__main__":
+    apply_final_fix()
+    print("\n🎉 Proceso completado. ¡Sube los cambios a GitHub y prueba el despliegue de nuevo!")
+
