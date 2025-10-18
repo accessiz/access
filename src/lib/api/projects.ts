@@ -4,10 +4,9 @@ import { createClient } from "@/lib/supabase/server";
 import { unstable_noStore as noStore } from 'next/cache';
 import { Model, Project } from "@/lib/types";
 
-const BUCKET_NAME = 'Book_Completo_iZ_Management'; // Variable para asegurar consistencia
+const BUCKET_NAME = 'Book_Completo_iZ_Management';
 const ITEMS_PER_PAGE = 10;
 
-// Tipado para los parámetros de búsqueda
 type SearchParams = {
   query?: string;
   year?: string;
@@ -37,9 +36,9 @@ export async function getProjectsForUser(searchParams: SearchParams = {}) {
   let queryBuilder = supabase
     .from('projects')
     .select('*', { count: 'exact' })
-    .eq('user_id', user.id);
+    .eq('user_id', user.id); // ✅ CRÍTICO: Se reintroduce el filtro por usuario.
 
-  // Filtro por búsqueda de texto
+  // Filtro por búsqueda de texto en nombre de proyecto O cliente.
   if (searchParams.query) {
     const searchQuery = `%${searchParams.query}%`;
     queryBuilder = queryBuilder.or(
@@ -47,7 +46,7 @@ export async function getProjectsForUser(searchParams: SearchParams = {}) {
     );
   }
 
-  // Filtro por fecha (año y mes)
+  // Filtro por fecha usando rangos para mayor precisión.
   if (searchParams.year && searchParams.month) {
     const year = parseInt(searchParams.year);
     const month = parseInt(searchParams.month);
@@ -82,70 +81,113 @@ export async function getProjectsForUser(searchParams: SearchParams = {}) {
 }
 
 /**
- * Obtiene un proyecto específico por su ID.
+ * Obtiene un proyecto por su ID o public_id
  */
-export async function getProjectById(id: string) {
-    noStore();
-    const supabase = await createClient();
-    const { data, error } = await supabase
-        .from('projects')
-        .select('*')
-        .eq('id', id)
-        .single();
+export async function getProjectById(projectId: string): Promise<Project | null> {
+  noStore();
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('projects')
+    .select('*')
+    .or(`id.eq.${projectId},public_id.eq.${projectId}`) // ✅ Se mantiene tu mejora.
+    .single();
 
-    if (error) {
-        console.error(`Error fetching project ${id}:`, error);
-        return null;
-    }
-    return data;
+  if (error) {
+    console.error('Error fetching project:', error);
+    return null;
+  }
+  return data as Project;
 }
 
 /**
- * Obtiene los modelos de un proyecto, incluyendo el estado de selección
- * y la URL segura para la foto de portada.
+ * Obtiene todos los modelos asociados a un proyecto
  */
 export async function getModelsForProject(projectId: string): Promise<Model[]> {
-    noStore();
-    const supabase = await createClient();
+  noStore();
+  const supabase = await createClient();
 
-    // 1. Obtenemos los modelos y su estado de selección
-    const { data: projectModelsData, error } = await supabase
-      .from('projects_models')
-      .select(`
-        client_selection,
-        models ( * )
-      `)
-      .eq('project_id', projectId);
+  const { data: projectModelsData, error } = await supabase
+    .from('projects_models')
+    .select(`
+      client_selection,
+      models (*)
+    `)
+    .eq('project_id', projectId);
 
-    if (error) {
-        console.error('Error fetching models for project:', error);
-        return [];
+  if (error || !projectModelsData) {
+    console.error('Error fetching models for project:', error);
+    return [];
+  }
+
+  const models = projectModelsData.flatMap(item => {
+    const modelData = item.models;
+    if (!modelData || Array.isArray(modelData) || typeof modelData !== 'object') {
+      return [];
     }
-    
-    if (!projectModelsData) {
-        return [];
-    }
+    const model = modelData as unknown as Model;
+    return [{
+      ...model,
+      client_selection: item.client_selection ?? model.client_selection ?? null,
+    }];
+  });
 
-    const models = projectModelsData.map(item => ({
-        ...(item.models as Model),
-        client_selection: item.client_selection,
-    }));
+  const enrichedModels = await Promise.all(
+    models.map(async (model) => {
+      const imagePath = `${model.id}/Portada/cover.jpg`;
+      const { data: signedUrlData, error: signedUrlError } = await supabase
+        .storage
+        .from(BUCKET_NAME)
+        .createSignedUrl(imagePath, 300);
 
-    // 2. Enriquecemos cada modelo con la URL de su foto de portada
-    const enrichedModels = await Promise.all(
-        models.map(async (model) => {
-            const imagePath = `${model.id}/Portada/cover.jpg`;
-            const { data: signedUrlData, error: signedUrlError } = await supabase
-                .storage
-                .from(BUCKET_NAME)
-                .createSignedUrl(imagePath, 300); // URL válida por 5 minutos
-
-            return {
-                ...model,
-                coverUrl: signedUrlError ? null : signedUrlData.signedUrl,
-            };
-        })
-    );
-
-    return enrichedModels;
+      return {
+        ...model,
+        coverUrl: signedUrlError ? null : signedUrlData.signedUrl,
+      };
+    })
+  );
+  return enrichedModels;
 }
+
+/**
+ * Obtiene un modelo específico dentro de un proyecto
+ */
+export async function getModelForProject(projectId: string, modelId: string): Promise<Model | null> {
+  noStore();
+  const supabase = await createClient();
+
+  const { data: projectModelData, error } = await supabase
+    .from('projects_models')
+    .select(`
+      client_selection,
+      models (*)
+    `)
+    .eq('project_id', projectId)
+    .eq('model_id', modelId)
+    .single();
+
+  if (error || !projectModelData) {
+    console.error('Error fetching model for project:', error);
+    return null;
+  }
+  
+  const modelData = projectModelData.models;
+  if (!modelData || Array.isArray(modelData) || typeof modelData !== 'object') {
+    return null;
+  }
+
+  let model = modelData as unknown as Model;
+
+  // ✅ Se reintroduce la obtención de la URL del portafolio.
+  const [coverUrlResult, portfolioUrlResult] = await Promise.all([
+    supabase.storage.from(BUCKET_NAME).createSignedUrl(`${model.id}/Portada/cover.jpg`, 300),
+    supabase.storage.from(BUCKET_NAME).createSignedUrl(`${model.id}/Portfolio/portfolio.jpg`, 300)
+  ]);
+
+  return {
+    ...model,
+    client_selection: projectModelData.client_selection ?? model.client_selection ?? null,
+    coverUrl: coverUrlResult.error ? null : coverUrlResult.data.signedUrl,
+    portfolioUrl: portfolioUrlResult.error ? null : portfolioUrlResult.data.signedUrl,
+  };
+}
+

@@ -31,6 +31,7 @@ export async function GET(
 
     let coverUrl: string | null = null;
     let compCardUrls: string[] = [];
+    let portfolioUrl: string | null = null;
 
     // --- 1. Obtener la portada ---
     const { data: coverList, error: coverListError } = await supabase
@@ -53,7 +54,28 @@ export async function GET(
       }
     }
 
-    // --- 2. Obtener contraportadas ---
+    // --- 2. Obtener la imagen de Portafolio ---
+    const { data: portfolioList, error: portfolioListError } = await supabase
+      .storage
+      .from(BUCKET_NAME)
+      .list(`${modelId}/Portfolio/`, { limit: 1 });
+
+    if (portfolioListError) {
+      console.error(`❌ Error al listar portafolio para ${modelId}:`, portfolioListError);
+    } else if (portfolioList && portfolioList.length > 0) {
+      const portfolioPath = `${modelId}/Portfolio/${portfolioList[0].name}`;
+      const { data: portfolioSignedUrl, error: portfolioError } = await supabase
+        .storage
+        .from(BUCKET_NAME)
+        .createSignedUrl(portfolioPath, 300);
+      if (portfolioError) {
+        console.error(`❌ Error al firmar URL de portafolio para ${modelId}:`, portfolioError);
+      } else {
+        portfolioUrl = portfolioSignedUrl?.signedUrl ?? null;
+      }
+    }
+
+    // --- 3. Obtener contraportadas ---
     const { data: fileList, error: listError } = await supabase
       .storage
       .from(BUCKET_NAME)
@@ -82,10 +104,11 @@ export async function GET(
       }
     }
 
-    // --- 3. Respuesta final ---
+    // --- 4. Respuesta final ---
     return NextResponse.json({
       success: true,
       coverUrl,
+      portfolioUrl,
       compCardUrls,
     });
 

@@ -13,7 +13,7 @@ export async function POST(
   const supabase = await createClient(); // ✅ await aquí
   const formData = await req.formData();
   const file = formData.get('file') as File | null;
-  const type = formData.get('type') as 'cover' | 'comp-card';
+  const type = formData.get('type') as 'cover' | 'comp-card' | 'portfolio';
   const slotIndex = formData.get('slotIndex') as string | null;
 
   if (!file) {
@@ -25,6 +25,8 @@ export async function POST(
     filePath = `${params.modelId}/Portada/cover.jpg`;
   } else if (type === 'comp-card' && slotIndex !== null) {
     filePath = `${params.modelId}/Contraportada/comp_${slotIndex}.jpg`;
+  } else if (type === 'portfolio') {
+    filePath = `${params.modelId}/Portfolio/portfolio.jpg`;
   } else {
     return NextResponse.json({ error: 'Tipo de imagen o índice no válido.' }, { status: 400 });
   }

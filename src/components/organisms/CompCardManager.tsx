@@ -48,8 +48,9 @@ const PhotoSlot = ({ className, imageUrl, onFileSelect, onDelete, label, isUploa
 export function CompCardManager({ modelId }: CompCardManagerProps) {
     const [coverUrl, setCoverUrl] = useState<string | null>(null);
     const [compCardUrls, setCompCardUrls] = useState<(string | null)[]>([null, null, null, null]);
+    const [portfolioUrl, setPortfolioUrl] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [uploadingState, setUploadingState] = useState({ cover: false, compCards: [false, false, false, false] });
+    const [uploadingState, setUploadingState] = useState({ cover: false, compCards: [false, false, false, false], portfolio: false });
 
     // Función para recargar las imágenes desde la API GET
     const loadImages = async () => {
@@ -60,6 +61,7 @@ export function CompCardManager({ modelId }: CompCardManagerProps) {
         const data = await response.json();
         if (data.success) {
           setCoverUrl(data.coverUrl || null);
+          setPortfolioUrl(data.portfolioUrl || null);
           const contraportadas = data.compCardUrls || [];
           const filledUrls = Array(4).fill(null).map((_, i) => contraportadas[i] || null);
           setCompCardUrls(filledUrls);
@@ -79,8 +81,9 @@ export function CompCardManager({ modelId }: CompCardManagerProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [modelId]);
 
-    const handleUpload = async (file: File, type: 'cover' | 'comp-card', slotIndex?: number) => {
+    const handleUpload = async (file: File, type: 'cover' | 'comp-card' | 'portfolio', slotIndex?: number) => {
         if (type === 'cover') setUploadingState(p => ({ ...p, cover: true }));
+        else if (type === 'portfolio') setUploadingState(p => ({ ...p, portfolio: true }));
         else if (slotIndex !== undefined) setUploadingState(p => {
             const newCompCards = [...p.compCards]; newCompCards[slotIndex] = true;
             return { ...p, compCards: newCompCards };
@@ -102,6 +105,7 @@ export function CompCardManager({ modelId }: CompCardManagerProps) {
             toast.error('Error al subir la imagen', { description: error.message });
         } finally {
             if (type === 'cover') setUploadingState(p => ({ ...p, cover: false }));
+            else if (type === 'portfolio') setUploadingState(p => ({ ...p, portfolio: false }));
             else if (slotIndex !== undefined) setUploadingState(p => {
                 const newCompCards = [...p.compCards]; newCompCards[slotIndex] = false;
                 return { ...p, compCards: newCompCards };
@@ -109,9 +113,11 @@ export function CompCardManager({ modelId }: CompCardManagerProps) {
         }
     };
 
-    const handleDelete = async (type: 'cover' | 'comp-card', slotIndex?: number) => {
+    const handleDelete = async (type: 'cover' | 'comp-card' | 'portfolio', slotIndex?: number) => {
         const filePath = type === 'cover' 
             ? `${modelId}/Portada/cover.jpg` 
+            : type === 'portfolio'
+            ? `${modelId}/Portfolio/portfolio.jpg`
             : `${modelId}/Contraportada/comp_${slotIndex}.jpg`;
 
         try {
@@ -132,8 +138,8 @@ export function CompCardManager({ modelId }: CompCardManagerProps) {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Gestión de Comp Card</CardTitle>
-                <CardDescription>Sube y administra las imágenes de portada y contraportada.</CardDescription>
+                <CardTitle>Imágenes del Talento</CardTitle>
+                <CardDescription>Sube y administra las imágenes de portada, portafolio y contraportada.</CardDescription>
             </CardHeader>
             <CardContent>
                 {isLoading ? (
@@ -153,18 +159,31 @@ export function CompCardManager({ modelId }: CompCardManagerProps) {
                          </div>
                     </div>
                 ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <span className="text-sm font-medium text-muted-foreground mb-2 block">Portada</span>
-                        <PhotoSlot className="aspect-[3/4]" imageUrl={coverUrl} onFileSelect={(file) => handleUpload(file, 'cover')} onDelete={() => handleDelete('cover')} label="Subir Portada" isUploading={uploadingState.cover}/>
-                    </div>
-                    <div>
-                        <span className="text-sm font-medium text-muted-foreground mb-2 block">Contraportada</span>
-                        <div className="grid grid-cols-2 gap-4">
-                            {compCardUrls.map((url, index) => (
-                                <PhotoSlot key={index} className="aspect-square" imageUrl={url} onFileSelect={(file) => handleUpload(file, 'comp-card', index)} onDelete={() => handleDelete('comp-card', index)} label={`Foto ${index + 1}`} isUploading={uploadingState.compCards[index]}/>
-                            ))}
+                <div className="space-y-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <span className="text-sm font-medium text-muted-foreground mb-2 block">Portada (Slider)</span>
+                            <PhotoSlot className="aspect-[3/4]" imageUrl={coverUrl} onFileSelect={(file) => handleUpload(file, 'cover')} onDelete={() => handleDelete('cover')} label="Subir Portada" isUploading={uploadingState.cover}/>
                         </div>
+                        <div>
+                            <span className="text-sm font-medium text-muted-foreground mb-2 block">Contraportada (4 Fotos)</span>
+                            <div className="grid grid-cols-2 gap-4">
+                                {compCardUrls.map((url, index) => (
+                                    <PhotoSlot key={index} className="aspect-square" imageUrl={url} onFileSelect={(file) => handleUpload(file, 'comp-card', index)} onDelete={() => handleDelete('comp-card', index)} label={`Foto ${index + 1}`} isUploading={uploadingState.compCards[index]}/>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                     <div>
+                        <span className="text-sm font-medium text-muted-foreground mb-2 block">Portafolio (Imagen Principal Horizontal)</span>
+                        <PhotoSlot 
+                            className="aspect-[11/8.5] max-h-64" 
+                            imageUrl={portfolioUrl} 
+                            onFileSelect={(file) => handleUpload(file, 'portfolio')} 
+                            onDelete={() => handleDelete('portfolio')} 
+                            label="Subir Imagen de Portafolio" 
+                            isUploading={uploadingState.portfolio}
+                        />
                     </div>
                 </div>
                 )}

@@ -1,12 +1,12 @@
 export interface Model {
   id: string; 
   alias: string | null;
-  full_name: string | null; // ✅ AÑADIDO
+  full_name: string | null;
   national_id: string | null;
   status: 'active' | 'inactive' | 'archived';
   gender: 'Male' | 'Female' | 'Other' | null;
   birth_date: string | null;
-  country: string | null; // ✅ AÑADIDO
+  country: string | null;
   height_cm: number | null;
   shoulders_cm: number | null;
   chest_cm: number | null;
@@ -29,6 +29,7 @@ export interface Model {
   // Campos opcionales que se añaden dinámicamente
   profile_completion?: number;
   coverUrl?: string | null; 
+  portfolioUrl?: string | null;
   client_selection?: 'pending' | 'approved' | 'rejected' | null;
 }
 
@@ -42,3 +43,4 @@ export interface Project {
   status: 'draft' | 'sent' | 'in-review' | 'completed' | 'archived';
   password?: string | null;
 }
+
