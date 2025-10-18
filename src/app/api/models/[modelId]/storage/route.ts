@@ -1,19 +1,22 @@
-import { NextResponse, NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
-// Forzar ejecución en Node runtime para evitar errores con process.version en Supabase
-export const runtime = 'nodejs';
+export const runtime = 'nodejs'; // evita los errores de Edge con Supabase
 
 const BUCKET_NAME = 'Book_Completo_iZ_Management';
 
-// --- FUNCIÓN POST para subir archivos ---
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { modelId: string } }
-) {
+// ✅ tipo correcto para rutas dinámicas en Next.js 15
+interface RouteContext {
+  params: {
+    modelId: string;
+  };
+}
+
+export async function POST(req: NextRequest, context: RouteContext) {
   try {
-    const { modelId } = params;
+    const { modelId } = context.params;
     const supabase = await createClient();
     const formData = await req.formData();
 
@@ -28,7 +31,6 @@ export async function POST(
       );
     }
 
-    // Determinar ruta dentro del bucket según tipo
     let filePath = '';
     if (type === 'cover') {
       filePath = `${modelId}/Portada/cover.jpg`;
@@ -43,7 +45,6 @@ export async function POST(
       );
     }
 
-    // Subir archivo al bucket de Supabase
     const { error } = await supabase.storage
       .from(BUCKET_NAME)
       .upload(filePath, file, { upsert: true });
@@ -61,7 +62,6 @@ export async function POST(
       path: filePath,
     });
   } catch (err) {
-    // Se tipa err como unknown para cumplir con ESLint
     const error = err instanceof Error ? err : new Error('Error desconocido');
     console.error('Error inesperado:', error);
     return NextResponse.json(
