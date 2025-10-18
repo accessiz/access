@@ -1,14 +1,10 @@
-
 "use client"
 
-import { useTheme } from "next-themes"
 import { Toaster as Sonner } from "sonner"
 
 type ToasterProps = React.ComponentProps<typeof Sonner>
 
 const Toaster = ({ ...props }: ToasterProps) => {
-  // Este componente no es parte de ShadCN, es una librería popular (Sonner)
-  // que se integra muy bien estéticamente.
   return (
     <Sonner
       className="toaster group"

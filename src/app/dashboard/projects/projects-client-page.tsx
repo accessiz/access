@@ -1,12 +1,11 @@
 'use client'
 
-import { useState, useEffect, useMemo, useTransition } from 'react';
-import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { useSearchParams, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { Project } from '@/lib/types';
 import { toast } from "sonner";
 
-// --- UI Components ---
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -17,21 +16,19 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink, Paginati
 import { DeleteProjectDialog } from '@/components/organisms/DeleteProjectDialog';
 import { Skeleton } from '@/components/ui/skeleton';
 
-// --- CONSTANTES ---
 const PAGE_SIZE = 10;
 
-// --- Tipos ---
 type InitialData = {
   initialProjects: Project[];
   initialCount: number;
 };
 
-// Componentes auxiliares (los mismos)
 const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
 const StatusBadge = ({ status }: { status: string }) => {
     const statusStyles: { [key: string]: string } = {
         draft: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
         sent: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+        'in-review': 'bg-purple-500/20 text-purple-400 border-purple-500/30',
         completed: 'bg-green-500/20 text-green-400 border-green-500/30',
         archived: 'bg-gray-500/20 text-gray-400 border-gray-500/30',
     };
@@ -43,14 +40,19 @@ export default function ProjectsClientPage({ initialProjects, initialCount }: In
     const [count, setCount] = useState(initialCount);
     const [loading, setLoading] = useState(false);
     
+    const isInitialLoad = useRef(true);
     const searchParams = useSearchParams();
     const pathname = usePathname();
-    const router = useRouter();
 
     const currentPage = Number(searchParams.get('page')) || 1;
     const totalPages = Math.ceil(count / PAGE_SIZE);
 
     useEffect(() => {
+        if (isInitialLoad.current) {
+            isInitialLoad.current = false;
+            return;
+        }
+
         const fetchProjects = async () => {
             setLoading(true);
             const params = new URLSearchParams(searchParams);
@@ -59,23 +61,19 @@ export default function ProjectsClientPage({ initialProjects, initialCount }: In
             try {
                 const response = await fetch(apiUrl);
                 if (!response.ok) throw new Error('Failed to fetch projects');
-                const { data, count } = await response.json();
+                const { data, count: newCount } = await response.json();
                 setProjects(data || []);
-                setCount(count || 0);
-            } catch (error) {
+                setCount(newCount || 0);
+            } catch {
                 toast.error("Error al cargar los proyectos.");
             } finally {
                 setLoading(false);
             }
         };
+        
+        fetchProjects();
 
-        // Evitamos la recarga inicial si ya tenemos los datos del servidor
-        const hasInitialData = initialProjects.length > 0 && currentPage === 1 && searchParams.toString().length < 5;
-        if (!hasInitialData) {
-            fetchProjects();
-        }
-
-    }, [searchParams, initialProjects]);
+    }, [searchParams, currentPage]);
 
     const handleProjectDeleted = (deletedProjectId: string) => {
         setProjects(current => current.filter(p => p.id !== deletedProjectId));

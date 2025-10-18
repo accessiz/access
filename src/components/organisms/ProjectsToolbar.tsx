@@ -2,7 +2,6 @@
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import {
   Select,
   SelectContent,
@@ -13,9 +12,7 @@ import {
 import { Search, CalendarDays } from 'lucide-react';
 import { useDebouncedCallback } from 'use-debounce';
 
-// Genera una lista de años (ej: desde el actual hasta 5 años atrás)
 const availableYears = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
-// Lista de meses
 const availableMonths = [
     { label: 'Enero', value: '1' }, { label: 'Febrero', value: '2' },
     { label: 'Marzo', value: '3' }, { label: 'Abril', value: '4' },
@@ -50,7 +47,6 @@ export function ProjectsToolbar() {
 
   return (
     <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-        {/* Lado izquierdo: Búsqueda y Filtros */}
         <div className="flex w-full sm:w-auto items-center gap-2">
             <div className="relative flex-1 sm:flex-initial sm:w-64">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

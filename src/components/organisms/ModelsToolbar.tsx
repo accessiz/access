@@ -1,4 +1,3 @@
-
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -19,7 +18,7 @@ const heightRanges = [
   { label: "Más de 185 cm", min: 186, max: null },
 ];
 
-export function ModelsToolbar({ countries, modelCount }: { countries: string[]; modelCount: number }) {
+export function ModelsToolbar({ countries }: { countries: string[] }) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const router = useRouter();

@@ -1,13 +1,12 @@
 'use client';
 
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { Model } from '@/lib/types';
 import { toast } from "sonner";
 import { ArrowUp, ArrowDown, Download, ExternalLink } from 'lucide-react';
 
-// --- UI Components ---
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from '@/components/ui/skeleton';
@@ -16,10 +15,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from "@/components/ui/pagination";
 import { Progress } from "@/components/ui/progress";
 
-// --- CONSTANTES ---
 const PAGE_SIZE = 24;
 
-// --- Tipos ---
 type ModelWithCompletion = Model & { profile_completion?: number };
 type SortConfig = { key: keyof Model; direction: 'asc' | 'desc'; };
 type InitialData = {
@@ -30,12 +27,13 @@ type InitialData = {
 };
 
 export default function ModelsClientPage({ initialData }: { initialData: InitialData }) {
-  // Estado inicializado con los datos del servidor
   const [models, setModels] = useState<ModelWithCompletion[]>(initialData.models);
   const [count, setCount] = useState(initialData.count);
   const [countries] = useState<string[]>(initialData.countries);
   const [publicUrl] = useState(initialData.publicUrl);
-  const [loading, setLoading] = useState(false); // La carga inicial ya está hecha
+  const [loading, setLoading] = useState(false);
+  
+  const isInitialLoad = useRef(true);
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -45,7 +43,7 @@ export default function ModelsClientPage({ initialData }: { initialData: Initial
   const currentPage = Number(searchParams.get('page')) || 1;
   const totalPages = Math.ceil(count / PAGE_SIZE);
 
-  const [sortConfig, setSortConfig] = useState<SortConfig>({
+  const [sortConfig] = useState<SortConfig>({
     key: (searchParams.get('sort') as keyof Model) || 'alias',
     direction: (searchParams.get('dir') as 'asc' | 'desc') || 'asc',
   });
@@ -62,10 +60,11 @@ export default function ModelsClientPage({ initialData }: { initialData: Initial
     router.replace(`${pathname}?${params.toString()}`);
   }, [searchParams, sortConfig, pathname, router]);
   
-  // Este useEffect ahora solo se activa para cargas subsecuentes (filtros, paginación)
   useEffect(() => {
-    // Evita la llamada inicial
-    const isInitialLoad = (searchParams.toString() === '' && currentPage === 1) || (models === initialData.models);
+    if (isInitialLoad.current) {
+        isInitialLoad.current = false;
+        return;
+    }
 
     async function fetchData() {
       setLoading(true);
@@ -92,19 +91,9 @@ export default function ModelsClientPage({ initialData }: { initialData: Initial
       }
     }
 
-    // Comprobamos si los datos iniciales ya corresponden a los parámetros actuales
-    // para evitar la recarga innecesaria al entrar a la página.
-    const hasInitialDataForCurrentParams = 
-      initialData.models.length > 0 &&
-      currentPage === 1 &&
-      !searchParams.get('q') &&
-      !searchParams.get('country');
+    fetchData();
 
-    if (!hasInitialDataForCurrentParams) {
-       fetchData();
-    }
-
-  }, [searchParams, currentPage, initialData.models]);
+  }, [searchParams, currentPage]);
 
 
   const handleRowClick = (modelId: string) => router.push(`/dashboard/models/${modelId}`);
@@ -172,8 +161,6 @@ export default function ModelsClientPage({ initialData }: { initialData: Initial
       );
     }
 
-    // El resto de la lógica de renderizado permanece igual
-    // ... (código de renderizado para grid y list)
     if (view === 'grid') {
       return (
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
@@ -243,7 +230,7 @@ export default function ModelsClientPage({ initialData }: { initialData: Initial
         <p className="text-muted-foreground">Gestiona, filtra y explora la base de datos de modelos.</p>
       </header>
       
-      <ModelsToolbar countries={countries} modelCount={count} />
+      <ModelsToolbar countries={countries} />
 
       <div className="pb-6 min-h-[500px]">
         {renderContent()}

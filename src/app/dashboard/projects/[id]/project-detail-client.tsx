@@ -6,7 +6,6 @@ import { toast } from 'sonner';
 import { Model, Project } from '@/lib/types';
 import { addModelToProject, removeModelFromProject } from '@/lib/actions/projects_models';
 
-// --- UI Components ---
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,15 +21,6 @@ import {
     CheckCircle2, XCircle as XCircleIcon, Clock, ChevronLeft 
 } from 'lucide-react';
 
-// --- Tipos y Componentes Auxiliares ---
-
-type ProjectDetailClientProps = {
-  project: Project;
-  initialSelectedModels: Model[];
-  allModels: Model[];
-};
-
-// Componente para el indicador de estado del cliente
 const ClientStatusBadge = ({ status }: { status: Model['client_selection'] }) => {
   if (status === 'approved') {
     return <Badge variant="outline" className="border-green-500 text-green-500 bg-green-500/10"><CheckCircle2 className="mr-1 h-3 w-3" /> Aprobado</Badge>;
@@ -41,7 +31,6 @@ const ClientStatusBadge = ({ status }: { status: Model['client_selection'] }) =>
   return <Badge variant="outline"><Clock className="mr-1 h-3 w-3" /> Pendiente</Badge>;
 };
 
-// Componente de Fila de Talento actualizado
 const TalentRow = ({ model, onAction, isPending, actionType }: {
     model: Model;
     onAction: () => void;
@@ -66,7 +55,6 @@ const TalentRow = ({ model, onAction, isPending, actionType }: {
     </div>
 );
 
-// Componente para la Zona de Peligro
 const DangerZone = ({ project }: { project: Project }) => (
     <Card className="border-destructive">
       <CardHeader>
@@ -86,8 +74,6 @@ const DangerZone = ({ project }: { project: Project }) => (
       </CardContent>
     </Card>
 );
-
-// --- Componente Principal ---
 
 export default function ProjectDetailClient({ project: initialProject, initialSelectedModels, allModels }: { project: Project; initialSelectedModels: Model[]; allModels: Model[]; }) {
     const [project, setProject] = useState(initialProject);

@@ -13,10 +13,6 @@ export async function GET(
     const { modelId } = await context.params;
     const supabase = await createClient();
 
-    if (!supabase) {
-      throw new Error('No se pudo inicializar el cliente de Supabase.');
-    }
-
     if (!modelId) {
       return NextResponse.json(
         { success: false, error: 'Model ID is required.' },
@@ -28,6 +24,7 @@ export async function GET(
     let compCardUrls: string[] = [];
     let portfolioUrl: string | null = null;
 
+    // --- 1. Obtener la portada ---
     const { data: coverList, error: coverListError } = await supabase
       .storage
       .from(BUCKET_NAME)
@@ -48,6 +45,7 @@ export async function GET(
       }
     }
 
+    // --- 2. Obtener la imagen de Portafolio ---
     const { data: portfolioList, error: portfolioListError } = await supabase
       .storage
       .from(BUCKET_NAME)
@@ -68,6 +66,7 @@ export async function GET(
       }
     }
 
+    // --- 3. Obtener contraportadas ---
     const { data: fileList, error: listError } = await supabase
       .storage
       .from(BUCKET_NAME)

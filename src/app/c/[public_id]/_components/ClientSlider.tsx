@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
+import React, { useState, useLayoutEffect, useRef, useCallback } from 'react';
 import { Project, Model } from '@/lib/types';
 import { toast } from 'sonner';
 import { updateModelSelection } from '@/lib/actions/projects_models';
@@ -42,7 +42,7 @@ export default function ClientSlider({ project, initialModels }: ClientSliderPro
         sizing.current.smallWidth = sizing.current.smallHeight * aspectRatio;
     };
 
-    const applyState = (targetIndex: number, duration = 0) => {
+    const applyState = useCallback((targetIndex: number, duration = 0) => {
         if (!galeriaRef.current) return;
         
         const { largeHeight, largeWidth, smallHeight, smallWidth } = sizing.current;
@@ -74,7 +74,7 @@ export default function ClientSlider({ project, initialModels }: ClientSliderPro
                 delay: isCenter ? duration / 2 : 0
             });
         });
-    };
+    }, [animConfig.ease]);
 
     const moveTo = (newIndex: number) => {
         if (isAnimating || newIndex < 0 || newIndex >= models.length) return;
@@ -93,8 +93,6 @@ export default function ClientSlider({ project, initialModels }: ClientSliderPro
         const modelId = models[modelIndex].id;
         const currentSelection = models[modelIndex].selection;
 
-        // Si se hace clic en la misma selección, no hacemos nada.
-        // Si se cambia la selección, lo permitimos.
         if (currentSelection === selection) return;
 
         setIsAnimating(true);
@@ -115,13 +113,11 @@ export default function ClientSlider({ project, initialModels }: ClientSliderPro
                 updateModelSelection(project.id, modelId, selection).then(result => {
                     if (!result.success) {
                         toast.error("No se pudo guardar la selección.");
-                        // Revertir al estado anterior si hay error
                         setModels(prev => prev.map((m, i) => i === modelIndex ? { ...m, selection: currentSelection } : m));
                     }
                 });
             })
             .to([feedbackOverlay, feedbackText], { opacity: 0, duration: 0.3, delay: 0.5, onComplete: () => {
-                 // Solo avanza si la decisión era 'pending'
                  if (currentSelection === 'pending') {
                     moveTo(modelIndex + 1);
                  } else {
@@ -151,7 +147,7 @@ export default function ClientSlider({ project, initialModels }: ClientSliderPro
         };
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
-    }, []);
+    }, [applyState]);
 
     if (models.length === 0) {
         return <div className="h-screen w-full flex items-center justify-center">No hay talentos asignados a este proyecto.</div>;

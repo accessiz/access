@@ -1,4 +1,3 @@
-
 'use client'
 
 import { useState } from 'react';
@@ -10,7 +9,6 @@ import { createModel } from '@/lib/actions/models';
 
 import { Button } from '@/components/ui/button';
 import { ModelForm } from '@/components/organisms/ModelForm';
-import { X, Save } from 'lucide-react';
 
 export default function NewModelPage() {
   const router = useRouter();
@@ -33,7 +31,6 @@ export default function NewModelPage() {
 
   return (
     <div className="space-y-8">
-      {/* --- Encabezado --- */}
       <header className="flex items-center justify-between gap-4 pb-6 border-b">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Añadir Nuevo Talento</h1>
@@ -51,7 +48,6 @@ export default function NewModelPage() {
         </div>
       </header>
 
-      {/* --- Contenedor del Formulario --- */}
       <div className="mx-auto">
           <ModelForm
               onSubmit={handleSubmit}

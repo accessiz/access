@@ -8,12 +8,12 @@ const infoFooterStyles = {
     alignItems: 'center',
     width: '100%',
     fontSize: 'var(--md-typescale-body-small-size)',
-    textTransform: 'uppercase' as 'uppercase',
+    textTransform: 'uppercase',
   },
-  left: { justifySelf: 'start' as const },
-  center: { justifySelf: 'center' as const },
-  right: { justifySelf: 'end' as const },
-};
+  left: { justifySelf: 'start' },
+  center: { justifySelf: 'center' },
+  right: { justifySelf: 'end' },
+} as const;
 
 interface InfoFooterProps {
     time: string;
