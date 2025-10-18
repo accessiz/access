@@ -2,6 +2,8 @@ import { NextResponse, NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
+// Forzar ejecución en Node runtime para evitar errores con process.version en Supabase
+export const runtime = 'nodejs';
 
 const BUCKET_NAME = 'Book_Completo_iZ_Management';
 
@@ -58,8 +60,10 @@ export async function POST(
       message: 'Archivo subido correctamente.',
       path: filePath,
     });
-  } catch (err: any) {
-    console.error('Error inesperado:', err);
+  } catch (err) {
+    // Se tipa err como unknown para cumplir con ESLint
+    const error = err instanceof Error ? err : new Error('Error desconocido');
+    console.error('Error inesperado:', error);
     return NextResponse.json(
       { error: 'Error interno del servidor.' },
       { status: 500 }
