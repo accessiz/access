@@ -8,70 +8,61 @@ const BUCKET_NAME = 'Book_Completo_iZ_Management';
 // --- FUNCIÓN POST para subir archivos ---
 export async function POST(
   req: NextRequest,
-  context: { params: { modelId: string } }
+  { params }: { params: { modelId: string } }
 ) {
-  const { modelId } = context.params;
-  const supabase = await createClient();
-  const formData = await req.formData();
-  const file = formData.get('file') as File | null;
-  const type = formData.get('type') as 'cover' | 'comp-card' | 'portfolio';
-  const slotIndex = formData.get('slotIndex') as string | null;
+  try {
+    const { modelId } = params;
+    const supabase = await createClient();
+    const formData = await req.formData();
 
-  if (!file) {
-    return NextResponse.json({ error: 'No se encontró el archivo.' }, { status: 400 });
-  }
+    const file = formData.get('file') as File | null;
+    const type = formData.get('type') as 'cover' | 'comp-card' | 'portfolio';
+    const slotIndex = formData.get('slotIndex') as string | null;
 
-  let filePath = '';
-  if (type === 'cover') {
-    filePath = `${modelId}/Portada/cover.jpg`;
-  } else if (type === 'comp-card' && slotIndex !== null) {
-    filePath = `${modelId}/Contraportada/comp_${slotIndex}.jpg`;
-  } else if (type === 'portfolio') {
-    filePath = `${modelId}/Portfolio/portfolio.jpg`;
-  } else {
-    return NextResponse.json({ error: 'Tipo de imagen o índice no válido.' }, { status: 400 });
-  }
+    if (!file) {
+      return NextResponse.json(
+        { error: 'No se encontró el archivo.' },
+        { status: 400 }
+      );
+    }
 
-  const { error } = await supabase.storage
-    .from(BUCKET_NAME)
-    .upload(filePath, file, {
-      cacheControl: '3600',
-      upsert: true,
+    // Determinar ruta dentro del bucket según tipo
+    let filePath = '';
+    if (type === 'cover') {
+      filePath = `${modelId}/Portada/cover.jpg`;
+    } else if (type === 'comp-card' && slotIndex !== null) {
+      filePath = `${modelId}/Contraportada/comp_${slotIndex}.jpg`;
+    } else if (type === 'portfolio' && slotIndex !== null) {
+      filePath = `${modelId}/Portfolio/portfolio_${slotIndex}.jpg`;
+    } else {
+      return NextResponse.json(
+        { error: 'Tipo de archivo o índice inválido.' },
+        { status: 400 }
+      );
+    }
+
+    // Subir archivo al bucket de Supabase
+    const { error } = await supabase.storage
+      .from(BUCKET_NAME)
+      .upload(filePath, file, { upsert: true });
+
+    if (error) {
+      console.error('Error al subir el archivo:', error);
+      return NextResponse.json(
+        { error: 'Error al subir el archivo: ' + error.message },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      message: 'Archivo subido correctamente.',
+      path: filePath,
     });
-
-  if (error) {
-    console.error('Supabase upload error:', error);
-    return NextResponse.json({ error: 'Error al subir el archivo a Supabase.' }, { status: 500 });
+  } catch (err: any) {
+    console.error('Error inesperado:', err);
+    return NextResponse.json(
+      { error: 'Error interno del servidor.' },
+      { status: 500 }
+    );
   }
-
-  return NextResponse.json({ success: true, path: filePath });
-}
-
-// --- FUNCIÓN DELETE para borrar archivos ---
-export async function DELETE(
-  req: NextRequest,
-  context: { params: { modelId: string } }
-) {
-  const { modelId } = context.params;
-  const supabase = await createClient();
-  const { filePath } = await req.json();
-
-  if (!filePath) {
-    return NextResponse.json({ error: 'Falta la ruta del archivo a eliminar.' }, { status: 400 });
-  }
-
-  if (!filePath.startsWith(modelId)) {
-    return NextResponse.json({ error: 'No tienes permiso para eliminar este archivo.' }, { status: 403 });
-  }
-
-  const { error } = await supabase.storage
-    .from(BUCKET_NAME)
-    .remove([filePath]);
-
-  if (error) {
-    console.error('Supabase delete error:', error);
-    return NextResponse.json({ error: 'Error al eliminar el archivo de Supabase.' }, { status: 500 });
-  }
-
-  return NextResponse.json({ success: true });
 }
