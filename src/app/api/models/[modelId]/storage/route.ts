@@ -3,20 +3,17 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
-export const runtime = 'nodejs'; // evita los errores de Edge con Supabase
+export const runtime = 'nodejs'; // necesario para usar Supabase (no Edge)
 
 const BUCKET_NAME = 'Book_Completo_iZ_Management';
 
-// ✅ tipo correcto para rutas dinámicas en Next.js 15
-interface RouteContext {
-  params: {
-    modelId: string;
-  };
-}
-
-export async function POST(req: NextRequest, context: RouteContext) {
+// ✅ Nuevo tipo oficial para rutas dinámicas en Next.js 15
+export async function POST(
+  req: NextRequest,
+  context: { params: Promise<{ modelId: string }> }
+) {
   try {
-    const { modelId } = context.params;
+    const { modelId } = await context.params;
     const supabase = await createClient();
     const formData = await req.formData();
 
@@ -52,7 +49,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
     if (error) {
       console.error('Error al subir el archivo:', error);
       return NextResponse.json(
-        { error: 'Error al subir el archivo: ' + error.message },
+        { error: `Error al subir el archivo: ${error.message}` },
         { status: 500 }
       );
     }
