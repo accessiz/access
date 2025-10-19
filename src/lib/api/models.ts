@@ -56,26 +56,39 @@ export async function getModelsEnriched(searchParams: SearchParams) {
     throw new Error('Could not fetch models data.');
   }
 
-  // --- INICIO DE LA CORRECCIÓN ---
-  // Cambiamos getPublicUrl por createSignedUrl para generar URLs seguras y temporales.
   const enrichedData = await Promise.all(
     (data || []).map(async (model) => {
-      const imagePath = `${model.id}/Portada/cover.jpg`;
-      const { data: signedUrlData, error: signedUrlError } = await supabase
+      
+      const { data: coverList, error: coverListError } = await supabase
         .storage
         .from(BUCKET_NAME)
-        .createSignedUrl(imagePath, 300); // 300 segundos (5 minutos) de validez
+        .list(`${model.id}/Portada/`, { limit: 1 });
 
-      if (signedUrlError) {
-        // Si hay un error al firmar (ej. el archivo no existe), no rompemos la app,
-        // simplemente no asignamos una URL.
-        return { ...model, coverUrl: null };
+      let coverUrl: string | null = null;
+
+      if (coverList && !coverListError && coverList.length > 0) {
+        const actualFileName = coverList[0].name;
+        const imagePath = `${model.id}/Portada/${actualFileName}`;
+        
+        // --- LA CORRECCIÓN ESTÁ AQUÍ ---
+        // Se eliminó el "..." que sobraba
+        const { data: signedUrlData, error: signedUrlError } = await supabase
+          .storage
+          .from(BUCKET_NAME) 
+          .createSignedUrl(imagePath, 300); 
+
+        if (!signedUrlError) {
+          coverUrl = signedUrlData.signedUrl;
+        } else {
+          console.error(`Error firmando URL para ${imagePath}:`, signedUrlError);
+        }
+      } else if (coverListError) {
+        console.error(`Error listando portada para ${model.id}:`, coverListError);
       }
-      
-      return { ...model, coverUrl: signedUrlData.signedUrl };
+
+      return { ...model, coverUrl: coverUrl };
     })
   );
-  // --- FIN DE LA CORRECCIÓN ---
 
   return { data: enrichedData, count: count || 0 };
 }
