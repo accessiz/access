@@ -5,12 +5,12 @@ import path from 'path';
 export const dynamic = 'force-dynamic';
 const BUCKET_NAME = 'Book_Completo_iZ_Management';
 
+// POST: Subir imagen
 export async function POST(
   request: NextRequest,
-  context: { params: { modelId: string } }
+  context: { params: Promise<{ modelId: string }> }
 ) {
-  const { params } = context;
-  const modelId = params.modelId;
+  const { modelId } = await context.params;
   const supabase = await createClient();
 
   const { data: { user } } = await supabase.auth.getUser();
@@ -54,12 +54,12 @@ export async function POST(
   return NextResponse.json({ success: true, path: filePath });
 }
 
+// DELETE: Eliminar imagen
 export async function DELETE(
   request: NextRequest,
-  context: { params: { modelId: string } }
+  context: { params: Promise<{ modelId: string }> }
 ) {
-  const { params } = context;
-  const modelId = params.modelId;
+  const { modelId } = await context.params;
   const supabase = await createClient();
 
   const { data: { user } } = await supabase.auth.getUser();
