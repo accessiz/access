@@ -39,6 +39,7 @@ export async function POST(
     }
 
     // 3. Definir la ruta del archivo en Supabase Storage
+    // Usamos la extensión original del archivo para soportar webp, png, jpg
     const extension = path.extname(file.name) || '.jpg';
     let filePath = '';
 
