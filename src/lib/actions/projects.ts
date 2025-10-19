@@ -71,8 +71,12 @@ export async function verifyProjectPassword(projectId: string, password_input: s
 
   if (project.password === password_input) {
     const cookieName = `project_access_${projectId}`;
-    const cookieStore = cookies();
+    // --- INICIO DE LA CORRECCIÓN ---
+    // La función cookies() ahora es asíncrona y debe esperarse (await).
+    // Este cambio resuelve el error de compilación.
+    const cookieStore = await cookies();
     cookieStore.set(cookieName, 'true', { maxAge: 60 * 60 * 24, httpOnly: true, path: '/' });
+    // --- FIN DE LA CORRECCIÓN ---
     return { success: true };
   } else {
     return { success: false, error: 'Contraseña incorrecta.' };
