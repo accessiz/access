@@ -10,10 +10,16 @@ const BUCKET_NAME = 'Book_Completo_iZ_Management';
 // --- FUNCIÓN POST (Subir/Actualizar Imagen) ---
 export async function POST(
   request: NextRequest,
-  { params }: { params: { modelId: string } }
+  // --- CORRECCIÓN ---
+  // Cambiamos la firma del argumento para que sea un objeto 'context'
+  context: { params: { modelId: string } }
 ) {
   try {
+    // Extraemos 'params' desde 'context'
+    const { params } = context;
     const modelId = params.modelId;
+    // --- FIN DE LA CORRECCIÓN ---
+    
     const supabase = await createClient();
 
     // 1. Verificar autenticación
@@ -59,7 +65,7 @@ export async function POST(
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // 5. Devolver una respuesta JSON (¡lo que el cliente espera!)
+    // 5. Devolver una respuesta JSON
     return NextResponse.json({ success: true, path: filePath });
 
   } catch (err) {
@@ -72,10 +78,16 @@ export async function POST(
 // --- FUNCIÓN DELETE (Eliminar Imagen) ---
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { modelId: string } }
+  // --- CORRECCIÓN ---
+  // Aplicamos la misma corrección aquí
+  context: { params: { modelId: string } }
 ) {
   try {
+    // Extraemos 'params' desde 'context'
+    const { params } = context;
     const modelId = params.modelId;
+    // --- FIN DE LA CORRECCIÓN ---
+    
     const supabase = await createClient();
 
     // 1. Verificar autenticación
@@ -91,8 +103,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Falta la ruta del archivo (filePath)' }, { status: 400 });
     }
     
-    // 3. Medida de seguridad: Asegurarse de que el usuario
-    //    solo borre archivos del modelo que está editando.
+    // 3. Medida de seguridad
     if (!filePath.startsWith(modelId)) {
         return NextResponse.json({ error: 'Ruta de archivo no válida (conflicto de ID)' }, { status: 403 });
     }
