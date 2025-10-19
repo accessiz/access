@@ -1,8 +1,15 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse, type NextRequest } from 'next/server';
 
+// Se añade 'force-dynamic' para asegurar que se ejecute en el entorno de Node.js,
+// evitando advertencias del Edge Runtime con las APIs de Supabase.
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest) {
-  const supabase = createClient();
+  // --- CORRECCIÓN CLAVE ---
+  // La función createClient es asíncrona, por lo que necesita 'await'.
+  // Sin 'await', `supabase` es una Promesa, no el cliente, causando el error.
+  const supabase = await createClient();
 
   // Verificamos si hay una sesión activa
   const {
@@ -15,7 +22,6 @@ export async function POST(req: NextRequest) {
   }
 
   // Redirigimos al usuario a la página de inicio de sesión.
-  // Es importante usar la URL completa para la redirección desde el servidor.
   const redirectUrl = new URL('/login', req.url);
   
   return NextResponse.redirect(redirectUrl, {
