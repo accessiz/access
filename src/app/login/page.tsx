@@ -17,24 +17,41 @@ export default async function LoginPage() {
   }
 
   return (
+    // Mantenemos el grid para escritorio
     <div className="w-full min-h-screen lg:grid lg:grid-cols-2">
-      <div className="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto grid w-[350px] gap-6">
-          <div className="grid gap-2 text-center">
-            <Link href="/" className="flex items-center justify-center gap-2 font-semibold text-lg">
-              <div className="bg-primary text-primary-foreground flex size-7 items-center justify-center rounded-md">
-                <GalleryVerticalEnd className="size-5" />
+      
+      {/* Columna Izquierda (Formulario) */}
+      {/* ✅ INICIO DE CAMBIOS PARA MÓVIL */}
+      <div className="flex items-center justify-center h-screen px-6 py-12 lg:h-auto lg:py-12 lg:px-8"> 
+      {/* ↑↑↑ Usamos h-screen en móvil para centrar verticalmente    ↑↑↑ Aumentamos padding horizontal */}
+        {/* Usamos w-full y max-w-sm para que ocupe el ancho disponible pero no se estire demasiado */}
+        <div className="mx-auto grid w-full max-w-sm gap-8"> 
+        {/* ↑↑↑ Aumentamos el espacio entre elementos */}
+          <div className="grid gap-4 text-center"> 
+          {/* ↑↑↑ Aumentamos espacio interno */}
+            <Link href="/" className="flex items-center justify-center gap-3 font-semibold text-xl"> 
+            {/* ↑↑↑ Gap aumentado ↑↑↑ Texto más grande */}
+              {/* Icono más grande */}
+              <div className="bg-primary text-primary-foreground flex size-9 items-center justify-center rounded-lg"> 
+              {/* ↑↑↑ Size 9      ↑↑↑ Más redondeado */}
+                <GalleryVerticalEnd className="size-6" /> 
+                {/* ↑↑↑ Icono interno más grande */}
               </div>
               IZ Access
             </Link>
-            <p className="text-balance text-muted-foreground mt-2">
+            {/* Texto descriptivo un poco más grande */}
+            <p className="text-balance text-muted-foreground mt-2 text-sm"> 
+            {/* ↑↑↑ text-sm */}
               Bienvenido de nuevo. Accede a tu panel de gestión.
             </p>
           </div>
-          <LoginForm />
+          {/* El componente LoginForm usará los tamaños estándar de shadcn, que son buenos para móvil */}
+          <LoginForm /> 
         </div>
       </div>
+      {/* ✅ FIN DE CAMBIOS PARA MÓVIL */}
 
+      {/* Columna Derecha (Imagen - sin cambios) */}
       <div className="hidden lg:block relative">
         <Image
             src="/images/JMTS_13.jpg"

@@ -1,36 +1,32 @@
 "use client";
 import React from 'react';
 
-const infoFooterStyles = {
-  infoFooter: {
-    display: 'grid',
-    gridTemplateColumns: '1fr auto 1fr',
-    alignItems: 'center',
-    width: '100%',
-    fontSize: 'var(--md-typescale-body-small-size)',
-    textTransform: 'uppercase',
-  },
-  left: { justifySelf: 'start' },
-  center: { justifySelf: 'center' },
-  right: { justifySelf: 'end' },
-} as const;
-
 interface InfoFooterProps {
     time: string;
 }
 
+// ✅ ARCHIVO COMPLETAMENTE ACTUALIZADO
 const InfoFooter = ({ time }: InfoFooterProps) => {
   return (
-    <div style={infoFooterStyles.infoFooter}>
-      <div style={infoFooterStyles.left}>
-        <span>Villa Nueva, Guatemala</span>
-      </div>
-      <div style={infoFooterStyles.center}>
-        <span>{time}</span>
-      </div>
-      <div style={infoFooterStyles.right}>
-        <span>Developed by Skopos</span>
-      </div>
+    // Por defecto (móvil): 2 columnas. Tiempo a la izquierda, Skopos a la derecha.
+    // En pantallas 'sm' (escritorio): 3 columnas. Se re-activa la ubicación en el centro.
+    <div className="grid grid-cols-2 sm:grid-cols-3 w-full text-xs uppercase">
+      
+      {/* Columna 1: Tiempo (siempre visible) */}
+      <span className="justify-self-start">
+        {time}
+      </span>
+      
+      {/* Columna 2: Ubicación (Oculta en móvil, visible en 'sm' y centrada) */}
+      <span className="hidden sm:inline justify-self-center">
+        Villa Nueva, Guatemala
+      </span>
+      
+      {/* Columna 3: Skopos (siempre visible, al final) */}
+      <span className="justify-self-end">
+        Developed by Skopos
+      </span>
+      
     </div>
   );
 };

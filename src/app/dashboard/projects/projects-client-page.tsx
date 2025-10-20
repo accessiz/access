@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { PlusCircle, Trash2 } from 'lucide-react';
+import { PlusCircle, Trash2 } from 'lucide-react'; // Make sure PlusCircle is imported
 import { ProjectsToolbar } from '@/components/organisms/ProjectsToolbar';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from "@/components/ui/pagination";
 import { DeleteProjectDialog } from '@/components/organisms/DeleteProjectDialog';
@@ -39,7 +39,7 @@ export default function ProjectsClientPage({ initialProjects, initialCount }: In
     const [projects, setProjects] = useState(initialProjects);
     const [count, setCount] = useState(initialCount);
     const [loading, setLoading] = useState(false);
-    
+
     const isInitialLoad = useRef(true);
     const searchParams = useSearchParams();
     const pathname = usePathname();
@@ -70,7 +70,7 @@ export default function ProjectsClientPage({ initialProjects, initialCount }: In
                 setLoading(false);
             }
         };
-        
+
         fetchProjects();
 
     }, [searchParams, currentPage]);
@@ -79,7 +79,7 @@ export default function ProjectsClientPage({ initialProjects, initialCount }: In
         setProjects(current => current.filter(p => p.id !== deletedProjectId));
         setCount(current => current - 1);
     };
-    
+
     const createPageURL = (pageNumber: number | string) => {
         const params = new URLSearchParams(searchParams);
         params.set('page', pageNumber.toString());
@@ -154,32 +154,37 @@ export default function ProjectsClientPage({ initialProjects, initialCount }: In
 
     return (
         <div className="p-8 md:p-12 h-full flex flex-col">
-            <header className="flex items-center justify-between gap-4 pb-6 border-b">
+            {/* --- Updated Header for Responsiveness --- */}
+            <header className="flex flex-col items-start gap-4 pb-6 border-b
+                           sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Proyectos de Casting</h1>
                     <p className="text-muted-foreground">Crea y gestiona las selecciones para tus clientes.</p>
                 </div>
-                <Button asChild>
-                    <Link href="/dashboard/projects/new"><PlusCircle />Nuevo Proyecto</Link>
+                {/* Button takes full width on mobile */}
+                <Button asChild className="w-full sm:w-auto">
+                    <Link href="/dashboard/projects/new"><PlusCircle className="mr-2 h-4 w-4"/>Nuevo Proyecto</Link>
                 </Button>
             </header>
-            
+            {/* --- END Updated Header --- */}
+
             <main className="flex-1 py-8 space-y-6">
                 <Card>
                     <CardHeader>
                         <CardTitle>Tus Proyectos</CardTitle>
-                        <CardDescription>
-                            <div className="flex justify-between items-center">
-                                <span>Filtra y busca entre tus castings activos y pasados.</span>
-                                <ProjectsToolbar />
-                            </div>
+                        {/* --- Updated CardDescription for Responsiveness --- */}
+                        <CardDescription className="flex flex-col gap-4 pt-2 sm:flex-row sm:justify-between sm:items-center">
+                            <span>Filtra y busca entre tus castings activos y pasados.</span>
+                            <ProjectsToolbar />
                         </CardDescription>
+                         {/* --- END Updated CardDescription --- */}
                     </CardHeader>
                     <CardContent>
                         {renderContent()}
                     </CardContent>
                 </Card>
 
+                {/* --- Footer with pagination (Unchanged from previous state) --- */}
                 {totalPages > 1 && !loading && (
                     <footer className="flex justify-between items-center pt-4 w-full">
                         <div className="flex-1">

@@ -2,11 +2,14 @@
 import React from 'react';
 import Link from 'next/link';
 
+// ✅ INICIO DEL CAMBIO
 const headerStyles = {
     header: "relative flex flex-col gap-[var(--md-sys-spacing-md)] w-full",
-    nav: "w-full flex justify-between items-center text-xs uppercase",
+    // Aplicamos clases de Tailwind directamente para la responsividad
+    nav: "w-full flex flex-col items-center gap-4 text-xs uppercase sm:flex-row sm:justify-between",
     line: "w-full h-[1px] bg-[var(--md-sys-color-on-background)] origin-left",
 };
+// ✅ FIN DEL CAMBIO
 
 const Header = () => {
   return (

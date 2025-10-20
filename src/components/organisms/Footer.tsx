@@ -1,41 +1,63 @@
 "use client";
 import React from 'react';
-import { Button } from '@/components/ui/button'; // Usando el botón de shadcn
+import { Button } from '@/components/ui/button';
 
 const Footer = () => {
   return (
-    <footer className="site-footer mt-[20vh] grid grid-cols-1 md:grid-cols-4 md:grid-rows-2 gap-y-6 p-8 md:p-12 lg:p-16 uppercase bg-background text-on-background">
-        <div className="flex flex-col gap-3 text-xs text-center md:text-left">
-            <a href="#" aria-label="Visita nuestro perfil de Instagram">Instagram</a>
-            <a href="#" aria-label="Visita nuestro perfil de LinkedIn">LinkedIn</a>
-            <a href="#" aria-label="Visita nuestro perfil de Twitter">Twitter</a>
-        </div>
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Se cambió 'mt-[20vh]' por 'md:mt-[20vh]'
+    <footer className="site-footer flex flex-col items-center gap-10 p-8
+                   md:grid md:grid-cols-4 md:grid-rows-2 md:items-start md:gap-y-6 md:p-12 lg:p-16
+                   md:mt-[20vh] // <-- ¡Aquí está el cambio!
+                   uppercase bg-background text-on-background">
 
-        <address className="flex flex-col gap-3 text-xs not-italic text-center md:text-left">
-          <span>Zona 10</span>
-          <span>Ciudad de Guatemala</span>
-          <span>Guatemala</span>
-        </address>
-        
-        <div className="flex flex-col gap-3 text-xs text-center md:text-left">
-            <span>info@izmanagementglobal.com</span>
-        </div>
+      {/* GRUPO 1: Slogan & CTA (¡Ahora es el primero!) */}
+      {/* Móvil: Centrado por defecto gracias al 'items-center' del 'footer'. */}
+      {/* Escritorio: Lo mandamos a su esquina con 'md:col-start-4' etc. */}
+      <div className="flex flex-col items-center gap-4 text-center
+                     md:col-start-4 md:row-span-2 md:items-end md:text-right md:justify-self-end">
+          <h3 className="text-2xl lg:text-3xl font-normal m-0">
+              TU VISIÓN,<br />NUESTRO TALENTO
+          </h3>
+          <Button asChild>
+              <a href="#" aria-label="Conectar con nosotros">Let&apos;s Connect</a>
+          </Button>
+      </div>
 
-        <div className="md:col-start-4 md:row-start-1 md:row-span-2 justify-self-center md:justify-self-end text-center md:text-right">
-            <div className="flex flex-col items-center md:items-end h-full justify-start">
-                <h3 className="text-2xl lg:text-3xl font-normal m-0 mb-4">
-                    TU VISIÓN,<br />NUESTRO TALENTO
-                </h3>
-                <Button asChild>
-                    <a href="#" aria-label="Conectar con nosotros">Let&apos;s Connect</a>
-                </Button>
-            </div>
-        </div>
+      {/* GRUPO 2: Redes Sociales */}
+      {/* Móvil: Centrado por defecto. */}
+      {/* Escritorio: Se ubica en la fila 1. */}
+      <div className="flex flex-col items-center gap-3 text-xs md:items-start md:row-start-1">
+          <a href="#" aria-label="Visita nuestro perfil de Instagram">Instagram</a>
+          <a href="#" aria-label="Visita nuestro perfil de LinkedIn">LinkedIn</a>
+          <a href="#" aria-label="Visita nuestro perfil de Twitter">Twitter</a>
+      </div>
 
-        <span className="text-xs text-center md:text-left md:col-start-1 md:row-start-2 self-end mt-4 md:mt-0">
-            2025 © IZ Management
-        </span>
+      {/* GRUPO 3: Dirección */}
+      {/* Móvil: Centrado por defecto. */}
+      {/* Escritorio: Se ubica en la fila 1. */}
+      <address className="flex flex-col items-center gap-3 text-xs not-italic md:items-start md:row-start-1">
+        <span>Zona 10</span>
+        <span>Ciudad de Guatemala</span>
+        <span>Guatemala</span>
+      </address>
+
+      {/* GRUPO 4: Contacto */}
+      {/* Móvil: Centrado por defecto. */}
+      {/* Escritorio: Se ubica en la fila 1. */}
+      <div className="flex flex-col items-center gap-3 text-xs md:items-start md:row-start-1">
+          <span>info@izmanagementglobal.com</span>
+      </div>
+
+      {/* GRUPO 5: Copyright (Al final de todo) */}
+      {/* Móvil: Centrado por defecto. */}
+      {/* Escritorio: Se ubica en la fila 2, al inicio. */}
+      <span className="text-xs md:col-start-1 md:row-start-2 md:self-end md:mt-4">
+          2025 © IZ Management
+      </span>
+
     </footer>
+    // --- FIN DE LA MODIFICACIÓN ---
   );
 };
 

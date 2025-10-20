@@ -17,6 +17,7 @@ type SearchParams = {
   limit?: number;
 };
 
+// Función para obtener la lista de proyectos (sin cambios aquí)
 export async function getProjectsForUser(searchParams: SearchParams = {}) {
   noStore();
   const supabase = await createClient();
@@ -73,9 +74,11 @@ export async function getProjectsForUser(searchParams: SearchParams = {}) {
   return { data: data || [], count: count || 0 };
 }
 
+// Función para obtener un proyecto por ID (sin cambios aquí)
 export async function getProjectById(projectId: string): Promise<Project | null> {
   noStore();
   const supabase = await createClient();
+  // Busca por ID de base de datos o por public_id
   const { data, error } = await supabase
     .from('projects')
     .select('*')
@@ -83,16 +86,21 @@ export async function getProjectById(projectId: string): Promise<Project | null>
     .single();
 
   if (error) {
-    console.error('Error fetching project:', error);
+    // Es normal no encontrar un proyecto si el ID es incorrecto, no loguear como error fatal
+    if (error.code !== 'PGRST116') { // PGRST116 = Single row not found
+        console.error('Error fetching project by ID:', projectId, error);
+    }
     return null;
   }
   return data as Project;
 }
 
+// Función para obtener modelos de un proyecto (OPTIMIZADA)
 export async function getModelsForProject(projectId: string): Promise<Model[]> {
   noStore();
   const supabase = await createClient();
 
+  // Obtiene las relaciones y los datos completos de los modelos asociados
   const { data: projectModelsData, error } = await supabase
     .from('projects_models')
     .select(`
@@ -102,43 +110,40 @@ export async function getModelsForProject(projectId: string): Promise<Model[]> {
     .eq('project_id', projectId);
 
   if (error || !projectModelsData) {
-    console.error('Error fetching models for project:', error);
+    // Registra el error real si existe, sino un mensaje genérico
+    console.error('Error fetching models for project:', error || 'No data returned');
     return [];
   }
 
+  // Mapea los datos correctamente, manejando posibles modelos nulos o inválidos
   const models = projectModelsData.flatMap(item => {
     const modelData = item.models;
+    // Verifica si modelData es un objeto válido antes de convertirlo
     if (!modelData || Array.isArray(modelData) || typeof modelData !== 'object') {
-      return [];
+      console.warn(`Invalid model data found for project ${projectId}:`, item);
+      return []; // Omite este item si los datos del modelo faltan o son inválidos
     }
-    const model = modelData as unknown as Model;
+    const model = modelData as unknown as Model; // Convertimos a tipo Model
     return [{
       ...model,
-      client_selection: item.client_selection ?? model.client_selection ?? null,
+      // Asegura que client_selection se asigne correctamente, usa null si falta
+      client_selection: item.client_selection ?? null,
     }];
   });
 
-  const enrichedModels = await Promise.all(
-    models.map(async (model) => {
-      const imagePath = `${model.id}/Portada/cover.jpg`;
-      const { data: signedUrlData, error: signedUrlError } = await supabase
-        .storage
-        .from(BUCKET_NAME)
-        .createSignedUrl(imagePath, 300);
+  // --- SE ELIMINÓ EL BLOQUE Promise.all QUE CAUSABA EL N+1 ---
+  // Ya no generamos URLs firmadas aquí. El frontend usará la publicUrl.
 
-      return {
-        ...model,
-        coverUrl: signedUrlError ? null : signedUrlData.signedUrl,
-      };
-    })
-  );
-  return enrichedModels;
+  // Devolvemos los modelos directamente
+  return models;
 }
 
+// Función para obtener UN modelo específico para un proyecto (sin cambios, ya era eficiente)
 export async function getModelForProject(projectId: string, modelId: string): Promise<Model | null> {
   noStore();
   const supabase = await createClient();
 
+  // Obtiene la relación y los datos del modelo específico
   const { data: projectModelData, error } = await supabase
     .from('projects_models')
     .select(`
@@ -150,26 +155,31 @@ export async function getModelForProject(projectId: string, modelId: string): Pr
     .single();
 
   if (error || !projectModelData) {
-    console.error('Error fetching model for project:', error);
+     if (error && error.code !== 'PGRST116') { // No loguear si simplemente no se encontró
+        console.error('Error fetching specific model for project:', projectId, modelId, error);
+     }
     return null;
   }
-  
+
   const modelData = projectModelData.models;
+  // Verifica si modelData es válido
   if (!modelData || Array.isArray(modelData) || typeof modelData !== 'object') {
+     console.warn(`Invalid specific model data for project ${projectId}, model ${modelId}:`, projectModelData);
     return null;
   }
 
   const model = modelData as unknown as Model;
 
+  // Obtiene URLs firmadas para portada y portafolio (solo para este modelo específico)
   const [coverUrlResult, portfolioUrlResult] = await Promise.all([
-    supabase.storage.from(BUCKET_NAME).createSignedUrl(`${model.id}/Portada/cover.jpg`, 300),
-    supabase.storage.from(BUCKET_NAME).createSignedUrl(`${model.id}/Portfolio/portfolio.jpg`, 300)
+    supabase.storage.from(BUCKET_NAME).createSignedUrl(`${model.id}/Portada/cover.jpg`, 300), // Asume cover.jpg
+    supabase.storage.from(BUCKET_NAME).createSignedUrl(`${model.id}/Portfolio/portfolio.jpg`, 300) // Asume portfolio.jpg
   ]);
 
   return {
     ...model,
-    client_selection: projectModelData.client_selection ?? model.client_selection ?? null,
-    coverUrl: coverUrlResult.error ? null : coverUrlResult.data.signedUrl,
-    portfolioUrl: portfolioUrlResult.error ? null : portfolioUrlResult.data.signedUrl,
+    client_selection: projectModelData.client_selection ?? null,
+    coverUrl: coverUrlResult.error ? null : coverUrlResult.data?.signedUrl ?? null,
+    portfolioUrl: portfolioUrlResult.error ? null : portfolioUrlResult.data?.signedUrl ?? null,
   };
 }

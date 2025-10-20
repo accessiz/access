@@ -6,6 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { CheckCircle2, Send, Archive, ListChecks, Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
+// Configuration for status labels and icons (no changes here)
 const statusConfig = {
   draft: { label: 'Borrador', icon: <ListChecks className="mr-2 h-4 w-4" /> },
   sent: { label: 'Enviado', icon: <Send className="mr-2 h-4 w-4" /> },
@@ -14,6 +15,7 @@ const statusConfig = {
   archived: { label: 'Archivado', icon: <Archive className="mr-2 h-4 w-4" /> },
 };
 
+// Configuration for status badge styles (no changes here)
 const statusStyles: { [key: string]: string } = {
     draft: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
     sent: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
@@ -34,16 +36,20 @@ export function ProjectStatusUpdater({ project, selectedModels }: ProjectStatusU
 
   return (
     <Card>
-      <CardHeader className="flex-row items-center justify-between">
+        {/* --- CardHeader updated for responsiveness --- */}
+        {/* Mobile: flex-col, items-start. Desktop: sm:flex-row, sm:items-center, sm:justify-between */}
+      <CardHeader className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <CardTitle>Estado y Progreso</CardTitle>
           <CardDescription>Monitoriza la revisión del cliente y el ciclo de vida del proyecto.</CardDescription>
         </div>
-        <Badge variant="outline" className={`capitalize text-base px-3 py-1 ${statusStyles[project.status] || ''}`}>
+        {/* Badge takes full width on mobile for better visibility */}
+        <Badge variant="outline" className={`capitalize text-base px-3 py-1 w-full justify-center sm:w-auto ${statusStyles[project.status] || ''}`}>
           {statusConfig[project.status]?.icon}
           {statusConfig[project.status]?.label || 'Estado'}
         </Badge>
       </CardHeader>
+      {/* --- END CardHeader update --- */}
       <CardContent>
         <div className="space-y-2">
           <div className="flex justify-between text-sm text-muted-foreground">

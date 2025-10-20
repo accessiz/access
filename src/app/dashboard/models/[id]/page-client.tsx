@@ -1,10 +1,8 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-// 1. Importamos FormProvider
 import { useForm, FormProvider } from 'react-hook-form';
 import { Button } from '../../../../components/ui/button';
-// 2. 'CardDescription' se elimina de la importación
 import { Card, CardContent, CardHeader, CardTitle } from '../../../../components/ui/card';
 import { modelFormSchema, ModelFormData } from '../../../../lib/schemas';
 import { Model } from '../../../../lib/types';
@@ -34,7 +32,6 @@ const InfoDisplay = ({ label, value }: { label: string; value: string | number |
 export default function ModelProfilePageClient({ initialModel }: ModelProfileClientProps) {
   const [isEditing, setIsEditing] = useState(false);
 
-  // 2. El hook 'useForm' se queda aquí, en el padre.
   const safeParseInt = (value: string | number | null | undefined): number | null => {
     if (value === null || value === undefined || value === '') return null;
     const parsed = parseInt(String(value), 10);
@@ -59,14 +56,13 @@ export default function ModelProfilePageClient({ initialModel }: ModelProfileCli
       waist_cm: initialModel.waist_cm ?? null,
       hips_cm: initialModel.hips_cm ?? null,
       top_size: initialModel.top_size ?? null,
-      pants_size: safeParseInt(initialModel.pants_size),
+      pants_size: safeParseInt(initialModel.pants_size), // Asegúrate que initialModel tenga pants_size
       shoe_size_eu: initialModel.shoe_size_eu ?? null,
       instagram: initialModel.instagram ?? '',
       tiktok: initialModel.tiktok ?? '',
       status: initialModel.status ?? 'active',
       eye_color: initialModel.eye_color ?? '',
       hair_color: initialModel.hair_color ?? '',
-      // Añadimos el campo que faltaba
       date_joined_agency: initialModel.date_joined_agency ? new Date(initialModel.date_joined_agency).toISOString().split('T')[0] : '',
     },
   });
@@ -75,24 +71,27 @@ export default function ModelProfilePageClient({ initialModel }: ModelProfileCli
     const result = await updateModel(initialModel.id, data);
     if (result.success) {
       toast.success('Modelo actualizado correctamente.');
-      setIsEditing(false); 
+      setIsEditing(false);
     } else {
       toast.error('Error al actualizar el modelo', {
         description: result.error,
       });
     }
   }
-  
+
   const { formState: { isSubmitting } } = form;
 
   const handleCancel = () => {
-    form.reset(); 
+    form.reset();
     setIsEditing(false);
   }
 
   return (
     <div className="space-y-8">
-       <header className="flex items-center justify-between gap-4 pb-6 border-b">
+      {/* --- INICIO DE LA MODIFICACIÓN --- */}
+      <header className="flex flex-col items-start gap-4 pb-6 border-b
+                     md:flex-row md:items-center md:justify-between">
+        {/* Título y Descripción */}
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
             {isEditing ? `Editando Perfil de ${initialModel.alias || initialModel.full_name}` : `Perfil de ${initialModel.alias || initialModel.full_name}`}
@@ -101,51 +100,54 @@ export default function ModelProfilePageClient({ initialModel }: ModelProfileCli
             {isEditing ? 'Actualiza la información y las imágenes del talento.' : 'Visualiza la información del talento.'}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+
+        {/* Contenedor de Botones (con flex-wrap y ancho ajustado) */}
+        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
           {isEditing ? (
             <>
-              <Button variant="outline" onClick={handleCancel}>
+              {/* Botón Cancelar (con flex-grow para móvil) */}
+              <Button variant="outline" onClick={handleCancel} className="flex-grow md:flex-grow-0">
                 <X className="mr-2 h-4 w-4" /> Cancelar
               </Button>
-              <Button form="model-edit-form" type="submit" disabled={isSubmitting}>
-                <Save className="mr-2 h-4 w-4" /> 
+              {/* Botón Guardar (con flex-grow para móvil) */}
+              <Button form="model-edit-form" type="submit" disabled={isSubmitting} className="flex-grow md:flex-grow-0">
+                <Save className="mr-2 h-4 w-4" />
                 {isSubmitting ? 'Guardando...' : 'Guardar Cambios'}
               </Button>
             </>
           ) : (
             <>
-               <Button variant="outline" asChild>
+              {/* Botón Volver (con flex-grow para móvil) */}
+               <Button variant="outline" asChild className="flex-grow md:flex-grow-0">
                 <Link href="/dashboard/models">
                    Volver
                 </Link>
               </Button>
+              {/* Botón Eliminar (con flex-grow para móvil) */}
               <DeleteModelDialog modelId={initialModel.id} modelAlias={initialModel.alias || 'este modelo'}>
-                  <Button variant="destructive">
+                  <Button variant="destructive" className="flex-grow md:flex-grow-0">
                     Eliminar Perfil
                   </Button>
               </DeleteModelDialog>
-              <Button onClick={() => setIsEditing(true)}>
+              {/* Botón Editar (con flex-grow para móvil) */}
+              <Button onClick={() => setIsEditing(true)} className="flex-grow md:flex-grow-0">
                 <Pencil className="mr-2 h-4 w-4" /> Editar
               </Button>
             </>
           )}
         </div>
       </header>
-      
+      {/* --- FIN DE LA MODIFICACIÓN --- */}
+
       {isEditing ? (
-        // 3. Envolvemos el componente del formulario
         <FormProvider {...form}>
           <form id="model-edit-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            {/* ✅ INICIO DE LA CORRECCIÓN */}
-            {/* Se elimina la prop 'model={initialModel}' */}
             <ModelForm
                 isSubmitting={isSubmitting}
             />
-            {/* ✅ FIN DE LA CORRECCIÓN */}
           </form>
         </FormProvider>
       ) : (
-        // MODO VISTA: (Este se queda igual)
         <div className="space-y-8">
             <Card>
                 <CardHeader><CardTitle>Información Personal</CardTitle></CardHeader>
@@ -164,7 +166,9 @@ export default function ModelProfilePageClient({ initialModel }: ModelProfileCli
             <Card>
                 <CardHeader><CardTitle>Medidas y Tallas</CardTitle></CardHeader>
                 <CardContent>
-                    <Grid cols={3}>
+                    {/* MODIFICACIÓN: Cambiado a cols={2} para mejor visualización en pantallas medianas */}
+                    <Grid cols={2} className="md:grid-cols-3">
+                    {/* ↑↑↑ Por defecto 2 columnas ↑↑↑ En 'md' y superior, 3 columnas */}
                         <InfoDisplay label="Estatura (cm)" value={initialModel.height_cm} />
                         {initialModel.gender === 'Male' ? <InfoDisplay label="Pecho (cm)" value={initialModel.chest_cm} /> : <InfoDisplay label="Busto (cm)" value={initialModel.bust_cm} />}
                         <InfoDisplay label="Cintura (cm)" value={initialModel.waist_cm} />
@@ -177,7 +181,7 @@ export default function ModelProfilePageClient({ initialModel }: ModelProfileCli
             </Card>
         </div>
       )}
-      
+
       <CompCardManager modelId={initialModel.id} />
     </div>
   );
