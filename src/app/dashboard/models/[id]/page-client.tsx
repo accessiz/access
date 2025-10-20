@@ -4,7 +4,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 // 1. Importamos FormProvider
 import { useForm, FormProvider } from 'react-hook-form';
 import { Button } from '../../../../components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../../components/ui/card';
+// 2. 'CardDescription' se elimina de la importación
+import { Card, CardContent, CardHeader, CardTitle } from '../../../../components/ui/card';
 import { modelFormSchema, ModelFormData } from '../../../../lib/schemas';
 import { Model } from '../../../../lib/types';
 import { updateModel } from '../../../../lib/actions/models';
@@ -135,11 +136,12 @@ export default function ModelProfilePageClient({ initialModel }: ModelProfileCli
         // 3. Envolvemos el componente del formulario
         <FormProvider {...form}>
           <form id="model-edit-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            {/* ✅ INICIO DE LA CORRECCIÓN */}
+            {/* Se elimina la prop 'model={initialModel}' */}
             <ModelForm
-                model={initialModel}
                 isSubmitting={isSubmitting}
-                // 4. La prop 'onSubmit' se elimina, ya la maneja el <form>
             />
+            {/* ✅ FIN DE LA CORRECCIÓN */}
           </form>
         </FormProvider>
       ) : (
