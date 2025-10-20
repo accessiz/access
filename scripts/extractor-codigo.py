@@ -7,6 +7,7 @@ OUTPUT_FILE = r"C:\Users\Evo-minidesk\Desktop\nyxa_dump.md"
 # Exclusiones absolutas (carpetas o archivos)
 EXCLUDED_PATHS = [
     os.path.join(ROOT_DIR, "node_modules"),
+    os.path.join(ROOT_DIR, "scripts"),
     os.path.join(ROOT_DIR, ".next"),
     os.path.join(ROOT_DIR, "package-lock.json"),
     os.path.join(ROOT_DIR, "yarn.lock"),

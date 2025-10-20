@@ -1,22 +1,20 @@
 // scripts\bulkUploadCovers.mjs
 
-// --- ¡CAMBIO REALIZADO! ---
-// Importamos 'dotenv' de forma diferente
 import dotenv from 'dotenv';
 import path from 'path';
-// Le decimos explícitamente que cargue el archivo .env.local
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
-// --- FIN DEL CAMBIO ---
 
 import { createClient } from '@supabase/supabase-js';
 import { readdir, readFile } from 'fs/promises';
-// 'path' ya fue importado arriba
 
 // --- CONFIGURACIÓN ---
 const LOCAL_IMAGES_PATH = 'C:\\Users\\Evo-minidesk\\Downloads\\ProcesadorDeFotos\\FOTOS_OUTPUT';
 const BUCKET_NAME = 'Book_Completo_iZ_Management';
-const STORAGE_PATH_PREFIX = 'Portada/cover.jpg';
-// --- FIN DE CONFIGURACIÓN ---
+
+// --- ¡CORRECCIÓN! ---
+// Ya no definimos el nombre del archivo, solo la carpeta.
+const STORAGE_FOLDER = 'Portada';
+// --- FIN DE LA CORRECCIÓN ---
 
 // Carga las variables de entorno
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -26,40 +24,23 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
   console.error(
     'Error: Faltan las variables SUPABASE_URL o SUPABASE_KEY en tu .env.local'
   );
-  // Añadimos más contexto al error
-  console.log('--- Variables Encontradas ---');
-  console.log('SUPABASE_URL:', SUPABASE_URL ? 'Encontrada' : 'NO ENCONTRADA');
-  console.log('SUPABASE_KEY:', SUPABASE_SERVICE_KEY ? 'Encontrada' : 'NO ENCONTRADA');
-  console.log('-----------------------------');
-  console.log('Asegúrate de que .env.local esté en el directorio C:\\Users\\Evo-minidesk\\Desktop\\nyxa');
   process.exit(1);
 }
 
-// Inicializa el cliente de Supabase con la llave de servicio
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
-/**
- * Normaliza un nombre para comparación:
- * 1. Quita acentos (diacríticos).
- * 2. Convierte a minúsculas.
- * 3. Quita espacios al inicio y al final.
- */
 function normalizeName(name) {
   if (!name) return '';
   return name
     .toLowerCase()
-    .normalize('NFD') // Separa acentos de letras
-    .replace(/[\u0300-\u036f]/g, '') // Elimina los acentos
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
     .trim();
 }
 
-/**
- * Función principal del script
- */
 async function runUpload() {
-  console.log('🚀 Iniciando script de subida masiva (con actualización de género)...');
+  console.log('🚀 Iniciando script de subida masiva (V2 - Arreglando .webp)...');
 
-  // 1. Obtener todos los modelos de la base de datos
   const { data: models, error: dbError } = await supabase
     .from('models')
     .select('id, alias, full_name');
@@ -71,7 +52,6 @@ async function runUpload() {
 
   console.log(`✅ Encontrados ${models.length} modelos en la base de datos.`);
 
-  // 2. Crear un "mapa" para búsqueda rápida
   const modelMap = new Map();
   for (const model of models) {
     if (model.alias) {
@@ -82,16 +62,11 @@ async function runUpload() {
     }
   }
 
-  // 3. Leer la carpeta de imágenes local
   let files;
   try {
     files = await readdir(LOCAL_IMAGES_PATH);
   } catch (err) {
-    console.error(
-      `Error: No se pudo leer la carpeta en ${path.resolve(
-        LOCAL_IMAGES_PATH
-      )}`
-    );
+    console.error(`Error: No se pudo leer la carpeta en ${path.resolve(LOCAL_IMAGES_PATH)}`);
     return;
   }
 
@@ -103,25 +78,30 @@ async function runUpload() {
   let successCount = 0;
   const failedFiles = [];
 
-  // 4. Procesar y subir cada imagen
   for (const file of imageFiles) {
-    const fileBaseName = path.parse(file).name; // Ej: "Badi Ceron"
-    const normalizedFile = normalizeName(fileBaseName); // Ej: "badi ceron"
-
-    // Buscar el ID del modelo en nuestro mapa
+    const fileBaseName = path.parse(file).name;
+    const normalizedFile = normalizeName(fileBaseName);
     const modelId = modelMap.get(normalizedFile);
 
     if (modelId) {
-      // --- ¡COINCIDENCIA! ---
       const localFilePath = path.join(LOCAL_IMAGES_PATH, file);
-      const storagePath = `${modelId}/${STORAGE_PATH_PREFIX}`;
       
+      // --- ¡CORRECCIÓN! ---
+      // Obtenemos la extensión del archivo local (ej: ".webp")
+      const extension = path.parse(file).ext; 
+      // Creamos la ruta de destino correcta (ej: [uuid]/Portada/cover.webp)
+      const storagePath = `${modelId}/${STORAGE_FOLDER}/cover${extension}`;
+      // --- FIN DE LA CORRECCIÓN ---
+
       try {
         const fileBuffer = await readFile(localFilePath);
-        const extension = path.parse(file).ext.slice(1);
-        const contentType = `image/${extension === 'jpg' ? 'jpeg' : extension}`;
+        
+        // --- ¡CORRECCIÓN! ---
+        // Obtenemos la extensión sin el punto (ej: "webp")
+        const extName = extension.slice(1);
+        const contentType = `image/${extName === 'jpg' ? 'jpeg' : extName}`;
+        // --- FIN DE LA CORRECCIÓN ---
 
-        // --- PASO 1: Subir la imagen ---
         const { error: uploadError } = await supabase.storage
           .from(BUCKET_NAME)
           .upload(storagePath, fileBuffer, {
@@ -133,21 +113,17 @@ async function runUpload() {
           console.error(`❌ Error subiendo ${file}:`, uploadError.message);
           failedFiles.push({ file, reason: `Error de subida: ${uploadError.message}` });
         } else {
-          successCount++; // Contar subida exitosa
-          
-          // --- PASO 2: Actualizar el género ---
+          successCount++;
           const { error: updateError } = await supabase
             .from('models')
-            .update({ gender: 'Male' })
+            .update({ gender: 'Female' })
             .eq('id', modelId);
 
           if (updateError) {
-            // La subida funcionó, pero el género falló
             console.warn(`✅ ÉXITO (Subida): ${file} -> ${storagePath}`);
             console.error(`   ❌ ERROR (Género): No se pudo actualizar el género para ${modelId}:`, updateError.message);
           } else {
-            // ¡Ambos funcionaron!
-            console.log(`✅ ÉXITO: ${file} -> ${storagePath} (y actualizado a 'Male')`);
+            console.log(`✅ ÉXITO: ${file} -> ${storagePath} (y actualizado a 'Female')`);
           }
         }
       } catch (err) {
@@ -155,15 +131,11 @@ async function runUpload() {
         failedFiles.push({ file, reason: 'Error de lectura local' });
       }
     } else {
-      // --- SIN COINCIDENCIA ---
-      console.warn(
-        `⚠️ OMITIDO: No se encontró un modelo para "${file}" (buscado como: "${normalizedFile}")`
-      );
+      console.warn(`⚠️ OMITIDO: No se encontró un modelo para "${file}" (buscado como: "${normalizedFile}")`);
       failedFiles.push({ file, reason: 'No se encontró el modelo en la DB' });
     }
   }
 
-  // 5. Reporte final
   console.log('\n--- 🏁 REPORTE FINAL ---');
   console.log(`Subidas con éxito: ${successCount}`);
   console.log(`Fallidas u omitidas: ${failedFiles.length}`);
@@ -176,5 +148,4 @@ async function runUpload() {
   }
 }
 
-// Ejecutar el script
 runUpload();
