@@ -1,23 +1,18 @@
-// Archivo: src/app/api/models/[modelId]/route.ts
-
 import { NextResponse, type NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import path from 'path';
 
+// Forzar el runtime de Node.js, necesario para operaciones de sistema de archivos
 export const dynamic = 'force-dynamic';
 const BUCKET_NAME = 'Book_Completo_iZ_Management';
 
-// --- FUNCIÓN GET (Obtener URLs firmadas y rutas exactas) ---
+// --- FUNCIÓN GET (Obtener URLs firmadas y rutas de archivo) ---
 export async function GET(
   req: NextRequest,
-  context: { params: Promise<{ modelId: string }> } // El tipo correcto es Promise
+  context: { params: { modelId: string } }
 ) {
   try {
-    // --- CORRECCIÓN FINAL: Await params ---
-    // Resolvemos la promesa ANTES de acceder a modelId
-    const params = await context.params;
-    const modelId = params.modelId;
-    // --- FIN CORRECCIÓN FINAL ---
+    const modelId = context.params.modelId;
 
     const supabase = await createClient();
 
@@ -28,6 +23,7 @@ export async function GET(
       );
     }
 
+    // Inicializar variables
     let coverUrl: string | null = null;
     let compCardUrls: (string | null)[] = Array(4).fill(null);
     let portfolioUrl: string | null = null;
@@ -35,125 +31,67 @@ export async function GET(
     let portfolioPath: string | null = null;
     let compCardPaths: (string | null)[] = Array(4).fill(null);
 
-
-    // --- 1. Obtener la portada ---
-    const { data: coverList, error: coverListError } = await supabase
-      .storage
-      .from(BUCKET_NAME)
-      .list(`${modelId}/Portada/`, { limit: 1 });
-
-    if (coverListError) {
-      console.error(`❌ Error al listar portada para ${modelId}:`, coverListError);
-    } else if (coverList && coverList.length > 0) {
+    // 1. Obtener la portada
+    const { data: coverList, error: coverListError } = await supabase.storage.from(BUCKET_NAME).list(`${modelId}/Portada/`, { limit: 1 });
+    if (!coverListError && coverList && coverList.length > 0) {
       const actualCoverPath = `${modelId}/Portada/${coverList[0].name}`;
       coverPath = actualCoverPath;
-      const { data: coverSignedUrl, error: coverError } = await supabase
-        .storage
-        .from(BUCKET_NAME)
-        .createSignedUrl(actualCoverPath, 300);
-      if (coverError) {
-        console.error(`❌ Error al firmar URL de portada para ${modelId}:`, coverError);
-      } else {
-        coverUrl = coverSignedUrl?.signedUrl ?? null;
-      }
-    }
+      const { data: coverSignedUrl, error: coverError } = await supabase.storage.from(BUCKET_NAME).createSignedUrl(actualCoverPath, 300);
+      if (!coverError) coverUrl = coverSignedUrl?.signedUrl ?? null;
+      else console.error(`❌ Error al firmar URL de portada para ${modelId}:`, coverError);
+    } else if (coverListError) console.error(`❌ Error al listar portada para ${modelId}:`, coverListError);
 
-    // --- 2. Obtener la imagen de Portafolio ---
-    const { data: portfolioList, error: portfolioListError } = await supabase
-      .storage
-      .from(BUCKET_NAME)
-      .list(`${modelId}/Portfolio/`, { limit: 1 });
-
-    if (portfolioListError) {
-      console.error(`❌ Error al listar portafolio para ${modelId}:`, portfolioListError);
-    } else if (portfolioList && portfolioList.length > 0) {
+    // 2. Obtener la imagen de Portafolio
+    const { data: portfolioList, error: portfolioListError } = await supabase.storage.from(BUCKET_NAME).list(`${modelId}/Portfolio/`, { limit: 1 });
+    if (!portfolioListError && portfolioList && portfolioList.length > 0) {
       const actualPortfolioPath = `${modelId}/Portfolio/${portfolioList[0].name}`;
       portfolioPath = actualPortfolioPath;
-      const { data: portfolioSignedUrl, error: portfolioError } = await supabase
-        .storage
-        .from(BUCKET_NAME)
-        .createSignedUrl(actualPortfolioPath, 300);
-      if (portfolioError) {
-        console.error(`❌ Error al firmar URL de portafolio para ${modelId}:`, portfolioError);
-      } else {
-        portfolioUrl = portfolioSignedUrl?.signedUrl ?? null;
-      }
-    }
+      const { data: portfolioSignedUrl, error: portfolioError } = await supabase.storage.from(BUCKET_NAME).createSignedUrl(actualPortfolioPath, 300);
+      if (!portfolioError) portfolioUrl = portfolioSignedUrl?.signedUrl ?? null;
+      else console.error(`❌ Error al firmar URL de portafolio para ${modelId}:`, portfolioError);
+    } else if (portfolioListError) console.error(`❌ Error al listar portafolio para ${modelId}:`, portfolioListError);
 
-    // --- 3. Obtener contraportadas ---
-    const { data: fileList, error: listError } = await supabase
-      .storage
-      .from(BUCKET_NAME)
-      .list(`${modelId}/Contraportada/`, {
-        limit: 4,
-        sortBy: { column: 'name', order: 'asc' },
-      });
-
-    if (listError) {
-      console.error(`❌ Error al listar contraportadas para ${modelId}:`, listError);
-    }
-
-    if (fileList && fileList.length > 0) {
+    // 3. Obtener contraportadas
+    const { data: fileList, error: listError } = await supabase.storage.from(BUCKET_NAME).list(`${modelId}/Contraportada/`, { limit: 4, sortBy: { column: 'name', order: 'asc' } });
+    if (!listError && fileList && fileList.length > 0) {
       const filePaths = fileList.map(file => `${modelId}/Contraportada/${file.name}`);
-
       fileList.forEach(file => {
           const match = file.name.match(/comp_(\d+)/);
           if (match && match[1]) {
               const index = parseInt(match[1], 10);
-              if (index >= 0 && index < 4) {
-                  compCardPaths[index] = `${modelId}/Contraportada/${file.name}`;
-              }
+              if (index >= 0 && index < 4) compCardPaths[index] = `${modelId}/Contraportada/${file.name}`;
           }
       });
-
-      const { data: signedUrlsData, error: signedUrlError } = await supabase
-        .storage
-        .from(BUCKET_NAME)
-        .createSignedUrls(filePaths, 300);
-
-      if (signedUrlError) {
-        console.error(`❌ Error al firmar URLs de contraportada para ${modelId}:`, signedUrlError);
-      } else if (signedUrlsData) {
+      const { data: signedUrlsData, error: signedUrlError } = await supabase.storage.from(BUCKET_NAME).createSignedUrls(filePaths, 300);
+      if (!signedUrlError && signedUrlsData) {
         const urlMap = new Map(signedUrlsData.map(item => item && item.path ? [item.path, item.signedUrl] : [null, null]));
         compCardUrls = compCardPaths.map(path => path ? urlMap.get(path) ?? null : null);
-      }
-    }
+      } else if (signedUrlError) console.error(`❌ Error al firmar URLs de contraportada para ${modelId}:`, signedUrlError);
+    } else if (listError) console.error(`❌ Error al listar contraportadas para ${modelId}:`, listError);
+
+    // Asegurar que los arrays siempre tengan 4 elementos
     while (compCardUrls.length < 4) compCardUrls.push(null);
     while (compCardPaths.length < 4) compCardPaths.push(null);
     compCardUrls = compCardUrls.slice(0, 4);
     compCardPaths = compCardPaths.slice(0, 4);
 
-
-    return NextResponse.json({
-      success: true,
-      coverUrl,
-      portfolioUrl,
-      compCardUrls,
-      coverPath,
-      portfolioPath,
-      compCardPaths,
-    });
+    return NextResponse.json({ success: true, coverUrl, portfolioUrl, compCardUrls, coverPath, portfolioPath, compCardPaths });
 
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Ocurrió un error desconocido.';
     console.error('🔥 Error general en GET /api/models/[modelId]:', errorMessage);
-    return NextResponse.json(
-      { success: false, error: errorMessage },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: errorMessage }, { status: 500 });
   }
 }
 
 
 // --- FUNCIÓN POST (Subir/Actualizar Imagen) ---
-// Esta ya estaba corregida en la versión anterior, usando context y params
 export async function POST(
   request: NextRequest,
   context: { params: { modelId: string } }
 ) {
   try {
-    const { params } = context; // Aquí no necesita await porque el tipo es diferente
-    const modelId = params.modelId;
+    const modelId = context.params.modelId;
 
     const supabase = await createClient();
 
@@ -210,14 +148,12 @@ export async function POST(
 
 
 // --- FUNCIÓN DELETE (Eliminar Imagen) ---
-// Esta ya estaba corregida en la versión anterior, usando context y params
 export async function DELETE(
   request: NextRequest,
   context: { params: { modelId: string } }
 ) {
   try {
-    const { params } = context; // Aquí no necesita await
-    const modelId = params.modelId;
+    const modelId = context.params.modelId;
 
     const supabase = await createClient();
 

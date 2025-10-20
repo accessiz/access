@@ -116,14 +116,14 @@ async function runUpload() {
           successCount++;
           const { error: updateError } = await supabase
             .from('models')
-            .update({ gender: 'Female' })
+            .update({ gender: 'Male' })
             .eq('id', modelId);
 
           if (updateError) {
             console.warn(`✅ ÉXITO (Subida): ${file} -> ${storagePath}`);
             console.error(`   ❌ ERROR (Género): No se pudo actualizar el género para ${modelId}:`, updateError.message);
           } else {
-            console.log(`✅ ÉXITO: ${file} -> ${storagePath} (y actualizado a 'Female')`);
+            console.log(`✅ ÉXITO: ${file} -> ${storagePath} (y actualizado a 'Male')`);
           }
         }
       } catch (err) {
