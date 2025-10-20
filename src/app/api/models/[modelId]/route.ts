@@ -9,10 +9,12 @@ const BUCKET_NAME = 'Book_Completo_iZ_Management';
 // --- FUNCIÓN GET (Obtener URLs firmadas y rutas de archivo) ---
 export async function GET(
   req: NextRequest,
-  context: { params: { modelId: string } }
+  context: { params: Promise<{ modelId: string }> }
 ) {
   try {
-    const modelId = context.params.modelId;
+    // CORRECCIÓN: Resolvemos la promesa 'params' antes de usar sus propiedades
+    const params = await context.params;
+    const modelId = params.modelId;
 
     const supabase = await createClient();
 
@@ -88,10 +90,12 @@ export async function GET(
 // --- FUNCIÓN POST (Subir/Actualizar Imagen) ---
 export async function POST(
   request: NextRequest,
-  context: { params: { modelId: string } }
+  context: { params: Promise<{ modelId: string }> }
 ) {
   try {
-    const modelId = context.params.modelId;
+    // CORRECCIÓN: Resolvemos la promesa 'params'
+    const params = await context.params;
+    const modelId = params.modelId;
 
     const supabase = await createClient();
 
@@ -150,10 +154,12 @@ export async function POST(
 // --- FUNCIÓN DELETE (Eliminar Imagen) ---
 export async function DELETE(
   request: NextRequest,
-  context: { params: { modelId: string } }
+  context: { params: Promise<{ modelId: string }> }
 ) {
   try {
-    const modelId = context.params.modelId;
+    // CORRECCIÓN: Resolvemos la promesa 'params'
+    const params = await context.params;
+    const modelId = params.modelId;
 
     const supabase = await createClient();
 
