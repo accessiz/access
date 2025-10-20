@@ -131,11 +131,40 @@ export async function getModelsForProject(projectId: string): Promise<Model[]> {
     }];
   });
 
-  // --- SE ELIMINÓ EL BLOQUE Promise.all QUE CAUSABA EL N+1 ---
-  // Ya no generamos URLs firmadas aquí. El frontend usará la publicUrl.
+  // --- ENRIQUECER MODELOS CON coverUrl (lista la carpeta Portada y firma la URL) ---
+  // Esto hace que la API no dependa de nombres fijos como "cover.jpg".
+  const enriched = await Promise.all(
+    models.map(async (model) => {
+      try {
+        const { data: coverList, error: coverListError } = await supabase
+          .storage
+          .from(BUCKET_NAME)
+          .list(`${model.id}/Portada/`, { limit: 1 });
 
-  // Devolvemos los modelos directamente
-  return models;
+        let coverUrl: string | null = null;
+
+        if (coverList && !coverListError && coverList.length > 0) {
+          const actualFileName = coverList[0].name;
+          const imagePath = `${model.id}/Portada/${actualFileName}`;
+          const { data: signedUrlData, error: signedUrlError } = await supabase.storage.from(BUCKET_NAME).createSignedUrl(imagePath, 300);
+          if (!signedUrlError) {
+            coverUrl = signedUrlData?.signedUrl ?? null;
+          } else {
+            console.error(`Error signing URL for ${imagePath}:`, signedUrlError);
+          }
+        } else if (coverListError) {
+          console.error(`Error listing portada for ${model.id}:`, coverListError);
+        }
+
+        return { ...model, coverUrl };
+      } catch (err) {
+        console.error(`Unexpected error enriching model ${model.id}:`, err);
+        return { ...model, coverUrl: null };
+      }
+    })
+  );
+
+  return enriched;
 }
 
 // Función para obtener UN modelo específico para un proyecto (sin cambios, ya era eficiente)
