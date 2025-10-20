@@ -1,7 +1,7 @@
 'use client'
 
 // 1. Importamos 'FieldPath' además de los otros
-import { useFormContext, Controller, ControllerRenderProps, FieldValues, FieldPath } from 'react-hook-form'
+import { useFormContext, Controller, ControllerRenderProps, FieldPath } from 'react-hook-form'
 import { ModelFormData } from '@/lib/schemas'
 import { countries } from '@/lib/countries'
 import { genderOptions, eyeColorOptions, hairColorOptions, topSizeOptions, statusOptions } from '@/lib/options'

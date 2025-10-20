@@ -133,7 +133,7 @@ export async function DELETE(
   }
 
   // 2. Actualizar la tabla 'models' para quitar la ruta (setear a null)
-  let dbUpdateData: { [key: string]: any } = {};
+  let dbUpdateData: Record<string, string | null | (string[] | null)> = {};
 
   if (type === 'cover') {
     dbUpdateData = { cover_path: null };

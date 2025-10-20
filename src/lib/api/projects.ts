@@ -195,7 +195,7 @@ export async function getModelForProject(projectId: string, modelId: string): Pr
     return null;
   }
 
-  const model = modelData as unknown as Model;
+  // Converted model data to Model when needed later; no local 'model' variable required here.
 
   // --- NUEVO: leer rutas desde la relación y firmar en lote ---
   // Re-query para incluir cover_path/portfolio_path from the joined models
