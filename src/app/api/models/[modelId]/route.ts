@@ -1,6 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import path from 'path';
 
 // Forzar el runtime de Node.js, necesario para operaciones de sistema de archivos
 export const dynamic = 'force-dynamic';

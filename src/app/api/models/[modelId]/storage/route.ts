@@ -27,7 +27,7 @@ export async function POST(
 
   const extension = path.extname(file.name) || '.jpg';
   let filePath = '';
-  let dbUpdateData: { [key: string]: any } = {};
+  let dbUpdateData: Record<string, string | null | (string[] | null)> = {};
 
   if (type === 'cover') {
     filePath = `${modelId}/Portada/cover${extension}`;
@@ -54,7 +54,8 @@ export async function POST(
       return NextResponse.json({ error: 'No se pudo leer el modelo para actualizar.' }, { status: 500 });
     }
 
-    const newPaths = Array.isArray(modelData.comp_card_paths) ? [...modelData.comp_card_paths] : Array(4).fill(null);
+    const existingPaths = (modelData && (modelData as { comp_card_paths?: (string | null)[] }).comp_card_paths) || null;
+    const newPaths = Array.isArray(existingPaths) ? [...existingPaths] : Array(4).fill(null);
     newPaths[index] = filePath;
     dbUpdateData = { comp_card_paths: newPaths };
 
@@ -139,20 +140,21 @@ export async function DELETE(
   } else if (type === 'portfolio') {
     dbUpdateData = { portfolio_path: null };
   } else if (type === 'comp-card' && slotIndex !== null) {
-    const { data: modelData, error: fetchError } = await supabase
-      .from('models')
-      .select('comp_card_paths')
-      .eq('id', modelId)
-      .single();
+      const { data: modelData, error: fetchError } = await supabase
+        .from('models')
+        .select('comp_card_paths')
+        .eq('id', modelId)
+        .single();
 
-    if (fetchError) {
-      console.error('Error fetching model for array update:', fetchError);
-      return NextResponse.json({ error: 'No se pudo leer el modelo para actualizar.' }, { status: 500 });
-    }
+      if (fetchError) {
+        console.error('Error fetching model for array update:', fetchError);
+        return NextResponse.json({ error: 'No se pudo leer el modelo para actualizar.' }, { status: 500 });
+      }
     
-    const newPaths = Array.isArray(modelData.comp_card_paths) ? [...modelData.comp_card_paths] : Array(4).fill(null);
-    newPaths[slotIndex] = null; // Setea el slot específico a null
-    dbUpdateData = { comp_card_paths: newPaths };
+      const existingPaths = (modelData && (modelData as { comp_card_paths?: (string | null)[] }).comp_card_paths) || null;
+      const newPaths = Array.isArray(existingPaths) ? [...existingPaths] : Array(4).fill(null);
+      newPaths[slotIndex] = null; // Setea el slot específico a null
+      dbUpdateData = { comp_card_paths: newPaths };
   } else {
      return NextResponse.json({ error: 'Tipo de archivo o índice no válido para borrar' }, { status: 400 });
   }

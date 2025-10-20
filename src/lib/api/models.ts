@@ -76,7 +76,7 @@ export async function getModelsEnriched(searchParams: SearchParams) {
     }
   }
 
-  const enrichedData = rows.map((model: any) => ({
+  const enrichedData = rows.map((model: Model & { cover_path?: string | null }) => ({
     ...model,
     coverUrl: model.cover_path ? signedUrlMap.get(model.cover_path) || null : null,
   }));
