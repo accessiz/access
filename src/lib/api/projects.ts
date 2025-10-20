@@ -105,7 +105,11 @@ export async function getModelsForProject(projectId: string): Promise<Model[]> {
     .from('projects_models')
     .select(`
       client_selection,
-      models (*)
+      models (
+        *,
+        cover_path,
+        portfolio_path
+      )
     `)
     .eq('project_id', projectId);
 
@@ -131,38 +135,32 @@ export async function getModelsForProject(projectId: string): Promise<Model[]> {
     }];
   });
 
-  // --- ENRIQUECER MODELOS CON coverUrl (lista la carpeta Portada y firma la URL) ---
-  // Esto hace que la API no dependa de nombres fijos como "cover.jpg".
-  const enriched = await Promise.all(
-    models.map(async (model) => {
-      try {
-        const { data: coverList, error: coverListError } = await supabase
-          .storage
-          .from(BUCKET_NAME)
-          .list(`${model.id}/Portada/`, { limit: 1 });
+  // --- OPTIMIZACIÓN: leer rutas desde la DB y firmar en lote ---
+  // Recolectar rutas de los modelos obtenidos (cover_path, portfolio_path)
+  const pathsToSign: string[] = [];
+  const modelsWithPaths = models.map(m => m as Model & { cover_path?: string; portfolio_path?: string });
+  for (const m of modelsWithPaths) {
+    if (m.cover_path) pathsToSign.push(m.cover_path);
+    if (m.portfolio_path) pathsToSign.push(m.portfolio_path);
+  }
 
-        let coverUrl: string | null = null;
-
-        if (coverList && !coverListError && coverList.length > 0) {
-          const actualFileName = coverList[0].name;
-          const imagePath = `${model.id}/Portada/${actualFileName}`;
-          const { data: signedUrlData, error: signedUrlError } = await supabase.storage.from(BUCKET_NAME).createSignedUrl(imagePath, 300);
-          if (!signedUrlError) {
-            coverUrl = signedUrlData?.signedUrl ?? null;
-          } else {
-            console.error(`Error signing URL for ${imagePath}:`, signedUrlError);
-          }
-        } else if (coverListError) {
-          console.error(`Error listing portada for ${model.id}:`, coverListError);
-        }
-
-        return { ...model, coverUrl };
-      } catch (err) {
-        console.error(`Unexpected error enriching model ${model.id}:`, err);
-        return { ...model, coverUrl: null };
+  const signedUrlMap = new Map<string, string>();
+  if (pathsToSign.length > 0) {
+    const { data: signedUrlsData, error: signError } = await supabase.storage.from(BUCKET_NAME).createSignedUrls(pathsToSign, 300);
+    if (signError) {
+      console.error(`Error batch signing project model URLs:`, signError);
+    } else if (signedUrlsData) {
+      for (const item of signedUrlsData) {
+        if (item.path && item.signedUrl) signedUrlMap.set(item.path, item.signedUrl);
       }
-    })
-  );
+    }
+  }
+
+  const enriched = modelsWithPaths.map(model => ({
+    ...model,
+    coverUrl: model.cover_path ? signedUrlMap.get(model.cover_path) || null : null,
+    portfolioUrl: model.portfolio_path ? signedUrlMap.get(model.portfolio_path) || null : null,
+  }));
 
   return enriched;
 }
@@ -199,16 +197,55 @@ export async function getModelForProject(projectId: string, modelId: string): Pr
 
   const model = modelData as unknown as Model;
 
-  // Obtiene URLs firmadas para portada y portafolio (solo para este modelo específico)
-  const [coverUrlResult, portfolioUrlResult] = await Promise.all([
-    supabase.storage.from(BUCKET_NAME).createSignedUrl(`${model.id}/Portada/cover.jpg`, 300), // Asume cover.jpg
-    supabase.storage.from(BUCKET_NAME).createSignedUrl(`${model.id}/Portfolio/portfolio.jpg`, 300) // Asume portfolio.jpg
-  ]);
+  // --- NUEVO: leer rutas desde la relación y firmar en lote ---
+  // Re-query para incluir cover_path/portfolio_path from the joined models
+  const { data: projectModelDataWithPaths, error: pathError } = await supabase
+    .from('projects_models')
+    .select(`
+      client_selection,
+      models (
+        *,
+        cover_path,
+        portfolio_path
+      )
+    `)
+    .eq('project_id', projectId)
+    .eq('model_id', modelId)
+    .single();
+
+  if (pathError || !projectModelDataWithPaths) {
+    if (pathError && pathError.code !== 'PGRST116') console.error('Error fetching specific model for project (with paths):', projectId, modelId, pathError);
+    return null;
+  }
+
+  const modelDataWithPaths = projectModelDataWithPaths.models;
+  if (!modelDataWithPaths || Array.isArray(modelDataWithPaths) || typeof modelDataWithPaths !== 'object') {
+    console.warn(`Invalid specific model data for project ${projectId}, model ${modelId}:`, projectModelDataWithPaths);
+    return null;
+  }
+
+  const modelWithPaths = modelDataWithPaths as unknown as Model & { cover_path?: string; portfolio_path?: string };
+
+  const pathsToSign: string[] = [];
+  if (modelWithPaths.cover_path) pathsToSign.push(modelWithPaths.cover_path);
+  if (modelWithPaths.portfolio_path) pathsToSign.push(modelWithPaths.portfolio_path);
+
+  const signedUrlMap = new Map<string, string>();
+  if (pathsToSign.length > 0) {
+    const { data: signedUrlsData, error: signError } = await supabase.storage.from(BUCKET_NAME).createSignedUrls(pathsToSign, 300);
+    if (signError) {
+      console.error('Error signing URLs for single model:', signError);
+    } else if (signedUrlsData) {
+      for (const item of signedUrlsData) {
+        if (item.path && item.signedUrl) signedUrlMap.set(item.path, item.signedUrl);
+      }
+    }
+  }
 
   return {
-    ...model,
-    client_selection: projectModelData.client_selection ?? null,
-    coverUrl: coverUrlResult.error ? null : coverUrlResult.data?.signedUrl ?? null,
-    portfolioUrl: portfolioUrlResult.error ? null : portfolioUrlResult.data?.signedUrl ?? null,
+    ...modelWithPaths,
+    client_selection: projectModelDataWithPaths.client_selection ?? null,
+    coverUrl: modelWithPaths.cover_path ? signedUrlMap.get(modelWithPaths.cover_path) || null : null,
+    portfolioUrl: modelWithPaths.portfolio_path ? signedUrlMap.get(modelWithPaths.portfolio_path) || null : null,
   };
 }

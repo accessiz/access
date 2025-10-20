@@ -24,7 +24,7 @@ export async function getModelsEnriched(searchParams: SearchParams) {
 
   let queryBuilder = supabase
     .from('models')
-    .select('*', { count: 'exact' });
+    .select('*, cover_path', { count: 'exact' });
 
   if (searchParams.query) {
     const searchQuery = `${searchParams.query}%`;
@@ -56,39 +56,30 @@ export async function getModelsEnriched(searchParams: SearchParams) {
     throw new Error('Could not fetch models data.');
   }
 
-  const enrichedData = await Promise.all(
-    (data || []).map(async (model) => {
-      
-      const { data: coverList, error: coverListError } = await supabase
-        .storage
-        .from(BUCKET_NAME)
-        .list(`${model.id}/Portada/`, { limit: 1 });
+  // En lugar de listar Storage por cada modelo (N+1), recolectamos las rutas cover_path
+  // y las firmamos en lote con createSignedUrls.
+  const rows = data || [];
+  const pathsToSign: string[] = [];
+  for (const row of rows) {
+    if (row.cover_path) pathsToSign.push(row.cover_path);
+  }
 
-      let coverUrl: string | null = null;
-
-      if (coverList && !coverListError && coverList.length > 0) {
-        const actualFileName = coverList[0].name;
-        const imagePath = `${model.id}/Portada/${actualFileName}`;
-        
-        // --- LA CORRECCIÓN ESTÁ AQUÍ ---
-        // Se eliminó el "..." que sobraba
-        const { data: signedUrlData, error: signedUrlError } = await supabase
-          .storage
-          .from(BUCKET_NAME) 
-          .createSignedUrl(imagePath, 300); 
-
-        if (!signedUrlError) {
-          coverUrl = signedUrlData.signedUrl;
-        } else {
-          console.error(`Error firmando URL para ${imagePath}:`, signedUrlError);
-        }
-      } else if (coverListError) {
-        console.error(`Error listando portada para ${model.id}:`, coverListError);
+  const signedUrlMap = new Map<string, string>();
+  if (pathsToSign.length > 0) {
+    const { data: signedUrlsData, error: signError } = await supabase.storage.from(BUCKET_NAME).createSignedUrls(pathsToSign, 300);
+    if (signError) {
+      console.error('Error batch signing model covers:', signError);
+    } else if (signedUrlsData) {
+      for (const item of signedUrlsData) {
+        if (item.path && item.signedUrl) signedUrlMap.set(item.path, item.signedUrl);
       }
+    }
+  }
 
-      return { ...model, coverUrl: coverUrl };
-    })
-  );
+  const enrichedData = rows.map((model: any) => ({
+    ...model,
+    coverUrl: model.cover_path ? signedUrlMap.get(model.cover_path) || null : null,
+  }));
 
   return { data: enrichedData, count: count || 0 };
 }

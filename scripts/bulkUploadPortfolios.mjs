@@ -129,6 +129,11 @@ async function runUpload() {
           failedFiles.push({ file, reason: `Error de subida: ${uploadError.message}` });
         } else {
           console.log(`✅ ÉXITO: '${file}' reemplazado y subido a -> ${storagePath}`);
+          // Update DB cover path for this model (portfolio_path)
+          const { error: dbUpdateError } = await supabase.from('models').update({ portfolio_path: storagePath }).eq('id', modelId);
+          if (dbUpdateError) {
+            console.warn(`Warning: uploaded but failed to update DB for ${modelId}:`, dbUpdateError.message);
+          }
           successCount++;
         }
       } catch (err) {
