@@ -1,9 +1,8 @@
 'use client'
 
-// 1. Importamos 'useFormContext' y quitamos 'SubmitHandler'
-import { useFormContext, Controller } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { modelFormSchema, ModelFormData } from '@/lib/schemas'
+// 1. Importamos 'FieldPath' además de los otros
+import { useFormContext, Controller, ControllerRenderProps, FieldValues, FieldPath } from 'react-hook-form'
+import { ModelFormData } from '@/lib/schemas'
 import { countries } from '@/lib/countries'
 import { genderOptions, eyeColorOptions, hairColorOptions, topSizeOptions, statusOptions } from '@/lib/options'
 import { Input } from "@/components/ui/input"
@@ -14,24 +13,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Model } from '@/lib/types'
+// 'Model' no se está usando
 import { FormField } from '@/components/molecules/FormField'
 import { Combobox } from '@/components/ui/combobox'
 
 interface ModelFormProps {
-  model?: Model | null;
-  // 2. La prop 'onSubmit' se elimina
   isSubmitting: boolean;
 }
 
-// 3. 'onSubmit' se quita de las props
-export const ModelForm = ({ model, isSubmitting }: ModelFormProps) => {
+export const ModelForm = ({ isSubmitting }: ModelFormProps) => {
 
-  // 4. Todos los 'safeParseInt' e 'initialValues' se eliminan.
-  //    El hook 'useForm' también se elimina.
-
-  // 5. Usamos 'useFormContext' para obtener todo del padre
-  const { register, handleSubmit, control, watch, formState: { errors } } = useFormContext<ModelFormData>();
+  const { register, control, watch, formState: { errors } } = useFormContext<ModelFormData>();
   
   const selectedGender = watch('gender');
   
@@ -77,13 +69,23 @@ export const ModelForm = ({ model, isSubmitting }: ModelFormProps) => {
     />
   );
   
-  const handleNumericChange = (field: any, e: React.ChangeEvent<HTMLInputElement>) => {
+  // ✅ INICIO DE LA CORRECCIÓN
+  // El tipo del 'field' ahora usa 'ModelFormData' directamente,
+  // que es el tipo del 'useFormContext'.
+  const handleNumericChange = (
+    field: ControllerRenderProps<ModelFormData, FieldPath<ModelFormData>>,
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+  // ✅ FIN DE LA CORRECCIÓN
     const value = e.target.value;
+    if (value === '') {
+      field.onChange(null);
+      return;
+    }
     const parsed = parseInt(value, 10);
-    field.onChange(isNaN(parsed) ? undefined : parsed);
+    field.onChange(isNaN(parsed) ? null : parsed);
   };
 
-  // 6. La etiqueta <form> se elimina, ahora es un <div> (o un Fragment)
   return (
     <div className="space-y-16">
         <div className="space-y-4">
