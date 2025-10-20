@@ -56,6 +56,10 @@ export async function getModelsEnriched(searchParams: SearchParams) {
     throw new Error('Could not fetch models data.');
   }
 
+  // --- INICIO DEL CAMBIO ---
+  // Se elimina todo el bloque `Promise.all` que generaba las URLs firmadas.
+  // Esto era muy lento (problema N+1).
+  /*
   const enrichedData = await Promise.all(
     (data || []).map(async (model) => {
       
@@ -70,8 +74,6 @@ export async function getModelsEnriched(searchParams: SearchParams) {
         const actualFileName = coverList[0].name;
         const imagePath = `${model.id}/Portada/${actualFileName}`;
         
-        // --- LA CORRECCIÓN ESTÁ AQUÍ ---
-        // Se eliminó el "..." que sobraba
         const { data: signedUrlData, error: signedUrlError } = await supabase
           .storage
           .from(BUCKET_NAME) 
@@ -89,8 +91,12 @@ export async function getModelsEnriched(searchParams: SearchParams) {
       return { ...model, coverUrl: coverUrl };
     })
   );
+  */
 
-  return { data: enrichedData, count: count || 0 };
+  // Simplemente devolvemos los datos crudos. El frontend (`models-client-page`)
+  // usará la `publicUrl` como fallback, lo cual es instantáneo.
+  return { data: data || [], count: count || 0 };
+  // --- FIN DEL CAMBIO ---
 }
 
 export async function getModelById(id: string): Promise<Model | null> {
