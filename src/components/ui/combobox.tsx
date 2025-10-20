@@ -1,8 +1,6 @@
 "use client"
-
 import * as React from "react"
 import { Check, ChevronsUpDown } from "lucide-react"
-
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -37,16 +35,10 @@ export function Combobox({
   emptyMessage = "No results found" 
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false)
+  const [highlightedValue, setHighlightedValue] = React.useState<string | null>(null)
 
   return (
-    // --- INICIO DE LA CORRECCIÓN ---
-    // Añadimos la propiedad `modal={true}`.
-    // Esto fuerza al Popover a capturar el foco, resolviendo el conflicto
-    // de eventos con el Sheet (panel lateral) que lo contiene. Al ser modal,
-    // el Popover se convierte en el elemento interactivo principal, permitiendo
-    // el scroll y el clic en sus opciones sin que el panel de fondo interfiera.
     <Popover open={open} onOpenChange={setOpen} modal={true}>
-    {/* --- FIN DE LA CORRECCIÓN --- */}
       <PopoverTrigger asChild>
         <Button
           variant="outline"
@@ -66,24 +58,46 @@ export function Combobox({
           <CommandList>
             <CommandEmpty>{emptyMessage}</CommandEmpty>
             <CommandGroup>
-              {options.map((option) => (
-                <CommandItem
-                  key={option.value}
-                  value={option.label} // Se busca por la etiqueta visible
-                  onSelect={() => {
-                    onChange(option.value)
-                    setOpen(false)
-                  }}
-                >
-                  <Check
+              {options.map((option) => {
+                const isHighlighted = highlightedValue === option.value
+                const isSelected = value === option.value
+
+                return (
+                  <CommandItem
+                    key={option.value}
+                    value={option.label}
                     className={cn(
-                      "mr-2 h-4 w-4",
-                      value === option.value ? "opacity-100" : "opacity-0"
+                      "cursor-pointer",
+                      // ✅ FIX: Permite mouse events
+                      "[&_[data-disabled]]:pointer-events-auto",
+                      // ✅ Hover visual como flecha ↓
+                      isHighlighted && !isSelected && "bg-accent text-accent-foreground"
                     )}
-                  />
-                  {option.label}
-                </CommandItem>
-              ))}
+                    // ✅ MOUSE HOVER: Selección visual
+                    onMouseEnter={() => setHighlightedValue(option.value)}
+                    onMouseLeave={() => setHighlightedValue(null)}
+                    // ✅ MOUSE CLICK: Como Enter
+                    onClick={(e) => {
+                      e.preventDefault()
+                      onChange(option.value)
+                      setOpen(false)
+                    }}
+                    // ✅ TECLADO: onSelect nativo
+                    onSelect={() => {
+                      onChange(option.value)
+                      setOpen(false)
+                    }}
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        isSelected ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    {option.label}
+                  </CommandItem>
+                )
+              })}
             </CommandGroup>
           </CommandList>
         </Command>

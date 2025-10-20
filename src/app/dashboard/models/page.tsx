@@ -1,12 +1,8 @@
-import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import { getModelsEnriched } from '@/lib/api/models';
-import { Model } from '@/lib/types';
 import ModelsClientPage from './models-client-page';
+import { Model } from '@/lib/types';
 
-export const dynamic = 'force-dynamic';
-
-// Tipado para los datos iniciales
+// Definimos el tipo que el componente cliente espera para los datos iniciales
 type InitialData = {
   models: Model[];
   count: number;
@@ -14,55 +10,50 @@ type InitialData = {
   publicUrl: string;
 };
 
-export default async function ModelsPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
-}) {
-  // ✅ Resolvemos searchParams antes de usarlos
-  const resolvedParams = await searchParams;
-
+export default async function ModelsPage() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  
+  // --- CORRECCIÓN PRINCIPAL ---
+  // Se ha modificado la consulta para:
+  // 1. Usar 'height_cm' en lugar del antiguo 'height_m'.
+  // 2. Seleccionar todas las columnas necesarias para la vista de tabla ('country', 'instagram', etc.).
+  // 3. Añadir un límite inicial para que la carga de la primera página sea rápida.
+  const { data: models, error, count } = await supabase
+    .from('models')
+    .select('id, alias, full_name, status, gender, height_cm, country, instagram, tiktok, profile_completeness', { count: 'exact' })
+    .order('created_at', { ascending: false })
+    .limit(24); // Límite inicial, coincide con PAGE_SIZE en el cliente
 
-  if (!user) {
-    redirect('/login');
+  if (error) {
+    // Este console.error es el que te mostraba el error original.
+    console.error('Error fetching models:', error);
   }
+  
+  // --- MEJORAS ADICIONALES ---
+  // Obtenemos la URL pública del bucket de Supabase para construir las rutas de las imágenes.
+  const { data: { publicUrl } } = supabase.storage.from('Book_Completo_iZ_Management').getPublicUrl('');
 
-  // 1. Obtener los datos iniciales en el servidor
-  const params = {
-    query: resolvedParams.q as string || undefined,
-    country: resolvedParams.country as string || undefined,
-    minHeight: resolvedParams.minHeight as string || undefined,
-    maxHeight: resolvedParams.maxHeight as string || undefined,
-    sortKey: (resolvedParams.sort as keyof Model) || 'alias',
-    sortDir: (resolvedParams.dir as 'asc' | 'desc') || 'asc',
-    currentPage: Number(resolvedParams.page) || 1,
-    limit: 24, // Coincide con PAGE_SIZE del cliente
-  };
-
-  const { data: models, count } = await getModelsEnriched(params);
-
-  // Obtener países distintos
-  const { data: countryData } = await supabase
+  // Obtenemos la lista única de países directamente desde la base de datos para los filtros.
+  const { data: countriesData, error: countriesError } = await supabase
     .from('models')
     .select('country')
     .neq('country', null);
 
-  const distinctCountries = [...new Set(countryData?.map(item => item.country) || [])];
+  if (countriesError) {
+    console.error('Error fetching countries:', countriesError);
+  }
 
-  // Obtener URL pública del storage
-  const { data: urlData } = supabase.storage
-    .from('Book_Completo_iZ_Management')
-    .getPublicUrl('');
-
+  // Creamos una lista de países únicos sin repetidos ni nulos.
+  const countries = countriesData ? [...new Set(countriesData.map(c => c.country).filter(Boolean))] : [];
+  
+  // Construimos el objeto 'initialData' que el componente cliente espera.
   const initialData: InitialData = {
-    models,
-    count: count || 0,
-    countries: distinctCountries,
-    publicUrl: urlData.publicUrl,
+    models: (models as Model[]) ?? [],
+    count: count ?? 0,
+    countries: countries as string[],
+    publicUrl: publicUrl,
   };
 
-  // 2. Pasar los datos iniciales al componente cliente
+  // Pasamos el objeto 'initialData' completo al componente cliente.
   return <ModelsClientPage initialData={initialData} />;
 }

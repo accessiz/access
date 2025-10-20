@@ -4,15 +4,50 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { ModelFormData } from '@/lib/schemas';
-import { createModel } from '@/lib/actions/models';
 
+// 1. IMPORTACIONES NECESARIAS
+import { useForm, FormProvider } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { modelFormSchema, ModelFormData } from '@/lib/schemas';
+
+import { createModel } from '@/lib/actions/models';
 import { Button } from '@/components/ui/button';
 import { ModelForm } from '@/components/organisms/ModelForm';
 
 export default function NewModelPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // 2. INICIALIZAMOS 'useForm' AQUÍ (en el padre)
+  const form = useForm<ModelFormData>({
+    resolver: zodResolver(modelFormSchema),
+    // 3. Definimos los valores por defecto para un formulario vacío
+    defaultValues: {
+      alias: '',
+      full_name: '',
+      national_id: '',
+      gender: null,
+      birth_date: '',
+      country: null,
+      height_cm: null,
+      shoulders_cm: null,
+      chest_cm: null,
+      bust_cm: null,
+      waist_cm: null,
+      hips_cm: null,
+      top_size: null,
+      pants_size: null,
+      shoe_size_eu: null,
+      eye_color: null,
+      hair_color: null,
+      instagram: '',
+      tiktok: '',
+      email: '',
+      phone_e164: '',
+      status: 'active',
+      date_joined_agency: '',
+    },
+  });
 
   const handleSubmit: (data: ModelFormData) => Promise<void> = async (data) => {
     setIsSubmitting(true);
@@ -49,10 +84,16 @@ export default function NewModelPage() {
       </header>
 
       <div className="mx-auto">
-          <ModelForm
-              onSubmit={handleSubmit}
-              isSubmitting={isSubmitting}
-          />
+          {/* 4. ENVOLVEMOS 'ModelForm' CON 'FormProvider' Y '<form>' */}
+          <FormProvider {...form}>
+            <form id="model-create-form" onSubmit={form.handleSubmit(handleSubmit)}>
+              <ModelForm
+                  // No pasamos 'model' (porque es nuevo)
+                  isSubmitting={isSubmitting}
+                  // No pasamos 'onSubmit' (lo maneja el <form>)
+              />
+            </form>
+          </FormProvider>
       </div>
     </div>
   );

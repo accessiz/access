@@ -28,5 +28,9 @@ export default async function ModelProfilePage({ params }: PageProps) {
 
   const model = await getModelById(id);
 
+  if (!model) {
+    return <div>Modelo no encontrado</div>;
+  }
+
   return <ModelProfilePageClient initialModel={model} />;
 }

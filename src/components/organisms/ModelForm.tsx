@@ -1,6 +1,7 @@
 'use client'
 
-import { useForm, Controller, SubmitHandler } from 'react-hook-form'
+// 1. Importamos 'useFormContext' y quitamos 'SubmitHandler'
+import { useFormContext, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { modelFormSchema, ModelFormData } from '@/lib/schemas'
 import { countries } from '@/lib/countries'
@@ -15,60 +16,24 @@ import {
 } from "@/components/ui/select"
 import { Model } from '@/lib/types'
 import { FormField } from '@/components/molecules/FormField'
+import { Combobox } from '@/components/ui/combobox'
 
 interface ModelFormProps {
   model?: Model | null;
-  onSubmit: SubmitHandler<ModelFormData>;
+  // 2. La prop 'onSubmit' se elimina
   isSubmitting: boolean;
 }
 
-export const ModelForm = ({ model, onSubmit, isSubmitting }: ModelFormProps) => {
-  const formId = model ? "model-edit-form" : "model-create-form";
+// 3. 'onSubmit' se quita de las props
+export const ModelForm = ({ model, isSubmitting }: ModelFormProps) => {
 
-  // Helper para convertir de forma segura un string a número o null.
-  const safeParseInt = (value: string | number | null | undefined): number | null => {
-    if (value === null || value === undefined || value === '') return null;
-    const parsed = parseInt(String(value), 10);
-    return isNaN(parsed) ? null : parsed;
-  };
+  // 4. Todos los 'safeParseInt' e 'initialValues' se eliminan.
+  //    El hook 'useForm' también se elimina.
 
-  // === LA CORRECCIÓN CLAVE ESTÁ AQUÍ ===
-  // Creamos una variable para los valores iniciales del formulario.
-  // Esto resuelve la discrepancia entre el `string` de la DB y el `number` del formulario.
-  const initialValues: ModelFormData = {
-    alias: model?.alias || '',
-    full_name: model?.full_name || '',
-    national_id: model?.national_id || '',
-    gender: model?.gender || null,
-    birth_date: model?.birth_date ? new Date(model.birth_date).toISOString().split('T')[0] : '',
-    country: model?.country || null,
-    height_cm: model?.height_cm || null,
-    shoulders_cm: model?.shoulders_cm || null,
-    chest_cm: model?.chest_cm || null,
-    bust_cm: model?.bust_cm || null,
-    waist_cm: model?.waist_cm || null,
-    hips_cm: model?.hips_cm || null,
-    top_size: model?.top_size || null,
-    pants_size: safeParseInt(model?.pants_size), // Convertimos el string a número aquí
-    shoe_size_eu: model?.shoe_size_eu || null,
-    eye_color: model?.eye_color || null,
-    hair_color: model?.hair_color || null,
-    instagram: model?.instagram || '',
-    tiktok: model?.tiktok || '',
-    email: model?.email || '',
-    phone_number: model?.phone_number || '',
-    status: model?.status || 'active',
-    date_joined_agency: model?.date_joined_agency ? new Date(model.date_joined_agency).toISOString().split('T')[0] : '',
-  };
-
-  const { register, handleSubmit, control, formState: { errors } } = useForm<ModelFormData>({
-    resolver: zodResolver(modelFormSchema),
-    defaultValues: initialValues,
-  });
+  // 5. Usamos 'useFormContext' para obtener todo del padre
+  const { register, handleSubmit, control, watch, formState: { errors } } = useFormContext<ModelFormData>();
   
-  // ... (El resto del componente sigue igual)
-  // ...
-  // --- El resto del código del componente no necesita cambios ---
+  const selectedGender = watch('gender');
   
   const preventNonNumericInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
     const isControlKey = ['Backspace', 'Tab', 'ArrowLeft', 'ArrowRight', 'Delete', 'Enter', 'Home', 'End'].includes(e.key) || e.ctrlKey || e.metaKey;
@@ -89,6 +54,7 @@ export const ModelForm = ({ model, onSubmit, isSubmitting }: ModelFormProps) => 
     return error ? <p className="text-xs text-destructive mt-1">{error.message}</p> : null;
   };
 
+  // Helper para Inputs numéricos
   const NumericInputController = ({ name, control: formControl, placeholder }: { name: keyof ModelFormData, control: typeof control, placeholder?: string }) => (
     <Controller
       name={name}
@@ -110,35 +76,48 @@ export const ModelForm = ({ model, onSubmit, isSubmitting }: ModelFormProps) => 
       )}
     />
   );
+  
+  const handleNumericChange = (field: any, e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    const parsed = parseInt(value, 10);
+    field.onChange(isNaN(parsed) ? undefined : parsed);
+  };
 
+  // 6. La etiqueta <form> se elimina, ahora es un <div> (o un Fragment)
   return (
-    <form id={formId} onSubmit={handleSubmit(onSubmit)} className="space-y-16">
+    <div className="space-y-16">
         <div className="space-y-4">
             <h2 className="text-lg font-semibold">Información Básica</h2>
             <div className="border bg-card rounded-lg p-8 grid md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-6">
-                <FormField label="Alias *" htmlFor="alias">
-                  <Input id="alias" {...register("alias")} onKeyDown={preventNumericInput} disabled={isSubmitting} />
-                  <FieldError name="alias" />
-                </FormField>
                 <FormField label="Nombre Completo *" htmlFor="full_name">
-                  <Input id="full_name" {...register("full_name")} onKeyDown={preventNumericInput} disabled={isSubmitting} />
+                  <Input id="full_name" {...register("full_name")} onKeyDown={preventNumericInput} disabled={isSubmitting} placeholder="Nombre y apellidos legales" />
                   <FieldError name="full_name" />
+                </FormField>
+                <FormField label="Alias" htmlFor="alias">
+                  <Input id="alias" {...register("alias")} onKeyDown={preventNumericInput} disabled={isSubmitting} placeholder="Nombre más conocido" />
+                  <FieldError name="alias" />
                 </FormField>
                 <FormField label="Fecha de Nacimiento" htmlFor="birth_date">
                   <Input id="birth_date" type="date" {...register("birth_date")} disabled={isSubmitting} />
                   <FieldError name="birth_date" />
                 </FormField>
+                
                 <FormField label="País" htmlFor="country">
                   <Controller name="country" control={control} render={({ field }) => (
-                    <Select onValueChange={field.onChange} value={field.value || undefined} disabled={isSubmitting}>
-                      <SelectTrigger id="country"><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
-                      <SelectContent>{countries.map(c => (<SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>))}</SelectContent>
-                    </Select>
+                     <Combobox
+                        options={countries}
+                        value={field.value ?? ''}
+                        onChange={field.onChange}
+                        placeholder="Selecciona un país..."
+                        searchPlaceholder="Buscar país..."
+                        emptyMessage="No se encontró el país."
+                      />
                   )} />
                   <FieldError name="country" />
                 </FormField>
+
                 <FormField label="Documento ID" htmlFor="national_id">
-                  <Input id="national_id" {...register("national_id")} disabled={isSubmitting} />
+                  <Input id="national_id" {...register("national_id")} disabled={isSubmitting} placeholder="13 dígitos sin espacios..." />
                   <FieldError name="national_id" />
                 </FormField>
                 <FormField label="Género" htmlFor="gender">
@@ -156,30 +135,39 @@ export const ModelForm = ({ model, onSubmit, isSubmitting }: ModelFormProps) => 
         <div className="space-y-4">
             <h2 className="text-lg font-semibold">Medidas y Tallas</h2>
             <div className="border bg-card rounded-lg p-8 grid md:grid-cols-3 lg:grid-cols-4 gap-x-8 gap-y-6">
+                
                 <FormField label="Estatura (cm)" htmlFor="height_cm">
-                  <NumericInputController name="height_cm" control={control} />
+                  <NumericInputController name="height_cm" control={control} placeholder="183" />
                   <FieldError name="height_cm" />
                 </FormField>
                 <FormField label="Hombros (cm)" htmlFor="shoulders_cm">
-                  <NumericInputController name="shoulders_cm" control={control} />
+                  <NumericInputController name="shoulders_cm" control={control} placeholder="40" />
                   <FieldError name="shoulders_cm" />
                 </FormField>
-                <FormField label="Pecho (cm)" htmlFor="chest_cm">
-                  <NumericInputController name="chest_cm" control={control} />
-                  <FieldError name="chest_cm" />
-                </FormField>
-                <FormField label="Busto (cm)" htmlFor="bust_cm">
-                  <NumericInputController name="bust_cm" control={control} />
-                  <FieldError name="bust_cm" />
-                </FormField>
+
+                {selectedGender === 'Male' && (
+                  <FormField label="Pecho (cm)" htmlFor="chest_cm">
+                    <NumericInputController name="chest_cm" control={control} placeholder="98" />
+                    <FieldError name="chest_cm" />
+                  </FormField>
+                )}
+                {selectedGender === 'Female' && (
+                  <FormField label="Busto (cm)" htmlFor="bust_cm">
+                    <NumericInputController name="bust_cm" control={control} placeholder="90" />
+                    <FieldError name="bust_cm" />
+                  </FormField>
+                )}
+                
                 <FormField label="Cintura (cm)" htmlFor="waist_cm">
-                  <NumericInputController name="waist_cm" control={control} />
+                  <NumericInputController name="waist_cm" control={control} placeholder="72" />
                   <FieldError name="waist_cm" />
                 </FormField>
+                
                 <FormField label="Cadera (cm)" htmlFor="hips_cm">
-                  <NumericInputController name="hips_cm" control={control} />
+                  <NumericInputController name="hips_cm" control={control} placeholder="92" />
                   <FieldError name="hips_cm" />
                 </FormField>
+
                 <FormField label="Talla Superior" htmlFor="top_size">
                   <Controller name="top_size" control={control} render={({ field }) => (
                     <Select onValueChange={field.onChange} value={field.value || undefined} disabled={isSubmitting}>
@@ -189,12 +177,32 @@ export const ModelForm = ({ model, onSubmit, isSubmitting }: ModelFormProps) => 
                   )} />
                   <FieldError name="top_size" />
                 </FormField>
+                
                 <FormField label="Pantalón" htmlFor="pants_size">
-                  <NumericInputController name="pants_size" control={control} />
+                  <Controller name="pants_size" control={control} render={({ field }) => (
+                    <Input
+                      type="number"
+                      placeholder={selectedGender === 'Female' ? "4" : "32"}
+                      {...field}
+                      value={field.value ?? ''}
+                      onChange={(e) => handleNumericChange(field, e)}
+                      disabled={isSubmitting}
+                    />
+                  )} />
                   <FieldError name="pants_size" />
                 </FormField>
+                
                 <FormField label="Zapato (EU)" htmlFor="shoe_size_eu">
-                  <NumericInputController name="shoe_size_eu" control={control} />
+                   <Controller name="shoe_size_eu" control={control} render={({ field }) => (
+                    <Input
+                      type="number"
+                      placeholder={selectedGender === 'Female' ? "5" : "9"}
+                      {...field}
+                      value={field.value ?? ''}
+                      onChange={(e) => handleNumericChange(field, e)}
+                      disabled={isSubmitting}
+                    />
+                  )} />
                   <FieldError name="shoe_size_eu" />
                 </FormField>
             </div>
@@ -230,12 +238,13 @@ export const ModelForm = ({ model, onSubmit, isSubmitting }: ModelFormProps) => 
                   <FieldError name="tiktok" />
                 </FormField>
                 <FormField label="Email" htmlFor="email">
-                  <Input id="email" type="email" {...register("email")} disabled={isSubmitting} />
+                  <Input id="email" type="email" {...register("email")} disabled={isSubmitting} placeholder="correo@ejemplo.com" />
                   <FieldError name="email" />
                 </FormField>
-                <FormField label="Teléfono" htmlFor="phone_number">
-                    <Input id="phone_number" type="tel" {...register("phone_number")} disabled={isSubmitting} />
-                    <FieldError name="phone_number" />
+                
+                <FormField label="Teléfono*" htmlFor="phone_e164">
+                    <Input id="phone_e164" type="tel" {...register("phone_e164")} disabled={isSubmitting} placeholder="+50212345678" />
+                    <FieldError name="phone_e164" />
                 </FormField>
           </div>
         </div>
@@ -258,6 +267,6 @@ export const ModelForm = ({ model, onSubmit, isSubmitting }: ModelFormProps) => 
                   </FormField>
             </div>
         </div>
-    </form>
+    </div>
   );
 };

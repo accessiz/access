@@ -10,24 +10,25 @@ import { ArrowUp, ArrowDown, Download, ExternalLink } from 'lucide-react';
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from '@/components/ui/skeleton';
-import { ModelsToolbar } from '@/components/organisms/ModelsToolbar';
+import { ModelsToolbar } from '../../../components/organisms/ModelsToolbar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from "@/components/ui/pagination";
 import { Progress } from "@/components/ui/progress";
 
 const PAGE_SIZE = 24;
 
-type ModelWithCompletion = Model & { profile_completion?: number };
+type ModelWithCover = Model & { coverUrl?: string | null };
+
 type SortConfig = { key: keyof Model; direction: 'asc' | 'desc'; };
 type InitialData = {
-  models: ModelWithCompletion[];
+  models: ModelWithCover[];
   count: number;
   countries: string[];
   publicUrl: string;
 };
 
 export default function ModelsClientPage({ initialData }: { initialData: InitialData }) {
-  const [models, setModels] = useState<ModelWithCompletion[]>(initialData.models);
+  const [models, setModels] = useState<ModelWithCover[]>(initialData.models);
   const [count, setCount] = useState(initialData.count);
   const [countries] = useState<string[]>(initialData.countries);
   const [publicUrl] = useState(initialData.publicUrl);
@@ -168,7 +169,8 @@ export default function ModelsClientPage({ initialData }: { initialData: Initial
             <Card key={model.id} onClick={() => handleRowClick(model.id)} className="cursor-pointer hover:border-primary transition-colors group overflow-hidden">
               <div className="aspect-[3/4] relative bg-muted">
                 <Avatar className="h-full w-full rounded-none">
-                  <AvatarImage src={model.coverUrl || `${publicUrl}/${model.id}/Portada/cover.jpg`} className="object-cover group-hover:scale-105 transition-transform duration-300" />
+                  {/* Se usa la URL pública como fallback para las imágenes */}
+                  <AvatarImage src={model.coverUrl || `${publicUrl}${model.id}/Portada/cover.jpg`} className="object-cover group-hover:scale-105 transition-transform duration-300" />
                   <AvatarFallback className="rounded-none text-2xl bg-transparent">{model.alias?.substring(0, 2) || 'IZ'}</AvatarFallback>
                 </Avatar>
               </div>
@@ -189,6 +191,7 @@ export default function ModelsClientPage({ initialData }: { initialData: Initial
             <TableHead className="w-[80px]"></TableHead>
             <SortableHeader tkey="alias" label="Alias" />
             <SortableHeader tkey="country" label="País" />
+            {/* CORRECCIÓN: La clave para ordenar ahora es 'height_cm' */}
             <SortableHeader tkey="height_cm" label="Estatura" />
             <TableHead>Instagram</TableHead>
             <TableHead>TikTok</TableHead>
@@ -198,16 +201,17 @@ export default function ModelsClientPage({ initialData }: { initialData: Initial
           <TableBody>
             {models.map((model) => (
               <TableRow key={model.id} onClick={() => handleRowClick(model.id)} className="cursor-pointer">
-                <TableCell><Avatar><AvatarImage src={model.coverUrl || `${publicUrl}/${model.id}/Portada/cover.jpg`} /><AvatarFallback>{model.alias?.substring(0, 2) || 'IZ'}</AvatarFallback></Avatar></TableCell>
+                <TableCell><Avatar><AvatarImage src={model.coverUrl || `${publicUrl}${model.id}/Portada/cover.jpg`} /><AvatarFallback>{model.alias?.substring(0, 2) || 'IZ'}</AvatarFallback></Avatar></TableCell>
                 <TableCell className="font-medium">{model.alias}</TableCell>
                 <TableCell>{model.country}</TableCell>
+                {/* CORRECCIÓN: Se muestra 'height_cm' directamente, ya no se multiplica. */}
                 <TableCell>{model.height_cm ? `${model.height_cm} cm` : '-'}</TableCell>
                 <TableCell>{model.instagram ? <Link href={`https://instagram.com/${model.instagram}`} target="_blank" onClick={(e) => e.stopPropagation()} className="flex items-center gap-1.5 hover:underline text-muted-foreground hover:text-foreground">@{model.instagram} <ExternalLink className="h-3.5 w-3.5" /></Link> : '-'}</TableCell>
                 <TableCell>{model.tiktok ? <Link href={`https://tiktok.com/@${model.tiktok}`} target="_blank" onClick={(e) => e.stopPropagation()} className="flex items-center gap-1.5 hover:underline text-muted-foreground hover:text-foreground">@{model.tiktok} <ExternalLink className="h-3.5 w-3.5" /></Link> : '-'}</TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
-                    <Progress value={model.profile_completion || 0} className="w-20 h-1.5" />
-                    <span className="text-xs text-muted-foreground">{`${Math.round(model.profile_completion || 0)}%`}</span>
+                    <Progress value={model.profile_completeness || 0} className="w-20 h-1.5" />
+                    <span className="text-xs text-muted-foreground">{`${Math.round(model.profile_completeness || 0)}%`}</span>
                   </div>
                 </TableCell>
                 <TableCell className="text-right">

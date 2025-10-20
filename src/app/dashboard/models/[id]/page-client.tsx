@@ -1,199 +1,182 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { toast } from 'sonner';
-import { Model } from '../../../../lib/types';
-import { ModelFormData } from '../../../../lib/schemas';
-import { updateModel } from '../../../../lib/actions/models';
-import { type SubmitHandler } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+// 1. Importamos FormProvider
+import { useForm, FormProvider } from 'react-hook-form';
 import { Button } from '../../../../components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from "../../../../components/ui/avatar";
-import { ChevronLeft, FilePenLine } from 'lucide-react';
-import { DeleteModelDialog } from '../../../../components/organisms/DeleteModelDialog';
-import { ModelForm } from '../../../../components/organisms/ModelForm';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../../components/ui/card';
+import { modelFormSchema, ModelFormData } from '../../../../lib/schemas';
+import { Model } from '../../../../lib/types';
+import { updateModel } from '../../../../lib/actions/models';
+import { toast } from 'sonner';
+import { Grid } from '../../../../components/ui/grid';
 import { CompCardManager } from '../../../../components/organisms/CompCardManager';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from '@/components/ui/label';
-import { Skeleton } from '@/components/ui/skeleton';
+import { DeleteModelDialog } from '../../../../components/organisms/DeleteModelDialog';
+import Link from 'next/link';
+import { useState } from 'react';
+import { Pencil, Save, X } from 'lucide-react';
+import { ModelForm } from '../../../../components/organisms/ModelForm';
 
-const DataPoint = ({ label, value, children }: { label: string, value?: string | number | null, children?: React.ReactNode }) => (
-  <div className="flex flex-col gap-1.5">
-    <Label className="text-sm font-normal text-muted-foreground">{label}</Label>
-    {children ? (
-      <div className="text-foreground">{children}</div>
-    ) : (
-      <p className="text-foreground">{value || '—'}</p>
-    )}
+interface ModelProfileClientProps {
+  initialModel: Model;
+}
+
+// Componente para mostrar la información en modo de solo lectura
+const InfoDisplay = ({ label, value }: { label: string; value: string | number | null | undefined }) => (
+  <div className="space-y-1">
+    <p className="text-sm font-medium text-muted-foreground">{label}</p>
+    <p className="text-base">{value || '-'}</p>
   </div>
 );
 
-const StaticInfoDisplay = ({ model }: { model: Model }) => (
-  <div className="space-y-8">
-    <Card>
-      <CardHeader>
-        <CardTitle>Información Básica</CardTitle>
-        <CardDescription>Datos personales y de identificación.</CardDescription>
-      </CardHeader>
-      <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-8">
-        <DataPoint label="Nombre Completo" value={model.full_name} />
-        <DataPoint label="Fecha de Nacimiento" value={model.birth_date} />
-        <DataPoint label="País" value={model.country} />
-        <DataPoint label="Documento ID" value={model.national_id} />
-        <DataPoint label="Género" value={model.gender} />
-      </CardContent>
-    </Card>
-  </div>
-);
 
-const DangerZone = ({ modelId, modelAlias }: { modelId: string, modelAlias: string }) => (
-  <Card className="border-destructive">
-    <CardHeader>
-      <CardTitle className="text-destructive">Danger Zone</CardTitle>
-      <CardDescription>La acción en esta zona es permanente.</CardDescription>
-    </CardHeader>
-    <CardContent>
-      <div className="flex items-center justify-between rounded-lg border border-destructive bg-destructive/5 p-4">
-        <div>
-          <p className="font-semibold text-foreground">Eliminar este talento</p>
-          <p className="text-sm text-muted-foreground">Todos los datos se perderán.</p>
-        </div>
-        <DeleteModelDialog modelId={modelId} modelAlias={modelAlias}>
-          <Button variant="destructive">Eliminar</Button>
-        </DeleteModelDialog>
-      </div>
-    </CardContent>
-  </Card>
-);
-
-export default function ModelProfilePageClient({ initialModel }: { initialModel: Model | null }) {
+export default function ModelProfilePageClient({ initialModel }: ModelProfileClientProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [model, setModel] = useState(initialModel);
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [avatarLoading, setAvatarLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchAvatar = async () => {
-      if (!model?.id) return;
-      setAvatarLoading(true);
-
-      try {
-        const response = await fetch(`/api/models/${model.id}`);
-        let data: { success: boolean, coverUrl?: string | null } | null = null;
-
-        try {
-          data = await response.json();
-        } catch {
-          console.error('⚠️ Respuesta no era JSON o venía vacía');
-        }
-
-        if (!response.ok) {
-          console.error('❌ Error HTTP al obtener avatar:', response.status, data);
-          throw new Error(`Failed to fetch avatar (${response.status})`);
-        }
-
-        if (data?.success && data?.coverUrl) {
-          setAvatarUrl(`${data.coverUrl}&t=${Date.now()}`);
-        } else {
-          setAvatarUrl(null);
-        }
-
-      } catch (error) {
-        console.error('🚨 Error fetching avatar:', error);
-        setAvatarUrl(null);
-      } finally {
-        setAvatarLoading(false);
-      }
-    };
-
-    fetchAvatar();
-  }, [model?.id]);
-
-  if (!model) {
-    return (
-      <div className="text-center py-20">
-        <p>No se encontró el modelo.</p>
-      </div>
-    );
-  }
-
-  const handleSubmit: SubmitHandler<ModelFormData> = async (data) => {
-    setIsSubmitting(true);
-    const result = await updateModel(model.id, data);
-
-    if (result.success) {
-      toast.success('Perfil actualizado!');
-      const dataForState = { ...data, pants_size: data.pants_size !== null ? String(data.pants_size) : null };
-      setModel({ ...model, ...dataForState });
-      setIsEditing(false);
-    } else {
-      toast.error('Error al actualizar', { description: result.error });
-    }
-    setIsSubmitting(false);
+  // 2. El hook 'useForm' se queda aquí, en el padre.
+  const safeParseInt = (value: string | number | null | undefined): number | null => {
+    if (value === null || value === undefined || value === '') return null;
+    const parsed = parseInt(String(value), 10);
+    return isNaN(parsed) ? null : parsed;
   };
 
-  const fallbackText = model.alias?.substring(0, 2) || 'IZ';
+  const form = useForm<ModelFormData>({
+    resolver: zodResolver(modelFormSchema),
+    defaultValues: {
+      alias: initialModel.alias ?? '',
+      full_name: initialModel.full_name ?? '',
+      gender: initialModel.gender ?? null,
+      birth_date: initialModel.birth_date ?? '',
+      national_id: initialModel.national_id ?? '',
+      phone_e164: initialModel.phone_e164 ?? '',
+      email: initialModel.email ?? '',
+      country: initialModel.country ?? null,
+      height_cm: initialModel.height_cm ?? null,
+      shoulders_cm: initialModel.shoulders_cm ?? null,
+      chest_cm: initialModel.chest_cm ?? null,
+      bust_cm: initialModel.bust_cm ?? null,
+      waist_cm: initialModel.waist_cm ?? null,
+      hips_cm: initialModel.hips_cm ?? null,
+      top_size: initialModel.top_size ?? null,
+      pants_size: safeParseInt(initialModel.pants_size),
+      shoe_size_eu: initialModel.shoe_size_eu ?? null,
+      instagram: initialModel.instagram ?? '',
+      tiktok: initialModel.tiktok ?? '',
+      status: initialModel.status ?? 'active',
+      eye_color: initialModel.eye_color ?? '',
+      hair_color: initialModel.hair_color ?? '',
+      // Añadimos el campo que faltaba
+      date_joined_agency: initialModel.date_joined_agency ? new Date(initialModel.date_joined_agency).toISOString().split('T')[0] : '',
+    },
+  });
+
+  async function onSubmit(data: ModelFormData) {
+    const result = await updateModel(initialModel.id, data);
+    if (result.success) {
+      toast.success('Modelo actualizado correctamente.');
+      setIsEditing(false); 
+    } else {
+      toast.error('Error al actualizar el modelo', {
+        description: result.error,
+      });
+    }
+  }
+  
+  const { formState: { isSubmitting } } = form;
+
+  const handleCancel = () => {
+    form.reset(); 
+    setIsEditing(false);
+  }
 
   return (
     <div className="space-y-8">
-      <header className="flex items-start justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <Button variant="outline" size="icon" className="h-10 w-10 flex-shrink-0" asChild>
-            <Link href="/dashboard/models">
-              <ChevronLeft className="h-4 w-4" />
-              <span className="sr-only">Volver</span>
-            </Link>
-          </Button>
-
-          <div className="flex items-center gap-4">
-            {avatarLoading ? (
-              <Skeleton className="h-16 w-16 rounded-full hidden sm:flex" />
-            ) : (
-              <Avatar className="h-16 w-16 hidden sm:flex">
-                <AvatarImage src={avatarUrl || ''} alt={model.alias || 'Avatar'} />
-                <AvatarFallback className="text-xl">{fallbackText}</AvatarFallback>
-              </Avatar>
-            )}
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">{model.alias}</h1>
-              <p className="text-muted-foreground">{model.full_name}</p>
-            </div>
-          </div>
+       <header className="flex items-center justify-between gap-4 pb-6 border-b">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">
+            {isEditing ? `Editando Perfil de ${initialModel.alias || initialModel.full_name}` : `Perfil de ${initialModel.alias || initialModel.full_name}`}
+          </h1>
+          <p className="text-muted-foreground">
+            {isEditing ? 'Actualiza la información y las imágenes del talento.' : 'Visualiza la información del talento.'}
+          </p>
         </div>
-
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center gap-2">
           {isEditing ? (
             <>
-              <Button variant="outline" onClick={() => setIsEditing(false)} disabled={isSubmitting}>
-                Cancelar
+              <Button variant="outline" onClick={handleCancel}>
+                <X className="mr-2 h-4 w-4" /> Cancelar
               </Button>
               <Button form="model-edit-form" type="submit" disabled={isSubmitting}>
-                {isSubmitting ? 'Guardando...' : 'Guardar'}
+                <Save className="mr-2 h-4 w-4" /> 
+                {isSubmitting ? 'Guardando...' : 'Guardar Cambios'}
               </Button>
             </>
           ) : (
-            <Button onClick={() => setIsEditing(true)}>
-              <FilePenLine className="mr-2 h-4 w-4" />
-              Editar
-            </Button>
+            <>
+               <Button variant="outline" asChild>
+                <Link href="/dashboard/models">
+                   Volver
+                </Link>
+              </Button>
+              <DeleteModelDialog modelId={initialModel.id} modelAlias={initialModel.alias || 'este modelo'}>
+                  <Button variant="destructive">
+                    Eliminar Perfil
+                  </Button>
+              </DeleteModelDialog>
+              <Button onClick={() => setIsEditing(true)}>
+                <Pencil className="mr-2 h-4 w-4" /> Editar
+              </Button>
+            </>
           )}
         </div>
       </header>
-
-      <main className="mx-auto w-full space-y-12">
-        {isEditing ? (
-          <ModelForm model={model} onSubmit={handleSubmit} isSubmitting={isSubmitting} />
-        ) : (
-          <>
-            <StaticInfoDisplay model={model} />
-            <div className="grid gap-8">
-              <CompCardManager modelId={model.id} />
-            </div>
-            <DangerZone modelId={model.id} modelAlias={model.alias || 'este modelo'} />
-          </>
-        )}
-      </main>
+      
+      {isEditing ? (
+        // 3. Envolvemos el componente del formulario
+        <FormProvider {...form}>
+          <form id="model-edit-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <ModelForm
+                model={initialModel}
+                isSubmitting={isSubmitting}
+                // 4. La prop 'onSubmit' se elimina, ya la maneja el <form>
+            />
+          </form>
+        </FormProvider>
+      ) : (
+        // MODO VISTA: (Este se queda igual)
+        <div className="space-y-8">
+            <Card>
+                <CardHeader><CardTitle>Información Personal</CardTitle></CardHeader>
+                <CardContent>
+                    <Grid cols={3}>
+                        <InfoDisplay label="Nombre Completo" value={initialModel.full_name} />
+                        <InfoDisplay label="Alias" value={initialModel.alias} />
+                        <InfoDisplay label="Género" value={initialModel.gender} />
+                        <InfoDisplay label="DPI (CUI)" value={initialModel.national_id} />
+                        <InfoDisplay label="Teléfono" value={initialModel.phone_e164} />
+                        <InfoDisplay label="Email" value={initialModel.email} />
+                        <InfoDisplay label="País" value={initialModel.country} />
+                    </Grid>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader><CardTitle>Medidas y Tallas</CardTitle></CardHeader>
+                <CardContent>
+                    <Grid cols={3}>
+                        <InfoDisplay label="Estatura (cm)" value={initialModel.height_cm} />
+                        {initialModel.gender === 'Male' ? <InfoDisplay label="Pecho (cm)" value={initialModel.chest_cm} /> : <InfoDisplay label="Busto (cm)" value={initialModel.bust_cm} />}
+                        <InfoDisplay label="Cintura (cm)" value={initialModel.waist_cm} />
+                        <InfoDisplay label="Cadera (cm)" value={initialModel.hips_cm} />
+                        <InfoDisplay label="Talla Camisa/Blusa" value={initialModel.top_size} />
+                        <InfoDisplay label="Talla Pantalón" value={initialModel.pants_size} />
+                        <InfoDisplay label="Talla Zapato (EU)" value={initialModel.shoe_size_eu} />
+                    </Grid>
+                </CardContent>
+            </Card>
+        </div>
+      )}
+      
+      <CompCardManager modelId={initialModel.id} />
     </div>
   );
 }
