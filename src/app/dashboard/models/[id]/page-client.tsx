@@ -57,7 +57,7 @@ export default function ModelProfilePageClient({ initialModel }: ModelProfileCli
       hips_cm: initialModel.hips_cm ?? null,
       top_size: initialModel.top_size ?? null,
       pants_size: safeParseInt(initialModel.pants_size), // Asegúrate que initialModel tenga pants_size
-      shoe_size_eu: initialModel.shoe_size_eu ?? null,
+  shoe_size_us: initialModel.shoe_size_us ?? null,
       instagram: initialModel.instagram ?? '',
       tiktok: initialModel.tiktok ?? '',
       status: initialModel.status ?? 'active',
@@ -73,9 +73,18 @@ export default function ModelProfilePageClient({ initialModel }: ModelProfileCli
       toast.success('Modelo actualizado correctamente.');
       setIsEditing(false);
     } else {
-      toast.error('Error al actualizar el modelo', {
-        description: result.error,
-      });
+      // Si el servidor devuelve errores por campo, los aplicamos al formulario
+      if ((result as any).errors) {
+        const fieldErrors = (result as any).errors as Record<string, string>;
+        for (const key of Object.keys(fieldErrors)) {
+          form.setError(key as any, { type: 'server', message: fieldErrors[key] });
+        }
+        toast.error('Corrige los errores en el formulario.');
+      } else {
+        toast.error('Error al actualizar el modelo', {
+          description: result.error,
+        });
+      }
     }
   }
 
@@ -170,7 +179,7 @@ export default function ModelProfilePageClient({ initialModel }: ModelProfileCli
                         <InfoDisplay label="Cadera (cm)" value={initialModel.hips_cm} />
                         <InfoDisplay label="Talla Camisa/Blusa" value={initialModel.top_size} />
                         <InfoDisplay label="Talla Pantalón" value={initialModel.pants_size} />
-                        <InfoDisplay label="Talla Zapato (EU)" value={initialModel.shoe_size_eu} />
+                        <InfoDisplay label="Talla Zapato (US)" value={initialModel.shoe_size_us} />
                     </Grid>
                 </CardContent>
             </Card>

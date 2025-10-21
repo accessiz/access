@@ -53,7 +53,8 @@ export async function getModelsEnriched(searchParams: SearchParams) {
   const { data, error, count } = await queryBuilder;
   if (error) {
     console.error('Error fetching models:', error);
-    throw new Error('Could not fetch models data.');
+    // Return a safe empty response instead of throwing to avoid uncaught exceptions
+    return { data: [], count: 0 };
   }
 
   // En lugar de listar Storage por cada modelo (N+1), recolectamos las rutas cover_path
@@ -97,6 +98,7 @@ export async function getModelById(id: string): Promise<Model | null> {
     if (error.code !== 'PGRST116') {
       console.error(`Error fetching model ${id}:`, error);
     }
+    // Return null when not found or on error (caller should handle null)
     return null;
   }
 

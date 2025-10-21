@@ -194,18 +194,22 @@ export const ModelForm = ({ isSubmitting }: ModelFormProps) => {
                   <FieldError name="pants_size" />
                 </FormField>
                 
-                <FormField label="Zapato (EU)" htmlFor="shoe_size_eu">
-                   <Controller name="shoe_size_eu" control={control} render={({ field }) => (
-                    <Input
-                      type="number"
-                      placeholder={selectedGender === 'Female' ? "5" : "9"}
-                      {...field}
-                      value={field.value ?? ''}
-                      onChange={(e) => handleNumericChange(field, e)}
-                      disabled={isSubmitting}
-                    />
-                  )} />
-                  <FieldError name="shoe_size_eu" />
+                
+                <FormField label="Zapato (US)" htmlFor="shoe_size_us">
+                   <Controller name="shoe_size_us" control={control} render={({ field }) => {
+                     const sizes = Array.from({ length: Math.round((15 - 3.5) / 0.5) + 1 }, (_, i) => Number((3.5 + i * 0.5).toFixed(1)));
+                     return (
+                       <Select onValueChange={(v) => field.onChange(v === '' ? null : Number(v))} value={field.value ? String(field.value) : ''} disabled={isSubmitting}>
+                         <SelectTrigger id="shoe_size_us"><SelectValue placeholder="Seleccionar talla" /></SelectTrigger>
+                         <SelectContent>
+                           {sizes.map(s => (
+                             <SelectItem key={s} value={String(s)}>{s}</SelectItem>
+                           ))}
+                         </SelectContent>
+                       </Select>
+                     )
+                   }} />
+                  <FieldError name="shoe_size_us" />
                 </FormField>
             </div>
         </div>

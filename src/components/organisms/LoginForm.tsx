@@ -14,13 +14,24 @@ export function LoginForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    // Simple client-side validation for email format before calling signIn
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError('Correo inválido. Usa el formato: usuario@dominio.com');
+      return;
+    }
     try {
       await signIn(email, password);
     } catch (err: unknown) {
       const error = err as Error;
-      setError(error.message || 'Ocurrió un error al iniciar sesión.');
-      if (error.message.includes("Invalid login credentials")) {
-        setError("Correo o contraseña incorrectos.");
+      // Map common supabase errors to friendly messages
+      const msg = error.message || '';
+      if (msg.includes('Invalid login credentials') || msg.includes('Invalid credentials')) {
+        setError('Correo o contraseña incorrectos.');
+      } else if (msg.includes('confirmed')) {
+        setError('Tu cuenta necesita confirmación por correo. Revisa tu bandeja de entrada.');
+      } else {
+        setError('Ocurrió un error al iniciar sesión. Inténtalo de nuevo.');
       }
     }
   };

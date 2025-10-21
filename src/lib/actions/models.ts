@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { modelFormSchema, ModelFormData } from '@/lib/schemas'
 import { z } from 'zod'
+import { zodErrorToFieldErrors } from '@/lib/utils/zod'
 
 export async function createModel(data: ModelFormData) {
   // ✅ SOLUCIÓN: Añadimos 'await' al crear el cliente.
@@ -11,7 +12,7 @@ export async function createModel(data: ModelFormData) {
   const validation = modelFormSchema.safeParse(data);
   if (!validation.success) {
     console.error('Validation Error:', validation.error.flatten().fieldErrors);
-    return { success: false, error: 'Los datos enviados no son válidos.' };
+    return { success: false, error: 'Los datos enviados no son válidos.', errors: zodErrorToFieldErrors(validation.error) };
   }
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) { return { success: false, error: 'No se pudo autenticar al usuario.' }; }
@@ -33,7 +34,7 @@ export async function updateModel(modelId: string, data: ModelFormData) {
   const validation = modelFormSchema.safeParse(data);
   if (!validation.success) {
     console.error('Validation Error:', validation.error.flatten().fieldErrors);
-    return { success: false, error: 'Los datos enviados no son válidos.' };
+    return { success: false, error: 'Los datos enviados no son válidos.', errors: zodErrorToFieldErrors(validation.error) };
   }
   const { error } = await supabase.from('models').update(validation.data).eq('id', modelId);
   if (error) {

@@ -31,6 +31,9 @@ export function ProjectForm() {
     password: ''
   });
 
+  // Extract field-level errors returned by the action (if any)
+  const fieldErrors = (state as any)?.errors as Record<string, string> | undefined;
+
   useEffect(() => {
     if (state?.error) {
       toast.error('Error al crear el proyecto', {
@@ -92,6 +95,7 @@ export function ProjectForm() {
               // Limpiamos el valor si el formulario tuvo éxito (evita repetición tras redirect)
               key={state.success ? 'success' : 'form'}
             />
+            {fieldErrors?.project_name && <p className="text-xs text-destructive mt-1">{fieldErrors.project_name}</p>}
           </div>
 
           <div className="space-y-2">
@@ -103,6 +107,7 @@ export function ProjectForm() {
               defaultValue={formValues.client_name || undefined}
               key={state.success ? 'success' : 'form'}
             />
+            {fieldErrors?.client_name && <p className="text-xs text-destructive mt-1">{fieldErrors.client_name}</p>}
           </div>
 
           <div className="space-y-2 md:col-span-2">
@@ -115,6 +120,7 @@ export function ProjectForm() {
               defaultValue={formValues.description || undefined}
               key={state.success ? 'success' : 'form'}
             />
+            {fieldErrors?.description && <p className="text-xs text-destructive mt-1">{fieldErrors.description}</p>}
           </div>
 
           <div className="space-y-2">
@@ -127,6 +133,7 @@ export function ProjectForm() {
               defaultValue={formValues.password || undefined}
               key={state.success ? 'success' : 'form'}
             />
+            {fieldErrors?.password && <p className="text-xs text-destructive mt-1">{fieldErrors.password}</p>}
             <p className="text-xs text-muted-foreground">
               Si dejas esto en blanco, el enlace será público.
             </p>

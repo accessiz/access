@@ -29,7 +29,7 @@ export interface Model {
   // Tallas (Nombres y tipos estandarizados)
   top_size?: string | null;
   pants_size?: number | null;
-  shoe_size_eu?: number | null; // Nombre y tipo corregidos
+  shoe_size_us?: number | null; // Talla US (acepta medias tallas)
 
   // Redes Sociales
   instagram?: string | null;

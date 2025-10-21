@@ -5,6 +5,7 @@ import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { Model } from '@/lib/types';
 import { toast } from "sonner";
+import { fetchSafe } from '@/lib/utils/fetchSafe';
 import { ArrowUp, ArrowDown, Download, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -77,15 +78,22 @@ export default function ModelsClientPage({ initialData }: { initialData: Initial
       const apiUrl = `/api/models?${params.toString()}`;
 
       try {
-        const response = await fetch(apiUrl);
-        if (!response.ok) throw new Error('No se pudieron cargar los datos desde la API.');
-
-        const { data, count: newCount } = await response.json();
-        setModels(data || []);
-        setCount(newCount || 0);
+        const res = await fetchSafe<{ data?: any; count?: number }>(apiUrl);
+        if (!res.ok) {
+          console.error('Error fetching models on client:', res.error);
+          toast.error(res.error || 'Error al cargar los talentos');
+          setModels([]);
+          setCount(0);
+        } else {
+          const { data, count: newCount } = res.json || {};
+          setModels(data || []);
+          setCount(newCount || 0);
+        }
       } catch (error) {
         console.error("Error fetching models on client:", error);
         toast.error("Error al cargar los talentos");
+        setModels([]);
+        setCount(0);
       } finally {
         setLoading(false);
       }

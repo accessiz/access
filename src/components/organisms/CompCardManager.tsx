@@ -7,6 +7,7 @@ import { UploadCloud, Trash2, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import Image from 'next/image';
+import { fetchSafe } from '@/lib/utils/fetchSafe';
 
 interface CompCardManagerProps {
   modelId: string;
@@ -87,11 +88,11 @@ export function CompCardManager({ modelId }: CompCardManagerProps) {
     const loadImages = async () => {
       if (!modelId) return;
       setIsLoading(true);
-      try {
-        const response = await fetch(`/api/models/${modelId}`);
-        const data: ApiImageData = await response.json(); // Usar el tipo definido
+            try {
+                const res = await fetchSafe<ApiImageData>(`/api/models/${modelId}`);
+                const data = res.json;
 
-        if (data.success) {
+                if (res.ok && data && data.success) {
           // Guardar URLs para visualización
           setCoverUrl(data.coverUrl || null);
           setPortfolioUrl(data.portfolioUrl || null);
@@ -107,7 +108,14 @@ export function CompCardManager({ modelId }: CompCardManagerProps) {
           setCompCardPaths(Array(4).fill(null).map((_, i) => fetchedCompPaths[i] || null));
 
         } else {
-            throw new Error(data.error || 'No se pudieron interpretar los datos de las imágenes.');
+            const msg = res.error || data?.error || 'No se pudieron interpretar los datos de las imágenes.';
+            console.error('CompCardManager loadImages error:', msg);
+            toast.error(msg);
+            // Reset states below
+            setCoverUrl(null); setPortfolioUrl(null); setCompCardUrls([null, null, null, null]);
+            setCoverPath(null); setPortfolioPath(null); setCompCardPaths([null, null, null, null]);
+            setIsLoading(false);
+            return;
         }
       } catch (error) {
         console.error("Error al cargar imágenes:", error);
@@ -144,11 +152,14 @@ export function CompCardManager({ modelId }: CompCardManagerProps) {
 
         try {
             // Llamar a la API de subida
-            const response = await fetch(`/api/models/${modelId}/storage`, { method: 'POST', body: formData });
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.error || 'Respuesta no válida del servidor');
-            toast.success('Imagen subida correctamente.');
-            await loadImages(); // Recargar datos después de subir exitosamente
+            const res = await fetchSafe(`/api/models/${modelId}/storage`, { method: 'POST', body: formData });
+            if (!res.ok) {
+                console.error('Upload error:', res.error);
+                toast.error(res.error || 'Respuesta no válida del servidor');
+            } else {
+                toast.success('Imagen subida correctamente.');
+                await loadImages(); // Recargar datos después de subir exitosamente
+            }
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : 'Ocurrió un error.';
             toast.error('Error al subir la imagen', { description: message });
@@ -184,19 +195,22 @@ export function CompCardManager({ modelId }: CompCardManagerProps) {
 
         try {
             // Llamar a la API de borrado enviando la ruta exacta
-                        const response = await fetch(`/api/models/${modelId}/storage`, {
-                                method: 'DELETE',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ 
-                                    filePath: filePathToDelete,
-                                    type: type,
-                                    slotIndex: slotIndex !== undefined ? String(slotIndex) : undefined
-                                }),
-                        });
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.error || 'Respuesta no válida del servidor');
-            toast.success('Imagen eliminada.');
-            await loadImages(); // Recargar datos después de borrar exitosamente
+            const res = await fetchSafe(`/api/models/${modelId}/storage`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    filePath: filePathToDelete,
+                    type: type,
+                    slotIndex: slotIndex !== undefined ? String(slotIndex) : undefined
+                }),
+            });
+            if (!res.ok) {
+                console.error('Delete error:', res.error);
+                toast.error(res.error || 'Respuesta no válida del servidor');
+            } else {
+                toast.success('Imagen eliminada.');
+                await loadImages(); // Recargar datos después de borrar exitosamente
+            }
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : 'Ocurrió un error.';
             toast.error('Error al eliminar la imagen', { description: message });

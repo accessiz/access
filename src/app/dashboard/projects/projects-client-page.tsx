@@ -5,6 +5,7 @@ import { useSearchParams, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { Project } from '@/lib/types';
 import { toast } from "sonner";
+import { fetchSafe } from '@/lib/utils/fetchSafe';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -59,11 +60,17 @@ export default function ProjectsClientPage({ initialProjects, initialCount }: In
             const apiUrl = `/api/projects?${params.toString()}`;
 
             try {
-                const response = await fetch(apiUrl);
-                if (!response.ok) throw new Error('Failed to fetch projects');
-                const { data, count: newCount } = await response.json();
-                setProjects(data || []);
-                setCount(newCount || 0);
+                const res = await fetchSafe<{ data?: any; count?: number }>(apiUrl);
+                if (!res.ok) {
+                    console.error('Failed to fetch projects:', res.error);
+                    toast.error(res.error || 'Failed to fetch projects');
+                    setProjects([]);
+                    setCount(0);
+                } else {
+                    const { data, count: newCount } = res.json || {};
+                    setProjects(data || []);
+                    setCount(newCount || 0);
+                }
             } catch {
                 toast.error("Error al cargar los proyectos.");
             } finally {

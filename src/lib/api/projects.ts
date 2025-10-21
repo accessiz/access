@@ -68,7 +68,8 @@ export async function getProjectsForUser(searchParams: SearchParams = {}) {
 
   if (error) {
     console.error('Error fetching projects:', error);
-    throw new Error('Could not fetch projects data.');
+    // Avoid throwing in server helper; return safe empty result for callers
+    return { data: [], count: 0 };
   }
 
   return { data: data || [], count: count || 0 };

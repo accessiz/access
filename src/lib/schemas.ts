@@ -24,9 +24,19 @@ const optionalStringWithRegex = (regex: RegExp, message: string) =>
   z.preprocess(emptyToNull, z.string().regex(regex, message).nullable());
 // Esquema para un campo numérico opcional y positivo
 const optionalPositiveNumber = z.preprocess(
-  emptyToNull, 
-  z.coerce.number().positive("Debe ser un número positivo.").nullable()
+  emptyToNull,
+  z.coerce.number().positive("El valor debe ser un número positivo.").nullable()
 );
+// Lista de tallas US para el dropdown: desde 3.5 hasta 15 en incrementos de 0.5
+const usShoeSizes: number[] = Array.from(
+  { length: Math.round((15 - 3.5) / 0.5) + 1 },
+  (_, i) => Number((3.5 + i * 0.5).toFixed(1))
+);
+
+// Esquema para talla US: sólo permite valores exactos de la lista
+const optionalUSSize = z.preprocess(emptyToNull, z.coerce.number().refine((v) => usShoeSizes.includes(Number(v)), {
+  message: 'Selecciona una talla válida (US).'
+}).nullable());
 // Esquema para un campo enum opcional
 const optionalEnum = <T extends [string, ...string[]]>(values: T) => 
   z.preprocess(emptyToNull, z.enum(values).nullable());
@@ -34,12 +44,12 @@ const optionalEnum = <T extends [string, ...string[]]>(values: T) =>
 
 export const modelFormSchema = z.object({
   // --- CAMPOS OBLIGATORIOS ---
-  full_name: z.string().min(3, "El nombre completo es obligatorio."),
-  phone_e164: z.string().min(1, "El teléfono es obligatorio.").regex(phoneRegex, "El teléfono debe empezar con + (ej: +502...)."),
-  email: z.string().min(1, "El email es obligatorio.").email("El formato del email no es válido."),
+  full_name: z.string().min(3, "El nombre completo es obligatorio. Ej: Juan Pérez"),
+  phone_e164: z.string().min(1, "El teléfono es obligatorio.").regex(phoneRegex, "Ingresa el teléfono en formato internacional, por ejemplo: +50212345678"),
+  email: z.string().min(1, "El email es obligatorio.").email("El formato del correo no es válido. Ej: usuario@dominio.com"),
 
   // --- CAMPOS OPCIONALES ---
-  alias: optionalStringWithRegex(nameRegex, "El alias solo puede contener letras y espacios."),
+  alias: optionalStringWithRegex(nameRegex, "El alias solo puede contener letras, espacios y apóstrofes. Ej: Ana María"),
   national_id: optionalString,
   gender: optionalEnum(['Male', 'Female', 'Non-binary']),
   birth_date: optionalString,
@@ -53,7 +63,7 @@ export const modelFormSchema = z.object({
   bust_cm: optionalPositiveNumber,
   waist_cm: optionalPositiveNumber,
   hips_cm: optionalPositiveNumber,
-  shoe_size_eu: optionalPositiveNumber,
+  shoe_size_us: optionalUSSize,
   pants_size: optionalPositiveNumber,
   
   top_size: optionalString,

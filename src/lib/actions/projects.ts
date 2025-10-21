@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { projectFormSchema } from '../schemas/projects';
+import { zodErrorToFieldErrors } from '@/lib/utils/zod';
 import { z } from 'zod';
 import { Project } from '@/lib/types';
 import { cookies } from 'next/headers';
@@ -12,6 +13,7 @@ type FormState = {
   error: string | null;
   success: boolean;
   data?: Record<string, FormDataEntryValue | undefined>;
+  errors?: Record<string, string>;
 };
 
 export async function createProject(prevState: FormState, formData: FormData): Promise<FormState> {
@@ -21,9 +23,9 @@ export async function createProject(prevState: FormState, formData: FormData): P
   const rawData = Object.fromEntries(formData.entries());
   const validation = projectFormSchema.safeParse(rawData);
   if (!validation.success) {
-    const fieldErrors = validation.error.flatten().fieldErrors;
+    const fieldErrors = zodErrorToFieldErrors(validation.error);
     const errorMessage = Object.values(fieldErrors).flat().join('. ');
-    return { success: false, error: errorMessage || 'Los datos enviados no son válidos.', data: rawData };
+    return { success: false, error: errorMessage || 'Los datos enviados no son válidos.', data: rawData, errors: fieldErrors };
   }
   const { password, ...projectData } = validation.data;
   const dataToInsert = { ...projectData, password: password || null, user_id: user.id };

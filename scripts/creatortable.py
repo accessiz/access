@@ -74,7 +74,7 @@ def clean_and_transform_data(df, nationality):
         'hips_cm': get_column_by_keyword(df, ['cadera']),
         'top_size': get_column_by_keyword(df, ['blusa', 'playera']),
         'pants_size': get_column_by_keyword(df, ['pantalon']),
-        'shoe_size_eu': get_column_by_keyword(df, ['zapato']),
+    'shoe_size_us': get_column_by_keyword(df, ['zapato']),
         'email': get_column_by_keyword(df, ['correo', 'email']),
         'instagram': get_column_by_keyword(df, ['instagram']),
         'tiktok': get_column_by_keyword(df, ['tiktok']),
@@ -95,7 +95,7 @@ def clean_and_transform_data(df, nationality):
         axis=1
     )
 
-    numeric_cols = ['height_cm', 'shoulders_cm', 'chest_cm', 'bust_cm', 'waist_cm', 'hips_cm', 'shoe_size_eu']
+    numeric_cols = ['height_cm', 'shoulders_cm', 'chest_cm', 'bust_cm', 'waist_cm', 'hips_cm', 'shoe_size_us']
     for col in numeric_cols:
         clean_df[col] = clean_df[col].apply(clean_numeric_value)
         if col == 'height_cm':
@@ -117,7 +117,7 @@ def clean_and_transform_data(df, nationality):
     final_columns = [
         'alias', 'full_name', 'national_id', 'status', 'gender', 'birth_date', 'nationality',
         'height_cm', 'shoulders_cm', 'chest_cm', 'bust_cm', 'waist_cm', 'hips_cm',
-        'top_size', 'pants_size', 'shoe_size_eu', 'eye_color', 'hair_color',
+    'top_size', 'pants_size', 'shoe_size_us', 'eye_color', 'hair_color',
         'instagram', 'tiktok', 'email', 'phone_number', 'date_joined_agency'
     ]
     
