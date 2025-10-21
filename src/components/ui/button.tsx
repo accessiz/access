@@ -45,16 +45,25 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     const Comp = asChild ? Slot : "button"
 
     // When rendering a native <button>, default to type="button"
-    // unless a type was explicitly provided. This prevents accidental
-    // form submissions when buttons are placed inside or near forms.
-    const nativeProps = Comp === "button" ? { type: (type as any) ?? "button" } : {};
+    // unless a type was explicitly provided. Use a properly typed
+    // Partial of Button attributes to avoid 'any' casts.
+    const nativeProps: Partial<React.ButtonHTMLAttributes<HTMLButtonElement>> =
+      Comp === "button"
+        ? { type: (type ?? "button") as React.ButtonHTMLAttributes<HTMLButtonElement>["type"] }
+        : {};
+
+    // The 'props' value already respects ButtonProps which extends the
+    // native button attributes. Narrow it to the native type so we can
+    // safely spread without using 'any'. When Comp is Slot (asChild), the
+    // Slot component will accept these props as children attributes.
+    const restProps = props as unknown as React.ButtonHTMLAttributes<HTMLButtonElement>;
 
     return (
       <Comp
         className={cn(buttonVariants({ variant, size, className }))}
         ref={ref}
         {...nativeProps}
-        {...(props as any)}
+        {...restProps}
       />
     )
   }
