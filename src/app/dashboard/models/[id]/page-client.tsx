@@ -123,12 +123,7 @@ export default function ModelProfilePageClient({ initialModel }: ModelProfileCli
                    Volver
                 </Link>
               </Button>
-              {/* Botón Eliminar (con flex-grow para móvil) */}
-              <DeleteModelDialog modelId={initialModel.id} modelAlias={initialModel.alias || 'este modelo'}>
-                  <Button variant="destructive" className="flex-grow md:flex-grow-0">
-                    Eliminar Perfil
-                  </Button>
-              </DeleteModelDialog>
+                  {/* Eliminar Perfil: moved to Danger Zone at the bottom */}
               {/* Botón Editar (con flex-grow para móvil) */}
               <Button onClick={() => setIsEditing(true)} className="flex-grow md:flex-grow-0">
                 <Pencil className="mr-2 h-4 w-4" /> Editar
@@ -183,6 +178,24 @@ export default function ModelProfilePageClient({ initialModel }: ModelProfileCli
       )}
 
       <CompCardManager modelId={initialModel.id} />
+
+      {/* Danger Zone: eliminar modelo (moved from header) */}
+      <div
+        className="rounded-lg p-6 mt-6"
+        style={{
+          backgroundColor: 'rgb(var(--background))',
+          border: '1px solid',
+          borderColor: 'rgb(var(--destructive))',
+        }}
+      >
+        <h3 className="text-lg font-semibold" style={{ color: 'rgb(var(--destructive))' }}>Zona de peligro</h3>
+        <p className="text-sm text-muted-foreground mt-2">Eliminar este modelo es irreversible. Se borrarán los datos y archivos asociados.</p>
+        <div className="mt-4">
+          <DeleteModelDialog modelId={initialModel.id} modelAlias={initialModel.alias || 'este modelo'}>
+            <Button variant="destructive">Eliminar Modelo</Button>
+          </DeleteModelDialog>
+        </div>
+      </div>
     </div>
   );
 }
