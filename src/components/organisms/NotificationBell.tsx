@@ -9,7 +9,7 @@ type Activity = { id: string; type: string; title: string; when: string; meta?: 
 export default function NotificationBell({ showDotOnly = true }: { showDotOnly?: boolean }) {
   const [activity, setActivity] = useState<Activity[]>([]);
   const [unseen, setUnseen] = useState<number>(0);
-  const [open, setOpen] = useState(false);
+  // 'open' y 'setOpen' se eliminaron porque no se usaban.
 
   useEffect(() => {
     let mounted = true;
@@ -35,8 +35,8 @@ export default function NotificationBell({ showDotOnly = true }: { showDotOnly?:
   };
 
   // mark seen when popover opens
+  // CORRECCIÓN: La función ahora solo recibe 'isOpen'
   const handleOpenChange = (isOpen: boolean) => {
-    setOpen(isOpen);
     if (isOpen) {
       // mark seen automatically when opening
       markAllSeen();
@@ -44,7 +44,8 @@ export default function NotificationBell({ showDotOnly = true }: { showDotOnly?:
   };
 
   return (
-    <Popover>
+    // CORRECCIÓN: Se añade 'onOpenChange' para ejecutar la lógica al abrir.
+    <Popover onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <Button variant="ghost" size="icon">
           <Bell />

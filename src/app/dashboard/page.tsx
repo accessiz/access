@@ -94,7 +94,8 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent>
             <ul className="space-y-2">
-              {lowModels.map((m: any) => (
+              {/* CORRECCIÓN: Se reemplaza 'any' por el tipo de objeto específico */}
+              {lowModels.map((m: { id: string; alias: string | null; profile_completeness: number | null }) => (
                 <li key={m.id} className="flex justify-between items-center">
                   <Link href={`/dashboard/models/${m.id}`} className="text-sm font-medium">{m.alias || 'Sin alias'}</Link>
                   <span className="text-sm text-muted-foreground">{Math.round(m.profile_completeness || 0)}%</span>

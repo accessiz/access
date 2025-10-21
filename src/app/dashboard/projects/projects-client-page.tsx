@@ -60,7 +60,9 @@ export default function ProjectsClientPage({ initialProjects, initialCount }: In
             const apiUrl = `/api/projects?${params.toString()}`;
 
             try {
-                const res = await fetchSafe<{ data?: any; count?: number }>(apiUrl);
+                // CORRECCIÓN 1: Usar el tipo 'Project' importado para la respuesta.
+                type ProjectsResponse = { data?: Project[]; count?: number };
+                const res = await fetchSafe<ProjectsResponse>(apiUrl);
                 if (!res.ok) {
                     console.error('Failed to fetch projects:', res.error);
                     toast.error(res.error || 'Failed to fetch projects');
@@ -68,6 +70,7 @@ export default function ProjectsClientPage({ initialProjects, initialCount }: In
                     setCount(0);
                 } else {
                     const { data, count: newCount } = res.json || {};
+                    // CORRECCIÓN 2: Eliminar 'as any' porque 'data' ya tiene el tipo correcto.
                     setProjects(data || []);
                     setCount(newCount || 0);
                 }

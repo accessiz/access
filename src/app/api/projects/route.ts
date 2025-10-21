@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { getProjectsForUser } from '@/lib/api/projects';
+import { logError } from '@/lib/utils/errors';
 import { Project } from '@/lib/types';
 
 export async function GET(req: NextRequest) {
@@ -22,7 +23,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ data, count });
 
   } catch (error) {
-    console.error('API Error fetching projects:', error);
+    logError(error, { route: '/api/projects' });
     return NextResponse.json(
       { error: 'Failed to fetch projects' },
       { status: 500 }

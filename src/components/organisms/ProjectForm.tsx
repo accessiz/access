@@ -32,7 +32,8 @@ export function ProjectForm() {
   });
 
   // Extract field-level errors returned by the action (if any)
-  const fieldErrors = (state as any)?.errors as Record<string, string> | undefined;
+  type ActionState = { error?: string | null; success?: boolean; errors?: Record<string, string> };
+  const fieldErrors = (state as ActionState)?.errors as Record<string, string> | undefined;
 
   useEffect(() => {
     if (state?.error) {

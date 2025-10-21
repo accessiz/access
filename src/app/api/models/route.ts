@@ -1,6 +1,7 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
 import { getModelsEnriched } from '@/lib/api/models';
+import { logError } from '@/lib/utils/errors';
 import { Model } from '@/lib/types';
 
 export async function GET(req: NextRequest) {
@@ -24,7 +25,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ data, count });
 
   } catch (error) {
-    console.error('API Error:', error);
+    logError(error, { route: '/api/models' });
     return NextResponse.json(
       { error: 'Failed to fetch models' },
       { status: 500 }

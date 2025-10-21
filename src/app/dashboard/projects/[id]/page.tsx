@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getProjectById, getModelsForProject } from '@/lib/api/projects';
 import { getModelsEnriched } from '@/lib/api/models'; // Necesario para obtener la lista de 'todos los modelos'
 import ProjectDetailClient from './project-detail-client';
+import { SUPABASE_PUBLIC_URL } from '@/lib/constants';
 
 // Forzamos el renderizado dinámico para esta página
 export const dynamic = 'force-dynamic';
@@ -26,10 +27,8 @@ export default async function ProjectDetailPage({ params }: PageProps) {
     redirect('/login');
   }
 
-  // --- Obtenemos la URL pública del bucket de Supabase Storage ---
-  // Asume que las políticas RLS permiten lectura pública o están configuradas adecuadamente.
-  const { data: { publicUrl } } = supabase.storage.from('Book_Completo_iZ_Management').getPublicUrl('');
-  // --- FIN Obtener URL pública ---
+  // Usamos la URL pública construida desde constantes para evitar prop drilling
+  const publicUrl = SUPABASE_PUBLIC_URL;
 
 
   // Obtenemos los detalles del proyecto, los modelos ya seleccionados, y todos los modelos disponibles en paralelo
@@ -55,7 +54,7 @@ export default async function ProjectDetailPage({ params }: PageProps) {
       project={project} // Los detalles del proyecto actual
       initialSelectedModels={selectedModels} // Los modelos ya asociados a este proyecto
       allModels={allModels} // Todos los modelos disponibles para añadir
-      publicStorageUrl={publicUrl} // Pasamos la URL pública obtenida
+  publicStorageUrl={publicUrl} // Pasamos la URL pública centralizada
     />
   );
 }

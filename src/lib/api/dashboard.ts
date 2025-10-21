@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { unstable_noStore as noStore } from 'next/cache';
+import { logError } from '@/lib/utils/errors';
 
 type ProjectStatusCounts = Record<string, number>;
 
@@ -13,12 +14,11 @@ export async function getProjectStatusCounts(): Promise<ProjectStatusCounts> {
   // TTL: 30 seconds to avoid frequent DB calls.
   const TTL = 30 * 1000;
   const cacheKey = user.id;
-  // @ts-ignore - attach cache to module
-  if (!global.__dashboard_counts_cache) global.__dashboard_counts_cache = {};
-  // @ts-ignore
-  const cache = global.__dashboard_counts_cache[cacheKey];
+  type DashboardCache = Record<string, { ts: number; counts: ProjectStatusCounts } | undefined>;
+  const g = globalThis as unknown as { __dashboard_counts_cache?: DashboardCache };
+  if (!g.__dashboard_counts_cache) g.__dashboard_counts_cache = {};
+  const cache = g.__dashboard_counts_cache[cacheKey];
   if (cache && Date.now() - cache.ts < TTL) {
-    // @ts-ignore
     return cache.counts;
   }
 
@@ -32,7 +32,7 @@ export async function getProjectStatusCounts(): Promise<ProjectStatusCounts> {
       .eq('user_id', user.id)
       .eq('status', status);
     if (error) {
-      console.error('Error fetching project count for status', status, error);
+      logError(error, { action: 'fetch project count', status });
       counts[status] = 0;
     } else {
       counts[status] = count || 0;
@@ -40,8 +40,7 @@ export async function getProjectStatusCounts(): Promise<ProjectStatusCounts> {
   }
 
   // store in cache
-  // @ts-ignore
-  global.__dashboard_counts_cache[cacheKey] = { ts: Date.now(), counts };
+  g.__dashboard_counts_cache[cacheKey] = { ts: Date.now(), counts };
 
   return counts;
 }
@@ -60,7 +59,7 @@ export async function getRecentActivity(limit = 5): Promise<ActivityItem[]> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return [];
 
-  const [{ data: models }, { data: projects }] = await Promise.all([
+  const res = (await Promise.all([
     supabase
       .from('models')
       .select('id, alias, created_at, updated_at')
@@ -73,21 +72,26 @@ export async function getRecentActivity(limit = 5): Promise<ActivityItem[]> {
       .eq('user_id', user.id)
       .order('updated_at', { ascending: false })
       .limit(limit),
-  ] as any);
+  ])) as unknown as [
+    { data: Array<{ id: string; alias?: string | null; created_at?: string | null; updated_at?: string | null }> | null },
+    { data: Array<{ id: string; project_name?: string | null; created_at?: string | null; updated_at?: string | null; status?: string | null }> | null }
+  ];
+  const { data: models } = res[0];
+  const { data: projects } = res[1];
 
-  const modelItems: ActivityItem[] = (models || []).map((m: any) => ({
+  const modelItems: ActivityItem[] = (models || []).map((m) => ({
     id: m.id,
     type: 'model',
     title: m.alias || 'Sin alias',
-    when: m.updated_at || m.created_at,
+    when: m.updated_at || m.created_at || '',
   }));
 
-  const projectItems: ActivityItem[] = (projects || []).map((p: any) => ({
+  const projectItems: ActivityItem[] = (projects || []).map((p) => ({
     id: p.id,
     type: 'project',
     title: p.project_name || 'Proyecto',
-    when: p.updated_at || p.created_at,
-    meta: p.status,
+    when: p.updated_at || p.created_at || '',
+    meta: p.status ?? undefined,
   }));
 
   // Merge and sort by when desc
@@ -109,7 +113,7 @@ export async function getLowCompletenessModels(limit = 5) {
     .limit(limit);
 
   if (error) {
-    console.error('Error fetching low completeness models', error);
+    logError(error, { action: 'getLowCompletenessModels' });
     return [];
   }
 

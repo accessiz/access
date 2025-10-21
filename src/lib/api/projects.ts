@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { unstable_noStore as noStore } from 'next/cache';
 import { Model, Project } from "@/lib/types";
+import { logError } from '@/lib/utils/errors';
 
 const BUCKET_NAME = 'Book_Completo_iZ_Management';
 const ITEMS_PER_PAGE = 10;
@@ -24,7 +25,7 @@ export async function getProjectsForUser(searchParams: SearchParams = {}) {
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    console.error('No user logged in');
+    logError(new Error('No user logged in'), { action: 'getProjectsForUser', projectId: null });
     return { data: [], count: 0 };
   }
 
@@ -67,7 +68,7 @@ export async function getProjectsForUser(searchParams: SearchParams = {}) {
   const { data, error, count } = await queryBuilder;
 
   if (error) {
-    console.error('Error fetching projects:', error);
+    logError(error, { action: 'fetch projects list', params: searchParams });
     // Avoid throwing in server helper; return safe empty result for callers
     return { data: [], count: 0 };
   }
@@ -89,7 +90,7 @@ export async function getProjectById(projectId: string): Promise<Project | null>
   if (error) {
     // Es normal no encontrar un proyecto si el ID es incorrecto, no loguear como error fatal
     if (error.code !== 'PGRST116') { // PGRST116 = Single row not found
-        console.error('Error fetching project by ID:', projectId, error);
+        logError(error, { action: 'getProjectById', projectId });
     }
     return null;
   }
@@ -116,7 +117,7 @@ export async function getModelsForProject(projectId: string): Promise<Model[]> {
 
   if (error || !projectModelsData) {
     // Registra el error real si existe, sino un mensaje genérico
-    console.error('Error fetching models for project:', error || 'No data returned');
+    logError(error || new Error('No data returned'), { action: 'getModelsForProject', projectId });
     return [];
   }
 
@@ -149,7 +150,7 @@ export async function getModelsForProject(projectId: string): Promise<Model[]> {
   if (pathsToSign.length > 0) {
     const { data: signedUrlsData, error: signError } = await supabase.storage.from(BUCKET_NAME).createSignedUrls(pathsToSign, 300);
     if (signError) {
-      console.error(`Error batch signing project model URLs:`, signError);
+      logError(signError, { action: 'batch sign project model urls', projectId, pathsToSign });
     } else if (signedUrlsData) {
       for (const item of signedUrlsData) {
         if (item.path && item.signedUrl) signedUrlMap.set(item.path, item.signedUrl);
@@ -183,10 +184,10 @@ export async function getModelForProject(projectId: string, modelId: string): Pr
     .single();
 
   if (error || !projectModelData) {
-     if (error && error.code !== 'PGRST116') { // No loguear si simplemente no se encontró
-        console.error('Error fetching specific model for project:', projectId, modelId, error);
-     }
-    return null;
+    if (error && error.code !== 'PGRST116') { // No loguear si simplemente no se encontró
+      logError(error, { action: 'getModelForProject', projectId, modelId });
+    }
+   return null;
   }
 
   const modelData = projectModelData.models;
@@ -215,7 +216,7 @@ export async function getModelForProject(projectId: string, modelId: string): Pr
     .single();
 
   if (pathError || !projectModelDataWithPaths) {
-    if (pathError && pathError.code !== 'PGRST116') console.error('Error fetching specific model for project (with paths):', projectId, modelId, pathError);
+    if (pathError && pathError.code !== 'PGRST116') logError(pathError, { action: 'getModelForProject paths', projectId, modelId });
     return null;
   }
 
@@ -235,7 +236,7 @@ export async function getModelForProject(projectId: string, modelId: string): Pr
   if (pathsToSign.length > 0) {
     const { data: signedUrlsData, error: signError } = await supabase.storage.from(BUCKET_NAME).createSignedUrls(pathsToSign, 300);
     if (signError) {
-      console.error('Error signing URLs for single model:', signError);
+      logError(signError, { action: 'sign urls single model', projectId, modelId, pathsToSign });
     } else if (signedUrlsData) {
       for (const item of signedUrlsData) {
         if (item.path && item.signedUrl) signedUrlMap.set(item.path, item.signedUrl);

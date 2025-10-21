@@ -1,9 +1,11 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { SUPABASE_BUCKET } from '@/lib/constants';
+import { logError } from '@/lib/utils/errors';
 
 // Forzar el runtime de Node.js, necesario para operaciones de sistema de archivos
 export const dynamic = 'force-dynamic';
-const BUCKET_NAME = 'Book_Completo_iZ_Management';
+const BUCKET_NAME = SUPABASE_BUCKET;
 
 // --- FUNCIÓN GET (Obtener URLs firmadas y rutas de archivo) ---
 export async function GET(
@@ -32,7 +34,7 @@ export async function GET(
       .single();
 
     if (modelError || !modelRecord) {
-      console.error(`Error fetching model paths for ${modelId}:`, modelError);
+      logError(modelError || new Error('No modelRecord'), { action: 'get model paths', modelId });
       return NextResponse.json({ success: false, error: 'Modelo no encontrado.' }, { status: 404 });
     }
 
@@ -50,7 +52,7 @@ export async function GET(
     if (pathsToSign.length > 0) {
       const { data: signedUrlsData, error: signError } = await supabase.storage.from(BUCKET_NAME).createSignedUrls(pathsToSign, 300);
       if (signError) {
-        console.error(`Error signing URLs for ${modelId}:`, signError);
+        logError(signError, { action: 'sign urls model', modelId, pathsToSign });
       } else if (signedUrlsData) {
         for (const item of signedUrlsData) {
           if (item.path && item.signedUrl) signedUrlMap.set(item.path, item.signedUrl);
@@ -66,7 +68,7 @@ export async function GET(
 
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Ocurrió un error desconocido.';
-    console.error('🔥 Error general en GET /api/models/[modelId]:', errorMessage);
+    logError(error, { route: 'GET /api/models/[modelId]', errorMessage });
     return NextResponse.json({ success: false, error: errorMessage }, { status: 500 });
   }
 }

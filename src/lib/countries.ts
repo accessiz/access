@@ -195,3 +195,9 @@ export const countries = [
     { value: 'Zambia', label: 'Zambia' },
     { value: 'Zimbabwe', label: 'Zimbabue' },
 ];
+
+// Precomputed arrays to avoid recomputing on each import/use
+export const countryValues: string[] = countries.map(c => c.value).filter(Boolean);
+export const countryLabels: string[] = countries.map(c => c.label).filter(Boolean);
+
+export default countries;

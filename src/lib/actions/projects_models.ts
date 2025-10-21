@@ -3,13 +3,14 @@
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { z } from 'zod';
+import { logError } from '@/lib/utils/errors';
 
 // --- addModelToProject y removeModelFromProject no cambian ---
 export async function addModelToProject(projectId: string, modelId: string) {
   const supabase = await createClient();
   const { error } = await supabase.from('projects_models').insert({ project_id: projectId, model_id: modelId });
   if (error) {
-    console.error("Error adding model to project:", error);
+    logError(error, { action: 'addModelToProject', projectId, modelId });
     if (error.code === '23505') { return { success: true }; }
     return { success: false, error: "No se pudo añadir el talento al proyecto." };
   }
@@ -21,7 +22,7 @@ export async function removeModelFromProject(projectId: string, modelId: string)
   const supabase = await createClient();
   const { error } = await supabase.from('projects_models').delete().eq('project_id', projectId).eq('model_id', modelId);
   if (error) {
-    console.error("Error removing model from project:", error);
+    logError(error, { action: 'removeModelFromProject', projectId, modelId });
     return { success: false, error: "No se pudo quitar el talento del proyecto." };
   }
   revalidatePath(`/dashboard/projects/${projectId}`);
@@ -51,7 +52,7 @@ export async function updateModelSelection(
     .eq('model_id', modelId);
 
   if (error) {
-    console.error("Error updating model selection:", error);
+    logError(error, { action: 'updateModelSelection', projectId, modelId, selection });
     return { success: false, error: "No se pudo guardar la selección." };
   }
   

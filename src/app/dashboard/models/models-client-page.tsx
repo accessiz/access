@@ -78,7 +78,8 @@ export default function ModelsClientPage({ initialData }: { initialData: Initial
       const apiUrl = `/api/models?${params.toString()}`;
 
       try {
-        const res = await fetchSafe<{ data?: any; count?: number }>(apiUrl);
+        type ModelsResponse = { data?: Array<ModelWithCover>; count?: number };
+        const res = await fetchSafe<ModelsResponse>(apiUrl);
         if (!res.ok) {
           console.error('Error fetching models on client:', res.error);
           toast.error(res.error || 'Error al cargar los talentos');

@@ -1,9 +1,11 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import path from 'path';
+import { SUPABASE_BUCKET, MAX_UPLOAD_BYTES } from '@/lib/constants';
+import { logError } from '@/lib/utils/errors';
 
 export const dynamic = 'force-dynamic';
-const BUCKET_NAME = 'Book_Completo_iZ_Management';
+const BUCKET_NAME = SUPABASE_BUCKET;
 
 // POST: Subir imagen
 export async function POST(
@@ -23,6 +25,25 @@ export async function POST(
 
   if (!file || !type) {
     return NextResponse.json({ error: 'Faltan datos (file o type)' }, { status: 400 });
+  }
+
+  // Validate file size to avoid abuse (limit ~10MB)
+  try {
+    // In some runtimes File may not expose size; guard defensively
+    const size = (file as unknown as { size?: number })?.size;
+    if (typeof size === 'number' && size > MAX_UPLOAD_BYTES) {
+      return NextResponse.json({ error: `El archivo excede el límite de ${Math.round(MAX_UPLOAD_BYTES / 1024 / 1024)}MB.` }, { status: 413 });
+    }
+  } catch {
+    // If size cannot be determined, continue but log for observability
+    console.warn('Unable to determine uploaded file size at upload endpoint.');
+  }
+
+  // MIME/type whitelist (aceptar solo imágenes comunes)
+  const allowedMIMEs = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'];
+  const mime = (file as unknown as { type?: string })?.type || '';
+  if (mime && !allowedMIMEs.includes(mime)) {
+    return NextResponse.json({ error: 'Tipo de archivo no permitido.' }, { status: 415 });
   }
 
   const extension = path.extname(file.name) || '.jpg';
@@ -50,7 +71,7 @@ export async function POST(
       .single();
 
     if (fetchError) {
-      console.error('Error fetching model for array update:', fetchError);
+      logError(fetchError, { action: 'fetch model for array update', modelId });
       return NextResponse.json({ error: 'No se pudo leer el modelo para actualizar.' }, { status: 500 });
     }
 
@@ -73,7 +94,7 @@ export async function POST(
     });
 
   if (error) {
-    console.error('Error al subir archivo:', error);
+    logError(error, { action: 'upload file', path: filePath, modelId, mime });
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
@@ -83,8 +104,8 @@ export async function POST(
     .update(dbUpdateData)
     .eq('id', modelId);
 
-  if (dbError) {
-    console.error('Error updating model path:', dbError);
+    if (dbError) {
+    logError(dbError, { action: 'update model path', modelId, dbUpdateData });
     return NextResponse.json({ error: 'Archivo subido, pero no se pudo actualizar la base de datos.' }, { status: 500 });
   }
 
@@ -123,7 +144,7 @@ export async function DELETE(
     .remove([filePath]);
 
   if (removeError) {
-    console.error('Error al eliminar archivo:', removeError);
+    logError(removeError, { action: 'remove file', path: filePath });
     // No fallamos si el archivo no existe (algunos SDKs retornan 404 en message),
     // pero sí en otros errores. Revisamos message/status si existe.
     const errorStr = String(removeError);
@@ -147,7 +168,7 @@ export async function DELETE(
         .single();
 
       if (fetchError) {
-        console.error('Error fetching model for array update:', fetchError);
+        logError(fetchError, { action: 'fetch model for array update (delete)', modelId });
         return NextResponse.json({ error: 'No se pudo leer el modelo para actualizar.' }, { status: 500 });
       }
     
@@ -165,7 +186,7 @@ export async function DELETE(
     .eq('id', modelId);
 
   if (dbError) {
-     console.error('Error updating model path to null:', dbError);
+    logError(dbError, { action: 'update model path null', modelId, dbUpdateData });
      return NextResponse.json({ error: 'Archivo eliminado, pero no se pudo actualizar la base de datos.' }, { status: 500 });
   }
 

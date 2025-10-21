@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server';
 import ModelsClientPage from './models-client-page';
 import { Model } from '@/lib/types';
+import { logError } from '@/lib/utils/errors';
+import { SUPABASE_PUBLIC_URL } from '@/lib/constants';
 
 // Definimos el tipo que el componente cliente espera para los datos iniciales
 type InitialData = {
@@ -25,13 +27,12 @@ export default async function ModelsPage() {
     .limit(24); // Límite inicial, coincide con PAGE_SIZE en el cliente
 
   if (error) {
-    // Este console.error es el que te mostraba el error original.
-    console.error('Error fetching models:', error);
+    logError(error, { action: 'modelsPage.fetch models' });
   }
   
   // --- MEJORAS ADICIONALES ---
   // Obtenemos la URL pública del bucket de Supabase para construir las rutas de las imágenes.
-  const { data: { publicUrl } } = supabase.storage.from('Book_Completo_iZ_Management').getPublicUrl('');
+  const publicUrl = SUPABASE_PUBLIC_URL;
 
   // Obtenemos la lista única de países directamente desde la base de datos para los filtros.
   const { data: countriesData, error: countriesError } = await supabase
@@ -40,7 +41,7 @@ export default async function ModelsPage() {
     .neq('country', null);
 
   if (countriesError) {
-    console.error('Error fetching countries:', countriesError);
+    logError(countriesError, { action: 'modelsPage.fetch countries' });
   }
 
   // Creamos una lista de países únicos sin repetidos ni nulos.
@@ -51,7 +52,7 @@ export default async function ModelsPage() {
     models: (models as Model[]) ?? [],
     count: count ?? 0,
     countries: countries as string[],
-    publicUrl: publicUrl,
+  publicUrl: publicUrl,
   };
 
   // Pasamos el objeto 'initialData' completo al componente cliente.

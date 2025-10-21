@@ -3,7 +3,7 @@
 import * as React from "react"
 import { ControllerProps, FieldPath, FieldValues, useFormContext } from "react-hook-form"
 
-import { FormField, FormItem } from "@/components/ui/form"
+import { FormField } from "@/components/ui/form"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
 

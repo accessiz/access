@@ -2,7 +2,6 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { LogOut, Menu, Settings, Users, FolderKanban, GalleryVerticalEnd } from 'lucide-react';
-import { getProjectStatusCounts } from '@/lib/api/dashboard';
 import DashboardNavLink from '@/components/organisms/DashboardNavLink';
 import NotificationBell from '@/components/organisms/NotificationBell';
 import { Button } from '@/components/ui/button';
@@ -31,9 +30,6 @@ export default async function DashboardLayout({
   if (!user) {
     redirect('/login');
   }
-
-  // Obtener conteos para badges (server-side) - usado para mostrar badge en el nav
-  const counts = await getProjectStatusCounts();
 
   // Definimos los links aquí para reusarlos
   const navLinks = [

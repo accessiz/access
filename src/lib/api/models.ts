@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { unstable_noStore as noStore } from 'next/cache';
 import { Model } from "@/lib/types";
+import { logError } from '@/lib/utils/errors';
 
 const BUCKET_NAME = 'Book_Completo_iZ_Management';
 const ITEMS_PER_PAGE = 24;
@@ -52,7 +53,7 @@ export async function getModelsEnriched(searchParams: SearchParams) {
 
   const { data, error, count } = await queryBuilder;
   if (error) {
-    console.error('Error fetching models:', error);
+    logError(error, { action: 'getModelsEnriched.query', searchParams });
     // Return a safe empty response instead of throwing to avoid uncaught exceptions
     return { data: [], count: 0 };
   }
@@ -69,7 +70,7 @@ export async function getModelsEnriched(searchParams: SearchParams) {
   if (pathsToSign.length > 0) {
     const { data: signedUrlsData, error: signError } = await supabase.storage.from(BUCKET_NAME).createSignedUrls(pathsToSign, 300);
     if (signError) {
-      console.error('Error batch signing model covers:', signError);
+      logError(signError, { action: 'batch sign model covers', pathsToSign });
     } else if (signedUrlsData) {
       for (const item of signedUrlsData) {
         if (item.path && item.signedUrl) signedUrlMap.set(item.path, item.signedUrl);
@@ -96,7 +97,7 @@ export async function getModelById(id: string): Promise<Model | null> {
 
   if (error) {
     if (error.code !== 'PGRST116') {
-      console.error(`Error fetching model ${id}:`, error);
+      logError(error, { action: 'getModelById', id });
     }
     // Return null when not found or on error (caller should handle null)
     return null;

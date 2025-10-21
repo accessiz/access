@@ -8,6 +8,7 @@ import { zodErrorToFieldErrors } from '@/lib/utils/zod';
 import { z } from 'zod';
 import { Project } from '@/lib/types';
 import { cookies } from 'next/headers';
+import { logError } from '@/lib/utils/errors';
 
 type FormState = {
   error: string | null;
@@ -31,7 +32,7 @@ export async function createProject(prevState: FormState, formData: FormData): P
   const dataToInsert = { ...projectData, password: password || null, user_id: user.id };
   const { data: newProject, error } = await supabase.from('projects').insert(dataToInsert).select('id').single();
   if (error) {
-    console.error('Supabase insert error:', error);
+    logError(error, { action: 'createProject.insert' });
     return { success: false, error: 'Error de base de datos al crear el proyecto.' };
   }
   revalidatePath('/dashboard/projects');
@@ -43,7 +44,7 @@ export async function deleteProject(projectId: string) {
   if (!z.string().uuid().safeParse(projectId).success) { return { success: false, error: 'ID de proyecto inválido.' }; }
   const { error } = await supabase.from('projects').delete().eq('id', projectId);
   if (error) {
-    console.error('Supabase delete error:', error);
+    logError(error, { action: 'deleteProject.delete', projectId });
     return { success: false, error: 'Error de base de datos al eliminar el proyecto.' };
   }
   revalidatePath('/dashboard/projects');
@@ -55,7 +56,7 @@ export async function updateProjectStatus(projectId: string, newStatus: Project[
   if (!z.string().uuid().safeParse(projectId).success) { return { success: false, error: 'ID de proyecto inválido.' }; }
   const { error } = await supabase.from('projects').update({ status: newStatus }).eq('id', projectId);
   if (error) {
-    console.error('Supabase status update error:', error);
+    logError(error, { action: 'updateProjectStatus.update', projectId, newStatus });
     return { success: false, error: 'No se pudo actualizar el estado del proyecto.' };
   }
   revalidatePath(`/dashboard/projects/${projectId}`);

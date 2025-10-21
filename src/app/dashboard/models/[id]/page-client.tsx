@@ -74,11 +74,13 @@ export default function ModelProfilePageClient({ initialModel }: ModelProfileCli
       setIsEditing(false);
     } else {
       // Si el servidor devuelve errores por campo, los aplicamos al formulario
-      if ((result as any).errors) {
-        const fieldErrors = (result as any).errors as Record<string, string>;
-        for (const key of Object.keys(fieldErrors)) {
-          form.setError(key as any, { type: 'server', message: fieldErrors[key] });
-        }
+      type ActionResult = { success?: boolean; error?: string; errors?: Record<string, string> };
+      const parsed = result as ActionResult;
+      if (parsed.errors) {
+          const fieldErrors = parsed.errors as Record<string, string>;
+          for (const key of Object.keys(fieldErrors)) {
+            form.setError(key as keyof ModelFormData, { type: 'server', message: fieldErrors[key] });
+          }
         toast.error('Corrige los errores en el formulario.');
       } else {
         toast.error('Error al actualizar el modelo', {
