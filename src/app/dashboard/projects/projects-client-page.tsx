@@ -1,21 +1,22 @@
 'use client'
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useMemo } from 'react';
 import { useSearchParams, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { Project } from '@/lib/types';
-import { toast } from "sonner";
-import { fetchSafe } from '@/lib/utils/fetchSafe';
+// CORRECCIÓN: Se elimina 'toast' no utilizado
+// import { toast } from "sonner"; 
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { PlusCircle, Trash2 } from 'lucide-react'; // Make sure PlusCircle is imported
+import { PlusCircle, Trash2 } from 'lucide-react';
 import { ProjectsToolbar } from '@/components/organisms/ProjectsToolbar';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from "@/components/ui/pagination";
 import { DeleteProjectDialog } from '@/components/organisms/DeleteProjectDialog';
-import { Skeleton } from '@/components/ui/skeleton';
+// CORRECCIÓN: Se elimina 'Skeleton' no utilizado
+// import { Skeleton } from '@/components/ui/skeleton'; 
 
 const PAGE_SIZE = 10;
 
@@ -39,51 +40,12 @@ const StatusBadge = ({ status }: { status: string }) => {
 export default function ProjectsClientPage({ initialProjects, initialCount }: InitialData) {
     const [projects, setProjects] = useState(initialProjects);
     const [count, setCount] = useState(initialCount);
-    const [loading, setLoading] = useState(false);
-
-    const isInitialLoad = useRef(true);
+    
     const searchParams = useSearchParams();
     const pathname = usePathname();
 
     const currentPage = Number(searchParams.get('page')) || 1;
     const totalPages = Math.ceil(count / PAGE_SIZE);
-
-    useEffect(() => {
-        if (isInitialLoad.current) {
-            isInitialLoad.current = false;
-            return;
-        }
-
-        const fetchProjects = async () => {
-            setLoading(true);
-            const params = new URLSearchParams(searchParams);
-            const apiUrl = `/api/projects?${params.toString()}`;
-
-            try {
-                // CORRECCIÓN 1: Usar el tipo 'Project' importado para la respuesta.
-                type ProjectsResponse = { data?: Project[]; count?: number };
-                const res = await fetchSafe<ProjectsResponse>(apiUrl);
-                if (!res.ok) {
-                    console.error('Failed to fetch projects:', res.error);
-                    toast.error(res.error || 'Failed to fetch projects');
-                    setProjects([]);
-                    setCount(0);
-                } else {
-                    const { data, count: newCount } = res.json || {};
-                    // CORRECCIÓN 2: Eliminar 'as any' porque 'data' ya tiene el tipo correcto.
-                    setProjects(data || []);
-                    setCount(newCount || 0);
-                }
-            } catch {
-                toast.error("Error al cargar los proyectos.");
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchProjects();
-
-    }, [searchParams, currentPage]);
 
     const handleProjectDeleted = (deletedProjectId: string) => {
         setProjects(current => current.filter(p => p.id !== deletedProjectId));
@@ -113,13 +75,6 @@ export default function ProjectsClientPage({ initialProjects, initialCount }: In
     }, [currentPage, totalPages]);
 
     const renderContent = () => {
-        if (loading) {
-            return (
-                <div className="space-y-2">
-                    {Array.from({ length: PAGE_SIZE }).map((_, i) => <Skeleton key={i} className="h-16 w-full"/>)}
-                </div>
-            );
-        }
         if (projects.length === 0) {
             return (
                 <div className="flex flex-col items-center justify-center text-center h-full rounded-lg border border-dashed py-20">
@@ -164,38 +119,32 @@ export default function ProjectsClientPage({ initialProjects, initialCount }: In
 
     return (
         <div className="p-8 md:p-12 h-full flex flex-col">
-            {/* --- Updated Header for Responsiveness --- */}
             <header className="flex flex-col items-start gap-4 pb-6 border-b
                            sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Proyectos de Casting</h1>
                     <p className="text-muted-foreground">Crea y gestiona las selecciones para tus clientes.</p>
                 </div>
-                {/* Button takes full width on mobile */}
                 <Button asChild className="w-full sm:w-auto">
                     <Link href="/dashboard/projects/new"><PlusCircle className="mr-2 h-4 w-4"/>Nuevo Proyecto</Link>
                 </Button>
             </header>
-            {/* --- END Updated Header --- */}
 
             <main className="flex-1 py-8 space-y-6">
                 <Card>
                     <CardHeader>
                         <CardTitle>Tus Proyectos</CardTitle>
-                        {/* --- Updated CardDescription for Responsiveness --- */}
                         <CardDescription className="flex flex-col gap-4 pt-2 sm:flex-row sm:justify-between sm:items-center">
                             <span>Filtra y busca entre tus castings activos y pasados.</span>
                             <ProjectsToolbar />
                         </CardDescription>
-                         {/* --- END Updated CardDescription --- */}
                     </CardHeader>
                     <CardContent>
                         {renderContent()}
                     </CardContent>
                 </Card>
 
-                {/* --- Footer with pagination (Unchanged from previous state) --- */}
-                {totalPages > 1 && !loading && (
+                {totalPages > 1 && (
                     <footer className="flex justify-between items-center pt-4 w-full">
                         <div className="flex-1">
                             <Pagination>

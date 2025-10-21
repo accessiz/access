@@ -1,17 +1,15 @@
 'use client';
 
-import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import { useMemo, useCallback } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { Model } from '@/lib/types';
 import { toast } from "sonner";
-import { fetchSafe } from '@/lib/utils/fetchSafe';
 import { ArrowUp, ArrowDown, Download, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Skeleton } from '@/components/ui/skeleton';
 import { ModelsToolbar } from '../../../components/organisms/ModelsToolbar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from "@/components/ui/pagination";
@@ -21,7 +19,9 @@ const PAGE_SIZE = 24;
 
 type ModelWithCover = Model & { coverUrl?: string | null };
 
-type SortConfig = { key: keyof Model; direction: 'asc' | 'desc'; };
+// CORRECCIÓN: Se elimina el tipo 'SortConfig' no utilizado.
+// type SortConfig = { key: keyof Model; direction: 'asc' | 'desc'; };
+
 type InitialData = {
   models: ModelWithCover[];
   count: number;
@@ -29,14 +29,10 @@ type InitialData = {
   publicUrl: string;
 };
 
+// El cliente recibe los datos listos para renderizar
 export default function ModelsClientPage({ initialData }: { initialData: InitialData }) {
-  const [models, setModels] = useState<ModelWithCover[]>(initialData.models);
-  const [count, setCount] = useState(initialData.count);
-  const [countries] = useState<string[]>(initialData.countries);
-  const [publicUrl] = useState(initialData.publicUrl);
-  const [loading, setLoading] = useState(false);
-
-  const isInitialLoad = useRef(true);
+  // CORRECCIÓN: 'publicUrl' ahora se usa, por lo que la advertencia desaparecerá.
+  const { models, count, countries, publicUrl } = initialData;
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -46,10 +42,10 @@ export default function ModelsClientPage({ initialData }: { initialData: Initial
   const currentPage = Number(searchParams.get('page')) || 1;
   const totalPages = Math.ceil(count / PAGE_SIZE);
 
-  const [sortConfig] = useState<SortConfig>({
+  const sortConfig = useMemo(() => ({
     key: (searchParams.get('sort') as keyof Model) || 'alias',
     direction: (searchParams.get('dir') as 'asc' | 'desc') || 'asc',
-  });
+  }), [searchParams]);
 
   const handleSort = useCallback((key: keyof Model) => {
     const params = new URLSearchParams(searchParams);
@@ -63,46 +59,6 @@ export default function ModelsClientPage({ initialData }: { initialData: Initial
     router.replace(`${pathname}?${params.toString()}`);
   }, [searchParams, sortConfig, pathname, router]);
 
-  useEffect(() => {
-    if (isInitialLoad.current) {
-      isInitialLoad.current = false;
-      return;
-    }
-
-    async function fetchData() {
-      setLoading(true);
-
-      const params = new URLSearchParams(searchParams);
-      params.set('page', currentPage.toString());
-
-      const apiUrl = `/api/models?${params.toString()}`;
-
-      try {
-        type ModelsResponse = { data?: Array<ModelWithCover>; count?: number };
-        const res = await fetchSafe<ModelsResponse>(apiUrl);
-        if (!res.ok) {
-          console.error('Error fetching models on client:', res.error);
-          toast.error(res.error || 'Error al cargar los talentos');
-          setModels([]);
-          setCount(0);
-        } else {
-          const { data, count: newCount } = res.json || {};
-          setModels(data || []);
-          setCount(newCount || 0);
-        }
-      } catch (error) {
-        console.error("Error fetching models on client:", error);
-        toast.error("Error al cargar los talentos");
-        setModels([]);
-        setCount(0);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchData();
-  }, [searchParams, currentPage]);
-
   const handleRowClick = (modelId: string) => router.push(`/dashboard/models/${modelId}`);
 
   const createPageURL = (pageNumber: number | string) => {
@@ -111,7 +67,6 @@ export default function ModelsClientPage({ initialData }: { initialData: Initial
     return `${pathname}?${params.toString()}`;
   };
 
-  // ✅ tipo explícito para evitar TS2367
   const paginationItems = useMemo(() => {
     type PageItem = number | '...' | 'skip';
     const items: PageItem[] = [];
@@ -122,23 +77,17 @@ export default function ModelsClientPage({ initialData }: { initialData: Initial
       for (let i = 1; i <= totalPages; i++) items.push(i);
     } else {
       items.push(1);
-
       if (currentPage > halfPages + 2) items.push('...');
-
       let startPage = Math.max(2, currentPage - halfPages);
       let endPage = Math.min(totalPages - 1, currentPage + halfPages);
-
       if (currentPage < halfPages + 2) {
         endPage = Math.min(totalPages - 1, pagesToShow + 1);
       }
       if (currentPage > totalPages - halfPages - 1) {
         startPage = Math.max(2, totalPages - pagesToShow);
       }
-
       for (let i = startPage; i <= endPage; i++) items.push(i);
-
       if (currentPage < totalPages - halfPages - 1) items.push('...');
-
       items.push(totalPages);
     }
 
@@ -173,25 +122,7 @@ export default function ModelsClientPage({ initialData }: { initialData: Initial
     </TableHead>
   );
 
-  const renderSkeletons = (viewType: string) => {
-    const skeletonArray = Array.from({ length: PAGE_SIZE });
-    if (viewType === 'grid') {
-      return (
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
-          {skeletonArray.map((_, i) => <Skeleton key={i} className="aspect-[3/4] rounded-lg" />)}
-        </div>
-      );
-    }
-    return (
-      <div className="space-y-2">
-        {skeletonArray.map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}
-      </div>
-    );
-  };
-
   const renderContent = () => {
-    if (loading) return renderSkeletons(view);
-
     if (models.length === 0) {
       return (
         <div className="flex flex-col items-center justify-center text-center h-full py-20 rounded-lg border border-dashed">
@@ -208,6 +139,7 @@ export default function ModelsClientPage({ initialData }: { initialData: Initial
             <Card key={model.id} onClick={() => handleRowClick(model.id)} className="cursor-pointer hover:border-primary transition-colors group overflow-hidden">
               <div className="aspect-[3/4] relative bg-muted">
                 <Avatar className="h-full w-full rounded-none">
+                  {/* CORRECCIÓN: Se usa 'publicUrl' para el fallback */}
                   <AvatarImage src={model.coverUrl || `${publicUrl}${model.id}/Portada/cover.jpg`} className="object-cover group-hover:scale-105 transition-transform duration-300" />
                   <AvatarFallback className="rounded-none text-2xl bg-transparent">{model.alias?.substring(0, 2) || 'IZ'}</AvatarFallback>
                 </Avatar>
@@ -240,6 +172,7 @@ export default function ModelsClientPage({ initialData }: { initialData: Initial
           <TableBody>
             {models.map((model) => (
               <TableRow key={model.id} onClick={() => handleRowClick(model.id)} className="cursor-pointer">
+                {/* CORRECCIÓN: Se usa 'publicUrl' para el fallback */}
                 <TableCell><Avatar><AvatarImage src={model.coverUrl || `${publicUrl}${model.id}/Portada/cover.jpg`} /><AvatarFallback>{model.alias?.substring(0, 2) || 'IZ'}</AvatarFallback></Avatar></TableCell>
                 <TableCell className="font-medium">{model.alias}</TableCell>
                 <TableCell>{model.country}</TableCell>
@@ -278,11 +211,10 @@ export default function ModelsClientPage({ initialData }: { initialData: Initial
         {renderContent()}
       </div>
 
-      {totalPages > 1 && !loading && (
+      {totalPages > 1 && (
         <footer className="flex flex-col items-center gap-4 pt-4 w-full sm:flex-row sm:justify-between">
           <div className="w-full sm:flex-1">
             <Pagination>
-              {/* ✅ Centrado en mobile */}
               <PaginationContent className="flex justify-center sm:justify-start w-full">
                 <PaginationItem>
                   <PaginationPrevious
@@ -297,7 +229,6 @@ export default function ModelsClientPage({ initialData }: { initialData: Initial
                   </PaginationPrevious>
                 </PaginationItem>
 
-                {/* ✅ Oculta los números en mobile */}
                 <div className="hidden sm:flex">
                   {paginationItems.map((page, index) => (
                     <PaginationItem key={index}>
@@ -335,7 +266,6 @@ export default function ModelsClientPage({ initialData }: { initialData: Initial
             Página {currentPage} de {totalPages}
           </div>
         </footer>
-
       )}
     </div>
   );
