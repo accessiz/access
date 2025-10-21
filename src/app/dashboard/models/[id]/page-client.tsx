@@ -122,10 +122,16 @@ export default function ModelProfilePageClient({ initialModel }: ModelProfileCli
         <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
           {isEditing ? (
             <>
-              <Button variant="outline" onClick={handleCancel} className="flex-grow md:flex-grow-0">
+              <Button variant="outline" type="button" onClick={handleCancel} className="flex-grow md:flex-grow-0">
                 <X className="mr-2 h-4 w-4" /> Cancelar
               </Button>
-              <Button form="model-edit-form" type="submit" disabled={isSubmitting} className="flex-grow md:flex-grow-0">
+              <Button type="button" disabled={isSubmitting} className="flex-grow md:flex-grow-0" onClick={() => {
+                const formEl = document.getElementById('model-edit-form') as HTMLFormElement | null;
+                if (formEl) {
+                  if (typeof formEl.requestSubmit === 'function') formEl.requestSubmit();
+                  else formEl.submit();
+                }
+              }}>
                 <Save className="mr-2 h-4 w-4" />
                 {isSubmitting ? 'Guardando...' : 'Guardar Cambios'}
               </Button>
@@ -137,7 +143,7 @@ export default function ModelProfilePageClient({ initialModel }: ModelProfileCli
                    Volver
                 </Link>
               </Button>
-              <Button onClick={() => setIsEditing(true)} className="flex-grow md:flex-grow-0">
+              <Button type="button" onClick={(e) => { e.preventDefault(); setTimeout(() => setIsEditing(true), 0); }} className="flex-grow md:flex-grow-0">
                 <Pencil className="mr-2 h-4 w-4" /> Editar
               </Button>
             </>

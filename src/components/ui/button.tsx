@@ -41,13 +41,20 @@ export interface ButtonProps
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
+  ({ className, variant, size, asChild = false, type, ...props }, ref) => {
     const Comp = asChild ? Slot : "button"
+
+    // When rendering a native <button>, default to type="button"
+    // unless a type was explicitly provided. This prevents accidental
+    // form submissions when buttons are placed inside or near forms.
+    const nativeProps = Comp === "button" ? { type: (type as any) ?? "button" } : {};
+
     return (
       <Comp
         className={cn(buttonVariants({ variant, size, className }))}
         ref={ref}
-        {...props}
+        {...nativeProps}
+        {...(props as any)}
       />
     )
   }
