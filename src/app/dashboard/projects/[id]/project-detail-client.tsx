@@ -5,11 +5,13 @@ import Link from 'next/link';
 import { toast } from 'sonner';
 import { Model, Project } from '@/lib/types';
 import { addModelToProject, removeModelFromProject } from '@/lib/actions/projects_models';
+// CORRECCIÓN: Importar la constante de URL pública
+import { SUPABASE_PUBLIC_URL } from '@/lib/constants';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'; // Importado
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
@@ -33,18 +35,18 @@ const ClientStatusBadge = ({ status }: { status: Model['client_selection'] }) =>
   return <Badge variant="outline"><Clock className="mr-1 h-3 w-3" /> Pendiente</Badge>;
 };
 
-// Componente para mostrar una fila de talento (actualizado para usar publicUrl)
-const TalentRow = ({ model, onAction, isPending, actionType, publicUrl }: {
+// CORRECCIÓN: Componente para mostrar una fila de talento (ya no recibe 'publicUrl')
+const TalentRow = ({ model, onAction, isPending, actionType }: {
     model: Model;
     onAction: () => void;
     isPending: boolean;
     actionType: 'add' | 'remove';
-    publicUrl: string; // Acepta la URL pública
+    // 'publicUrl' se ha eliminado de las props
 }) => (
     <div className="flex items-center gap-4 p-2 hover:bg-muted/50 rounded-md">
         <Avatar className="h-10 w-10">
-            {/* Usa la coverUrl si existe, sino construye la URL pública como fallback */}
-            <AvatarImage src={model.coverUrl || `${publicUrl}${model.id}/Portada/cover.jpg`} />
+            {/* CORRECCIÓN: Usa la constante importada 'SUPABASE_PUBLIC_URL' */}
+            <AvatarImage src={model.coverUrl || `${SUPABASE_PUBLIC_URL}${model.id}/Portada/cover.jpg`} />
             <AvatarFallback>{model.alias?.substring(0, 2) || 'IZ'}</AvatarFallback>
         </Avatar>
         <div className="flex-1">
@@ -55,9 +57,9 @@ const TalentRow = ({ model, onAction, isPending, actionType, publicUrl }: {
         {actionType === 'remove' && <ClientStatusBadge status={model.client_selection} />}
         <Button size="icon" variant="ghost" onClick={onAction} disabled={isPending} className="h-8 w-8">
             {/* Muestra un loader si la acción está pendiente */}
-            {isPending ? <Loader2 className="animate-spin h-4 w-4" /> : ( // Ajustado tamaño de Loader2
+            {isPending ? <Loader2 className="animate-spin h-4 w-4" /> : (
                 // Muestra icono de añadir o quitar según el tipo
-                actionType === 'add' ? <PlusCircle className="h-4 w-4 text-green-500" /> : <XCircle className="h-4 w-4 text-destructive" /> // Ajustado tamaño de iconos
+                actionType === 'add' ? <PlusCircle className="h-4 w-4 text-green-500" /> : <XCircle className="h-4 w-4 text-destructive" />
             )}
         </Button>
     </div>
@@ -84,16 +86,16 @@ const DangerZone = ({ project }: { project: Project }) => (
     </Card>
 );
 
-// Define la interfaz de props para el componente principal
+// CORRECCIÓN: Define la interfaz de props (sin 'publicStorageUrl')
 interface ProjectDetailClientProps {
   project: Project;
   initialSelectedModels: Model[];
   allModels: Model[];
-  publicStorageUrl: string; // Prop para la URL pública
+  // 'publicStorageUrl' se ha eliminado
 }
 
 // Componente principal de la página de detalle del proyecto
-export default function ProjectDetailClient({ project: initialProject, initialSelectedModels, allModels, publicStorageUrl }: ProjectDetailClientProps) {
+export default function ProjectDetailClient({ project: initialProject, initialSelectedModels, allModels }: ProjectDetailClientProps) {
     // Estados para manejar el proyecto, los modelos seleccionados, la búsqueda y el estado de carga
     const [project, setProject] = useState(initialProject);
     const [selectedModels, setSelectedModels] = useState(initialSelectedModels);
@@ -194,14 +196,13 @@ export default function ProjectDetailClient({ project: initialProject, initialSe
                         <ScrollArea className="h-96">
                             <div className="space-y-2 pr-4">
                                 {availableModels.length > 0 ? availableModels.map(model => (
-                                    // Renderiza cada fila de talento disponible, pasando la publicUrl
+                                    // CORRECCIÓN: Renderiza TalentRow sin pasar 'publicUrl'
                                     <TalentRow
                                       key={model.id}
                                       model={model}
                                       onAction={() => handleAddModel(model.id)}
                                       isPending={isPending}
                                       actionType="add"
-                                      publicUrl={publicStorageUrl} // Pasar URL pública
                                     />
                                 )) : (
                                     // Mensaje si no hay talentos disponibles
@@ -223,14 +224,13 @@ export default function ProjectDetailClient({ project: initialProject, initialSe
                         <ScrollArea className="h-[28.5rem]">
                             <div className="space-y-2 pr-4">
                                 {selectedModels.length > 0 ? selectedModels.map(model => (
-                                     // Renderiza cada fila de talento seleccionado, pasando la publicUrl
+                                     // CORRECCIÓN: Renderiza TalentRow sin pasar 'publicUrl'
                                     <TalentRow
                                       key={model.id}
                                       model={model}
                                       onAction={() => handleRemoveModel(model.id)}
                                       isPending={isPending}
                                       actionType="remove"
-                                      publicUrl={publicStorageUrl} // Pasar URL pública
                                     />
                                 )) : (
                                      // Mensaje si no hay talentos añadidos

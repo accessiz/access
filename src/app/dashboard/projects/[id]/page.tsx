@@ -3,7 +3,8 @@ import { createClient } from '@/lib/supabase/server';
 import { getProjectById, getModelsForProject } from '@/lib/api/projects';
 import { getModelsEnriched } from '@/lib/api/models'; // Necesario para obtener la lista de 'todos los modelos'
 import ProjectDetailClient from './project-detail-client';
-import { SUPABASE_PUBLIC_URL } from '@/lib/constants';
+// CORRECCIÓN: Se elimina la importación de SUPABASE_PUBLIC_URL (ya no se pasa)
+// import { SUPABASE_PUBLIC_URL } from '@/lib/constants';
 
 // Forzamos el renderizado dinámico para esta página
 export const dynamic = 'force-dynamic';
@@ -27,8 +28,8 @@ export default async function ProjectDetailPage({ params }: PageProps) {
     redirect('/login');
   }
 
-  // Usamos la URL pública construida desde constantes para evitar prop drilling
-  const publicUrl = SUPABASE_PUBLIC_URL;
+  // CORRECCIÓN: Se elimina la variable 'publicUrl' (ya no se pasa)
+  // const publicUrl = SUPABASE_PUBLIC_URL;
 
 
   // Obtenemos los detalles del proyecto, los modelos ya seleccionados, y todos los modelos disponibles en paralelo
@@ -54,7 +55,7 @@ export default async function ProjectDetailPage({ params }: PageProps) {
       project={project} // Los detalles del proyecto actual
       initialSelectedModels={selectedModels} // Los modelos ya asociados a este proyecto
       allModels={allModels} // Todos los modelos disponibles para añadir
-  publicStorageUrl={publicUrl} // Pasamos la URL pública centralizada
+      // CORRECCIÓN: Se elimina la prop 'publicStorageUrl={publicUrl}'
     />
   );
 }
