@@ -2,6 +2,9 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { LogOut, Menu, Settings, Users, FolderKanban, GalleryVerticalEnd } from 'lucide-react';
+import { getProjectStatusCounts } from '@/lib/api/dashboard';
+import DashboardNavLink from '@/components/organisms/DashboardNavLink';
+import NotificationBell from '@/components/organisms/NotificationBell';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -29,11 +32,14 @@ export default async function DashboardLayout({
     redirect('/login');
   }
 
+  // Obtener conteos para badges (server-side) - usado para mostrar badge en el nav
+  const counts = await getProjectStatusCounts();
+
   // Definimos los links aquí para reusarlos
   const navLinks = [
-      // { href: "/dashboard", label: "Dashboard", icon: GalleryVerticalEnd }, // Opcional
-      { href: "/dashboard/models", label: "Talento", icon: Users },
-      { href: "/dashboard/projects", label: "Proyectos", icon: FolderKanban },
+    { href: "/dashboard", label: "Dashboard", icon: GalleryVerticalEnd },
+    { href: "/dashboard/models", label: "Talento", icon: Users },
+    { href: "/dashboard/projects", label: "Proyectos", icon: FolderKanban },
   ];
   const settingsLink = { href: "/dashboard/settings", label: "Configuración", icon: Settings };
 
@@ -54,17 +60,15 @@ export default async function DashboardLayout({
                 </div>
                 <div className="flex-1 overflow-y-auto">
                     <nav className="grid items-start p-4 text-sm font-medium">
-                        {navLinks.map((link) => (
-                            <Link
-                                key={link.href}
-                                href={link.href}
-                                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-                                // Nota: Estado activo omitido por simplicidad en Server Component
-                            >
-                                <link.icon className="h-4 w-4" />
-                                {link.label}
-                            </Link>
-                        ))}
+                    {/** Render server-side links but use client component for active/badge behavior */}
+            {navLinks.map((link) => (
+              <DashboardNavLink key={link.href} href={link.href}>
+                <span className="flex items-center gap-3">
+                  <link.icon className="h-4 w-4" />
+                  {link.label}
+                </span>
+              </DashboardNavLink>
+            ))}
                     </nav>
                 </div>
                  <div className="mt-auto px-4 pb-12">
@@ -105,6 +109,10 @@ export default async function DashboardLayout({
                       <span className="text-lg">IZ Access</span>
                   </Link>
                   {/* Título para accesibilidad */}
+                  <div className="ml-auto flex items-center gap-2">
+                    {/* Mobile bell in sheet header */}
+                    <NotificationBell showDotOnly />
+                  </div>
                   <SheetTitle className="sr-only">Menú Principal</SheetTitle>
                 </SheetHeader>
 
@@ -112,13 +120,12 @@ export default async function DashboardLayout({
                 <nav className="flex-1 flex flex-col gap-1 p-4 text-base font-medium overflow-y-auto">
                   {navLinks.map((link) => (
                     <SheetClose asChild key={link.href}>
-                      <Link
-                        href={link.href}
-                        className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-                      >
-                        <link.icon className="h-5 w-5" />
-                        {link.label}
-                      </Link>
+                      <DashboardNavLink href={link.href}>
+                        <span className="flex items-center gap-3">
+                          <link.icon className="h-5 w-5" />
+                          {link.label}
+                        </span>
+                      </DashboardNavLink>
                     </SheetClose>
                   ))}
                 </nav>
@@ -154,9 +161,13 @@ export default async function DashboardLayout({
              {/* Espacio para breadcrumbs, etc. */}
            </div>
 
-           {/* Info de Usuario y Logout (Solo escritorio) */}
+           {/* Info de Usuario, Notificaciones y Logout (Solo escritorio) */}
            <div className="hidden md:flex items-center gap-4">
              <p className="text-sm text-muted-foreground hidden sm:block">{user.email}</p>
+             {/* NotificationBell is client component */}
+             <div className="hidden sm:block">
+               <NotificationBell />
+             </div>
              <form action="/auth/signout" method="post">
                 <Button variant="ghost" size="icon">
                   <LogOut className="h-5 w-5" />

@@ -13,14 +13,14 @@ export default function DashboardQuickSearch() {
     e?.preventDefault();
     if (!q.trim()) return;
     const params = new URLSearchParams();
-    params.set('query', q.trim());
+    params.set('q', q.trim());
     router.push(`/dashboard/models?${params.toString()}`);
   };
 
   return (
     <form onSubmit={handleSubmit} className="flex gap-2">
       <Input placeholder="Buscar talento por alias o nombre" value={q} onChange={e => setQ(e.target.value)} />
-      <Button type="submit" variant="secondary"><Search /></Button>
+      <Button type="submit" variant="outline"><Search /></Button>
     </form>
   );
 }

@@ -6,6 +6,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { getProjectStatusCounts, getRecentActivity, getLowCompletenessModels } from '@/lib/api/dashboard';
+import { Button } from '@/components/ui/button';
 import DashboardQuickSearch from '@/components/organisms/DashboardQuickSearch';
 import Link from 'next/link';
 
@@ -15,13 +16,16 @@ export default async function DashboardPage() {
   const lowModels = await getLowCompletenessModels(5);
 
   return (
-    <div>
-      <h1 className="text-3xl font-bold tracking-tight mb-8">Dashboard</h1>
+    <div className="space-y-6 p-8 md:p-12">
+      <header>
+        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+        <p className="text-muted-foreground">Resumen general de proyectos, actividad y atajos.</p>
+      </header>
 
-      <div className="grid gap-8 md:grid-cols-3">
+      <div className="grid gap-8 md:grid-cols-3 items-stretch">
         {/* Resumen de Estatus de Proyectos (ocupa 2 columnas en md) */}
-        <div className="md:col-span-2">
-          <Card>
+        <div className="md:col-span-2 h-full">
+          <Card className="h-full">
             <CardHeader>
               <CardTitle>Resumen de Proyectos</CardTitle>
               <CardDescription>Conteos por estado y acceso rápido.</CardDescription>
@@ -29,7 +33,7 @@ export default async function DashboardPage() {
             <CardContent>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {['in-review','draft','sent','completed'].map((s) => (
-                  <Link key={s} href={`/dashboard/projects?status=${s}`} className="block p-4 rounded-md border hover:shadow">
+                  <Link key={s} href={`/dashboard/projects?status=${s}`} className="p-4 rounded-md border hover:shadow h-full flex flex-col justify-center">
                     <div className="text-sm text-muted-foreground capitalize">{s.replace('-', ' ')}</div>
                     <div className="text-2xl font-bold">{counts[s] ?? 0}</div>
                   </Link>
@@ -40,16 +44,20 @@ export default async function DashboardPage() {
         </div>
 
         {/* Atajos / Quick Actions */}
-        <div>
-          <Card>
+        <div className="h-full">
+          <Card className="h-full">
             <CardHeader>
               <CardTitle>Atajos</CardTitle>
               <CardDescription>Acciones rápidas</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex flex-col gap-3">
-                <Link href="/dashboard/models/new" className="btn btn-primary block text-center py-3 rounded bg-primary text-primary-foreground">Añadir Nuevo Talento</Link>
-                <Link href="/dashboard/projects/new" className="btn btn-outline block text-center py-3 rounded border">Crear Nuevo Proyecto</Link>
+                <Button asChild>
+                  <Link href="/dashboard/models/new"><span className="w-full text-center">Añadir Nuevo Talento</span></Link>
+                </Button>
+                <Button variant="outline" asChild>
+                  <Link href="/dashboard/projects/new"><span className="w-full text-center">Crear Nuevo Proyecto</span></Link>
+                </Button>
                 <div className="pt-4">
                   <DashboardQuickSearch />
                 </div>
@@ -59,7 +67,7 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <div className="grid gap-8 md:grid-cols-2 mt-8">
+  <div className="grid gap-8 md:grid-cols-2 mt-8 pb-6">
         {/* Actividad Reciente */}
         <Card>
           <CardHeader>

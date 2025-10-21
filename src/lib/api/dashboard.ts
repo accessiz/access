@@ -9,6 +9,19 @@ export async function getProjectStatusCounts(): Promise<ProjectStatusCounts> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return {};
 
+  // Simple in-memory TTL cache (works in long-lived server processes).
+  // TTL: 30 seconds to avoid frequent DB calls.
+  const TTL = 30 * 1000;
+  const cacheKey = user.id;
+  // @ts-ignore - attach cache to module
+  if (!global.__dashboard_counts_cache) global.__dashboard_counts_cache = {};
+  // @ts-ignore
+  const cache = global.__dashboard_counts_cache[cacheKey];
+  if (cache && Date.now() - cache.ts < TTL) {
+    // @ts-ignore
+    return cache.counts;
+  }
+
   const statuses = ['in-review', 'draft', 'sent', 'completed'];
   const counts: ProjectStatusCounts = {};
 
@@ -25,6 +38,10 @@ export async function getProjectStatusCounts(): Promise<ProjectStatusCounts> {
       counts[status] = count || 0;
     }
   }
+
+  // store in cache
+  // @ts-ignore
+  global.__dashboard_counts_cache[cacheKey] = { ts: Date.now(), counts };
 
   return counts;
 }
