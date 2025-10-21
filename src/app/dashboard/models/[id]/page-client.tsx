@@ -16,8 +16,19 @@ import { useState } from 'react';
 import { Pencil, Save, X } from 'lucide-react';
 import { ModelForm } from '../../../../components/organisms/ModelForm';
 
+// CORRECCIÓN: Define el tipo extendido que incluye las URLs/paths
+type ModelWithImages = Model & {
+  coverUrl?: string | null;
+  portfolioUrl?: string | null;
+  compCardUrls?: (string | null)[];
+  cover_path?: string | null;
+  portfolio_path?: string | null;
+  comp_card_paths?: (string | null)[];
+};
+
 interface ModelProfileClientProps {
-  initialModel: Model;
+  // CORRECCIÓN: Usa el tipo extendido aquí
+  initialModel: ModelWithImages;
 }
 
 // Componente para mostrar la información en modo de solo lectura
@@ -56,8 +67,8 @@ export default function ModelProfilePageClient({ initialModel }: ModelProfileCli
       waist_cm: initialModel.waist_cm ?? null,
       hips_cm: initialModel.hips_cm ?? null,
       top_size: initialModel.top_size ?? null,
-      pants_size: safeParseInt(initialModel.pants_size), // Asegúrate que initialModel tenga pants_size
-  shoe_size_us: initialModel.shoe_size_us ?? null,
+      pants_size: safeParseInt(initialModel.pants_size),
+      shoe_size_us: initialModel.shoe_size_us ?? null,
       instagram: initialModel.instagram ?? '',
       tiktok: initialModel.tiktok ?? '',
       status: initialModel.status ?? 'active',
@@ -73,7 +84,6 @@ export default function ModelProfilePageClient({ initialModel }: ModelProfileCli
       toast.success('Modelo actualizado correctamente.');
       setIsEditing(false);
     } else {
-      // Si el servidor devuelve errores por campo, los aplicamos al formulario
       type ActionResult = { success?: boolean; error?: string; errors?: Record<string, string> };
       const parsed = result as ActionResult;
       if (parsed.errors) {
@@ -99,10 +109,8 @@ export default function ModelProfilePageClient({ initialModel }: ModelProfileCli
 
   return (
     <div className="space-y-8">
-      {/* --- INICIO DE LA MODIFICACIÓN --- */}
       <header className="flex flex-col items-start gap-4 pb-6 border-b
                      md:flex-row md:items-center md:justify-between">
-        {/* Título y Descripción */}
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
             {isEditing ? `Editando Perfil de ${initialModel.alias || initialModel.full_name}` : `Perfil de ${initialModel.alias || initialModel.full_name}`}
@@ -111,16 +119,12 @@ export default function ModelProfilePageClient({ initialModel }: ModelProfileCli
             {isEditing ? 'Actualiza la información y las imágenes del talento.' : 'Visualiza la información del talento.'}
           </p>
         </div>
-
-        {/* Contenedor de Botones (con flex-wrap y ancho ajustado) */}
         <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
           {isEditing ? (
             <>
-              {/* Botón Cancelar (con flex-grow para móvil) */}
               <Button variant="outline" onClick={handleCancel} className="flex-grow md:flex-grow-0">
                 <X className="mr-2 h-4 w-4" /> Cancelar
               </Button>
-              {/* Botón Guardar (con flex-grow para móvil) */}
               <Button form="model-edit-form" type="submit" disabled={isSubmitting} className="flex-grow md:flex-grow-0">
                 <Save className="mr-2 h-4 w-4" />
                 {isSubmitting ? 'Guardando...' : 'Guardar Cambios'}
@@ -128,14 +132,11 @@ export default function ModelProfilePageClient({ initialModel }: ModelProfileCli
             </>
           ) : (
             <>
-              {/* Botón Volver (con flex-grow para móvil) */}
                <Button variant="outline" asChild className="flex-grow md:flex-grow-0">
                 <Link href="/dashboard/models">
                    Volver
                 </Link>
               </Button>
-                  {/* Eliminar Perfil: moved to Danger Zone at the bottom */}
-              {/* Botón Editar (con flex-grow para móvil) */}
               <Button onClick={() => setIsEditing(true)} className="flex-grow md:flex-grow-0">
                 <Pencil className="mr-2 h-4 w-4" /> Editar
               </Button>
@@ -143,7 +144,6 @@ export default function ModelProfilePageClient({ initialModel }: ModelProfileCli
           )}
         </div>
       </header>
-      {/* --- FIN DE LA MODIFICACIÓN --- */}
 
       {isEditing ? (
         <FormProvider {...form}>
@@ -172,9 +172,7 @@ export default function ModelProfilePageClient({ initialModel }: ModelProfileCli
             <Card>
                 <CardHeader><CardTitle>Medidas y Tallas</CardTitle></CardHeader>
                 <CardContent>
-                    {/* MODIFICACIÓN: Cambiado a cols={2} para mejor visualización en pantallas medianas */}
                     <Grid cols={2} className="md:grid-cols-3">
-                    {/* ↑↑↑ Por defecto 2 columnas ↑↑↑ En 'md' y superior, 3 columnas */}
                         <InfoDisplay label="Estatura (cm)" value={initialModel.height_cm} />
                         {initialModel.gender === 'Male' ? <InfoDisplay label="Pecho (cm)" value={initialModel.chest_cm} /> : <InfoDisplay label="Busto (cm)" value={initialModel.bust_cm} />}
                         <InfoDisplay label="Cintura (cm)" value={initialModel.waist_cm} />
@@ -188,9 +186,17 @@ export default function ModelProfilePageClient({ initialModel }: ModelProfileCli
         </div>
       )}
 
-      <CompCardManager modelId={initialModel.id} />
+      {/* CORRECCIÓN: Se eliminan los '(as any)' */}
+      <CompCardManager
+        modelId={initialModel.id}
+        initialCoverUrl={initialModel.coverUrl ?? null}
+        initialPortfolioUrl={initialModel.portfolioUrl ?? null}
+        initialCompCardUrls={initialModel.compCardUrls ?? [null, null, null, null]}
+        initialCoverPath={initialModel.cover_path ?? null}
+        initialPortfolioPath={initialModel.portfolio_path ?? null}
+        initialCompCardPaths={initialModel.comp_card_paths ?? [null, null, null, null]}
+      />
 
-      {/* Danger Zone: eliminar modelo (moved from header) */}
       <div
         className="rounded-lg p-6 mt-6"
         style={{

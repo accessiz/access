@@ -32,5 +32,6 @@ export default async function ModelProfilePage({ params }: PageProps) {
     return <div>Modelo no encontrado</div>;
   }
 
+  // Model ahora viene enriquecido con coverUrl, portfolioUrl y compCardUrls
   return <ModelProfilePageClient initialModel={model} />;
 }

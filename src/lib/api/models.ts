@@ -86,7 +86,11 @@ export async function getModelsEnriched(searchParams: SearchParams) {
   return { data: enrichedData, count: count || 0 };
 }
 
-export async function getModelById(id: string): Promise<Model | null> {
+export async function getModelById(id: string): Promise<(Model & {
+  coverUrl?: string | null;
+  portfolioUrl?: string | null;
+  compCardUrls?: (string | null)[];
+}) | null> {
   noStore();
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -99,9 +103,45 @@ export async function getModelById(id: string): Promise<Model | null> {
     if (error.code !== 'PGRST116') {
       logError(error, { action: 'getModelById', id });
     }
-    // Return null when not found or on error (caller should handle null)
     return null;
   }
 
-  return data;
+  // Enrich model with signed URLs for images (cover, portfolio, comp cards)
+  const model = data as Model & {
+    cover_path?: string | null;
+    portfolio_path?: string | null;
+    comp_card_paths?: (string | null)[];
+  };
+
+  const pathsToSign: string[] = [];
+  const coverPath = model.cover_path || null;
+  const portfolioPath = model.portfolio_path || null;
+  const compCardPaths = (model.comp_card_paths || []).slice(0, 4);
+
+  if (coverPath) pathsToSign.push(coverPath);
+  if (portfolioPath) pathsToSign.push(portfolioPath);
+  for (const p of compCardPaths) if (p) pathsToSign.push(p as string);
+
+  const signedUrlMap = new Map<string, string>();
+  if (pathsToSign.length > 0) {
+    const { data: signedUrlsData, error: signError } = await supabase.storage.from(BUCKET_NAME).createSignedUrls(pathsToSign, 300);
+    if (signError) {
+      logError(signError, { action: 'getModelById.batch sign urls', id, pathsToSign });
+    } else if (signedUrlsData) {
+      for (const item of signedUrlsData) {
+        if (item.path && item.signedUrl) signedUrlMap.set(item.path, item.signedUrl);
+      }
+    }
+  }
+
+  const coverUrl = coverPath ? signedUrlMap.get(coverPath) || null : null;
+  const portfolioUrl = portfolioPath ? signedUrlMap.get(portfolioPath) || null : null;
+  const compCardUrls = compCardPaths.map(p => p ? signedUrlMap.get(p as string) || null : null);
+
+  return {
+    ...model,
+    coverUrl,
+    portfolioUrl,
+    compCardUrls,
+  };
 }

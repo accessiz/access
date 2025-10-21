@@ -109,7 +109,19 @@ export async function POST(
     return NextResponse.json({ error: 'Archivo subido, pero no se pudo actualizar la base de datos.' }, { status: 500 });
   }
 
-  return NextResponse.json({ success: true, path: filePath });
+  // Intentar crear una URL firmada para el archivo subido para que el cliente la use inmediatamente
+  try {
+    const { data: signedData, error: signError } = await supabase.storage.from(BUCKET_NAME).createSignedUrls([filePath], 300);
+    if (signError) {
+      logError(signError, { action: 'create signed url after upload', path: filePath, modelId });
+      return NextResponse.json({ success: true, path: filePath });
+    }
+    const signedUrl = (signedData && signedData[0] && signedData[0].signedUrl) || null;
+    return NextResponse.json({ success: true, path: filePath, signedUrl });
+  } catch { // <-- CORRECCIÓN: Se elimina la variable 'err' no utilizada
+    // No queremos romper la subida si la firma falla, devolvemos al menos el path
+    return NextResponse.json({ success: true, path: filePath });
+  }
 }
 
 // DELETE: Eliminar imagen
@@ -133,7 +145,7 @@ export async function DELETE(
   if (!filePath) {
     return NextResponse.json({ error: 'Falta la ruta del archivo a eliminar' }, { status: 400 });
   }
-  
+
   if (!filePath.startsWith(modelId)) {
     return NextResponse.json({ error: 'Ruta de archivo no válida (conflicto de ID)' }, { status: 403 });
   }
@@ -160,7 +172,7 @@ export async function DELETE(
     dbUpdateData = { cover_path: null };
   } else if (type === 'portfolio') {
     dbUpdateData = { portfolio_path: null };
-  } else if (type === 'comp-card' && slotIndex !== null) {
+  } else if (type === 'comp-card' && slotIndex !== null && !isNaN(slotIndex) && slotIndex >= 0 && slotIndex < 4) { // Añadida validación extra
       const { data: modelData, error: fetchError } = await supabase
         .from('models')
         .select('comp_card_paths')
@@ -171,7 +183,7 @@ export async function DELETE(
         logError(fetchError, { action: 'fetch model for array update (delete)', modelId });
         return NextResponse.json({ error: 'No se pudo leer el modelo para actualizar.' }, { status: 500 });
       }
-    
+
       const existingPaths = (modelData && (modelData as { comp_card_paths?: (string | null)[] }).comp_card_paths) || null;
       const newPaths = Array.isArray(existingPaths) ? [...existingPaths] : Array(4).fill(null);
       newPaths[slotIndex] = null; // Setea el slot específico a null
