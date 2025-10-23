@@ -49,6 +49,18 @@ export default function ModelProfilePageClient({ initialModel }: ModelProfileCli
     return isNaN(parsed) ? null : parsed;
   };
 
+  // Normalize persisted values to the supported US size range and increments.
+  const normalizeShoeSize = (value: number | string | null | undefined): number | null => {
+    if (value === null || value === undefined || value === '') return null;
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed)) return null;
+    const rounded = Number(parsed.toFixed(1));
+    const isHalfStep = Number.isInteger(rounded * 2);
+    if (!isHalfStep) return null;
+    if (rounded < 3.5 || rounded > 15) return null;
+    return rounded;
+  };
+
   const form = useForm<ModelFormData>({
     resolver: zodResolver(modelFormSchema),
     defaultValues: {
@@ -68,7 +80,7 @@ export default function ModelProfilePageClient({ initialModel }: ModelProfileCli
       hips_cm: initialModel.hips_cm ?? null,
       top_size: initialModel.top_size ?? null,
       pants_size: safeParseInt(initialModel.pants_size),
-      shoe_size_us: initialModel.shoe_size_us ?? null,
+  shoe_size_us: normalizeShoeSize(initialModel.shoe_size_us),
       instagram: initialModel.instagram ?? '',
       tiktok: initialModel.tiktok ?? '',
       status: initialModel.status ?? 'active',

@@ -7,40 +7,63 @@ const phoneRegex = /^\+\d{7,15}$/;
 
 /**
  * Preprocesador para transformar valores "vacíos" (undefined, null, o strings vacíos) a null.
- * Esto es ideal para campos de formulario opcionales. Si el valor no está vacío, lo pasa
- * sin cambios para la siguiente validación.
+ * Además, limpia espacios extra en strings.
  */
 const emptyToNull = (val: unknown) => {
-  if (val === undefined || val === null || (typeof val === 'string' && val.trim() === '')) {
-    return null;
+  if (val === undefined || val === null) return null;
+  if (typeof val === 'string') {
+    const trimmed = val.trim();
+    return trimmed === '' ? null : trimmed;
   }
   return val;
 };
 
 // Esquema para un campo de texto opcional
 const optionalString = z.preprocess(emptyToNull, z.string().nullable());
+
 // Esquema para un campo de texto opcional con una regex específica
 const optionalStringWithRegex = (regex: RegExp, message: string) => 
   z.preprocess(emptyToNull, z.string().regex(regex, message).nullable());
+
 // Esquema para un campo numérico opcional y positivo
 const optionalPositiveNumber = z.preprocess(
   emptyToNull,
   z.coerce.number().positive("El valor debe ser un número positivo.").nullable()
 );
+
 // Lista de tallas US para el dropdown: desde 3.5 hasta 15 en incrementos de 0.5
 const usShoeSizes: number[] = Array.from(
   { length: Math.round((15 - 3.5) / 0.5) + 1 },
   (_, i) => Number((3.5 + i * 0.5).toFixed(1))
 );
 
-// Esquema para talla US: sólo permite valores exactos de la lista
-const optionalUSSize = z.preprocess(emptyToNull, z.coerce.number().refine((v) => usShoeSizes.includes(Number(v)), {
-  message: 'Selecciona una talla válida (US).'
-}).nullable());
+// Esquema para talla US: normaliza y valida
+const optionalUSSize = z.preprocess((val) => {
+  // empty -> null
+  if (val === undefined || val === null || (typeof val === 'string' && val.trim() === '')) {
+    return null;
+  }
+
+  // Try to parse number-like values
+  const num = Number(val);
+  if (Number.isNaN(num)) return val; // deja que Zod lo invalide
+
+  // Round to one decimal (e.g., 4 -> 4.0)
+  return Number(num.toFixed(1));
+}, z.union([
+  z.number().refine((v) => {
+    return usShoeSizes.includes(v);
+  }, { message: 'Selecciona una talla válida (US).' }),
+  z.null()
+]));
+
 // Esquema para un campo enum opcional
 const optionalEnum = <T extends [string, ...string[]]>(values: T) => 
   z.preprocess(emptyToNull, z.enum(values).nullable());
 
+// ------------------------------------------------------
+// 📋 Esquema principal
+// ------------------------------------------------------
 
 export const modelFormSchema = z.object({
   // --- CAMPOS OBLIGATORIOS ---
