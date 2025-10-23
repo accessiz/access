@@ -33,5 +33,7 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
   }
 
   // Si no hay contraseña o el cliente ya tiene la cookie, mostramos el slider.
-  return <ClientSlider project={project} initialModels={initialModels} />;
+  // Aseguramos que cada modelo tenga la propiedad `selection` por defecto.
+  const modelsWithSelection = initialModels.map(m => ({ ...m, selection: (m.client_selection as 'pending' | 'approved' | 'rejected') ?? 'pending' }));
+  return <ClientSlider project={project} initialModels={modelsWithSelection} />;
 }

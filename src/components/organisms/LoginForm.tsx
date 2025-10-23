@@ -67,7 +67,7 @@ export function LoginForm() {
             />
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
-          <Button disabled={loading} className="w-full">
+          <Button type="submit" disabled={loading} className="w-full">
             {loading ? 'Ingresando...' : 'Iniciar Sesión'}
           </Button>
         </form>
