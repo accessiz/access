@@ -90,6 +90,25 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
     }
   }, [project.id, project.status]);
 
+
+  // --- INICIO DE LA CORRECCIÓN ---
+  // Sincroniza el estado 'models' si 'initialModels' (props) cambia
+  // (especialmente después de pasar la pantalla de contraseña).
+  useEffect(() => {
+    // Si nuestro estado interno está vacío Y las props que recibimos SÍ tienen datos...
+    if (models.length === 0 && initialModels.length > 0) {
+      // ...entonces actualizamos nuestro estado interno.
+      setModels(
+        initialModels.map(m => ({ 
+          ...m, 
+          selection: (m.client_selection as 'pending' | 'approved' | 'rejected') ?? 'pending' 
+        }))
+      );
+    }
+  }, [initialModels, models.length]); // Se ejecuta si estas dos cosas cambian
+  // --- FIN DE LA CORRECCIÓN ---
+
+
   // --- C. MANEJADORES DE NAVEGACIÓN (AHORA VIVEN AQUÍ) ---
 
   const handlePrev = () => {
@@ -162,6 +181,7 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
       <header className="flex-shrink-0">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-semibold uppercase tracking-wider">
+            {/* Si 'currentModel' no existe (porque 'models' está vacío), muestra 'Cargando...' */}
             {currentModel?.alias || 'Cargando...'}
           </h1>
           <ThemeToggle />
@@ -215,4 +235,3 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
     </div>
   );
 }
-

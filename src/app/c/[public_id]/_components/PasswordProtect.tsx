@@ -3,7 +3,8 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { verifyProjectPassword } from '@/lib/actions/projects';
+// CORRECCIÓN: Se usa la ruta relativa para evitar errores de alias
+import { verifyProjectPassword } from '../../../../lib/actions/projects';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,7 +28,11 @@ export default function PasswordProtect({ projectId, projectName }: PasswordProt
       const result = await verifyProjectPassword(projectId, password);
       if (result.success) {
         toast.success('Acceso concedido. ¡Bienvenido!');
-        router.refresh();
+        
+        // CORRECCIÓN: Se usa router.push() a la misma ruta para forzar
+        // la revalidación de la página y la lectura de la nueva cookie.
+        router.push(window.location.pathname);
+
       } else {
         toast.error(result.error || 'Ocurrió un error.');
       }

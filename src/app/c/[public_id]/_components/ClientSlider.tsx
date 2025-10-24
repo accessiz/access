@@ -286,12 +286,20 @@ export default function ClientSlider({
                 applyState(centerIndexRef.current, 0); // Siempre instantáneo
             };
             
+            // --- INICIO DE LA CORRECCIÓN ---
+            // Volvemos a usar requestAnimationFrame.
+            // Esto asegura que 'updateSizing' se ejecute DESPUÉS de que el navegador
+            // haya calculado la altura del layout (clientHeight), lo cual es crucial
+            // después de una navegación del lado del cliente.
             const animFrame = requestAnimationFrame(onResize);
+            // --- FIN DE LA CORRECCIÓN ---
 
             const ro = new ResizeObserver(onResize);
             ro.observe(sliderContainer);
             
             return () => {
+                // --- CORRECCIÓN AQUÍ TAMBIÉN ---
+                // Restauramos el cancelAnimationFrame
                 cancelAnimationFrame(animFrame);
                 ro.disconnect();
             };
@@ -305,6 +313,9 @@ export default function ClientSlider({
      * EFECTO 2: Movimiento (Se ejecuta en cada cambio de `centerIndex`)
      */
     useLayoutEffect(() => {
+        // Esta lógica (isInitialMove) es correcta.
+        // Previene que este efecto se ejecute en la carga inicial,
+        // ya que el EFECTO 1 se encarga del dibujado inicial.
         if (isInitialMove.current) {
             isInitialMove.current = false;
             return;
@@ -386,7 +397,7 @@ export default function ClientSlider({
                                         currentSelection={currentModel.selection}
                                         onClick={() => handleLocalSelection('approved')}
                                     />
-                                </div>
+                                 </div>
                             </div>
                         </div>
                     ))}
