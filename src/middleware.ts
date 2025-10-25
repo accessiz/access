@@ -49,10 +49,14 @@ export async function middleware(request: NextRequest) {
   return response
 }
 
-// Configuración para que el middleware se ejecute en todas las rutas
-// excepto en las de archivos estáticos.
+// --- ¡ESTA ES LA PARTE CORREGIDA! ---
+// Configuración para que el middleware se ejecute ÚNICAMENTE en las rutas
+// del dashboard, API y autenticación.
+// Esto DEJA LIBRES las rutas públicas (como '/c/...')
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico).*)',
+    '/dashboard/:path*', // Todas las rutas del admin
+    '/api/:path*',       // Todas las rutas de tu API
+    '/auth/:path*'       // Tus rutas de /auth/signout, etc.
   ],
 }
