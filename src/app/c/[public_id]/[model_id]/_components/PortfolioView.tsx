@@ -10,6 +10,11 @@ import { updateModelSelection } from '@/lib/actions/projects_models';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Check, X, Loader2 } from 'lucide-react';
 
+// 1. IMPORTAR LOS NUEVOS COMPONENTES
+import { ClientNavbar } from '../../../_components/ClientNavbar';
+import { ClientHeader } from '../../../_components/ClientHeader';
+import { ClientFooter } from '../../../_components/ClientFooter';
+
 interface PortfolioViewProps {
   project: Project;
   model: Model;
@@ -24,7 +29,6 @@ export default function PortfolioView({ project, model: initialModel }: Portfoli
       const result = await updateModelSelection(project.id, model.id, selection);
       if (result.success) {
         toast.success(`Selección guardada: ${selection === 'approved' ? 'Aprobado' : 'Rechazado'}`);
-        // Actualizamos el estado local para reflejar el cambio en la UI
         setModel(prevModel => ({ ...prevModel, client_selection: selection }));
       } else {
         toast.error(result.error || 'No se pudo guardar la selección.');
@@ -32,26 +36,27 @@ export default function PortfolioView({ project, model: initialModel }: Portfoli
     });
   };
 
-  const backUrl = `/c/${project.id}`;
+  const backUrl = `/c/${project.public_id}`; // Usamos public_id para el link
 
   return (
-    <div className="relative min-h-screen w-full bg-white text-black flex flex-col">
-      {/* Encabezado con botón de regreso y datos */}
-      <header className="absolute top-0 left-0 right-0 z-10 p-4 sm:p-8 flex justify-between items-center">
-        <div>
-           <h1 className="text-xl font-bold">{model.alias}</h1>
-           <p className="text-sm text-gray-600">{project.project_name}</p>
-        </div>
-        <Button variant="outline" asChild className="bg-white/80 backdrop-blur-sm">
+    <div className="relative min-h-screen w-full bg-white text-black dark:bg-black dark:text-white flex flex-col">
+      
+      {/* 2. AÑADIR NAVBAR Y HEADER CONSISTENTES */}
+      <ClientNavbar clientName={project.client_name} />
+      <ClientHeader projectName={project.project_name} />
+      
+      {/* Botón de Regreso (Reposicionado) */}
+      <div className="px-4 pt-6 sm:px-6 md:px-8">
+        <Button variant="outline" asChild>
           <Link href={backUrl}>
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Regresar al Slider
+            Regresar al Grid
           </Link>
         </Button>
-      </header>
+      </div>
 
       {/* Contenido principal con la imagen */}
-      <main className="flex-1 flex items-center justify-center p-4 pt-24 pb-32">
+      <main className="flex-1 flex items-center justify-center p-4 pt-8 pb-32">
         <div className="relative w-full max-w-4xl aspect-[4/3]">
           {model.portfolioUrl ? (
             <Image
@@ -71,12 +76,12 @@ export default function PortfolioView({ project, model: initialModel }: Portfoli
 
       {/* Footer con botones de acción (solo si está pendiente) */}
       {model.client_selection === 'pending' && (
-        <footer className="absolute bottom-0 left-0 right-0 z-10 p-4 sm:p-8 bg-gradient-to-t from-white via-white to-transparent">
+        <footer className="sticky bottom-0 z-10 p-4 sm:p-8 bg-gradient-to-t from-white via-white to-transparent dark:from-black dark:via-black">
           <div className="max-w-md mx-auto flex justify-center gap-4">
             <Button
               size="lg"
               variant="outline"
-              className="w-full bg-white border-red-500 text-red-500 hover:bg-red-50 hover:text-red-600"
+              className="w-full bg-white dark:bg-black border-red-500 text-red-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
               onClick={() => handleSelection('rejected')}
               disabled={isPending}
             >
@@ -95,13 +100,18 @@ export default function PortfolioView({ project, model: initialModel }: Portfoli
           </div>
         </footer>
       )}
-       {model.client_selection !== 'pending' && (
-         <footer className="absolute bottom-0 left-0 right-0 z-10 p-4 sm:p-8 text-center">
-             <p className="text-gray-600 bg-gray-100 inline-block px-4 py-2 rounded-full">
+      
+      {/* Mensaje si ya fue calificado */}
+      {model.client_selection !== 'pending' && (
+         <footer className="sticky bottom-0 z-10 p-4 sm:p-8 text-center">
+             <p className="text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 inline-block px-4 py-2 rounded-full">
                 {`Ya has calificado a este talento como: ${model.client_selection === 'approved' ? 'Aprobado' : 'Rechazado'}`}
             </p>
          </footer>
        )}
+       
+      {/* 3. AÑADIR FOOTER CONSISTENTE */}
+      <ClientFooter />
     </div>
   );
 }

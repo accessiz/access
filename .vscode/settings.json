@@ -1,0 +1,17 @@
+{
+  // Ignore unknown at-rules like @apply/@tailwind produced by Tailwind/PostCSS
+  "css.lint.unknownAtRules": "ignore",
+  "scss.lint.unknownAtRules": "ignore",
+  "less.lint.unknownAtRules": "ignore",
+
+  // If you use the Tailwind CSS IntelliSense extension, make sure it treats
+  // PostCSS files and common front-end languages as tailwind-aware.
+  "tailwindCSS.includeLanguages": {
+    "typescript": "javascript",
+    "typescriptreact": "html",
+    "javascriptreact": "html",
+    "postcss": "css",
+    "css": "css",
+    "scss": "scss"
+  }
+}

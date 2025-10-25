@@ -11,9 +11,10 @@ type PageProps = {
 
 export default async function ClientViewPage({ params }: PageProps) {
   const resolvedParams = await params;
-  const projectId = resolvedParams.public_id;
+  const publicId = resolvedParams.public_id; // Renombrado para claridad
 
-  const project = await getProjectById(projectId);
+  // 1. Obtenemos el proyecto usando el publicId (esto funciona)
+  const project = await getProjectById(publicId);
 
   if (!project) {
     return (
@@ -26,7 +27,7 @@ export default async function ClientViewPage({ params }: PageProps) {
     );
   }
 
-  // ✅ Comprobación de estado ANTES de hacer más trabajo
+  // 2. Comprobación de estado (sin cambios)
   if (project.status === 'completed' || project.status === 'archived') {
     return (
       <div className="flex h-screen w-full items-center justify-center text-center p-4 bg-white">
@@ -44,12 +45,17 @@ export default async function ClientViewPage({ params }: PageProps) {
  
   // --- Lógica que solo se ejecuta para proyectos ACTIVOS ---
  
-  // ✅ Lógica de cookies y modelos movida aquí
   const cookieStore = await cookies();
-  const cookieName = `project_access_${projectId}`;
+  // --- CORRECCIÓN DE COOKIE ---
+  // Usamos el ID real (UUID) para la cookie, ya que 'publicId' podría no ser único si lo cambias.
+  // 'verifyProjectPassword' también usa el ID real.
+  const cookieName = `project_access_${project.id}`;
   const hasAccessCookie = cookieStore.get(cookieName)?.value === 'true';
 
-  const models = (!project.password || hasAccessCookie) ? await getModelsForProject(projectId) : [];
+  // --- CORRECCIÓN CLAVE ---
+  // Ahora usamos 'project.id' (el UUID real) para llamar a getModelsForProject,
+  // en lugar de 'publicId' (el ID corto de la URL).
+  const models = (!project.password || hasAccessCookie) ? await getModelsForProject(project.id) : [];
 
   return (
     <ClientViewHandler
