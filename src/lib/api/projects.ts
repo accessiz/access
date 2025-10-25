@@ -18,7 +18,7 @@ type SearchParams = {
   limit?: number;
 };
 
-// Función para obtener la lista de proyectos (sin cambios aquí)
+// Función para obtener la lista de proyectos (sin cambios)
 export async function getProjectsForUser(searchParams: SearchParams = {}) {
   noStore();
   const supabase = await createClient();
@@ -76,16 +76,37 @@ export async function getProjectsForUser(searchParams: SearchParams = {}) {
   return { data: data || [], count: count || 0 };
 }
 
-// Función para obtener un proyecto por ID (sin cambios aquí)
+// --- INICIO DE LA CORRECCIÓN ---
+
+// Helper para validar si un string es un UUID
+const isUUID = (id: string) => {
+  return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(id);
+}
+
+// Función para obtener un proyecto por ID (MODIFICADA)
 export async function getProjectById(projectId: string): Promise<Project | null> {
   noStore();
   const supabase = await createClient();
-  // Busca por ID de base de datos o por public_id
-  const { data, error } = await supabase
-    .from('projects')
-    .select('*')
-    .or(`id.eq.${projectId},public_id.eq.${projectId}`)
-    .single();
+  
+  // Determinamos qué columna consultar para evitar errores de casting de UUID
+  let queryBuilder;
+  if (isUUID(projectId)) {
+    // Si es un UUID, buscamos por la columna 'id'
+    queryBuilder = supabase
+      .from('projects')
+      .select('*')
+      .eq('id', projectId)
+      .single();
+  } else {
+    // Si NO es un UUID, asumimos que es un 'public_id' y buscamos en esa columna
+    queryBuilder = supabase
+      .from('projects')
+      .select('*')
+      .eq('public_id', projectId)
+      .single();
+  }
+  
+  const { data, error } = await queryBuilder;
 
   if (error) {
     // Es normal no encontrar un proyecto si el ID es incorrecto, no loguear como error fatal
@@ -96,6 +117,8 @@ export async function getProjectById(projectId: string): Promise<Project | null>
   }
   return data as Project;
 }
+// --- FIN DE LA CORRECCIÓN ---
+
 
 // Función para obtener modelos de un proyecto (OPTIMIZADA)
 export async function getModelsForProject(projectId: string): Promise<Model[]> {
@@ -167,7 +190,7 @@ export async function getModelsForProject(projectId: string): Promise<Model[]> {
   return enriched;
 }
 
-// Función para obtener UN modelo específico para un proyecto (sin cambios, ya era eficiente)
+// Función para obtener UN modelo específico para un proyecto (sin cambios)
 export async function getModelForProject(projectId: string, modelId: string): Promise<Model | null> {
   noStore();
   const supabase = await createClient();

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { 
+    useEffect, // <-- CAMBIO N°1: Importamos useEffect
     useLayoutEffect, 
     useRef, 
     useCallback, 
@@ -42,10 +43,6 @@ interface SelectionButtonProps {
 }
 
 // --- Componente de Botón (Memoizado) ---
-/**
- * Un botón de selección puro y memoizado para evitar re-renders innecesarios
- * cuando el slider se mueve.
- */
 const SelectionButton = memo(({ 
     icon: Icon, 
     selection, 
@@ -98,15 +95,11 @@ export default function ClientSlider({
 }: ClientSliderProps) {
     
     // --- Refs del DOM ---
-    // mainRef es el contenedor principal, usado para el contexto de GSAP y ResizeObserver
     const mainRef = useRef<HTMLDivElement>(null); 
-    // galeriaRef es el contenedor *móvil* que GSAP animará en 'x'
     const galeriaRef = useRef<HTMLDivElement>(null);
-    // cuadrosRef es un array de todas las tarjetas individuales
     const cuadrosRef = useRef<(HTMLDivElement | null)[]>([]);
 
     // --- Refs de Estado ---
-    // Ref para almacenar los tamaños calculados. No dispara re-renders.
     const sizing = useRef({ 
         largeHeight: 0, 
         largeWidth: 0, 
@@ -114,10 +107,8 @@ export default function ClientSlider({
         smallWidth: 0 
     });
     
-    // Ref para evitar que la animación de "movimiento" se ejecute en la carga inicial
     const isInitialMove = useRef(true);
     
-    // Ref para almacenar el centerIndex actual.
     const centerIndexRef = useRef(centerIndex);
     useLayoutEffect(() => {
         centerIndexRef.current = centerIndex;
@@ -127,49 +118,33 @@ export default function ClientSlider({
 
     /**
      * Calcula y almacena los tamaños de las tarjetas (grande y pequeña)
-     * basándose en la altura Y ANCHO del contenedor principal (mainRef).
      */
     const updateSizing = useCallback(() => {
         const sliderContainer = mainRef.current;
         if (!sliderContainer) return;
 
-        // --- INICIO DE LA MODIFICACIÓN RESPONSIVE ---
-        
-        // 1. Obtener ambas dimensiones del contenedor
         const containerHeight = sliderContainer.clientHeight;
         const containerWidth = sliderContainer.clientWidth;
 
-        // 2. Definir un padding horizontal para evitar que la tarjeta toque los bordes en móvil
-        // (ej: 1rem a cada lado = 16px * 2 = 32px)
-        const mobileHorizontalPadding = 32; 
+        // Si la altura es 0, no hacer nada. 
+        // Esto es un seguro extra, aunque con useEffect no debería pasar.
+        if (containerHeight === 0) return;
 
-        // 3. Calcular el ancho potencial si usamos el 100% de la altura
+        const mobileHorizontalPadding = 32; 
         const potentialWidthFromHeight = containerHeight * ASPECT_RATIO;
 
-        // 4. Comprobar si el ancho potencial (más el padding) se pasa del ancho del contenedor
         if (potentialWidthFromHeight + mobileHorizontalPadding > containerWidth) {
-            
-            // --- Caso Móvil (El ANCHO es la limitante) ---
-            // El ancho de la tarjeta es el ancho del contenedor menos el padding
             sizing.current.largeWidth = containerWidth - mobileHorizontalPadding;
-            // La altura se recalcula basándose en el nuevo ancho
             sizing.current.largeHeight = sizing.current.largeWidth / ASPECT_RATIO;
-
         } else {
-            
-            // --- Caso Desktop (La ALTURA es la limitante) ---
-            // La altura de la tarjeta es la altura del contenedor
             sizing.current.largeHeight = containerHeight;
-            // El ancho se calcula basándose en la altura (como estaba antes)
             sizing.current.largeWidth = potentialWidthFromHeight;
         }
-        // --- FIN DE LA MODIFICACIÓN RESPONSIVE ---
 
-        // El tamaño de las tarjetas pequeñas sigue siendo relativo al tamaño grande
         sizing.current.smallHeight = sizing.current.largeHeight * 0.2; 
         sizing.current.smallWidth = sizing.current.smallHeight * ASPECT_RATIO;
         
-    }, []); // La función sigue sin tener dependencias
+    }, []); // Sin dependencias
 
     /**
      * Función principal de GSAP.
@@ -181,12 +156,12 @@ export default function ClientSlider({
         const parent = mainRef.current;
         const cards = cuadrosRef.current;
 
-        if (!gallery || !parent || cards.length === 0) return;
+        // Si los tamaños son 0, no ejecutar la animación para evitar colapsar
+        if (!gallery || !parent || cards.length === 0 || largeHeight === 0) return;
 
         const gap = 16; // 1rem
         const parentWidth = parent.clientWidth;
         
-        // 1. Calcular la posición X del contenedor de la galería
         const centerOffset = (parentWidth / 2) - (largeWidth / 2);
         let totalWidthBefore = 0;
         for (let i = 0; i < targetIndex; i++) {
@@ -194,14 +169,12 @@ export default function ClientSlider({
         }
         const targetX = centerOffset - totalWidthBefore;
 
-        // 2. Animar el contenedor principal
         gsap.to(gallery, { 
             x: targetX, 
             duration, 
             ease: ANIM_EASE 
         });
 
-        // 3. Animar cada tarjeta individual
         cards.forEach((cuadro, index) => {
             if (!cuadro) return;
             const isCenter = index === targetIndex;
@@ -215,13 +188,12 @@ export default function ClientSlider({
                 ease: ANIM_EASE
             });
             
-            // 4. Animar el overlay de botones y texto
             const overlayContent = cuadro.querySelector('.overlay-content') as HTMLElement;
             if (overlayContent) {
                 gsap.to(overlayContent, {
                     opacity: isCenter ? 1 : 0,
-                    duration: duration * 0.5, // Más rápido
-                    delay: isCenter ? duration * 0.5 : 0, // Aparece a la mitad, desaparece al inicio
+                    duration: duration * 0.5, 
+                    delay: isCenter ? duration * 0.5 : 0, 
                     onStart: () => {
                         if (isCenter) overlayContent.style.pointerEvents = 'auto';
                     },
@@ -231,7 +203,7 @@ export default function ClientSlider({
                 });
             }
         });
-    }, []); // Sin dependencias, solo usa refs y argumentos
+    }, []); // Sin dependencias
 
     /**
      * Maneja la animación de feedback (verde/rojo) al seleccionar.
@@ -275,7 +247,8 @@ export default function ClientSlider({
     /**
      * EFECTO 1: Dimensionamiento y ResizeObserver (Se ejecuta 1 vez)
      */
-    useLayoutEffect(() => {
+    // --- CAMBIO N°2: Se usa useEffect en lugar de useLayoutEffect ---
+    useEffect(() => {
         const sliderContainer = mainRef.current;
         if (!sliderContainer) return;
 
@@ -286,21 +259,16 @@ export default function ClientSlider({
                 applyState(centerIndexRef.current, 0); // Siempre instantáneo
             };
             
-            // --- INICIO DE LA CORRECCIÓN ---
-            // Volvemos a usar requestAnimationFrame.
-            // Esto asegura que 'updateSizing' se ejecute DESPUÉS de que el navegador
-            // haya calculado la altura del layout (clientHeight), lo cual es crucial
-            // después de una navegación del lado del cliente.
-            const animFrame = requestAnimationFrame(onResize);
-            // --- FIN DE LA CORRECCIÓN ---
-
+            // --- CAMBIO N°3: Simplificado ---
+            // Como estamos en useEffect, el navegador YA PINTÓ.
+            // 'clientHeight' es correcto. Podemos llamar a onResize() directamente.
+            // No necesitamos 'requestAnimationFrame' aquí.
+            onResize();
+            
             const ro = new ResizeObserver(onResize);
             ro.observe(sliderContainer);
             
             return () => {
-                // --- CORRECCIÓN AQUÍ TAMBIÉN ---
-                // Restauramos el cancelAnimationFrame
-                cancelAnimationFrame(animFrame);
                 ro.disconnect();
             };
         }, mainRef); 
@@ -312,10 +280,10 @@ export default function ClientSlider({
     /**
      * EFECTO 2: Movimiento (Se ejecuta en cada cambio de `centerIndex`)
      */
+    // --- SIN CAMBIOS AQUÍ ---
+    // Este se queda como useLayoutEffect para sincronizar la animación
+    // de cambio de índice con el pintado.
     useLayoutEffect(() => {
-        // Esta lógica (isInitialMove) es correcta.
-        // Previene que este efecto se ejecute en la carga inicial,
-        // ya que el EFECTO 1 se encarga del dibujado inicial.
         if (isInitialMove.current) {
             isInitialMove.current = false;
             return;
@@ -351,7 +319,6 @@ export default function ClientSlider({
                             ref={el => { cuadrosRef.current[index] = el; }}
                             className={cn(
                                 "aspect-[3/4] relative flex-shrink-0 bg-cover bg-center cursor-pointer overflow-hidden group",
-                                // Clase condicional para fondo si no hay imagen
                                 model.coverUrl ? 'bg-transparent' : 'bg-muted'
                             )}
                             style={{ backgroundImage: model.coverUrl ? `url(${model.coverUrl})` : 'none' }}

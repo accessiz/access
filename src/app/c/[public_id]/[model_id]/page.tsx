@@ -11,16 +11,23 @@ type PageProps = {
 export default async function ModelPortfolioPage({ params }: PageProps) {
   const { public_id: projectId, model_id: modelId } = await params;
 
-  // Obtenemos los datos del proyecto y del modelo específico en paralelo
-  const [project, model] = await Promise.all([
-    getProjectById(projectId),
-    getModelForProject(projectId, modelId)
-  ]);
+  // 1. Obtenemos el proyecto PRIMERO usando el public_id (projectId)
+  const project = await getProjectById(projectId);
 
-  // Si no se encuentra el proyecto o el modelo, mostramos un 404
-  if (!project || !model) {
+  // Si no se encuentra el proyecto, mostramos un 404
+  if (!project) {
     notFound();
   }
 
+  // 2. AHORA usamos el ID real del proyecto (project.id) para buscar el modelo
+  //    junto con el modelId.
+  const model = await getModelForProject(project.id, modelId);
+
+  // Si no se encuentra el modelo (o no pertenece a ese project.id), mostramos 404
+  if (!model) {
+    notFound();
+  }
+
+  // 3. Pasamos ambos objetos al componente cliente
   return <PortfolioView project={project} model={model} />;
 }
