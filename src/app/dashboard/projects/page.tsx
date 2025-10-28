@@ -25,6 +25,5 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
     sortDir: (resolvedSearchParams.dir as 'asc' | 'desc') || 'desc',
   });
 
-  // CORRECCIÓN: El componente que se usa es <ProjectsClientPage>
-  return <ProjectsClientPage initialProjects={data} initialCount={count} />;
+  return <ProjectsClientPage initialProjects={data as Project[]} initialCount={count} />;
 }

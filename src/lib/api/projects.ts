@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { unstable_noStore as noStore } from 'next/cache';
-import { Model, Project } from "@/lib/types";
+import { Model, Project } from "@/lib/types"; // Asegúrate que Model incluye client_selection?
 import { logError } from '@/lib/utils/errors';
 
 const BUCKET_NAME = 'Book_Completo_iZ_Management';
@@ -69,53 +69,39 @@ export async function getProjectsForUser(searchParams: SearchParams = {}) {
 
   if (error) {
     logError(error, { action: 'fetch projects list', params: searchParams });
-    // Avoid throwing in server helper; return safe empty result for callers
     return { data: [], count: 0 };
   }
 
   return { data: data || [], count: count || 0 };
 }
 
-// --- INICIO DE LA CORRECCIÓN ---
-
-// Helper para validar si un string es un UUID (SE CONSERVA POR SI ACASO)
-// const isUUID = (id: string) => {
-//   return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(id);
-// }
-
 // Función para obtener un proyecto por ID (MODIFICADA)
 export async function getProjectById(idOrPublicId: string): Promise<Project | null> {
   noStore();
   const supabase = await createClient();
-  
-  // --- LÓGICA CORREGIDA ---
-  // Las rutas públicas (/c/...) SIEMPRE usan el 'public_id'.
-  // Las rutas de admin (/dashboard/projects/...) pueden usar el 'id' (PK).
-  // Esta función ahora intenta buscar por AMBOS.
+
   const { data, error } = await supabase
       .from('projects')
       .select('*')
       .or(`id.eq.${idOrPublicId},public_id.eq.${idOrPublicId}`)
-      .maybeSingle(); // Usamos maybeSingle para que no falle si hay duplicados (aunque no debería)
+      .maybeSingle();
 
   if (error) {
-    // Es normal no encontrar un proyecto si el ID es incorrecto, no loguear como error fatal
-    if (error.code !== 'PGRST116') { // PGRST116 = Single row not found
+    if (error.code !== 'PGRST116') {
         logError(error, { action: 'getProjectById', idOrPublicId });
     }
     return null;
   }
+  // Hacemos una aserción aquí porque sabemos que 'status' debe ser uno de los válidos
+  // si la base de datos está configurada correctamente.
   return data as Project;
 }
-// --- FIN DE LA CORRECCIÓN ---
-
 
 // Función para obtener modelos de un proyecto (OPTIMIZADA)
 export async function getModelsForProject(projectId: string): Promise<Model[]> {
   noStore();
   const supabase = await createClient();
 
-  // Obtiene las relaciones y los datos completos de los modelos asociados
   const { data: projectModelsData, error } = await supabase
     .from('projects_models')
     .select(`
@@ -129,29 +115,37 @@ export async function getModelsForProject(projectId: string): Promise<Model[]> {
     .eq('project_id', projectId);
 
   if (error || !projectModelsData) {
-    // Registra el error real si existe, sino un mensaje genérico
     logError(error || new Error('No data returned'), { action: 'getModelsForProject', projectId });
     return [];
   }
 
-  // Mapea los datos correctamente, manejando posibles modelos nulos o inválidos
+  // Define los tipos y la guardia aquí también si es necesario,
+  // o importa desde donde definiste isValidClientSelection
+  const VALID_CLIENT_SELECTIONS_INNER = ['pending', 'approved', 'rejected'] as const;
+  type ClientSelectionInner = typeof VALID_CLIENT_SELECTIONS_INNER[number];
+  function isValidClientSelectionInner(selection: unknown): selection is ClientSelectionInner {
+      if (typeof selection !== 'string') return false;
+      return VALID_CLIENT_SELECTIONS_INNER.includes(selection as ClientSelectionInner);
+  }
+
   const models = projectModelsData.flatMap(item => {
     const modelData = item.models;
-    // Verifica si modelData es un objeto válido antes de convertirlo
     if (!modelData || Array.isArray(modelData) || typeof modelData !== 'object') {
       console.warn(`Invalid model data found for project ${projectId}:`, item);
-      return []; // Omite este item si los datos del modelo faltan o son inválidos
+      return [];
     }
-    const model = modelData as unknown as Model; // Convertimos a tipo Model
+    const model = modelData as unknown as Model;
+    // Validar el client_selection al mapear
+    const validatedSelection = isValidClientSelectionInner(item.client_selection)
+                               ? item.client_selection
+                               : null; // O 'pending'
+
     return [{
       ...model,
-      // Asegura que client_selection se asigne correctamente, usa null si falta
-      client_selection: item.client_selection ?? null,
+      client_selection: validatedSelection, // Usar el valor validado
     }];
   });
 
-  // --- OPTIMIZACIÓN: leer rutas desde la DB y firmar en lote ---
-  // Recolectar rutas de los modelos obtenidos (cover_path, portfolio_path)
   const pathsToSign: string[] = [];
   const modelsWithPaths = models.map(m => m as Model & { cover_path?: string; portfolio_path?: string });
   for (const m of modelsWithPaths) {
@@ -180,12 +174,31 @@ export async function getModelsForProject(projectId: string): Promise<Model[]> {
   return enriched;
 }
 
-// Función para obtener UN modelo específico para un proyecto (sin cambios)
+
+// --- INICIO: Type Guard para client_selection ---
+const VALID_CLIENT_SELECTIONS = ['pending', 'approved', 'rejected'] as const;
+type ClientSelection = typeof VALID_CLIENT_SELECTIONS[number];
+
+/**
+ * Type Guard para validar el valor de client_selection de la DB.
+ */
+function isValidClientSelection(selection: unknown): selection is ClientSelection {
+  if (typeof selection !== 'string') {
+    return false; // No es válido si no es string
+  }
+  // Comprueba si el string está en nuestro array de selecciones válidas
+  return VALID_CLIENT_SELECTIONS.includes(selection as ClientSelection);
+  // Alternativa más explícita si la anterior falla:
+  // return (VALID_CLIENT_SELECTIONS as ReadonlyArray<string>).includes(selection);
+}
+// --- FIN: Type Guard para client_selection ---
+
+
+// Función para obtener UN modelo específico para un proyecto
 export async function getModelForProject(projectId: string, modelId: string): Promise<Model | null> {
   noStore();
   const supabase = await createClient();
 
-  // Consulta única: obtiene relación y rutas en la misma selección
   const { data, error } = await supabase
     .from('projects_models')
     .select(`
@@ -215,7 +228,6 @@ export async function getModelForProject(projectId: string, modelId: string): Pr
 
   const modelWithPaths = modelData as unknown as Model & { cover_path?: string; portfolio_path?: string };
 
-  // Firmar URLs necesarias
   const pathsToSign: string[] = [];
   if (modelWithPaths.cover_path) pathsToSign.push(modelWithPaths.cover_path);
   if (modelWithPaths.portfolio_path) pathsToSign.push(modelWithPaths.portfolio_path);
@@ -234,9 +246,16 @@ export async function getModelForProject(projectId: string, modelId: string): Pr
     }
   }
 
+  // --- CORRECCIÓN APLICADA AQUÍ ---
+  // Valida el client_selection antes de asignarlo
+  const validatedSelection = isValidClientSelection(data.client_selection)
+                             ? data.client_selection
+                             : null; // O usa 'pending' si prefieres ese default en caso inválido
+  // --- FIN CORRECCIÓN ---
+
   return {
     ...modelWithPaths,
-    client_selection: data.client_selection ?? null,
+    client_selection: validatedSelection, // <-- Usa el valor validado
     coverUrl: modelWithPaths.cover_path ? signedUrlMap.get(modelWithPaths.cover_path) || null : null,
     portfolioUrl: modelWithPaths.portfolio_path ? signedUrlMap.get(modelWithPaths.portfolio_path) || null : null,
   };

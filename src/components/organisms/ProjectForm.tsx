@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useEffect, useState } from 'react';
+import { useActionState, useEffect } from 'react';
 import { useFormStatus } from 'react-dom';
 import Link from 'next/link';
 import { toast } from 'sonner';
@@ -24,13 +24,6 @@ export function ProjectForm() {
   type ActionState = { success: boolean; error?: string; errors?: Record<string, string> };
   const initialState: ActionState = { success: false };
   const [state, dispatch] = useActionState<ActionState, FormData>(createProject, initialState);
-
-  const [formValues, setFormValues] = useState({
-    project_name: '',
-    client_name: '',
-    description: '',
-    password: ''
-  });
 
   // Extract field-level errors returned by the action (if any)
   const fieldErrors = state?.errors as Record<string, string> | undefined;
@@ -83,8 +76,6 @@ export function ProjectForm() {
               name="project_name"
               placeholder="Ej: Campaña Verano 2025"
               required
-              // Usamos defaultValue solo si el estado tiene algo (tras error)
-              defaultValue={formValues.project_name || undefined}
               // Limpiamos el valor si el formulario tuvo éxito (evita repetición tras redirect)
               key={state.success ? 'success' : 'form'}
             />
@@ -97,7 +88,6 @@ export function ProjectForm() {
               id="client_name"
               name="client_name"
               placeholder="Ej: Tiendas El Sol"
-              defaultValue={formValues.client_name || undefined}
               key={state.success ? 'success' : 'form'}
             />
             {fieldErrors?.client_name && <p className="text-xs text-destructive mt-1">{fieldErrors.client_name}</p>}
@@ -110,7 +100,6 @@ export function ProjectForm() {
               name="description"
               placeholder="Notas internas sobre el proyecto, perfil buscado, etc."
               className="min-h-[120px]"
-              defaultValue={formValues.description || undefined}
               key={state.success ? 'success' : 'form'}
             />
             {fieldErrors?.description && <p className="text-xs text-destructive mt-1">{fieldErrors.description}</p>}
@@ -123,7 +112,6 @@ export function ProjectForm() {
               name="password"
               type="password"
               placeholder="Para proteger el enlace del cliente"
-              defaultValue={formValues.password || undefined}
               key={state.success ? 'success' : 'form'}
             />
             {fieldErrors?.password && <p className="text-xs text-destructive mt-1">{fieldErrors.password}</p>}

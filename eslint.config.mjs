@@ -10,7 +10,10 @@ const compat = new FlatCompat({
 });
 
 const eslintConfig = [
+  // Extiende la configuración de Next.js y TypeScript
   ...compat.extends("next/core-web-vitals", "next/typescript"),
+
+  // Ignora archivos y carpetas globalmente
   {
     ignores: [
       "node_modules/**",
@@ -18,6 +21,8 @@ const eslintConfig = [
       "out/**",
       "build/**",
       "next-env.d.ts",
+      "src/lib/db-types.ts", // tu archivo binario
+      "scripts/**",          // tu carpeta de scripts
     ],
   },
 ];

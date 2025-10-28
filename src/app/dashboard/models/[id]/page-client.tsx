@@ -16,18 +16,19 @@ import { useState } from 'react';
 import { Pencil, Save, X } from 'lucide-react';
 import { ModelForm } from '../../../../components/organisms/ModelForm';
 
-// CORRECCIÓN: Define el tipo extendido que incluye las URLs/paths
+// Define el tipo extendido que incluye las URLs/paths
 type ModelWithImages = Model & {
   coverUrl?: string | null;
   portfolioUrl?: string | null;
   compCardUrls?: (string | null)[];
-  cover_path?: string | null;
-  portfolio_path?: string | null;
-  comp_card_paths?: (string | null)[];
+  cover_path?: string | null; // Tipicamente string | null desde la DB
+  portfolio_path?: string | null; // Tipicamente string | null desde la DB
+  // --- CORRECCIÓN AQUÍ ---
+  comp_card_paths?: (string | null)[] | null; // Acepta un array O null directamente
+  // --- FIN CORRECCIÓN ---
 };
 
 interface ModelProfileClientProps {
-  // CORRECCIÓN: Usa el tipo extendido aquí
   initialModel: ModelWithImages;
 }
 
@@ -39,6 +40,24 @@ const InfoDisplay = ({ label, value }: { label: string; value: string | number |
   </div>
 );
 
+// Define los estados válidos que espera el formulario
+const VALID_STATUSES = ['active', 'inactive', 'archived'] as const;
+type ModelStatus = typeof VALID_STATUSES[number];
+
+/**
+ * Una "Guardia de Tipo" segura que verifica si el valor de la DB
+ * es uno de los estados permitidos por el formulario, usando 'unknown'.
+ */
+function isValidStatus(status: unknown): status is ModelStatus {
+  // 1. Primero, asegura que sea un string
+  if (typeof status !== 'string') {
+    return false;
+  }
+  // 2. Ahora que TypeScript sabe que 'status' es un string,
+  //    podemos usar .includes() de forma segura SIN 'as any'.
+  return VALID_STATUSES.includes(status as ModelStatus);
+}
+
 
 export default function ModelProfilePageClient({ initialModel }: ModelProfileClientProps) {
   const [isEditing, setIsEditing] = useState(false);
@@ -49,7 +68,6 @@ export default function ModelProfilePageClient({ initialModel }: ModelProfileCli
     return isNaN(parsed) ? null : parsed;
   };
 
-  // Normalize persisted values to the supported US size range and increments.
   const normalizeShoeSize = (value: number | string | null | undefined): number | null => {
     if (value === null || value === undefined || value === '') return null;
     const parsed = Number(value);
@@ -83,7 +101,10 @@ export default function ModelProfilePageClient({ initialModel }: ModelProfileCli
   shoe_size_us: normalizeShoeSize(initialModel.shoe_size_us),
       instagram: initialModel.instagram ?? '',
       tiktok: initialModel.tiktok ?? '',
-      status: initialModel.status ?? 'active',
+
+      // Usamos la Guardia de Tipo para validar el 'status'
+      status: isValidStatus(initialModel.status) ? initialModel.status : 'active',
+
       eye_color: initialModel.eye_color ?? '',
       hair_color: initialModel.hair_color ?? '',
       date_joined_agency: initialModel.date_joined_agency ? new Date(initialModel.date_joined_agency).toISOString().split('T')[0] : '',
@@ -204,7 +225,6 @@ export default function ModelProfilePageClient({ initialModel }: ModelProfileCli
         </div>
       )}
 
-      {/* CORRECCIÓN: Se eliminan los '(as any)' */}
       <CompCardManager
         modelId={initialModel.id}
         initialCoverUrl={initialModel.coverUrl ?? null}
@@ -212,7 +232,7 @@ export default function ModelProfilePageClient({ initialModel }: ModelProfileCli
         initialCompCardUrls={initialModel.compCardUrls ?? [null, null, null, null]}
         initialCoverPath={initialModel.cover_path ?? null}
         initialPortfolioPath={initialModel.portfolio_path ?? null}
-        initialCompCardPaths={initialModel.comp_card_paths ?? [null, null, null, null]}
+        initialCompCardPaths={initialModel.comp_card_paths ?? [null, null, null, null]} // Aquí se usa el tipo corregido
       />
 
       <div

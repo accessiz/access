@@ -103,11 +103,9 @@ export async function createProject(
       user_id: user.id,
     }
 
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('projects')
       .insert(insertPayload)
-      .select()
-      .single()
 
     if (error) {
       logError(error, { action: 'createProject' })
