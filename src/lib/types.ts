@@ -1,63 +1,47 @@
-// Este tipo representa la estructura de un modelo en la base de datos
-// y debe coincidir perfectamente con tu nueva tabla 'models' en Supabase.
-export interface Model {
-  id: string;
-  created_at: string;
-  
-  // Información Personal
-  alias?: string | null;
-  full_name: string;
-  birth_date?: string | null; // formato YYYY-MM-DD
-  national_id?: string | null; // 13 dígitos
-  phone_e164?: string | null; // +502...
-  email?: string | null;
-  
-  // Atributos Físicos
-  gender?: 'Male' | 'Female' | 'Non-binary' | null;
-  country?: string | null;
-  eye_color?: string | null;
-  hair_color?: string | null;
+// src/lib/types.ts
+import type { Database } from './db-types'; // ¡Importamos el manual automático!
 
-  // Medidas (Nombres estandarizados)
-  height_cm?: number | null;
-  shoulders_cm?: number | null;
-  chest_cm?: number | null;
-  bust_cm?: number | null;
-  waist_cm?: number | null;
-  hips_cm?: number | null; // Nombre corregido a plural
+// ----------------------------------------------------------------
+// 1. TIPOS EXTRAÍDOS DE LA BASE DE DATOS
+// ----------------------------------------------------------------
 
-  // Tallas (Nombres y tipos estandarizados)
-  top_size?: string | null;
-  pants_size?: number | null;
-  shoe_size_us?: number | null; // Talla US (acepta medias tallas)
+// Extraemos el tipo "Row" (fila) de la tabla 'models'
+type DbModel = Database['public']['Tables']['models']['Row'];
 
-  // Redes Sociales
-  instagram?: string | null;
-  tiktok?: string | null;
+// Extraemos el tipo "Row" de la tabla 'projects'
+type DbProject = Database['public']['Tables']['projects']['Row'];
 
-  // Datos de Agencia
-  status: 'active' | 'inactive' | 'archived'; // Estatus en minúscula
-  date_joined_agency?: string | null;
-  
-  // Relaciones
-  user_id?: string | null;
-  
-  // Campos calculados y URLs (opcionales, añadidos por la lógica de la API)
-  profile_completeness?: number | null;
+// --- ¡INICIO DE LA CORRECCIÓN! ---
+// El error (ts(2339)) indica que tu 'db-types.ts' no exporta un Enum
+// para 'project_status', probablemente porque tu columna es de tipo 'text'.
+// Definimos el tipo manualmente basándonos en tu código original.
+export type ProjectStatus =
+  | 'draft'
+  | 'sent'
+  | 'in-review'
+  | 'completed'
+  | 'archived';
+// --- ¡FIN DE LA CORRECCIÓN! ---
+
+
+// ----------------------------------------------------------------
+// 2. TIPOS DE LA APLICACIÓN (EXTENDIDOS)
+// ----------------------------------------------------------------
+
+// Creamos la interfaz 'Model' que usará tu app.
+// Es el tipo de la DB + los campos extra que añadimos en la API
+export interface Model extends DbModel {
   coverUrl?: string | null;
   portfolioUrl?: string | null;
+  compCardUrls?: (string | null)[];
+  
+  // Este campo viene de la tabla 'projects_models' cuando se usa en un proyecto
   client_selection?: 'pending' | 'approved' | 'rejected' | null;
 }
 
-// Interfaz para proyectos, sin cambios necesarios pero bueno tenerla definida
-export interface Project {
-  id: string;
-  public_id: string;
-  created_at: string;
-  user_id: string;
-  project_name: string | null;
-  client_name: string | null;
-  description: string | null;
-  password?: string | null;
-  status: 'draft' | 'sent' | 'in-review' | 'completed' | 'archived';
+// Hacemos lo mismo para 'Project'
+// Sobrescribimos 'status' para que use nuestro tipo 'ProjectStatus'
+// en lugar del genérico 'string | null' que viene de la DB.
+export interface Project extends DbProject {
+  status: ProjectStatus;
 }

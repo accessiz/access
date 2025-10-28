@@ -4,11 +4,13 @@ import PortfolioView from './_components/PortfolioView';
 
 export const dynamic = 'force-dynamic';
 
+// 1. CORRECCIÓN DEL TIPO: 'params' ahora es una Promise que contiene ambos IDs
 type PageProps = {
   params: Promise<{ public_id: string; model_id: string }>;
 };
 
 export default async function ModelPortfolioPage({ params }: PageProps) {
+  // 2. CORRECCIÓN: Usamos 'await' para desestructurar ambos IDs
   const { public_id: projectId, model_id: modelId } = await params;
 
   // 1. Obtenemos el proyecto PRIMERO usando el public_id (projectId)

@@ -5,13 +5,14 @@ import { CheckCircle2 } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
+// 1. CORRECCIÓN DEL TIPO: 'params' ahora es una Promise
 type PageProps = {
-  params: Promise<{ public_id: string }>;
+  params: Promise<{ public_id: string }>;
 };
 
 export default async function ClientViewPage({ params }: PageProps) {
-  const resolvedParams = await params;
-  const publicId = resolvedParams.public_id; // Renombrado para claridad
+  // 2. CORRECCIÓN: Usamos 'await' para resolver la Promise y obtener el ID
+  const { public_id: publicId } = await params;
 
   // 1. Obtenemos el proyecto usando el publicId (esto funciona)
   const project = await getProjectById(publicId);

@@ -27,12 +27,31 @@ export async function getModelsEnriched(searchParams: SearchParams) {
     .from('models')
     .select('*, cover_path', { count: 'exact' });
 
+  // --- BLOQUE DE BÚSQUEDA FTS ---
   if (searchParams.query) {
-    const searchQuery = `${searchParams.query}%`;
-    queryBuilder = queryBuilder.or(
-      `alias.ilike.${searchQuery},full_name.ilike.${searchQuery}`
-    );
+    // console.log(`[DEBUG] Término de búsqueda recibido: ${searchParams.query}`);
+
+    const searchQuery = searchParams.query.trim()
+      .split(/\s+/)
+      .filter(term => term.length > 0)
+      .map(term => term + ':*') // Mantenemos la búsqueda por prefijo
+      .join(' & ');
+
+    if (searchQuery) {
+      // console.log(`[DEBUG] Query FTS construido: ${searchQuery}`);
+
+      // ✅ CORRECTION: Usamos el config name sin el schema 'public.'
+      queryBuilder = queryBuilder.textSearch(
+        'fts_search_vector',
+        searchQuery,
+        {
+          config: 'spanish_unaccent' // <--- ¡CAMBIO AQUÍ!
+        }
+      );
+    }
   }
+  // --- FIN BLOQUE DE BÚSQUEDA FTS ---
+
   if (searchParams.country) {
     queryBuilder = queryBuilder.eq('country', searchParams.country);
   }
@@ -52,14 +71,16 @@ export async function getModelsEnriched(searchParams: SearchParams) {
   queryBuilder = queryBuilder.range(from, to);
 
   const { data, error, count } = await queryBuilder;
+
+  // console.log(`[DEBUG] Error de Supabase: ${error ? error.message : 'null'}`);
+  // console.log(`[DEBUG] Modelos encontrados: ${data ? data.length : 0} (Total: ${count})`);
+
+
   if (error) {
     logError(error, { action: 'getModelsEnriched.query', searchParams });
-    // Return a safe empty response instead of throwing to avoid uncaught exceptions
     return { data: [], count: 0 };
   }
 
-  // En lugar de listar Storage por cada modelo (N+1), recolectamos las rutas cover_path
-  // y las firmamos en lote con createSignedUrls.
   const rows = data || [];
   const pathsToSign: string[] = [];
   for (const row of rows) {
@@ -68,7 +89,11 @@ export async function getModelsEnriched(searchParams: SearchParams) {
 
   const signedUrlMap = new Map<string, string>();
   if (pathsToSign.length > 0) {
-    const { data: signedUrlsData, error: signError } = await supabase.storage.from(BUCKET_NAME).createSignedUrls(pathsToSign, 300);
+    const { data: signedUrlsData, error: signError } = await supabase
+      .storage
+      .from(BUCKET_NAME)
+      .createSignedUrls(pathsToSign, 300);
+
     if (signError) {
       logError(signError, { action: 'batch sign model covers', pathsToSign });
     } else if (signedUrlsData) {
@@ -86,6 +111,7 @@ export async function getModelsEnriched(searchParams: SearchParams) {
   return { data: enrichedData, count: count || 0 };
 }
 
+// getModelById remains unchanged
 export async function getModelById(id: string): Promise<(Model & {
   coverUrl?: string | null;
   portfolioUrl?: string | null;
@@ -93,6 +119,7 @@ export async function getModelById(id: string): Promise<(Model & {
 }) | null> {
   noStore();
   const supabase = await createClient();
+
   const { data, error } = await supabase
     .from('models')
     .select('*')
@@ -106,7 +133,6 @@ export async function getModelById(id: string): Promise<(Model & {
     return null;
   }
 
-  // Enrich model with signed URLs for images (cover, portfolio, comp cards)
   const model = data as Model & {
     cover_path?: string | null;
     portfolio_path?: string | null;
@@ -124,7 +150,11 @@ export async function getModelById(id: string): Promise<(Model & {
 
   const signedUrlMap = new Map<string, string>();
   if (pathsToSign.length > 0) {
-    const { data: signedUrlsData, error: signError } = await supabase.storage.from(BUCKET_NAME).createSignedUrls(pathsToSign, 300);
+    const { data: signedUrlsData, error: signError } = await supabase
+      .storage
+      .from(BUCKET_NAME)
+      .createSignedUrls(pathsToSign, 300);
+
     if (signError) {
       logError(signError, { action: 'getModelById.batch sign urls', id, pathsToSign });
     } else if (signedUrlsData) {

@@ -21,8 +21,9 @@ function SubmitButton() {
 }
 
 export function ProjectForm() {
-  const initialState: { error: string | null; success: boolean } = { error: null, success: false };
-  const [state, dispatch] = useActionState(createProject, initialState);
+  type ActionState = { success: boolean; error?: string; errors?: Record<string, string> };
+  const initialState: ActionState = { success: false };
+  const [state, dispatch] = useActionState<ActionState, FormData>(createProject, initialState);
 
   const [formValues, setFormValues] = useState({
     project_name: '',
@@ -32,8 +33,7 @@ export function ProjectForm() {
   });
 
   // Extract field-level errors returned by the action (if any)
-  type ActionState = { error?: string | null; success?: boolean; errors?: Record<string, string> };
-  const fieldErrors = (state as ActionState)?.errors as Record<string, string> | undefined;
+  const fieldErrors = state?.errors as Record<string, string> | undefined;
 
   useEffect(() => {
     if (state?.error) {
@@ -46,15 +46,7 @@ export function ProjectForm() {
   return (
     <form
       id="project-create-form"
-      action={async (formData) => {
-        setFormValues({
-          project_name: formData.get('project_name') as string,
-          client_name: formData.get('client_name') as string,
-          description: formData.get('description') as string,
-          password: formData.get('password') as string,
-        });
-        await dispatch(formData);
-      }}
+      action={dispatch}
       className="space-y-8"
     >
       {/* --- INICIO DE LA MODIFICACIÓN HEADER --- */}

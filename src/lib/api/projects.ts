@@ -78,40 +78,30 @@ export async function getProjectsForUser(searchParams: SearchParams = {}) {
 
 // --- INICIO DE LA CORRECCIÓN ---
 
-// Helper para validar si un string es un UUID
-const isUUID = (id: string) => {
-  return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(id);
-}
+// Helper para validar si un string es un UUID (SE CONSERVA POR SI ACASO)
+// const isUUID = (id: string) => {
+//   return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(id);
+// }
 
 // Función para obtener un proyecto por ID (MODIFICADA)
-export async function getProjectById(projectId: string): Promise<Project | null> {
+export async function getProjectById(idOrPublicId: string): Promise<Project | null> {
   noStore();
   const supabase = await createClient();
   
-  // Determinamos qué columna consultar para evitar errores de casting de UUID
-  let queryBuilder;
-  if (isUUID(projectId)) {
-    // Si es un UUID, buscamos por la columna 'id'
-    queryBuilder = supabase
+  // --- LÓGICA CORREGIDA ---
+  // Las rutas públicas (/c/...) SIEMPRE usan el 'public_id'.
+  // Las rutas de admin (/dashboard/projects/...) pueden usar el 'id' (PK).
+  // Esta función ahora intenta buscar por AMBOS.
+  const { data, error } = await supabase
       .from('projects')
       .select('*')
-      .eq('id', projectId)
-      .single();
-  } else {
-    // Si NO es un UUID, asumimos que es un 'public_id' y buscamos en esa columna
-    queryBuilder = supabase
-      .from('projects')
-      .select('*')
-      .eq('public_id', projectId)
-      .single();
-  }
-  
-  const { data, error } = await queryBuilder;
+      .or(`id.eq.${idOrPublicId},public_id.eq.${idOrPublicId}`)
+      .maybeSingle(); // Usamos maybeSingle para que no falle si hay duplicados (aunque no debería)
 
   if (error) {
     // Es normal no encontrar un proyecto si el ID es incorrecto, no loguear como error fatal
     if (error.code !== 'PGRST116') { // PGRST116 = Single row not found
-        logError(error, { action: 'getProjectById', projectId });
+        logError(error, { action: 'getProjectById', idOrPublicId });
     }
     return null;
   }
@@ -195,36 +185,8 @@ export async function getModelForProject(projectId: string, modelId: string): Pr
   noStore();
   const supabase = await createClient();
 
-  // Obtiene la relación y los datos del modelo específico
-  const { data: projectModelData, error } = await supabase
-    .from('projects_models')
-    .select(`
-      client_selection,
-      models (*)
-    `)
-    .eq('project_id', projectId)
-    .eq('model_id', modelId)
-    .single();
-
-  if (error || !projectModelData) {
-    if (error && error.code !== 'PGRST116') { // No loguear si simplemente no se encontró
-      logError(error, { action: 'getModelForProject', projectId, modelId });
-    }
-   return null;
-  }
-
-  const modelData = projectModelData.models;
-  // Verifica si modelData es válido
-  if (!modelData || Array.isArray(modelData) || typeof modelData !== 'object') {
-     console.warn(`Invalid specific model data for project ${projectId}, model ${modelId}:`, projectModelData);
-    return null;
-  }
-
-  // Converted model data to Model when needed later; no local 'model' variable required here.
-
-  // --- NUEVO: leer rutas desde la relación y firmar en lote ---
-  // Re-query para incluir cover_path/portfolio_path from the joined models
-  const { data: projectModelDataWithPaths, error: pathError } = await supabase
+  // Consulta única: obtiene relación y rutas en la misma selección
+  const { data, error } = await supabase
     .from('projects_models')
     .select(`
       client_selection,
@@ -238,26 +200,31 @@ export async function getModelForProject(projectId: string, modelId: string): Pr
     .eq('model_id', modelId)
     .single();
 
-  if (pathError || !projectModelDataWithPaths) {
-    if (pathError && pathError.code !== 'PGRST116') logError(pathError, { action: 'getModelForProject paths', projectId, modelId });
+  if (error || !data) {
+    if (error && error.code !== 'PGRST116') {
+      logError(error, { action: 'getModelForProject', projectId, modelId });
+    }
     return null;
   }
 
-  const modelDataWithPaths = projectModelDataWithPaths.models;
-  if (!modelDataWithPaths || Array.isArray(modelDataWithPaths) || typeof modelDataWithPaths !== 'object') {
-    console.warn(`Invalid specific model data for project ${projectId}, model ${modelId}:`, projectModelDataWithPaths);
+  const modelData = data.models;
+  if (!modelData || Array.isArray(modelData) || typeof modelData !== 'object') {
+    console.warn(`Invalid specific model data for project ${projectId}, model ${modelId}:`, data);
     return null;
   }
 
-  const modelWithPaths = modelDataWithPaths as unknown as Model & { cover_path?: string; portfolio_path?: string };
+  const modelWithPaths = modelData as unknown as Model & { cover_path?: string; portfolio_path?: string };
 
+  // Firmar URLs necesarias
   const pathsToSign: string[] = [];
   if (modelWithPaths.cover_path) pathsToSign.push(modelWithPaths.cover_path);
   if (modelWithPaths.portfolio_path) pathsToSign.push(modelWithPaths.portfolio_path);
 
   const signedUrlMap = new Map<string, string>();
   if (pathsToSign.length > 0) {
-    const { data: signedUrlsData, error: signError } = await supabase.storage.from(BUCKET_NAME).createSignedUrls(pathsToSign, 300);
+    const { data: signedUrlsData, error: signError } = await supabase.storage
+      .from(BUCKET_NAME)
+      .createSignedUrls(pathsToSign, 300);
     if (signError) {
       logError(signError, { action: 'sign urls single model', projectId, modelId, pathsToSign });
     } else if (signedUrlsData) {
@@ -269,7 +236,7 @@ export async function getModelForProject(projectId: string, modelId: string): Pr
 
   return {
     ...modelWithPaths,
-    client_selection: projectModelDataWithPaths.client_selection ?? null,
+    client_selection: data.client_selection ?? null,
     coverUrl: modelWithPaths.cover_path ? signedUrlMap.get(modelWithPaths.cover_path) || null : null,
     portfolioUrl: modelWithPaths.portfolio_path ? signedUrlMap.get(modelWithPaths.portfolio_path) || null : null,
   };
