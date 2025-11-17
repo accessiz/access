@@ -43,7 +43,7 @@ export default async function ProjectDetailPage({ params }: PageProps) {
   if (!project) {
     return (
       <div className="p-8 md:p-12 text-center">
-        <h1 className="text-2xl font-bold">Proyecto no encontrado</h1>
+        <h1 className="text-heading-24">Proyecto no encontrado</h1>
         <p className="text-muted-foreground">El proyecto que buscas no existe o no tienes permiso para verlo.</p>
       </div>
     );

@@ -16,7 +16,7 @@ const Footer = () => {
       {/* Escritorio: Lo mandamos a su esquina con 'md:col-start-4' etc. */}
       <div className="flex flex-col items-center gap-4 text-center
                      md:col-start-4 md:row-span-2 md:items-end md:text-right md:justify-self-end">
-          <h3 className="text-2xl lg:text-3xl font-normal m-0">
+          <h3 className="text-heading-24 lg:text-heading-32 font-normal m-0">
               TU VISIÓN,<br />NUESTRO TALENTO
           </h3>
           <Button asChild>

@@ -44,18 +44,18 @@ const TalentRow = ({ model, onAction, isPending, actionType }: {
     // 'publicUrl' se ha eliminado de las props
 }) => (
     <div className="flex items-center gap-4 p-2 hover:bg-muted/50 rounded-md">
-        <Avatar className="h-10 w-10">
+        <Avatar className="h-9 w-9">
             {/* CORRECCIÓN: Usa la constante importada 'SUPABASE_PUBLIC_URL' */}
             <AvatarImage src={model.coverUrl || `${SUPABASE_PUBLIC_URL}${model.id}/Portada/cover.jpg`} />
             <AvatarFallback>{model.alias?.substring(0, 2) || 'IZ'}</AvatarFallback>
         </Avatar>
         <div className="flex-1">
-            <p className="font-semibold">{model.alias}</p>
-            <p className="text-sm text-muted-foreground">{model.country}</p>
+            <p className="text-label-14">{model.alias}</p>
+            <p className="text-label-13 text-muted-foreground">{model.country}</p>
         </div>
         {/* Muestra la insignia de estado solo si es una acción de quitar (lista de seleccionados) */}
         {actionType === 'remove' && <ClientStatusBadge status={model.client_selection} />}
-        <Button size="icon" variant="ghost" onClick={onAction} disabled={isPending} className="h-8 w-8">
+        <Button size="icon" variant="ghost" onClick={onAction} disabled={isPending}>
             {/* Muestra un loader si la acción está pendiente */}
             {isPending ? <Loader2 className="animate-spin h-4 w-4" /> : (
                 // Muestra icono de añadir o quitar según el tipo
@@ -75,8 +75,8 @@ const DangerZone = ({ project }: { project: Project }) => (
       <CardContent>
         <div className="flex items-center justify-between rounded-lg border border-destructive bg-destructive/5 p-4">
           <div>
-            <p className="font-semibold text-foreground">Eliminar este proyecto</p>
-            <p className="text-sm text-muted-foreground">Toda la información y selección de talentos se perderá.</p>
+            <p className="text-label-14 text-foreground">Eliminar este proyecto</p>
+            <p className="text-label-13 text-muted-foreground">Toda la información y selección de talentos se perderá.</p>
           </div>
           <DeleteProjectDialog projectId={project.id} projectName={project.project_name || 'este proyecto'}>
             <Button variant="destructive">Eliminar</Button>
@@ -150,14 +150,14 @@ export default function ProjectDetailClient({ project: initialProject, initialSe
             <header className="flex flex-col items-start gap-4 sm:flex-row sm:items-start sm:justify-between">
                 {/* Contenedor Título (con botón volver) */}
                 <div className="flex items-center gap-4">
-                    <Button variant="outline" size="icon" className="h-10 w-10 flex-shrink-0" asChild>
+                    <Button variant="outline" size="icon" className="flex-shrink-0" asChild>
                         <Link href="/dashboard/projects">
                             <ChevronLeft className="h-4 w-4" />
                             <span className="sr-only">Volver a Proyectos</span>
                         </Link>
                     </Button>
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight">{project.project_name}</h1>
+                        <h1 className="text-heading-32">{project.project_name}</h1>
                         <p className="text-muted-foreground">Cliente: {project.client_name || 'No especificado'}</p>
                     </div>
                 </div>
@@ -206,7 +206,7 @@ export default function ProjectDetailClient({ project: initialProject, initialSe
                                     />
                                 )) : (
                                     // Mensaje si no hay talentos disponibles
-                                    <p className="text-center text-sm text-muted-foreground py-4">No hay más talentos disponibles o que coincidan.</p>
+                                    <p className="text-center text-copy-14 text-muted-foreground py-4">No hay más talentos disponibles o que coincidan.</p>
                                 )}
                             </div>
                         </ScrollArea>
@@ -234,7 +234,7 @@ export default function ProjectDetailClient({ project: initialProject, initialSe
                                     />
                                 )) : (
                                      // Mensaje si no hay talentos añadidos
-                                    <p className="text-center text-sm text-muted-foreground py-4">Aún no has añadido talentos.</p>
+                                    <p className="text-center text-copy-14 text-muted-foreground py-4">Aún no has añadido talentos.</p>
                                 )}
                             </div>
                         </ScrollArea>

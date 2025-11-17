@@ -145,7 +145,7 @@ export default function ModelProfilePageClient({ initialModel }: ModelProfileCli
       <header className="flex flex-col items-start gap-4 pb-6 border-b
                      md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">
+          <h1 className="text-heading-32">
             {isEditing ? `Editando Perfil de ${initialModel.alias || initialModel.full_name}` : `Perfil de ${initialModel.alias || initialModel.full_name}`}
           </h1>
           <p className="text-muted-foreground">

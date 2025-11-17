@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
+// IMPORTA TU LOGO OSCURO
+import LogoDark from '@/components/LogoDark';
 import { LogOut, Menu, Settings, Users, FolderKanban, GalleryVerticalEnd } from 'lucide-react';
 import DashboardNavLink from '@/components/organisms/DashboardNavLink';
 import NotificationBell from '@/components/organisms/NotificationBell';
@@ -8,13 +10,11 @@ import { Button } from '@/components/ui/button';
 import {
   Sheet,
   SheetContent,
-  SheetHeader, // Importado
-  SheetTitle,  // Importado
+  SheetHeader,
+  SheetTitle,
   SheetTrigger,
   SheetClose
 } from "@/components/ui/sheet";
-// Importamos cn para manejar clases condicionales si fuera necesario, aunque no se usa ahora
-// import { cn } from "@/lib/utils"; 
 
 export default async function DashboardLayout({
   children,
@@ -44,35 +44,34 @@ export default async function DashboardLayout({
     <div className="grid h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
 
       {/* --- Sidebar de Escritorio --- */}
-      <div className="hidden border-r bg-nav-background md:block">
+      <div className="hidden border-r bg-sidebar-background md:block">
             <div className="flex h-full max-h-screen flex-col">
-                <div className="flex h-16 items-center border-b px-6">
+                {/* --- DIV MODIFICADO: Se quitó border-b --- */}
+                <div className="flex h-16 items-center px-6">
+                    {/* --- LOGO REEMPLAZADO --- */}
                     <Link href="/dashboard/models" className="flex items-center gap-2 font-semibold">
-                        <div className="bg-primary text-primary-foreground flex size-8 items-center justify-center rounded-md">
-                           <GalleryVerticalEnd className="size-5" />
-                        </div>
-                        <span className="text-lg">IZ Access</span>
+                       {/* Usa el componente LogoDark y ajusta el tamaño con className */}
+                       <LogoDark className="h-[1.4rem]" />
                     </Link>
+                    {/* --- FIN LOGO REEMPLAZADO --- */}
                 </div>
                 <div className="flex-1 overflow-y-auto">
-                    <nav className="grid items-start p-4 text-sm font-medium">
-                    {/** Render server-side links but use client component for active/badge behavior */}
-            {navLinks.map((link) => (
-              <DashboardNavLink key={link.href} href={link.href}>
-                <span className="flex items-center gap-3">
-                  <link.icon className="h-4 w-4" />
-                  {link.label}
-                </span>
-              </DashboardNavLink>
-            ))}
+                    <nav className="grid items-start pt-8 px-4 pb-4">
+                      {navLinks.map((link) => (
+                        <DashboardNavLink key={link.href} href={link.href}>
+                          <span className="flex items-center gap-3 text-label-14"> {/* Aplicar clase de texto aquí */}
+                            <link.icon className="h-4 w-4" />
+                            {link.label}
+                          </span>
+                        </DashboardNavLink>
+                      ))}
                     </nav>
                 </div>
                  <div className="mt-auto px-4 pb-12">
-                    <nav className="grid items-start text-sm font-medium">
+                    <nav className="grid items-start">
                          <Link
                             href={settingsLink.href}
-                            className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-                            // Nota: Estado activo omitido
+                            className="flex items-center gap-3 rounded-lg px-3 py-2 text-label-14 text-muted-foreground transition-all hover:text-primary"
                         >
                             <settingsLink.icon className="h-4 w-4" />
                             {settingsLink.label}
@@ -98,26 +97,24 @@ export default async function DashboardLayout({
               <SheetContent side="left" className="flex flex-col p-0">
                 {/* 1. Header del Sheet (con título oculto) */}
                 <SheetHeader className="h-16 flex flex-row items-center border-b px-6">
-                  <Link href="/dashboard/models" className="flex items-center gap-2 font-semibold">
-                       <div className="bg-primary text-primary-foreground flex size-8 items-center justify-center rounded-md">
-                         <GalleryVerticalEnd className="size-5" />
-                      </div>
-                      <span className="text-lg">IZ Access</span>
-                  </Link>
-                  {/* Título para accesibilidad */}
+                  {/* --- LOGO REEMPLAZADO (Sheet) --- */}
+                   <Link href="/dashboard/models" className="flex items-center gap-2 font-semibold">
+                       {/* Usa el componente LogoDark y ajusta el tamaño con className */}
+                       <LogoDark className="h-[1.4rem]" />
+                   </Link>
+                   {/* --- FIN LOGO REEMPLAZADO (Sheet) --- */}
                   <div className="ml-auto flex items-center gap-2">
-                    {/* Mobile bell in sheet header */}
                     <NotificationBell showDotOnly />
                   </div>
                   <SheetTitle className="sr-only">Menú Principal</SheetTitle>
                 </SheetHeader>
 
                 {/* 2. Navegación (ahora flex-col) */}
-                <nav className="flex-1 flex flex-col gap-1 p-4 text-base font-medium overflow-y-auto">
+                <nav className="flex-1 flex flex-col gap-1 p-4 overflow-y-auto">
                   {navLinks.map((link) => (
                     <SheetClose asChild key={link.href}>
                       <DashboardNavLink href={link.href}>
-                        <span className="flex items-center gap-3">
+                        <span className="flex items-center gap-3 text-label-16"> {/* Aplicar clase de texto aquí */}
                           <link.icon className="h-5 w-5" />
                           {link.label}
                         </span>
@@ -131,17 +128,17 @@ export default async function DashboardLayout({
                    <SheetClose asChild>
                       <Link
                           href={settingsLink.href}
-                          className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
+                          className="flex items-center gap-3 rounded-lg px-3 py-2 text-label-14 text-muted-foreground transition-all hover:text-primary"
                       >
                           <settingsLink.icon className="h-5 w-5" />
                           {settingsLink.label}
                       </Link>
                    </SheetClose>
                    <div className="flex flex-col gap-2 items-start px-3 py-2">
-                      <p className="text-sm font-medium text-foreground">{user.email}</p>
+                      <p className="text-copy-14 text-foreground">{user.email}</p>
                       <form action="/auth/signout" method="post" className="w-full">
                         <SheetClose asChild>
-                          <Button variant="ghost" className="w-full justify-start text-muted-foreground hover:text-primary p-0 h-auto">
+                          <Button variant="ghost" className="w-full justify-start text-label-14 text-muted-foreground hover:text-primary p-0 h-auto"> {/* Aplicar clase de texto aquí */}
                             <LogOut className="mr-3 h-5 w-5" />
                             Cerrar sesión
                           </Button>
@@ -159,8 +156,7 @@ export default async function DashboardLayout({
 
            {/* Info de Usuario, Notificaciones y Logout (Solo escritorio) */}
            <div className="hidden md:flex items-center gap-4">
-             <p className="text-sm text-muted-foreground hidden sm:block">{user.email}</p>
-             {/* NotificationBell is client component */}
+             <p className="text-copy-13 text-muted-foreground hidden sm:block">{user.email}</p>
              <div className="hidden sm:block">
                <NotificationBell />
              </div>

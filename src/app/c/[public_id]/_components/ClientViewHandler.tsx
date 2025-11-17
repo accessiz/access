@@ -110,13 +110,13 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
   }
 
   return (
-    <div className="flex min-h-screen w-full flex-col bg-white text-black dark:bg-black dark:text-white">
+    <div className="flex min-h-screen w-full flex-col bg-background text-foreground">
 
       <div className="w-full max-w-[1340px] mx-auto px-6 md:px-0">
 
         <ClientNavbar clientName={project.client_name} />
 
-        <div className="py-24 sm:py-[220px]">
+        <div className="py-24 sm:py-56">
           <ClientHeader projectName={project.project_name} />
         </div>
 

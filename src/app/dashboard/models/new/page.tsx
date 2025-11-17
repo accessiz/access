@@ -68,7 +68,7 @@ export default function NewModelPage() {
     <div className="space-y-8">
       <header className="flex items-center justify-between gap-4 pb-6 border-b">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Añadir Nuevo Talento</h1>
+          <h1 className="text-heading-32">Añadir Nuevo Talento</h1>
           <p className="text-muted-foreground">Rellena los datos para crear un nuevo perfil.</p>
         </div>
         <div className="flex items-center gap-2">

@@ -9,6 +9,8 @@
     --foreground: 20 20 20;
     --nav-background: 255 255 255;
     --nav-foreground: 20 20 20;
+    --sidebar-background: 255 255 255;
+    --sidebar-foreground: 20 20 20;
     --card: 255 255 255;
     --card-foreground: 20 20 20;
     --popover: 255 255 255;
@@ -27,15 +29,22 @@
     --input: 230 230 230;
     --ring: 135 24 157;
     --radius: 0rem; /* Bordes cuadrados por defecto */
+
+    /* Design System aliases */
+    /* Token solicitado: el negro más oscuro del sistema */
+    --ds-background-200: 1 1 1;
   }
 
   .dark {
     /* MODO OSCURO */
-    --background: 11 11 11;
+    --background: 1 1 1;
     --foreground: 230 230 230;
-    --nav-background: 17 17 17;
+    --nav-background: 1 1 1;
     --nav-foreground: 230 230 230;
-    --card: 16 16 16;
+    /* Updated sidebar/card background based on user input */
+    --sidebar-background: 4 4 4;
+    --sidebar-foreground: 230 230 230;
+    --card: 4 4 4;
     --card-foreground: 230 230 230;
     --popover: 20 20 20;
     --popover-foreground: 230 230 230;
@@ -45,13 +54,16 @@
     --secondary-foreground: 230 230 230;
     --muted: 30 30 30;
     --muted-foreground: 140 140 140;
-    --accent: 30 30 30;
-    --accent-foreground: 230 230 230;
+    --accent: 30 30 30; /* This is likely the background for active nav links */
+    --accent-foreground: 230 230 230; /* Text color for active nav links */
     --destructive: 255 30 30;
     --destructive-foreground: 230 230 230;
     --border: 28 28 28;
     --input: 28 28 28;
     --ring: 135 24 157;
+
+    /* Mantener el alias en oscuro igual de negro */
+    --ds-background-200: 11 11 11;
   }
 }
 
@@ -72,7 +84,7 @@
 /* Scrollbar */
 * {
   scrollbar-width: thin;
-  scrollbar-color: hsl(var(--muted-foreground) / 0.5) transparent;
+  scrollbar-color: rgb(var(--muted-foreground) / 0.5) transparent;
 }
 ::-webkit-scrollbar {
   width: 8px;
@@ -82,13 +94,13 @@
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background-color: hsl(var(--muted-foreground) / 0.5);
-  border-radius: 10px;
+  background-color: rgb(var(--muted-foreground) / 0.5);
+  border-radius: var(--radius);
   border: 2px solid transparent;
   background-clip: content-box;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background-color: hsl(var(--primary));
+  background-color: rgb(var(--primary));
 }
 
 /* Inputs WebKit */
@@ -137,5 +149,20 @@
     .client-grid {
       grid-template-columns: repeat(6, minmax(0, 1fr));
     }
+  }
+
+  /* --- EFECTO GLOW PARA NAVBAR ACTIVO --- */
+  .active-nav-glow::after {
+    content: ''; /* Obligatorio para pseudo-elementos */
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    width: 3px; /* Ancho de la barra de color */
+    background-color: rgb(var(--primary)); /* Usa tu color primario */
+    /* El efecto de "brillo" con box-shadow */
+    box-shadow: -2px 0 12px 2px rgb(var(--primary) / 0.6); /* Ajusta los valores para el brillo deseado */
+    /* Opcional: redondear la barra misma */
+    border-radius: 0 3px 3px 0;
   }
 }

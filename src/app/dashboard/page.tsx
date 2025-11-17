@@ -18,7 +18,7 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-6 p-8 md:p-12">
       <header>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+        <h1 className="text-heading-32">Dashboard</h1>
         <p className="text-muted-foreground">Resumen general de proyectos, actividad y atajos.</p>
       </header>
 
@@ -34,8 +34,8 @@ export default async function DashboardPage() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {['in-review','draft','sent','completed'].map((s) => (
                   <Link key={s} href={`/dashboard/projects?status=${s}`} className="p-4 rounded-md border hover:shadow h-full flex flex-col justify-center">
-                    <div className="text-sm text-muted-foreground capitalize">{s.replace('-', ' ')}</div>
-                    <div className="text-2xl font-bold">{counts[s] ?? 0}</div>
+                    <div className="text-label-13 text-muted-foreground capitalize">{s.replace('-', ' ')}</div>
+                    <div className="text-heading-24">{counts[s] ?? 0}</div>
                   </Link>
                 ))}
               </div>
@@ -77,11 +77,11 @@ export default async function DashboardPage() {
           <CardContent>
             <ul className="space-y-3">
               {activity.map(a => (
-                <li key={a.id} className="text-sm">
+                <li key={a.id} className="text-copy-14">
                   {a.type === 'model' ? `Se añadió/actualizó el talento ${a.title}` : `Proyecto: ${a.title} (${a.meta || 'estado'})`} • <span className="text-muted-foreground">{new Date(a.when).toLocaleString()}</span>
                 </li>
               ))}
-              {activity.length === 0 && <li className="text-sm text-muted-foreground">No hay actividad reciente</li>}
+              {activity.length === 0 && <li className="text-copy-13 text-muted-foreground">No hay actividad reciente</li>}
             </ul>
           </CardContent>
         </Card>
@@ -97,11 +97,11 @@ export default async function DashboardPage() {
               {/* CORRECCIÓN: Se reemplaza 'any' por el tipo de objeto específico */}
               {lowModels.map((m: { id: string; alias: string | null; profile_completeness: number | null }) => (
                 <li key={m.id} className="flex justify-between items-center">
-                  <Link href={`/dashboard/models/${m.id}`} className="text-sm font-medium">{m.alias || 'Sin alias'}</Link>
-                  <span className="text-sm text-muted-foreground">{Math.round(m.profile_completeness || 0)}%</span>
+                  <Link href={`/dashboard/models/${m.id}`} className="text-label-14">{m.alias || 'Sin alias'}</Link>
+                  <span className="text-copy-13 text-muted-foreground">{Math.round(m.profile_completeness || 0)}%</span>
                 </li>
               ))}
-              {lowModels.length === 0 && <li className="text-sm text-muted-foreground">No hay perfiles pendientes</li>}
+              {lowModels.length === 0 && <li className="text-copy-13 text-muted-foreground">No hay perfiles pendientes</li>}
             </ul>
           </CardContent>
         </Card>

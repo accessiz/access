@@ -1,4 +1,3 @@
-
 import type { Config } from 'tailwindcss'
 import animatePlugin from 'tailwindcss-animate'
 
@@ -21,14 +20,43 @@ const config: Config = {
     },
     extend: {
       fontSize: {
-          'xs': '0.852rem', // ~12px
-          'sm': '0.923rem', // ~13px
-          'base': '1rem',    // ~14.08px (base)
-          'lg': '1.136rem', // ~16px
-          'xl': '1.278rem', // ~18px
-          '2xl': '1.562rem', // ~22px
-          '3xl': '1.846rem', // ~26px
-          '4xl': '2.272rem', // ~32px
+          // --- BLOQUE ELIMINADO ---
+          // Se eliminaron las clases 'xs', 'sm', 'base', 'lg', 'xl', etc.
+          // para forzar el uso exclusivo del sistema Geist/Vercel de abajo.
+
+          // Geist/Vercel type roles (Basado en tu texto)
+          'heading-72': ['4.5rem', { lineHeight: '1', letterSpacing: '-0.02em', fontWeight: '700' }], // 72px
+          'heading-64': ['4rem',   { lineHeight: '1', letterSpacing: '-0.02em', fontWeight: '700' }], // 64px
+          'heading-56': ['3.5rem', { lineHeight: '1.05', letterSpacing: '-0.02em', fontWeight: '700' }], // 56px
+          'heading-48': ['3rem',   { lineHeight: '1.05', letterSpacing: '-0.02em', fontWeight: '700' }], // 48px
+          'heading-40': ['2.5rem', { lineHeight: '1.1', letterSpacing: '-0.01em', fontWeight: '700' }], // 40px
+          'heading-32': ['2rem',   { lineHeight: '1.2', letterSpacing: '-0.01em', fontWeight: '600' }], // 32px
+          'heading-24': ['1.5rem', { lineHeight: '1.3', letterSpacing: '-0.005em', fontWeight: '600' }], // 24px
+          'heading-20': ['1.25rem',{ lineHeight: '1.4', letterSpacing: '0', fontWeight: '600' }], // 20px
+          'heading-16': ['1rem',   { lineHeight: '1.4', letterSpacing: '0', fontWeight: '600' }], // 16px
+          'heading-14': ['0.875rem',{ lineHeight: '1.4', letterSpacing: '0', fontWeight: '600' }], // 14px
+
+          'button-16': ['1rem',    { lineHeight: '1.25', letterSpacing: '0', fontWeight: '600' }],
+          'button-14': ['0.875rem',{ lineHeight: '1.25', letterSpacing: '0', fontWeight: '600' }],
+          'button-12': ['0.75rem', { lineHeight: '1.2', letterSpacing: '0.01em', fontWeight: '600' }],
+
+          'label-20':  ['1.25rem', { lineHeight: '1.1', letterSpacing: '0', fontWeight: '500' }],
+          'label-18':  ['1.125rem',{ lineHeight: '1.1', letterSpacing: '0', fontWeight: '500' }],
+          'label-16':  ['1rem',    { lineHeight: '1.2', letterSpacing: '0', fontWeight: '600' }],
+          'label-14':  ['0.875rem',{ lineHeight: '1.2', letterSpacing: '0', fontWeight: '600' }],
+          'label-13':  ['0.8125rem',{ lineHeight: '1.2', letterSpacing: '0.01em', fontWeight: '600' }],
+          'label-12':  ['0.75rem', { lineHeight: '1.3', letterSpacing: '0.04em', fontWeight: '700' }],
+          'label-14-mono': ['0.875rem',{ lineHeight: '1.2', letterSpacing: '0.02em', fontWeight: '600' }],
+          'label-13-mono': ['0.8125rem',{ lineHeight: '1.2', letterSpacing: '0.03em', fontWeight: '600' }],
+          'label-12-mono': ['0.75rem', { lineHeight: '1.3', letterSpacing: '0.04em', fontWeight: '700' }],
+
+          'copy-24': ['1.5rem',    { lineHeight: '1.6', letterSpacing: '0', fontWeight: '500' }],
+          'copy-20': ['1.25rem',   { lineHeight: '1.6', letterSpacing: '0', fontWeight: '500' }],
+          'copy-18': ['1.125rem',  { lineHeight: '1.65', letterSpacing: '0', fontWeight: '500' }],
+          'copy-16': ['1rem',      { lineHeight: '1.7', letterSpacing: '0', fontWeight: '400' }],
+          'copy-14': ['0.875rem',  { lineHeight: '1.7', letterSpacing: '0', fontWeight: '400' }],
+          'copy-13': ['0.8125rem', { lineHeight: '1.7', letterSpacing: '0.01em', fontWeight: '400' }],
+          'copy-13-mono': ['0.8125rem', { lineHeight: '1.7', letterSpacing: '0.02em', fontWeight: '500' }],
       },
       colors: {
         border: "rgb(var(--border) / <alpha-value>)",
@@ -38,6 +66,8 @@ const config: Config = {
         foreground: "rgb(var(--foreground) / <alpha-value>)",
         "nav-background": "rgb(var(--nav-background) / <alpha-value>)",
         "nav-foreground": "rgb(var(--nav-foreground) / <alpha-value>)",
+        "sidebar-background": "rgb(var(--sidebar-background) / <alpha-value>)",
+        "sidebar-foreground": "rgb(var(--sidebar-foreground) / <alpha-value>)",
         primary: {
           DEFAULT: "rgb(var(--primary) / <alpha-value>)",
           foreground: "rgb(var(--primary-foreground) / <alpha-value>)",

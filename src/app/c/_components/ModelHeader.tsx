@@ -11,20 +11,10 @@ interface ModelHeaderProps {
 export function ModelHeader({ modelName }: ModelHeaderProps) {
   return (
     <header className="px-0 text-left">
-      {/* Etiqueta "TALENTO"
-        - text-xs: El tamaño de fuente más pequeño de Tailwind.
-        - text-muted-foreground: El color grisáceo de tus variables globales.
-      */}
-      <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+      <p className="text-label-12 uppercase tracking-widest text-muted-foreground">
         TALENTO
       </p>
-      
-      {/* Nombre del Modelo (Responsivo)
-        - text-xl: Tamaño base para móviles.
-        - sm:text-2xl: Crece en pantallas pequeñas (landscape).
-        - md:text-3xl: Crece más en tablets y escritorio.
-      */}
-      <h1 className="mt-1 text-xl font-semibold tracking-tight sm:text-2xl md:text-3xl">
+      <h1 className="mt-1 text-heading-20 sm:text-heading-24 md:text-heading-32">
         {modelName || 'Talento Sin Asignar'}
       </h1>
     </header>

@@ -20,7 +20,7 @@ export default function DashboardQuickSearch() {
   return (
     <form onSubmit={handleSubmit} className="flex gap-2">
       <Input placeholder="Buscar talento por alias o nombre" value={q} onChange={e => setQ(e.target.value)} />
-      <Button type="submit" variant="outline"><Search /></Button>
+      <Button type="submit" variant="outline" size="icon"><Search className="h-4 w-4" /></Button>
     </form>
   );
 }

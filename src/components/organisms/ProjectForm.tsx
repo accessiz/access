@@ -42,32 +42,24 @@ export function ProjectForm() {
       action={dispatch}
       className="space-y-8"
     >
-      {/* --- INICIO DE LA MODIFICACIÓN HEADER --- */}
-      {/* Móvil: flex-col, items-start. Escritorio: sm:flex-row, sm:items-center, sm:justify-between */}
       <header className="flex flex-col items-start gap-4 pb-6 border-b
                      sm:flex-row sm:items-center sm:justify-between">
-        {/* Título y Descripción */}
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Crear Nuevo Proyecto</h1>
+          <h1 className="text-heading-32">Crear Nuevo Proyecto</h1>
           <p className="text-muted-foreground">Rellena los detalles para tu nuevo casting.</p>
         </div>
-        {/* Contenedor de Botones (con flex-wrap implícito por gap) */}
-        {/* Móvil: flex-col-reverse para poner Crear arriba. Escritorio: sm:flex-row */}
         <div className="flex flex-col-reverse items-stretch gap-2 w-full sm:flex-row sm:w-auto">
-          {/* Botón Cancelar (Móvil: Ancho completo. Escritorio: Ancho auto) */}
           <Button variant="outline" asChild className="w-full sm:w-auto">
             <Link href="/dashboard/projects">Cancelar</Link>
           </Button>
-          {/* Botón Crear (usando el componente SubmitButton) */}
           <SubmitButton />
         </div>
       </header>
-      {/* --- FIN DE LA MODIFICACIÓN HEADER --- */}
 
 
       {/* --- Resto del formulario (sin cambios) --- */}
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold">Detalles del Proyecto</h2>
+        <h2 className="text-heading-20">Detalles del Proyecto</h2>
         <div className="border bg-card rounded-lg p-8 grid md:grid-cols-2 gap-x-8 gap-y-6">
           <div className="space-y-2">
             <Label htmlFor="project_name">Nombre del Proyecto *</Label>

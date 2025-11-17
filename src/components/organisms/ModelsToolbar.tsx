@@ -77,9 +77,9 @@ export function ModelsToolbar({ countries }: { countries: string[] }) {
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="h-10 gap-1.5">
+            <Button variant="outline" size="icon" className="flex-shrink-0">
               <ListFilter className="h-4 w-4" />
-              <span className="hidden sm:inline">{currentCountry || 'País'}</span>
+              <span className="sr-only">{currentCountry || 'País'}</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
@@ -91,9 +91,9 @@ export function ModelsToolbar({ countries }: { countries: string[] }) {
         </DropdownMenu>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="h-10 gap-1.5">
+            <Button variant="outline" size="icon" className="flex-shrink-0">
               <Ruler className="h-4 w-4" />
-              <span className="hidden sm:inline">{currentHeightLabel.split(' ')[0]}</span>
+              <span className="sr-only">{currentHeightLabel}</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
@@ -108,7 +108,7 @@ export function ModelsToolbar({ countries }: { countries: string[] }) {
           <Button variant={view === 'list' ? 'secondary' : 'ghost'} size="icon" onClick={() => setView('list')} className="h-8 w-8"><List className="h-4 w-4" /></Button>
           <Button variant={view === 'grid' ? 'secondary' : 'ghost'} size="icon" onClick={() => setView('grid')} className="h-8 w-8"><LayoutGrid className="h-4 w-4" /></Button>
         </div>
-        <Button size="sm" className="h-10 gap-2 w-full sm:w-auto" asChild>
+        <Button className="gap-2 w-full sm:w-auto" asChild>
             <Link href="/dashboard/models/new">
                 <PlusCircle className="h-4 w-4" />
                 Añadir Talento

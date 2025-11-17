@@ -29,7 +29,7 @@ export default async function LoginPage() {
         {/* ↑↑↑ Aumentamos el espacio entre elementos */}
           <div className="grid gap-4 text-center"> 
           {/* ↑↑↑ Aumentamos espacio interno */}
-            <Link href="/" className="flex items-center justify-center gap-3 font-semibold text-xl"> 
+            <Link href="/" className="flex items-center justify-center gap-3 font-semibold text-label-20"> 
             {/* ↑↑↑ Gap aumentado ↑↑↑ Texto más grande */}
               {/* Icono más grande */}
               <div className="bg-primary text-primary-foreground flex size-9 items-center justify-center rounded-lg"> 
@@ -61,9 +61,9 @@ export default async function LoginPage() {
             priority
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-        <div className="absolute bottom-0 left-0 p-8 text-white">
-            <h2 className="text-3xl font-bold">Tu Visión, Nuestro Talento</h2>
-            <p className="text-white/80 mt-2">La plataforma exclusiva para la gestión de talentos de IZ Management.</p>
+        <div className="absolute bottom-0 left-0 p-8 text-primary-foreground">
+            <h2 className="text-heading-32">Tu Visión, Nuestro Talento</h2>
+            <p className="opacity-80 mt-2">La plataforma exclusiva para la gestión de talentos de IZ Management.</p>
         </div>
       </div>
     </div>

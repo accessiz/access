@@ -201,7 +201,7 @@ export default function ModelsClientPage({ initialData }: { initialData: Initial
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-3xl font-bold tracking-tight">Talento</h1>
+        <h1 className="text-heading-32">Talento</h1>
         <p className="text-muted-foreground">Gestiona, filtra y explora la base de datos de modelos.</p>
       </header>
 

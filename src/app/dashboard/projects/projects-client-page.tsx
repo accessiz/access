@@ -78,7 +78,7 @@ export default function ProjectsClientPage({ initialProjects, initialCount }: In
         if (projects.length === 0) {
             return (
                 <div className="flex flex-col items-center justify-center text-center h-full rounded-lg border border-dashed py-20">
-                    <p className="text-lg font-semibold">No se encontraron proyectos</p>
+                    <p className="text-heading-20">No se encontraron proyectos</p>
                     <p className="text-muted-foreground">Intenta ajustar los filtros o la búsqueda.</p>
                 </div>
             );
@@ -122,7 +122,7 @@ export default function ProjectsClientPage({ initialProjects, initialCount }: In
             <header className="flex flex-col items-start gap-4 pb-6 border-b
                            sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Proyectos de Casting</h1>
+                    <h1 className="text-heading-32">Proyectos de Casting</h1>
                     <p className="text-muted-foreground">Crea y gestiona las selecciones para tus clientes.</p>
                 </div>
                 <Button asChild className="w-full sm:w-auto">
@@ -159,7 +159,7 @@ export default function ProjectsClientPage({ initialProjects, initialCount }: In
                                 </PaginationContent>
                             </Pagination>
                         </div>
-                        <div className="text-sm text-muted-foreground whitespace-nowrap ml-4">
+                        <div className="text-label-13 text-muted-foreground whitespace-nowrap ml-4">
                             Página {currentPage} de {totalPages}
                         </div>
                     </footer>

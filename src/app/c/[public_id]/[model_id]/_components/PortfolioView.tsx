@@ -40,7 +40,7 @@ export default function PortfolioView({ project, model: initialModel }: Portfoli
   const backUrl = `/c/${project.public_id}`; // Usamos public_id para el link
 
   return (
-    <div className="relative min-h-screen w-full bg-white text-black dark:bg-black dark:text-white flex flex-col">
+    <div className="relative min-h-screen w-full bg-background text-foreground flex flex-col">
       
       {/* Contenedor principal con MAX-WIDTH Y PADDING */}
       <div className="w-full max-w-[1340px] mx-auto px-6 md:px-0 flex flex-col flex-1">
@@ -88,12 +88,12 @@ export default function PortfolioView({ project, model: initialModel }: Portfoli
 
         {/* 5. Footer de Acciones (sin cambios) */}
         {model.client_selection === 'pending' && (
-          <footer className="sticky bottom-0 z-10 p-4 sm:p-8 bg-gradient-to-t from-white via-white to-transparent dark:from-black dark:via-black">
+          <footer className="sticky bottom-0 z-10 p-4 sm:p-8 bg-gradient-to-t from-background via-background to-transparent">
             <div className="max-w-md mx-auto flex justify-center gap-4">
               <Button
                 size="lg"
                 variant="outline"
-                className="w-full bg-white dark:bg-black border-red-500 text-red-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
+                className="w-full bg-background border-red-500 text-red-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
                 onClick={() => handleSelection('rejected')}
                 disabled={isPending}
               >
