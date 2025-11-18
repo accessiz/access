@@ -1,81 +1,120 @@
 // src/lib/actions/client_actions.ts
 'use server'
 
-import { createServerClient, type CookieOptions } from '@supabase/ssr'
-import { cookies } from 'next/headers'
-import { logError } from '@/lib/utils/errors'
 import { revalidatePath } from 'next/cache'
+import { cookies } from 'next/headers' // Necesitamos leer cookies
 import { z } from 'zod'
+import { logError } from '@/lib/utils/errors'
+import { supabaseAdmin } from '@/lib/supabase/admin'
 
-// Helper para crear el cliente (es el mismo que usas en otros actions)
-const createSupabaseServerActionClient = async () => {
-  const cookieStore = await cookies()
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value
-        },
-        set(name: string, value: string, options: CookieOptions) {
-          try {
-            cookieStore.set({ name, value, ...options })
-          } catch {}
-        },
-        remove(name: string, options: CookieOptions) {
-          try {
-            cookieStore.set({ name, value: '', ...options })
-          } catch {}
-        },
-      },
-    }
-  )
+// --- FUNCIÓN HELPER DE SEGURIDAD ---
+async function verifyAccess(projectId: string) {
+  // 1. Consultamos si el proyecto tiene contraseña
+  const { data: project } = await supabaseAdmin
+    .from('projects')
+    .select('password')
+    .eq('id', projectId)
+    .single();
+
+  // Si no existe el proyecto, bloqueamos.
+  if (!project) return false;
+
+  // 2. Si NO tiene contraseña, es público -> Acceso Permitido.
+  if (!project.password) return true;
+
+  // 3. Si TIENE contraseña, verificamos la cookie de acceso.
+  const cookieStore = await cookies();
+  const accessCookie = cookieStore.get(`project_access_${projectId}`);
+
+  // Si la cookie existe y es válida -> Acceso Permitido.
+  return accessCookie?.value === 'true';
 }
+// -----------------------------------
 
-/**
- * Esta acción es segura para ser llamada por usuarios anónimos.
- * Llama a la función de base de datos 'client_completes_project'
- * que se ejecuta con 'SECURITY DEFINER' y tiene sus propias reglas de seguridad.
- */
-export async function finalizeProjectReview(projectId: string) {
-  const supabase = await createSupabaseServerActionClient();
-
-  // Validar que el ID sea un UUID antes de enviarlo
+export async function finalizeProjectReview(projectId: string, rejectPending: boolean = false) {
   if (!z.string().uuid().safeParse(projectId).success) {
-    return { success: false, error: 'ID de proyecto inválido.' };
+    return { success: false, error: 'ID inválido.' };
+  }
+
+  // 🔒 EL GUARDIA DE SEGURIDAD
+  const hasAccess = await verifyAccess(projectId);
+  if (!hasAccess) {
+    return { success: false, error: 'No tienes autorización para finalizar este proyecto.' };
   }
 
   try {
-    // 1. Llamar a la función RPC (Remote Procedure Call) segura
-    // (Asegúrate de haber corrido el SQL para crear esta función)
-    const { error: rpcError } = await supabase.rpc('client_completes_project', {
-      project_uuid: projectId
-    });
+    // AHORA SÍ: Usamos poderes de admin con seguridad
+    if (rejectPending) {
+      const { error: updateError } = await supabaseAdmin
+        .from('projects_models')
+        .update({ 
+            client_selection: 'rejected',
+            client_selection_date: new Date().toISOString()
+        })
+        .eq('project_id', projectId)
+        .or('client_selection.is.null,client_selection.eq.pending');
 
-    if (rpcError) {
-      logError(rpcError, { action: 'finalizeProjectReview.rpc', projectId });
-      return { success: false, error: 'No se pudo finalizar el proyecto.' };
+      if (updateError) throw updateError;
     }
 
-    // 2. Revalidar la página pública
-    // (Necesitamos el public_id para esto)
-    try {
-      // Usamos 'createSupabaseServerActionClient' de nuevo para una lectura segura
-      const readClient = await createSupabaseServerActionClient();
-      const { data: project } = await readClient.from('projects').select('public_id').eq('id', projectId).single();
-      
-      if (project?.public_id) {
-        revalidatePath(`/c/${project.public_id}`);
-      }
-    } catch (revalError) {
-      logError(revalError, { action: 'finalizeProjectReview.revalidate', projectId });
-    }
+    const statusToSet = 'completed';
+    const completionDate = new Date().toISOString().slice(0, 10); 
+
+    const { error: finalizeError } = await supabaseAdmin
+      .from('projects')
+      .update({ status: statusToSet, end_date: completionDate })
+      .eq('id', projectId);
+
+    if (finalizeError) throw finalizeError;
+
+    // Revalidar
+    const { data: project } = await supabaseAdmin
+      .from('projects')
+      .select('public_id')
+      .eq('id', projectId)
+      .single();
+
+    if (project?.public_id) revalidatePath(`/c/${project.public_id}`);
 
     return { success: true };
-    
+
   } catch (err) {
-    logError(err, { action: 'finalizeProjectReview.catch_all', projectId });
-    return { success: false, error: 'Error inesperado al finalizar.' };
+    logError(err, { action: 'finalizeProjectReview', projectId });
+    return { success: false, error: 'Error al procesar la solicitud.' };
+  }
+}
+
+export async function reopenProject(projectId: string) {
+  if (!z.string().uuid().safeParse(projectId).success) {
+    return { success: false, error: 'ID inválido.' };
+  }
+
+  // 🔒 EL GUARDIA DE SEGURIDAD
+  const hasAccess = await verifyAccess(projectId);
+  if (!hasAccess) {
+    return { success: false, error: 'No tienes autorización para reabrir este proyecto.' };
+  }
+
+  try {
+    const { error } = await supabaseAdmin
+      .from('projects')
+      .update({ status: 'in-review' })
+      .eq('id', projectId);
+
+    if (error) throw error;
+
+    const { data: project } = await supabaseAdmin
+      .from('projects')
+      .select('public_id')
+      .eq('id', projectId)
+      .single();
+
+    if (project?.public_id) revalidatePath(`/c/${project.public_id}`);
+
+    return { success: true };
+
+  } catch (err) {
+    logError(err, { action: 'reopenProject', projectId });
+    return { success: false, error: 'Error al intentar reabrir.' };
   }
 }

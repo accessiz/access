@@ -4,7 +4,6 @@
 import { useEffect, useState, useTransition } from 'react';
 import { Project, Model } from '@/lib/types';
 import { finalizeProjectReview } from '@/lib/actions/client_actions'; 
-// 1. Importamos la acción para actualizar el estado
 import { updateProjectStatus } from '@/lib/actions/projects'; 
 import { toast } from 'sonner';
 import PasswordProtect from './PasswordProtect';
@@ -13,12 +12,10 @@ import { ClientHeader } from '../../_components/ClientHeader';
 import { ClientGrid } from '../../_components/ClientGrid';
 import { ClientFooter } from '../../_components/ClientFooter';
 import { Button } from '@/components/ui/button';
-import { Send } from 'lucide-react';
+import { Send, Loader2 } from 'lucide-react'; // Loader2 para feedback visual en el botón
+import { useAuth } from '@/hooks/useAuth';
 
-// --- INICIO DE LA MODIFICACIÓN ---
-// Importamos el hook de autenticación
-import { useAuth } from '@/hooks/useAuth'; //
-// --- FIN DE LA MODIFICACIÓN ---
+// (Se eliminaron las importaciones de AlertDialog)
 
 type GridModel = Model & {
     selection?: 'pending' | 'approved' | 'rejected' | null
@@ -39,44 +36,21 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
     }))
   );
   
-  // Renombramos la transición para ser específica
   const [isFinalizing, startFinalizeTransition] = useTransition();
-  
-  // Añadimos una nueva transición para la actualización de estado
   const [isUpdatingStatus, startStatusUpdateTransition] = useTransition();
+  const { user, loading: authLoading } = useAuth(); 
 
-  // --- INICIO DE LA MODIFICACIÓN ---
-  // Obtenemos el estado del usuario (logueado o anónimo)
-  const { user, loading: authLoading } = useAuth(); //
-  // --- FIN DE LA MODIFICACIÓN ---
-
-  // useEffect para cambiar el estado a "in-review"
+  // Lógica automática de "En Revisión" (sin cambios)
   useEffect(() => {
-    // No hacer nada hasta que sepamos si el usuario está logueado o no
-    if (authLoading) {
-      return; 
-    }
-
-    // Se ejecuta solo si:
-    //    - El proyecto está en 'sent'
-    //    - No estamos ya actualizándolo
-    //    - Y (¡NUEVO!) el usuario es anónimo (user === null)
+    if (authLoading) return; 
     if (user === null && project.status === 'sent' && !isUpdatingStatus) {
-      
       startStatusUpdateTransition(async () => {
-        // ¡Línea activada!
-        const result = await updateProjectStatus(project.id, 'in-review'); //
-        
-        if (!result.success) {
-          // Si falla, ahora podemos verlo en la consola
-          console.error("Error al actualizar estado a 'in-review':", result.error);
-        }
+        const result = await updateProjectStatus(project.id, 'in-review'); 
+        if (!result.success) console.error("Error auto-updating status:", result.error);
       });
     }
-    // Añadimos 'user' y 'authLoading' a las dependencias del useEffect
-  }, [project.id, project.status, isUpdatingStatus, user, authLoading]); //
+  }, [project.id, project.status, isUpdatingStatus, user, authLoading]);
 
-  // useEffect para poblar modelos (sin cambios)
   useEffect(() => {
     if (models.length === 0 && initialModels.length > 0) {
       setModels(
@@ -88,15 +62,18 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
     }
   }, [initialModels, models.length]);
 
+  // --- LÓGICA DE FINALIZACIÓN DIRECTA (CERO FRICCIÓN) ---
   const handleFinalize = () => {
-    // Usamos la transición correcta
     startFinalizeTransition(async () => {
-      const result = await finalizeProjectReview(project.id);
+      // Llamamos a la acción pasando 'true' para limpiar pendientes automáticamente.
+      // Sin preguntas, sin modales.
+      const result = await finalizeProjectReview(project.id, true);
       
       if (result.success) {
-        toast.success('¡Revisión enviada!', {
-          description: 'Gracias por completar la selección. Hemos notificado a la agencia.'
+        toast.success('¡Selección enviada!', {
+          description: 'Procesando tus resultados...'
         });
+        // La página se refrescará automáticamente y mostrará el ClientSummaryView
       } else {
         toast.error('Error al finalizar', {
           description: result.error || 'No se pudo enviar tu revisión. Intenta de nuevo.'
@@ -126,10 +103,11 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
             <p className="max-w-xl text-sm text-muted-foreground sm:text-base">
               Revisa el talento disponible para tu proyecto. Haz clic en un perfil para ver su portafolio completo y emitir tu aprobación o rechazo.
             </p>
+            
+            {/* Botón Superior */}
             <div className="flex-shrink-0">
-              {/* Usamos la variable de transición correcta */}
               <Button size="lg" onClick={handleFinalize} disabled={isFinalizing} className="w-full md:w-auto">
-                <Send className="mr-2 size-4" />
+                {isFinalizing ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Send className="mr-2 size-4" />}
                 {isFinalizing ? 'Enviando...' : 'Finalizar Revisión'}
               </Button>
             </div>
@@ -137,10 +115,10 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
 
           <ClientGrid models={models} projectId={project.public_id} />
 
+          {/* Botón Inferior */}
           <div className="flex justify-end pt-4 pb-16 md:pb-24">
-             {/* Usamos la variable de transición correcta */}
             <Button size="lg" onClick={handleFinalize} disabled={isFinalizing}>
-              <Send className="mr-2 size-4" />
+              {isFinalizing ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Send className="mr-2 size-4" />}
               {isFinalizing ? 'Enviando...' : 'Finalizar Revisión'}
             </Button>
           </div>
@@ -149,7 +127,7 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
 
         <ClientFooter />
 
-      </div> {/* Fin del div max-w-7xl */}
+      </div>
     </div>
   );
 }
