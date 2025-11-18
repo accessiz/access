@@ -46,7 +46,7 @@ export default function ClientSummaryView({ project, models }: SummaryProps) {
             <h1 className="text-heading-40 md:text-heading-48 font-semibold">
               ¡Selección Enviada!
             </h1>
-            <p className="text-muted-foreground text-lg">
+            <p className="text-copy-16 text-muted-foreground">
               {approved.length > 0 
                 ? `Elegiste ${approved.length} talento${approved.length === 1 ? '' : 's'} que encajan perfectamente con tu proyecto.`
                 : 'No seleccionaste ningún talento en esta revisión.'}
@@ -57,9 +57,9 @@ export default function ClientSummaryView({ project, models }: SummaryProps) {
           {approved.length > 0 && (
             // CAMBIO REALIZADO: Se eliminó 'max-w-5xl' para permitir el ancho completo del contenedor padre (1340px)
             <div className="w-full mb-16"> 
-              <h3 className="text-lg font-medium mb-6 text-center md:text-left">Talento aprobado:</h3>
+              <h3 className="text-heading-20 mb-6 text-center md:text-left">Talento aprobado:</h3>
               
-              <div className="client-grid"> 
+              <div className="client-grid">  
                 {approved.map(model => (
                   <div key={model.id} className="group relative">
                     <div className="aspect-[3/4] relative rounded-md overflow-hidden border bg-muted shadow-sm">
@@ -73,12 +73,12 @@ export default function ClientSummaryView({ project, models }: SummaryProps) {
                           sizes="(min-width: 1600px) 16.6vw, (min-width: 1200px) 20vw, (min-width: 900px) 25vw, (min-width: 480px) 33vw, 50vw"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-muted text-muted-foreground text-xs">
+                        <div className="w-full h-full flex items-center justify-center bg-muted text-muted-foreground text-label-12">
                           Sin foto
                         </div>
                       )}
                       <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-3 pt-6">
-                        <p className="text-white font-medium truncate text-sm">{model.alias}</p>
+                        <p className="text-white font-medium truncate text-label-14">{model.alias}</p>
                       </div>
                     </div>
                   </div>

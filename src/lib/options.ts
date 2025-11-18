@@ -4,8 +4,6 @@
 export const genderOptions = [
   { value: 'Female', label: 'Femenino' },
   { value: 'Male', label: 'Masculino' },
-  // CORRECCIÓN: Se actualiza 'Other' por 'Non-binary' para coincidir con el tipo.
-  { value: 'Non-binary', label: 'No binario' },
 ];
 
 // Opciones para el estado del modelo en la agencia

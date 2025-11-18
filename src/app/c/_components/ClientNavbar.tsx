@@ -45,7 +45,7 @@ export function ClientNavbar({ clientName }: { clientName: string | null }) {
       </Link>
 
       <div className="flex items-center gap-4">
-        <span className="text-sm text-muted-foreground hidden md:inline">
+        <span className="text-copy-14 text-muted-foreground hidden md:inline">
           {clientName || 'Cliente'}
         </span>
         <ThemeToggle isDark={isDark} toggle={toggle} />

@@ -52,6 +52,12 @@ export function ClientGrid({ models, projectId }: ClientGridProps) {
     );
   }
 
+  // 🔄 FUNCIÓN ACTUALIZADA: Guarda la posición de scroll antes de navegar.
+  const saveScrollPosition = () => {
+    // Usamos el public_id para que el scroll sea específico de este proyecto
+    sessionStorage.setItem(`client_scroll_${projectId}`, String(window.scrollY));
+  };
+
   // Renderizado del grid
   return (
     // Usa la clase CSS definida en globals.css
@@ -66,6 +72,8 @@ export function ClientGrid({ models, projectId }: ClientGridProps) {
             // Atenúa los ya calificados, pero permite hover
             model.selection !== 'pending' && model.selection !== null && 'opacity-60 hover:opacity-100'
           )}
+          // 🔄 AÑADIDO: Guardar la posición antes de navegar
+          onClick={saveScrollPosition}
         >
           {/* Contenedor de la Imagen (bordes cuadrados) */}
           <div className="relative aspect-[3/4] bg-muted overflow-hidden"> {/* Añadido overflow-hidden */}
@@ -81,7 +89,7 @@ export function ClientGrid({ models, projectId }: ClientGridProps) {
             ) : (
               // Placeholder si no hay imagen
               <div className="flex h-full w-full items-center justify-center">
-                <span className="text-sm text-muted-foreground">Sin foto</span>
+                <span className="text-copy-14 text-muted-foreground">Sin foto</span>
               </div>
             )}
 

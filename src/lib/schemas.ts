@@ -74,7 +74,7 @@ export const modelFormSchema = z.object({
   // --- CAMPOS OPCIONALES ---
   alias: optionalStringWithRegex(nameRegex, "El alias solo puede contener letras, espacios y apóstrofes. Ej: Ana María"),
   national_id: optionalString,
-  gender: optionalEnum(['Male', 'Female', 'Non-binary']),
+  gender: optionalEnum(['Male', 'Female']), // <--- CAMBIO AQUÍ
   birth_date: optionalString,
   date_joined_agency: optionalString,
   country: optionalString,
