@@ -68,13 +68,21 @@ const optionalEnum = <T extends [string, ...string[]]>(values: T) =>
 export const modelFormSchema = z.object({
   // --- CAMPOS OBLIGATORIOS ---
   full_name: z.string().min(3, "El nombre completo es obligatorio. Ej: Juan Pérez"),
-  phone_e164: z.string().min(1, "El teléfono es obligatorio.").regex(phoneRegex, "Ingresa el teléfono en formato internacional, por ejemplo: +50212345678"),
-  email: z.string().min(1, "El email es obligatorio.").email("El formato del correo no es válido. Ej: usuario@dominio.com"),
+  
+  phone_e164: z.string().min(1, "El teléfono es obligatorio.")
+    .regex(phoneRegex, "Ingresa el teléfono en formato internacional, por ejemplo: +50212345678"),
 
   // --- CAMPOS OPCIONALES ---
+  
+  // Email ahora es opcional (se movió aquí y usa preprocess)
+  email: z.preprocess(
+    emptyToNull, 
+    z.string().email("El formato del correo no es válido. Ej: usuario@dominio.com").nullable()
+  ),
+
   alias: optionalStringWithRegex(nameRegex, "El alias solo puede contener letras, espacios y apóstrofes. Ej: Ana María"),
   national_id: optionalString,
-  gender: optionalEnum(['Male', 'Female']), // <--- CAMBIO AQUÍ
+  gender: optionalEnum(['Male', 'Female']),
   birth_date: optionalString,
   date_joined_agency: optionalString,
   country: optionalString,
