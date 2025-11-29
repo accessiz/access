@@ -3,11 +3,10 @@
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import { Search, ListFilter, Ruler, LayoutGrid, List, Users } from 'lucide-react';
+import { Search, ListFilter, Ruler, LayoutGrid, List } from 'lucide-react';
 import { useMemo } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 
-// Rangos de altura para el filtro
 const heightRanges = [
   { label: "Cualquier Estatura", min: null, max: null },
   { label: "Menos de 170 cm", min: null, max: 169 },
@@ -17,20 +16,13 @@ const heightRanges = [
   { label: "Más de 185 cm", min: 186, max: null },
 ];
 
-// Opciones de género
-const genderOptions = [
-    { value: 'Female', label: 'Femenino' },
-    { value: 'Male', label: 'Masculino' },
-];
-
 interface ClientToolbarProps {
     countries: string[];
     onFilterChange: (filters: { key: string; value: string | null }) => void;
     onViewChange: (view: 'list' | 'grid') => void;
     currentFilters: { 
-        query: string; 
+        query: string;
         country: string | null; 
-        gender: string | null; // Nuevo filtro
         minHeight: number | null; 
         maxHeight: number | null; 
         view: 'list' | 'grid' 
@@ -39,7 +31,6 @@ interface ClientToolbarProps {
 
 export function ClientToolbar({ countries, onFilterChange, onViewChange, currentFilters }: ClientToolbarProps) {
 
-  // Usa debounce para la búsqueda por texto
   const handleSearch = useDebouncedCallback((term: string) => {
     onFilterChange({ key: 'query', value: term });
   }, 300);
@@ -56,10 +47,6 @@ export function ClientToolbar({ countries, onFilterChange, onViewChange, current
       )?.label || 'Estatura',
   [currentFilters.minHeight, currentFilters.maxHeight]);
 
-  const currentGenderLabel = useMemo(() => 
-    genderOptions.find(g => g.value === currentFilters.gender)?.label || 'Género',
-  [currentFilters.gender]);
-
   return (
     <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
       <div className="flex w-full sm:w-auto items-center gap-2 overflow-x-auto pb-2 sm:pb-0 no-scrollbar">
@@ -75,32 +62,6 @@ export function ClientToolbar({ countries, onFilterChange, onViewChange, current
           />
         </div>
         
-        {/* Filtro por Género (NUEVO) */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="icon" className="flex-shrink-0">
-              <Users className="h-4 w-4" />
-              <span className="sr-only">{currentGenderLabel}</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
-            <DropdownMenuLabel>Filtrar por género</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={() => onFilterChange({ key: 'gender', value: null })}>
-                Todos
-            </DropdownMenuItem>
-            {genderOptions.map((option) => (
-                <DropdownMenuItem 
-                    key={option.value} 
-                    onSelect={() => onFilterChange({ key: 'gender', value: option.value })}
-                    className={currentFilters.gender === option.value ? "bg-accent text-accent-foreground" : ""}
-                >
-                    {option.label}
-                </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-
         {/* Filtro por País */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -135,7 +96,7 @@ export function ClientToolbar({ countries, onFilterChange, onViewChange, current
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
             <DropdownMenuLabel>Filtrar por estatura</DropdownMenuLabel>
-             <DropdownMenuSeparator />
+            <DropdownMenuSeparator />
             {heightRanges.map((r) => (
                 <DropdownMenuItem 
                     key={r.label} 

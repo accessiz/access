@@ -9,8 +9,8 @@
     --foreground: 20 20 20;
     --nav-background: 255 255 255;
     --nav-foreground: 20 20 20;
-    --sidebar-background: 255 255 255;
-    --sidebar-foreground: 20 20 20;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
     --card: 255 255 255;
     --card-foreground: 20 20 20;
     --popover: 255 255 255;
@@ -33,6 +33,12 @@
     /* Design System aliases */
     /* Token solicitado: el negro más oscuro del sistema */
     --ds-background-200: 1 1 1;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
   .dark {
@@ -43,7 +49,7 @@
     --nav-foreground: 230 230 230;
     /* Updated sidebar/card background based on user input */
     --sidebar-background: 4 4 4;
-    --sidebar-foreground: 230 230 230;
+    --sidebar-foreground: 240 4.8% 95.9%;
     --card: 4 4 4;
     --card-foreground: 230 230 230;
     --popover: 20 20 20;
@@ -64,6 +70,12 @@
 
     /* Mantener el alias en oscuro igual de negro */
     --ds-background-200: 11 11 11;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
 

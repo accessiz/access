@@ -6,7 +6,7 @@ import Link from 'next/link';
 const headerStyles = {
     header: "relative flex flex-col gap-[var(--md-sys-spacing-md)] w-full",
     // Aplicamos clases de Tailwind directamente para la responsividad
-    nav: "w-full flex flex-col items-center gap-4 text-xs uppercase sm:flex-row sm:justify-between",
+    nav: "w-full flex flex-col items-center gap-4 text-label-12 uppercase sm:flex-row sm:justify-between",
     line: "w-full h-[1px] bg-[var(--md-sys-color-on-background)] origin-left",
 };
 // ✅ FIN DEL CAMBIO

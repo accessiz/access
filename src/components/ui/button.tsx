@@ -5,7 +5,7 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
@@ -21,10 +21,10 @@ const buttonVariants = cva(
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {
-        sm: "h-7 px-2 text-button-12",        // 28px height, 8px padding
-        default: "h-9 px-3 text-button-14",   // 36px height, 12px padding
-        lg: "h-11 px-4 text-button-16",       // 44px height, 16px padding
-        icon: "h-9 w-9",                      // Cuadrado 36px
+        default: "h-9 px-4 py-2",
+        sm: "h-8 rounded-md px-3 text-xs",
+        lg: "h-10 rounded-md px-8",
+        icon: "h-9 w-9",
       },
     },
     defaultVariants: {
@@ -41,29 +41,13 @@ export interface ButtonProps
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, type, ...props }, ref) => {
+  ({ className, variant, size, asChild = false, ...props }, ref) => {
     const Comp = asChild ? Slot : "button"
-
-    // When rendering a native <button>, default to type="button"
-    // unless a type was explicitly provided. Use a properly typed
-    // Partial of Button attributes to avoid 'any' casts.
-    const nativeProps: Partial<React.ButtonHTMLAttributes<HTMLButtonElement>> =
-      Comp === "button"
-        ? { type: (type ?? "button") as React.ButtonHTMLAttributes<HTMLButtonElement>["type"] }
-        : {};
-
-    // The 'props' value already respects ButtonProps which extends the
-    // native button attributes. Narrow it to the native type so we can
-    // safely spread without using 'any'. When Comp is Slot (asChild), the
-    // Slot component will accept these props as children attributes.
-    const restProps = props as unknown as React.ButtonHTMLAttributes<HTMLButtonElement>;
-
     return (
       <Comp
         className={cn(buttonVariants({ variant, size, className }))}
         ref={ref}
-        {...nativeProps}
-        {...restProps}
+        {...props}
       />
     )
   }

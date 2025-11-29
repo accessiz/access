@@ -43,7 +43,7 @@ export const ModelForm = ({ isSubmitting }: ModelFormProps) => {
 
   const FieldError = ({ name }: { name: keyof ModelFormData }) => {
     const error = errors[name];
-    return error ? <p className="text-xs text-destructive mt-1">{error.message}</p> : null;
+    return error ? <p className="text-label-12 text-destructive mt-1">{error.message}</p> : null;
   };
 
   // Helper para Inputs numéricos
@@ -89,7 +89,7 @@ export const ModelForm = ({ isSubmitting }: ModelFormProps) => {
   return (
     <div className="space-y-16">
         <div className="space-y-4">
-            <h2 className="text-lg font-semibold">Información Básica</h2>
+            <h2 className="text-heading-20">Información Básica</h2>
             <div className="border bg-card rounded-lg p-8 grid md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-6">
                 <FormField label="Nombre Completo *" htmlFor="full_name">
                   <Input id="full_name" {...register("full_name")} onKeyDown={preventNumericInput} disabled={isSubmitting} placeholder="Nombre y apellidos legales" />
@@ -135,7 +135,7 @@ export const ModelForm = ({ isSubmitting }: ModelFormProps) => {
         </div>
 
         <div className="space-y-4">
-            <h2 className="text-lg font-semibold">Medidas y Tallas</h2>
+            <h2 className="text-heading-20">Medidas y Tallas</h2>
             <div className="border bg-card rounded-lg p-8 grid md:grid-cols-3 lg:grid-cols-4 gap-x-8 gap-y-6">
                 
                 <FormField label="Estatura (cm)" htmlFor="height_cm">
@@ -215,7 +215,7 @@ export const ModelForm = ({ isSubmitting }: ModelFormProps) => {
         </div>
 
         <div className="space-y-4">
-          <h2 className="text-lg font-semibold">Apariencia y Contacto</h2>
+          <h2 className="text-heading-20">Apariencia y Contacto</h2>
           <div className="border bg-card rounded-lg p-8 grid md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-6">
                 <FormField label="Color de Ojos" htmlFor="eye_color">
                   <Controller name="eye_color" control={control} render={({ field }) => (
@@ -256,7 +256,7 @@ export const ModelForm = ({ isSubmitting }: ModelFormProps) => {
         </div>
 
         <div className="space-y-4">
-            <h2 className="text-lg font-semibold">Datos de Agencia</h2>
+            <h2 className="text-heading-20">Datos de Agencia</h2>
             <div className="border bg-card rounded-lg p-8 grid md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-6">
                   <FormField label="Estado" htmlFor="status">
                     <Controller name="status" control={control} render={({ field }) => (

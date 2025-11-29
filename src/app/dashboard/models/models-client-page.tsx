@@ -126,7 +126,7 @@ export default function ModelsClientPage({ initialData }: { initialData: Initial
     if (models.length === 0) {
       return (
         <div className="flex flex-col items-center justify-center text-center h-full py-20 rounded-lg border border-dashed">
-          <p className="text-lg font-semibold">No se encontraron modelos</p>
+          <p className="text-heading-20">No se encontraron modelos</p>
           <p className="text-muted-foreground">Intenta ajustar los filtros o la búsqueda.</p>
         </div>
       );
@@ -141,12 +141,12 @@ export default function ModelsClientPage({ initialData }: { initialData: Initial
                 <Avatar className="h-full w-full rounded-none">
                   {/* CORRECCIÓN: Usar la constante importada */}
                   <AvatarImage src={model.coverUrl || `${SUPABASE_PUBLIC_URL}${model.id}/Portada/cover.jpg`} className="object-cover group-hover:scale-105 transition-transform duration-300" />
-                  <AvatarFallback className="rounded-none text-2xl bg-transparent">{model.alias?.substring(0, 2) || 'IZ'}</AvatarFallback>
+                  <AvatarFallback className="rounded-none text-heading-24 bg-transparent">{model.alias?.substring(0, 2) || 'IZ'}</AvatarFallback>
                 </Avatar>
               </div>
               <div className="p-3">
                 <p className="font-semibold truncate">{model.alias}</p>
-                <p className="text-sm text-muted-foreground">{model.country}</p>
+                <p className="text-copy-14 text-muted-foreground">{model.country}</p>
               </div>
             </Card>
           ))}
@@ -200,11 +200,6 @@ export default function ModelsClientPage({ initialData }: { initialData: Initial
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-heading-32">Talento</h1>
-        <p className="text-muted-foreground">Gestiona, filtra y explora la base de datos de modelos.</p>
-      </header>
-
       <ModelsToolbar countries={countries} />
 
       <div className="pb-6 min-h-[500px]">

@@ -40,7 +40,7 @@ export default async function LoginPage() {
               IZ Access
             </Link>
             {/* Texto descriptivo un poco más grande */}
-            <p className="text-balance text-muted-foreground mt-2 text-sm"> 
+            <p className="text-balance text-muted-foreground mt-2 text-copy-14"> 
             {/* ↑↑↑ text-sm */}
               Bienvenido de nuevo. Accede a tu panel de gestión.
             </p>

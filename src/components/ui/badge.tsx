@@ -17,9 +17,9 @@ const badgeVariants = cva(
         outline: "text-foreground",
       },
       size: {
-        small: "h-5 px-1.5 text-xs",      // 20px height, 6px padding (1.5 * 4px)
-        medium: "h-6 px-2 text-xs",        // 24px height, 8px padding (default)
-        large: "h-7 px-2.5 text-sm",       // 28px height, 10px padding (2.5 * 4px)
+        small: "h-5 px-1.5 text-label-12",      // 20px height, 6px padding (1.5 * 4px)
+        medium: "h-6 px-2 text-label-12",        // 24px height, 8px padding (default)
+        large: "h-7 px-2.5 text-label-14",       // 28px height, 10px padding (2.5 * 4px)
       },
     },
     defaultVariants: {

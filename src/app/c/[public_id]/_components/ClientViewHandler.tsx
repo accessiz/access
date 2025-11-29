@@ -10,7 +10,7 @@ import { ClientNavbar } from '../../_components/ClientNavbar';
 import { ClientHeader } from '../../_components/ClientHeader';
 import { ClientGrid } from '../../_components/ClientGrid';
 import { ClientListView } from './ClientListView'; 
-import { ClientToolbar } from './ClientToolbar';   
+import { ClientToolbar } from './ClientToolbar';
 import { ClientFooter } from '../../_components/ClientFooter';
 import { Button } from '@/components/ui/button';
 import { Send, Loader2 } from 'lucide-react';
@@ -26,7 +26,6 @@ interface HandlerProps {
   hasAccessCookie: boolean;
 }
 
-// Claves para sessionStorage
 const getStorageKey = (id: string, key: string) => `client_${id}_${key}`;
 
 export default function ClientViewHandler({ project, initialModels, hasAccessCookie }: HandlerProps) {
@@ -39,12 +38,11 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
   );
 
   // 2. ESTADOS DE FILTROS Y VISTA
-  // Inicializamos leyendo de sessionStorage si existe, o usamos valores por defecto
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  
   const [filters, setFilters] = useState({
     query: '',
     country: null as string | null,
-    gender: null as string | null, // Inicializado correctamente para evitar error TS
     minHeight: null as number | null,
     maxHeight: null as number | null,
   });
@@ -58,41 +56,43 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
   // --- EFECTO DE MONTAJE: RECUPERAR ESTADO ---
   useEffect(() => {
     setIsMounted(true);
-    // Recuperar filtros y vista guardados
     const savedView = sessionStorage.getItem(getStorageKey(project.public_id, 'view'));
     if (savedView === 'list' || savedView === 'grid') setViewMode(savedView);
 
     const savedFilters = sessionStorage.getItem(getStorageKey(project.public_id, 'filters'));
     if (savedFilters) {
         try {
-            setFilters(JSON.parse(savedFilters));
+            const parsed = JSON.parse(savedFilters);
+            setFilters({
+                query: parsed.query || '',
+                country: parsed.country || null,
+                minHeight: parsed.minHeight || null,
+                maxHeight: parsed.maxHeight || null
+            });
         } catch (e) { console.error("Error parsing filters", e); }
     }
 
-    // Restaurar Scroll (Lógica existente)
     const scrollKey = `client_scroll_${project.public_id}`;
     const savedScrollY = sessionStorage.getItem(scrollKey);
     if (savedScrollY) {
       setTimeout(() => {
         window.scrollTo(0, parseInt(savedScrollY, 10));
         sessionStorage.removeItem(scrollKey); 
-      }, 100); // Un pequeño delay extra para asegurar que el grid filtrado se renderice
+      }, 100); 
     }
   }, [project.public_id]);
 
   // --- EFECTO: PERSISTENCIA DE ESTADO ---
-  // Guardamos en sessionStorage cada vez que cambian los filtros o la vista
   useEffect(() => {
     if (!isMounted) return;
     sessionStorage.setItem(getStorageKey(project.public_id, 'view'), viewMode);
     sessionStorage.setItem(getStorageKey(project.public_id, 'filters'), JSON.stringify(filters));
   }, [viewMode, filters, project.public_id, isMounted]);
 
-
   // --- LÓGICA DE FILTRADO (useMemo) ---
   const filteredModels = useMemo(() => {
     return models.filter(model => {
-      // 1. Filtro de Texto (Nombre/Alias)
+      // 1. Filtro de Texto
       if (filters.query) {
         const q = filters.query.toLowerCase();
         const matchName = model.full_name?.toLowerCase().includes(q);
@@ -103,23 +103,21 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
       if (filters.country && model.country !== filters.country) {
         return false;
       }
-      // 3. Filtro de Género
-      if (filters.gender && model.gender !== filters.gender) {
-        return false;
-      }
-      // 4. Filtro de Estatura
+      // 3. Filtro de Estatura
       if (model.height_cm) {
           if (filters.minHeight && model.height_cm < filters.minHeight) return false;
           if (filters.maxHeight && model.height_cm > filters.maxHeight) return false;
       } else {
-          // Si no tiene estatura y hay filtro de estatura activo, ¿lo mostramos?
-          // Por lo general, si se filtra por un rango, se excluyen los nulos.
           if (filters.minHeight || filters.maxHeight) return false;
       }
-      
       return true;
     });
   }, [models, filters]);
+
+  // --- SEGMENTACIÓN DE DATOS (Hombres / Mujeres) ---
+  const womenModels = useMemo(() => filteredModels.filter(m => m.gender === 'Female'), [filteredModels]);
+  const menModels = useMemo(() => filteredModels.filter(m => m.gender === 'Male'), [filteredModels]);
+  const otherModels = useMemo(() => filteredModels.filter(m => m.gender !== 'Female' && m.gender !== 'Male'), [filteredModels]);
 
   // Obtener lista única de países para el filtro
   const availableCountries = useMemo(() => {
@@ -128,13 +126,11 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
   }, [models]);
 
   // --- HANDLERS ---
-
   const handleFilterChange = (newFilter: { key: string; value: string | null }) => {
     setFilters(prev => {
         const updated = { ...prev };
         if (newFilter.key === 'query') updated.query = newFilter.value || '';
         else if (newFilter.key === 'country') updated.country = newFilter.value;
-        else if (newFilter.key === 'gender') updated.gender = newFilter.value;
         else if (newFilter.key === 'minHeight') updated.minHeight = newFilter.value ? Number(newFilter.value) : null;
         else if (newFilter.key === 'maxHeight') updated.maxHeight = newFilter.value ? Number(newFilter.value) : null;
         return updated;
@@ -194,7 +190,7 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
 
         <main className="w-full flex-1 space-y-8">
           
-          {/* 1. HEADER Y BOTÓN SUPERIOR */}
+          {/* HEADER Y BOTÓN SUPERIOR */}
           <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
              <div className="space-y-4 max-w-2xl">
                 <p className="text-sm text-muted-foreground sm:text-base">
@@ -207,7 +203,7 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
                   size="lg" 
                   onClick={handleFinalize} 
                   disabled={isFinalizing} 
-                  className="w-full md:w-auto text-white" // <-- AÑADIDO: text-white
+                  className="w-full md:w-auto text-white"
                 >
                   {isFinalizing ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Send className="mr-2 size-4" />}
                   {isFinalizing ? 'Enviando...' : 'Finalizar Revisión'}
@@ -215,7 +211,7 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
              </div>
           </div>
 
-          {/* 2. TOOLBAR DE FILTROS */}
+          {/* TOOLBAR: Eliminada propiedad gender: null */}
           <ClientToolbar 
              countries={availableCountries}
              onFilterChange={handleFilterChange}
@@ -226,22 +222,61 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
              }}
           />
 
-          {/* 3. CONTENIDO (GRID O LISTA) */}
-          <div className="min-h-[400px]">
-             {viewMode === 'grid' ? (
-                 <ClientGrid models={filteredModels} projectId={project.public_id} />
-             ) : (
-                 <ClientListView models={filteredModels} projectId={project.public_id} />
+          {/* CONTENIDO (SECCIONES DIVIDIDAS) */}
+          <div className="min-h-[400px] space-y-16">
+             
+             {/* SECCIÓN HOMBRES */}
+             {menModels.length > 0 && (
+                <section>
+                    <h2 className="text-heading-32 mb-8 border-b pb-4 uppercase tracking-tight">Hombres</h2>
+                    {viewMode === 'grid' ? (
+                        <ClientGrid models={menModels} projectId={project.public_id} />
+                    ) : (
+                        <ClientListView models={menModels} projectId={project.public_id} />
+                    )}
+                </section>
              )}
+
+             {/* SECCIÓN MUJERES */}
+             {womenModels.length > 0 && (
+                <section>
+                    <h2 className="text-heading-32 mb-8 border-b pb-4 uppercase tracking-tight">Mujeres</h2>
+                    {viewMode === 'grid' ? (
+                        <ClientGrid models={womenModels} projectId={project.public_id} />
+                    ) : (
+                        <ClientListView models={womenModels} projectId={project.public_id} />
+                    )}
+                </section>
+             )}
+
+             {/* SECCIÓN OTROS */}
+             {otherModels.length > 0 && (
+                <section>
+                    <h2 className="text-heading-32 mb-8 border-b pb-4 uppercase tracking-tight">Otros</h2>
+                    {viewMode === 'grid' ? (
+                        <ClientGrid models={otherModels} projectId={project.public_id} />
+                    ) : (
+                        <ClientListView models={otherModels} projectId={project.public_id} />
+                    )}
+                </section>
+             )}
+
+             {/* MENSAJE DE VACÍO GLOBAL */}
+             {filteredModels.length === 0 && (
+                 <div className="flex h-64 items-center justify-center rounded-lg border border-dashed">
+                     <p className="text-copy-14 text-muted-foreground">No se encontraron talentos con estos filtros.</p>
+                 </div>
+             )}
+
           </div>
 
-          {/* 4. BOTÓN INFERIOR */}
+          {/* BOTÓN INFERIOR */}
           <div className="flex justify-end pt-4 pb-16 md:pb-24">
             <Button 
               size="lg" 
               onClick={handleFinalize} 
               disabled={isFinalizing}
-              className="text-white" // <-- AÑADIDO: text-white
+              className="text-white"
             >
               {isFinalizing ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Send className="mr-2 size-4" />}
               {isFinalizing ? 'Enviando...' : 'Finalizar Revisión'}

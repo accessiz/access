@@ -133,7 +133,7 @@ export function ProjectStatusUpdater({ project, selectedModels }: ProjectStatusU
       </CardHeader>
       <CardContent>
         <div className="space-y-2">
-          <div className="flex justify-between text-sm text-muted-foreground">
+          <div className="flex justify-between text-copy-14 text-muted-foreground">
             <span>Revisión del Cliente</span>
             <span>{reviewedCount} de {totalCount} talentos revisados</span>
           </div>

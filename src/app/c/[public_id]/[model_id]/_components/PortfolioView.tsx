@@ -129,7 +129,7 @@ export default function PortfolioView({ project, model: initialModel }: Portfoli
             </div>
             {/* Pequeño texto de ayuda si ya votó */}
             {model.client_selection && model.client_selection !== 'pending' && (
-                <p className="text-center text-xs text-muted-foreground mt-2 animate-in fade-in">
+                <p className="text-center text-label-12 text-muted-foreground mt-2 animate-in fade-in">
                     Puedes cambiar tu selección pulsando el otro botón.
                 </p>
             )}

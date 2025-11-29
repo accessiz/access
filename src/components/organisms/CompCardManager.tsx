@@ -53,7 +53,7 @@ const PhotoSlot = ({ className, imageUrl, onFileSelect, onDelete, label, isUploa
                     ? <Loader2 className="h-8 w-8 text-muted-foreground animate-spin mb-2" />
                     : <UploadCloud className="h-8 w-8 text-muted-foreground mb-2" />
                 }
-                <span className="text-xs font-normal text-muted-foreground">{isUploading ? 'Subiendo...' : label}</span>
+                <span className="text-label-12 font-normal text-muted-foreground">{isUploading ? 'Subiendo...' : label}</span>
             </Button>
         </div>
       )}
@@ -187,7 +187,7 @@ export function CompCardManager({
                 <div className="space-y-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                         <div>
-                            <span className="text-sm font-medium text-muted-foreground mb-2 block">Portada (Slider)</span>
+                            <span className="text-label-14 text-muted-foreground mb-2 block">Portada (Slider)</span>
                             <PhotoSlot
                                 className="aspect-[3/4]"
                                 imageUrl={coverUrl}
@@ -198,7 +198,7 @@ export function CompCardManager({
                             />
                         </div>
                         <div>
-                            <span className="text-sm font-medium text-muted-foreground mb-2 block">Contraportada (4 Fotos)</span>
+                            <span className="text-label-14 text-muted-foreground mb-2 block">Contraportada (4 Fotos)</span>
                             <div className="grid grid-cols-2 gap-4">
                                 {Array.from({ length: 4 }).map((_, index) => (
                                     <PhotoSlot
@@ -215,7 +215,7 @@ export function CompCardManager({
                         </div>
                     </div>
                      <div>
-                        <span className="text-sm font-medium text-muted-foreground mb-2 block">Portafolio (Imagen Principal Horizontal)</span>
+                        <span className="text-label-14 text-muted-foreground mb-2 block">Portafolio (Imagen Principal Horizontal)</span>
                         <PhotoSlot
                             className="aspect-[11/8.5] max-h-64"
                             imageUrl={portfolioUrl}

@@ -11,112 +11,325 @@ const config: Config = {
   ],
   prefix: "",
   theme: {
-    container: {
-      center: true,
-      padding: "2rem",
-      screens: {
-        "2xl": "1400px",
-      },
-    },
-    extend: {
-      fontSize: {
-          // --- BLOQUE ELIMINADO ---
-          // Se eliminaron las clases 'xs', 'sm', 'base', 'lg', 'xl', etc.
-          // para forzar el uso exclusivo del sistema Geist/Vercel de abajo.
-
-          // Geist/Vercel type roles (Basado en tu texto)
-          'heading-72': ['4.5rem', { lineHeight: '1', letterSpacing: '-0.02em', fontWeight: '700' }], // 72px
-          'heading-64': ['4rem',   { lineHeight: '1', letterSpacing: '-0.02em', fontWeight: '700' }], // 64px
-          'heading-56': ['3.5rem', { lineHeight: '1.05', letterSpacing: '-0.02em', fontWeight: '700' }], // 56px
-          'heading-48': ['3rem',   { lineHeight: '1.05', letterSpacing: '-0.02em', fontWeight: '700' }], // 48px
-          'heading-40': ['2.5rem', { lineHeight: '1.1', letterSpacing: '-0.01em', fontWeight: '700' }], // 40px
-          'heading-32': ['2rem',   { lineHeight: '1.2', letterSpacing: '-0.01em', fontWeight: '600' }], // 32px
-          'heading-24': ['1.5rem', { lineHeight: '1.3', letterSpacing: '-0.005em', fontWeight: '600' }], // 24px
-          'heading-20': ['1.25rem',{ lineHeight: '1.4', letterSpacing: '0', fontWeight: '600' }], // 20px
-          'heading-16': ['1rem',   { lineHeight: '1.4', letterSpacing: '0', fontWeight: '600' }], // 16px
-          'heading-14': ['0.875rem',{ lineHeight: '1.4', letterSpacing: '0', fontWeight: '600' }], // 14px
-
-          'button-16': ['1rem',    { lineHeight: '1.25', letterSpacing: '0', fontWeight: '600' }],
-          'button-14': ['0.875rem',{ lineHeight: '1.25', letterSpacing: '0', fontWeight: '600' }],
-          'button-12': ['0.75rem', { lineHeight: '1.2', letterSpacing: '0.01em', fontWeight: '600' }],
-
-          'label-20':  ['1.25rem', { lineHeight: '1.1', letterSpacing: '0', fontWeight: '500' }],
-          'label-18':  ['1.125rem',{ lineHeight: '1.1', letterSpacing: '0', fontWeight: '500' }],
-          'label-16':  ['1rem',    { lineHeight: '1.2', letterSpacing: '0', fontWeight: '600' }],
-          'label-14':  ['0.875rem',{ lineHeight: '1.2', letterSpacing: '0', fontWeight: '600' }],
-          'label-13':  ['0.8125rem',{ lineHeight: '1.2', letterSpacing: '0.01em', fontWeight: '600' }],
-          'label-12':  ['0.75rem', { lineHeight: '1.3', letterSpacing: '0.04em', fontWeight: '700' }],
-          'label-14-mono': ['0.875rem',{ lineHeight: '1.2', letterSpacing: '0.02em', fontWeight: '600' }],
-          'label-13-mono': ['0.8125rem',{ lineHeight: '1.2', letterSpacing: '0.03em', fontWeight: '600' }],
-          'label-12-mono': ['0.75rem', { lineHeight: '1.3', letterSpacing: '0.04em', fontWeight: '700' }],
-
-          'copy-24': ['1.5rem',    { lineHeight: '1.6', letterSpacing: '0', fontWeight: '500' }],
-          'copy-20': ['1.25rem',   { lineHeight: '1.6', letterSpacing: '0', fontWeight: '500' }],
-          'copy-18': ['1.125rem',  { lineHeight: '1.65', letterSpacing: '0', fontWeight: '500' }],
-          'copy-16': ['1rem',      { lineHeight: '1.7', letterSpacing: '0', fontWeight: '400' }],
-          'copy-14': ['0.875rem',  { lineHeight: '1.7', letterSpacing: '0', fontWeight: '400' }],
-          'copy-13': ['0.8125rem', { lineHeight: '1.7', letterSpacing: '0.01em', fontWeight: '400' }],
-          'copy-13-mono': ['0.8125rem', { lineHeight: '1.7', letterSpacing: '0.02em', fontWeight: '500' }],
-      },
-      colors: {
-        border: "rgb(var(--border) / <alpha-value>)",
-        input: "rgb(var(--input) / <alpha-value>)",
-        ring: "rgb(var(--ring) / <alpha-value>)",
-        background: "rgb(var(--background) / <alpha-value>)",
-        foreground: "rgb(var(--foreground) / <alpha-value>)",
-        "nav-background": "rgb(var(--nav-background) / <alpha-value>)",
-        "nav-foreground": "rgb(var(--nav-foreground) / <alpha-value>)",
-        "sidebar-background": "rgb(var(--sidebar-background) / <alpha-value>)",
-        "sidebar-foreground": "rgb(var(--sidebar-foreground) / <alpha-value>)",
-        primary: {
-          DEFAULT: "rgb(var(--primary) / <alpha-value>)",
-          foreground: "rgb(var(--primary-foreground) / <alpha-value>)",
-        },
-        secondary: {
-          DEFAULT: "rgb(var(--secondary) / <alpha-value>)",
-          foreground: "rgb(var(--secondary-foreground) / <alpha-value>)",
-        },
-        destructive: {
-          DEFAULT: "rgb(var(--destructive) / <alpha-value>)",
-          foreground: "rgb(var(--destructive-foreground) / <alpha-value>)",
-        },
-        muted: {
-          DEFAULT: "rgb(var(--muted) / <alpha-value>)",
-          foreground: "rgb(var(--muted-foreground) / <alpha-value>)",
-        },
-        accent: {
-          DEFAULT: "rgb(var(--accent) / <alpha-value>)",
-          foreground: "rgb(var(--accent-foreground) / <alpha-value>)",
-        },
-        popover: {
-          DEFAULT: "rgb(var(--popover) / <alpha-value>)",
-          foreground: "rgb(var(--popover-foreground) / <alpha-value>)",
-        },
-        card: {
-          DEFAULT: "rgb(var(--card) / <alpha-value>)",
-          foreground: "rgb(var(--card-foreground) / <alpha-value>)",
-        },
-      },
-      borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
-      },
-      keyframes: {
-        "accordion-down": {
-          from: { height: "0" },
-          to: { height: "var(--radix-accordion-content-height)" },
-        },
-        "accordion-up": {
-          from: { height: "var(--radix-accordion-content-height)" },
-          to: { height: "0" },
-        },
-      },
-      animation: {
-        "accordion-down": "accordion-down 0.2s ease-out",
-        "accordion-up": "accordion-up 0.2s ease-out",
-      },
-    },
+  	container: {
+  		center: true,
+  		padding: '2rem',
+  		screens: {
+  			'2xl': '1400px'
+  		}
+  	},
+  	extend: {
+  		fontSize: {
+  			'heading-72': [
+  				'4.5rem',
+  				{
+  					lineHeight: '1',
+  					letterSpacing: '-0.02em',
+  					fontWeight: '700'
+  				}
+  			],
+  			'heading-64': [
+  				'4rem',
+  				{
+  					lineHeight: '1',
+  					letterSpacing: '-0.02em',
+  					fontWeight: '700'
+  				}
+  			],
+  			'heading-56': [
+  				'3.5rem',
+  				{
+  					lineHeight: '1.05',
+  					letterSpacing: '-0.02em',
+  					fontWeight: '700'
+  				}
+  			],
+  			'heading-48': [
+  				'3rem',
+  				{
+  					lineHeight: '1.05',
+  					letterSpacing: '-0.02em',
+  					fontWeight: '700'
+  				}
+  			],
+  			'heading-40': [
+  				'2.5rem',
+  				{
+  					lineHeight: '1.1',
+  					letterSpacing: '-0.01em',
+  					fontWeight: '700'
+  				}
+  			],
+  			'heading-32': [
+  				'2rem',
+  				{
+  					lineHeight: '1.2',
+  					letterSpacing: '-0.01em',
+  					fontWeight: '600'
+  				}
+  			],
+  			'heading-24': [
+  				'1.5rem',
+  				{
+  					lineHeight: '1.3',
+  					letterSpacing: '-0.005em',
+  					fontWeight: '600'
+  				}
+  			],
+  			'heading-20': [
+  				'1.25rem',
+  				{
+  					lineHeight: '1.4',
+  					letterSpacing: '0',
+  					fontWeight: '600'
+  				}
+  			],
+  			'heading-16': [
+  				'1rem',
+  				{
+  					lineHeight: '1.4',
+  					letterSpacing: '0',
+  					fontWeight: '600'
+  				}
+  			],
+  			'heading-14': [
+  				'0.875rem',
+  				{
+  					lineHeight: '1.4',
+  					letterSpacing: '0',
+  					fontWeight: '600'
+  				}
+  			],
+  			'button-16': [
+  				'1rem',
+  				{
+  					lineHeight: '1.25',
+  					letterSpacing: '0',
+  					fontWeight: '600'
+  				}
+  			],
+  			'button-14': [
+  				'0.875rem',
+  				{
+  					lineHeight: '1.25',
+  					letterSpacing: '0',
+  					fontWeight: '600'
+  				}
+  			],
+  			'button-12': [
+  				'0.75rem',
+  				{
+  					lineHeight: '1.2',
+  					letterSpacing: '0.01em',
+  					fontWeight: '600'
+  				}
+  			],
+  			'label-20': [
+  				'1.25rem',
+  				{
+  					lineHeight: '1.1',
+  					letterSpacing: '0',
+  					fontWeight: '500'
+  				}
+  			],
+  			'label-18': [
+  				'1.125rem',
+  				{
+  					lineHeight: '1.1',
+  					letterSpacing: '0',
+  					fontWeight: '500'
+  				}
+  			],
+  			'label-16': [
+  				'1rem',
+  				{
+  					lineHeight: '1.2',
+  					letterSpacing: '0',
+  					fontWeight: '600'
+  				}
+  			],
+  			'label-14': [
+  				'0.875rem',
+  				{
+  					lineHeight: '1.2',
+  					letterSpacing: '0',
+  					fontWeight: '600'
+  				}
+  			],
+  			'label-13': [
+  				'0.8125rem',
+  				{
+  					lineHeight: '1.2',
+  					letterSpacing: '0.01em',
+  					fontWeight: '600'
+  				}
+  			],
+  			'label-12': [
+  				'0.75rem',
+  				{
+  					lineHeight: '1.3',
+  					letterSpacing: '0.04em',
+  					fontWeight: '700'
+  				}
+  			],
+  			'label-14-mono': [
+  				'0.875rem',
+  				{
+  					lineHeight: '1.2',
+  					letterSpacing: '0.02em',
+  					fontWeight: '600'
+  				}
+  			],
+  			'label-13-mono': [
+  				'0.8125rem',
+  				{
+  					lineHeight: '1.2',
+  					letterSpacing: '0.03em',
+  					fontWeight: '600'
+  				}
+  			],
+  			'label-12-mono': [
+  				'0.75rem',
+  				{
+  					lineHeight: '1.3',
+  					letterSpacing: '0.04em',
+  					fontWeight: '700'
+  				}
+  			],
+  			'copy-24': [
+  				'1.5rem',
+  				{
+  					lineHeight: '1.6',
+  					letterSpacing: '0',
+  					fontWeight: '500'
+  				}
+  			],
+  			'copy-20': [
+  				'1.25rem',
+  				{
+  					lineHeight: '1.6',
+  					letterSpacing: '0',
+  					fontWeight: '500'
+  				}
+  			],
+  			'copy-18': [
+  				'1.125rem',
+  				{
+  					lineHeight: '1.65',
+  					letterSpacing: '0',
+  					fontWeight: '500'
+  				}
+  			],
+  			'copy-16': [
+  				'1rem',
+  				{
+  					lineHeight: '1.7',
+  					letterSpacing: '0',
+  					fontWeight: '400'
+  				}
+  			],
+  			'copy-14': [
+  				'0.875rem',
+  				{
+  					lineHeight: '1.7',
+  					letterSpacing: '0',
+  					fontWeight: '400'
+  				}
+  			],
+  			'copy-13': [
+  				'0.8125rem',
+  				{
+  					lineHeight: '1.7',
+  					letterSpacing: '0.01em',
+  					fontWeight: '400'
+  				}
+  			],
+  			'copy-13-mono': [
+  				'0.8125rem',
+  				{
+  					lineHeight: '1.7',
+  					letterSpacing: '0.02em',
+  					fontWeight: '500'
+  				}
+  			]
+  		},
+  		colors: {
+  			border: 'rgb(var(--border) / <alpha-value>)',
+  			input: 'rgb(var(--input) / <alpha-value>)',
+  			ring: 'rgb(var(--ring) / <alpha-value>)',
+  			background: 'rgb(var(--background) / <alpha-value>)',
+  			foreground: 'rgb(var(--foreground) / <alpha-value>)',
+  			'nav-background': 'rgb(var(--nav-background) / <alpha-value>)',
+  			'nav-foreground': 'rgb(var(--nav-foreground) / <alpha-value>)',
+  			'sidebar-background': 'hsl(var(--sidebar-background) / <alpha-value>)',
+  			'sidebar-foreground': 'hsl(var(--sidebar-foreground) / <alpha-value>)',
+  			primary: {
+  				DEFAULT: 'rgb(var(--primary) / <alpha-value>)',
+  				foreground: 'rgb(var(--primary-foreground) / <alpha-value>)'
+  			},
+  			secondary: {
+  				DEFAULT: 'rgb(var(--secondary) / <alpha-value>)',
+  				foreground: 'rgb(var(--secondary-foreground) / <alpha-value>)'
+  			},
+  			destructive: {
+  				DEFAULT: 'rgb(var(--destructive) / <alpha-value>)',
+  				foreground: 'rgb(var(--destructive-foreground) / <alpha-value>)'
+  			},
+  			muted: {
+  				DEFAULT: 'rgb(var(--muted) / <alpha-value>)',
+  				foreground: 'rgb(var(--muted-foreground) / <alpha-value>)'
+  			},
+  			accent: {
+  				DEFAULT: 'rgb(var(--accent) / <alpha-value>)',
+  				foreground: 'rgb(var(--accent-foreground) / <alpha-value>)'
+  			},
+  			popover: {
+  				DEFAULT: 'rgb(var(--popover) / <alpha-value>)',
+  				foreground: 'rgb(var(--popover-foreground) / <alpha-value>)'
+  			},
+  			card: {
+  				DEFAULT: 'rgb(var(--card) / <alpha-value>)',
+  				foreground: 'rgb(var(--card-foreground) / <alpha-value>)'
+  			},
+  			sidebar: {
+  				DEFAULT: 'hsl(var(--sidebar-background))',
+  				foreground: 'hsl(var(--sidebar-foreground))',
+  				primary: 'hsl(var(--sidebar-primary))',
+  				'primary-foreground': 'hsl(var(--sidebar-primary-foreground))',
+  				accent: 'hsl(var(--sidebar-accent))',
+  				'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
+  				border: 'hsl(var(--sidebar-border))',
+  				ring: 'hsl(var(--sidebar-ring))'
+  			}
+  		},
+  		borderRadius: {
+  			lg: 'var(--radius)',
+  			md: 'calc(var(--radius) - 2px)',
+  			sm: 'calc(var(--radius) - 4px)'
+  		},
+  		keyframes: {
+  			'accordion-down': {
+  				from: {
+  					height: '0'
+  				},
+  				to: {
+  					height: 'var(--radix-accordion-content-height)'
+  				}
+  			},
+  			'accordion-up': {
+  				from: {
+  					height: 'var(--radix-accordion-content-height)'
+  				},
+  				to: {
+  					height: '0'
+  				}
+  			}
+  		},
+  		animation: {
+  			'accordion-down': 'accordion-down 0.2s ease-out',
+  			'accordion-up': 'accordion-up 0.2s ease-out'
+  		}
+  	}
   },
   plugins: [animatePlugin],
 };

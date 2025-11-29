@@ -71,7 +71,7 @@ export function ProjectForm() {
               // Limpiamos el valor si el formulario tuvo éxito (evita repetición tras redirect)
               key={state.success ? 'success' : 'form'}
             />
-            {fieldErrors?.project_name && <p className="text-xs text-destructive mt-1">{fieldErrors.project_name}</p>}
+            {fieldErrors?.project_name && <p className="text-label-12 text-destructive mt-1">{fieldErrors.project_name}</p>}
           </div>
 
           <div className="space-y-2">
@@ -82,7 +82,7 @@ export function ProjectForm() {
               placeholder="Ej: Tiendas El Sol"
               key={state.success ? 'success' : 'form'}
             />
-            {fieldErrors?.client_name && <p className="text-xs text-destructive mt-1">{fieldErrors.client_name}</p>}
+            {fieldErrors?.client_name && <p className="text-label-12 text-destructive mt-1">{fieldErrors.client_name}</p>}
           </div>
 
           <div className="space-y-2 md:col-span-2">
@@ -94,7 +94,7 @@ export function ProjectForm() {
               className="min-h-[120px]"
               key={state.success ? 'success' : 'form'}
             />
-            {fieldErrors?.description && <p className="text-xs text-destructive mt-1">{fieldErrors.description}</p>}
+            {fieldErrors?.description && <p className="text-label-12 text-destructive mt-1">{fieldErrors.description}</p>}
           </div>
 
           <div className="space-y-2">
@@ -106,8 +106,8 @@ export function ProjectForm() {
               placeholder="Para proteger el enlace del cliente"
               key={state.success ? 'success' : 'form'}
             />
-            {fieldErrors?.password && <p className="text-xs text-destructive mt-1">{fieldErrors.password}</p>}
-            <p className="text-xs text-muted-foreground">
+            {fieldErrors?.password && <p className="text-label-12 text-destructive mt-1">{fieldErrors.password}</p>}
+            <p className="text-label-12 text-muted-foreground">
               Si dejas esto en blanco, el enlace será público.
             </p>
           </div>

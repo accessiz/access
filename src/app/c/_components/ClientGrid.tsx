@@ -99,7 +99,7 @@ export function ClientGrid({ models, projectId }: ClientGridProps) {
 
           {/* Nombre del modelo debajo, alineado a la izquierda */}
           <div className="mt-3 text-left"> {/* mt-3 = 12px */}
-            <h3 className="text-sm font-medium text-foreground truncate">{model.alias || 'Sin Alias'}</h3> {/* Añadido truncate */}
+            <h3 className="text-label-14 text-foreground truncate">{model.alias || 'Sin Alias'}</h3> {/* Añadido truncate */}
           </div>
 
         </Link>

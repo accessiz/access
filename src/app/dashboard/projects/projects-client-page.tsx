@@ -120,11 +120,7 @@ export default function ProjectsClientPage({ initialProjects, initialCount }: In
     return (
         <div className="p-8 md:p-12 h-full flex flex-col">
             <header className="flex flex-col items-start gap-4 pb-6 border-b
-                           sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                    <h1 className="text-heading-32">Proyectos de Casting</h1>
-                    <p className="text-muted-foreground">Crea y gestiona las selecciones para tus clientes.</p>
-                </div>
+                           sm:flex-row sm:items-center sm:justify-end">
                 <Button asChild className="w-full sm:w-auto">
                     <Link href="/dashboard/projects/new"><PlusCircle className="mr-2 h-4 w-4"/>Nuevo Proyecto</Link>
                 </Button>

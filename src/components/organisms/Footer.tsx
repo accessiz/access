@@ -27,7 +27,7 @@ const Footer = () => {
       {/* GRUPO 2: Redes Sociales */}
       {/* Móvil: Centrado por defecto. */}
       {/* Escritorio: Se ubica en la fila 1. */}
-      <div className="flex flex-col items-center gap-3 text-xs md:items-start md:row-start-1">
+      <div className="flex flex-col items-center gap-3 text-label-12 md:items-start md:row-start-1">
           <a href="#" aria-label="Visita nuestro perfil de Instagram">Instagram</a>
           <a href="#" aria-label="Visita nuestro perfil de LinkedIn">LinkedIn</a>
           <a href="#" aria-label="Visita nuestro perfil de Twitter">Twitter</a>
@@ -36,7 +36,7 @@ const Footer = () => {
       {/* GRUPO 3: Dirección */}
       {/* Móvil: Centrado por defecto. */}
       {/* Escritorio: Se ubica en la fila 1. */}
-      <address className="flex flex-col items-center gap-3 text-xs not-italic md:items-start md:row-start-1">
+      <address className="flex flex-col items-center gap-3 text-label-12 not-italic md:items-start md:row-start-1">
         <span>Zona 10</span>
         <span>Ciudad de Guatemala</span>
         <span>Guatemala</span>
@@ -45,14 +45,14 @@ const Footer = () => {
       {/* GRUPO 4: Contacto */}
       {/* Móvil: Centrado por defecto. */}
       {/* Escritorio: Se ubica en la fila 1. */}
-      <div className="flex flex-col items-center gap-3 text-xs md:items-start md:row-start-1">
+      <div className="flex flex-col items-center gap-3 text-label-12 md:items-start md:row-start-1">
           <span>info@izmanagementglobal.com</span>
       </div>
 
       {/* GRUPO 5: Copyright (Al final de todo) */}
       {/* Móvil: Centrado por defecto. */}
       {/* Escritorio: Se ubica en la fila 2, al inicio. */}
-      <span className="text-xs md:col-start-1 md:row-start-2 md:self-end md:mt-4">
+      <span className="text-label-12 md:col-start-1 md:row-start-2 md:self-end md:mt-4">
           2025 © IZ Management
       </span>
 

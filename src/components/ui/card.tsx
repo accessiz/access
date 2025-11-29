@@ -27,7 +27,7 @@ CardTitle.displayName = "CardTitle"
 // Cambiamos la etiqueta <p> por una <div> para permitir contenido más complejo.
 const CardDescription = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
-    <div ref={ref} className={cn("text-sm text-muted-foreground", className)} {...props} />
+    <div ref={ref} className={cn("text-copy-14 text-muted-foreground", className)} {...props} />
 ))
 // ✅ FIN DE LA CORRECCIÓN
 CardDescription.displayName = "CardDescription"

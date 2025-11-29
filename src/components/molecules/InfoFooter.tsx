@@ -10,7 +10,7 @@ const InfoFooter = ({ time }: InfoFooterProps) => {
   return (
     // Por defecto (móvil): 2 columnas. Tiempo a la izquierda, Skopos a la derecha.
     // En pantallas 'sm' (escritorio): 3 columnas. Se re-activa la ubicación en el centro.
-    <div className="grid grid-cols-2 sm:grid-cols-3 w-full text-xs uppercase">
+    <div className="grid grid-cols-2 sm:grid-cols-3 w-full text-label-12 uppercase">
       
       {/* Columna 1: Tiempo (siempre visible) */}
       <span className="justify-self-start">
