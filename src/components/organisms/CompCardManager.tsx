@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import Image from 'next/image';
 import { fetchSafe } from '@/lib/utils/fetchSafe';
+import { uploadImageToR2 } from '@/lib/storage';
 
 interface CompCardManagerProps {
     modelId: string;
@@ -18,8 +19,6 @@ interface CompCardManagerProps {
     initialPortfolioPath?: string | null;
     initialCompCardPaths?: (string | null)[];
 }
-
-// CORRECCIÓN: Se elimina el tipo 'ApiImageData' no utilizado
 
 // Componente reutilizable para cada slot de foto
 const PhotoSlot = ({ className, imageUrl, onFileSelect, onDelete, label, isUploading }: {
@@ -82,6 +81,15 @@ export function CompCardManager({
         const [uploadingState, setUploadingState] = useState({ cover: false, compCards: [false, false, false, false], portfolio: false });
 
     const handleUpload = async (file: File, type: 'cover' | 'comp-card' | 'portfolio', slotIndex?: number) => {
+        // Mapea el `type` a la categoría que espera `uploadImageToR2`
+        const categoryMap = {
+            'cover': 'Portada',
+            'portfolio': 'Portfolio',
+            'comp-card': 'General' // O podrías crear una categoría "Contraportada"
+        };
+        const category = categoryMap[type];
+
+        // 1. Inicia el estado de carga visualmente
         if (type === 'cover') setUploadingState(p => ({ ...p, cover: true }));
         else if (type === 'portfolio') setUploadingState(p => ({ ...p, portfolio: true }));
         else if (slotIndex !== undefined) setUploadingState(p => {
@@ -89,20 +97,22 @@ export function CompCardManager({
             return { ...p, compCards: newCompCards };
         });
 
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('type', type);
-        if (slotIndex !== undefined) formData.append('slotIndex', String(slotIndex));
-
         try {
-            const res = await fetchSafe<{ success: boolean; path?: string; signedUrl?: string }>(`/api/models/${modelId}/storage`, { method: 'POST', body: formData });
+            // 2. Llama a la nueva función de subida
+            const publicUrl = await uploadImageToR2(file, modelId, category);
+            
+            // 3. Simula la respuesta que antes obtenías de la API para mantener la lógica de actualización
+            // Asumimos que la URL pública devuelta es tanto el path como la URL firmada.
+            const res = { ok: true, json: { success: true, path: publicUrl, signedUrl: publicUrl }};
+            
             if (!res.ok) {
-                console.error('Upload error:', res.error);
-                toast.error(res.error || 'Respuesta no válida del servidor');
+                toast.error('Error de subida', { description: `El servidor de imágenes respondió con un error.`});
             } else {
-                toast.success('Imagen subida correctamente.');
+                toast.success('Imagen subida correctamente a R2.');
                 const signed = res.json?.signedUrl;
                 const returnedPath = res.json?.path;
+
+                // Esta lógica de actualización de estado local se mantiene
                 if (type === 'cover') {
                     if (signed) setCoverUrl(signed);
                     if (returnedPath) setCoverPath(returnedPath);
@@ -122,6 +132,7 @@ export function CompCardManager({
             const message = error instanceof Error ? error.message : 'Ocurrió un error.';
             toast.error('Error al subir la imagen', { description: message });
         } finally {
+             // 4. Detiene el estado de carga visual
              if (type === 'cover') setUploadingState(p => ({ ...p, cover: false }));
              else if (type === 'portfolio') setUploadingState(p => ({ ...p, portfolio: false }));
              else if (slotIndex !== undefined) setUploadingState(p => {

@@ -6,7 +6,11 @@
     // Esto permite usar features modernas de JS como la bandera 'u' en regex
     // y la iteración de Sets, que son soportadas por Node 18 y navegadores modernos.
     "target": "es2017",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -14,30 +18,26 @@
     // "allowSyntheticDefaultImports": true, // Ya no es necesario con esModuleInterop: true
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
-
     // --- Resolución de Módulos (Importante para TS 5+) ---
     "module": "esnext",
     "moduleResolution": "bundler", // Correcto para TS 5+ y Next.js
     "resolveJsonModule": true,
     "isolatedModules": true, // Requerido por Next.js
-
     // --- Emisión de Archivos ---
     // Correcto: Next.js (SWC) maneja la transpilación/emisión
     "noEmit": true,
-
     // --- Configuración de JSX ---
     // Correcto: Se pasa JSX a Next.js (SWC)
-    "jsx": "preserve",
-
+    "jsx": "react-jsx",
     // --- Builds Incrementales ---
     "incremental": true,
-
     // --- ALIAS DE RUTA (Tu Configuración Correcta) ---
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": [
+        "src/*"
+      ]
     },
-
     // --- Plugin de Next.js (Correcto) ---
     "plugins": [
       {
@@ -50,7 +50,8 @@
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    ".next/types/**/*.ts"
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"
