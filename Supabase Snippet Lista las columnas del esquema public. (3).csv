@@ -1,0 +1,82 @@
+table_name,column_name,data_type,is_nullable,column_default
+activity_logs,id,uuid,NO,gen_random_uuid()
+activity_logs,created_at,timestamp with time zone,NO,now()
+activity_logs,user_id,uuid,YES,null
+activity_logs,category,text,NO,null
+activity_logs,title,text,NO,null
+activity_logs,message,text,YES,null
+activity_logs,metadata,jsonb,YES,'{}'::jsonb
+activity_logs,is_urgent,boolean,YES,false
+model_assignments,id,uuid,NO,gen_random_uuid()
+model_assignments,schedule_id,uuid,NO,null
+model_assignments,model_id,uuid,NO,null
+model_assignments,is_confirmed,boolean,YES,false
+model_assignments,created_at,timestamp with time zone,YES,now()
+models,id,uuid,NO,gen_random_uuid()
+models,created_at,timestamp with time zone,NO,now()
+models,alias,text,YES,null
+models,full_name,text,NO,null
+models,birth_date,date,YES,null
+models,national_id,character varying,YES,null
+models,phone_e164,character varying,YES,null
+models,email,text,YES,null
+models,gender,text,YES,null
+models,country,text,YES,'Guatemala'::text
+models,eye_color,text,YES,null
+models,hair_color,text,YES,null
+models,height_cm,integer,YES,null
+models,shoulders_cm,integer,YES,null
+models,chest_cm,integer,YES,null
+models,bust_cm,integer,YES,null
+models,waist_cm,integer,YES,null
+models,hips_cm,integer,YES,null
+models,top_size,text,YES,null
+models,pants_size,integer,YES,null
+models,shoe_size_us,numeric,YES,null
+models,instagram,text,YES,null
+models,tiktok,text,YES,null
+models,status,text,NO,'active'::text
+models,date_joined_agency,date,YES,null
+models,user_id,uuid,YES,null
+models,profile_completeness,integer,YES,0
+models,cover_path,text,YES,null
+models,portfolio_path,text,YES,null
+models,comp_card_paths,ARRAY,YES,null
+models,fts_search_vector,tsvector,YES,null
+models,gallery_paths,ARRAY,YES,null
+profiles,id,uuid,NO,null
+profiles,full_name,text,YES,null
+profiles,role,text,YES,'assistant'::text
+profiles,created_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+project_schedule,id,uuid,NO,gen_random_uuid()
+project_schedule,project_id,uuid,NO,null
+project_schedule,title,text,NO,null
+project_schedule,start_time,timestamp with time zone,NO,null
+project_schedule,end_time,timestamp with time zone,NO,null
+project_schedule,location,text,YES,null
+project_schedule,is_call_time,boolean,YES,false
+project_schedule,created_at,timestamp with time zone,YES,now()
+projects,id,uuid,NO,gen_random_uuid()
+projects,user_id,uuid,YES,null
+projects,created_at,timestamp with time zone,NO,now()
+projects,project_name,text,NO,null
+projects,client_name,text,YES,null
+projects,description,text,YES,null
+projects,start_date,date,YES,null
+projects,end_date,date,YES,null
+projects,status,text,NO,'draft'::text
+projects,public_id,text,NO,SUBSTRING(md5((random())::text) FROM 1 FOR 8)
+projects,password,text,YES,null
+projects,revenue,numeric,YES,0
+projects,default_model_fee,numeric,YES,0
+projects,default_fee_type,text,YES,'fixed'::text
+projects,application_deadline,timestamp with time zone,YES,null
+projects_models,project_id,uuid,NO,null
+projects_models,model_id,uuid,NO,null
+projects_models,client_selection,text,NO,'pending'::text
+projects_models,client_selection_date,timestamp with time zone,YES,null
+projects_models,internal_status,text,YES,'shortlisted'::text
+projects_models,agreed_fee,numeric,YES,0
+projects_models,fee_type,text,YES,'fixed'::text
+projects_models,currency,text,YES,'GTQ'::text
+projects_models,notes,text,YES,null

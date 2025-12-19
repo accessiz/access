@@ -1,0 +1,32 @@
+policy_name,schema,table_name,command,using_expression,check_expression,roles
+Staff read access,public,activity_logs,SELECT,true,null,{authenticated}
+Admin gestiona asignaciones,public,model_assignments,ALL,(auth.role() = 'authenticated'::text),null,{public}
+Allow admin delete on models,public,models,DELETE,true,null,{authenticated}
+Allow admin insert on models,public,models,INSERT,null,(auth.uid() = user_id),{authenticated}
+Allow admin update on models,public,models,UPDATE,true,true,{authenticated}
+Allow public read-only access to models,public,models,SELECT,true,null,"{anon,authenticated}"
+Permitir actualización (UPDATE) a usuarios autenticados,public,models,UPDATE,true,true,{authenticated}
+Permitir borrado (DELETE) a usuarios autenticados,public,models,DELETE,true,null,{authenticated}
+Permitir creación (INSERT) a usuarios autenticados,public,models,INSERT,null,(auth.uid() = user_id),{authenticated}
+Allow authenticated delete,storage,objects,DELETE,((bucket_id = 'Book_Completo_iZ_Management'::text) AND (auth.role() = 'authenticated'::text)),null,{public}
+Allow authenticated insert,storage,objects,INSERT,null,((bucket_id = 'Book_Completo_iZ_Management'::text) AND (auth.role() = 'authenticated'::text)),{public}
+Allow authenticated update,storage,objects,UPDATE,((bucket_id = 'Book_Completo_iZ_Management'::text) AND (auth.role() = 'authenticated'::text)),null,{public}
+Allow public read access to Book_Completo_iZ_Management,storage,objects,SELECT,(bucket_id = 'Book_Completo_iZ_Management'::text),null,{public}
+Public profiles are viewable by everyone,public,profiles,SELECT,true,null,{public}
+Users can insert their own profile,public,profiles,INSERT,null,(auth.uid() = id),{public}
+Users can update own profile,public,profiles,UPDATE,(auth.uid() = id),null,{public}
+Admin gestiona agenda,public,project_schedule,ALL,(auth.role() = 'authenticated'::text),null,{public}
+Lectura pública agenda,public,project_schedule,SELECT,true,null,{public}
+Allow admin delete on projects,public,projects,DELETE,(auth.uid() = user_id),null,{authenticated}
+Allow admin insert on projects,public,projects,INSERT,null,(auth.uid() = user_id),{authenticated}
+Allow admin update on projects,public,projects,UPDATE,(auth.uid() = user_id),(auth.uid() = user_id),{authenticated}
+Allow anon to set project in-review,public,projects,UPDATE,(status = 'sent'::text),(status = 'in-review'::text),{anon}
+Allow public read-only access to projects,public,projects,SELECT,true,null,"{anon,authenticated}"
+Allow admin to link models to projects,public,projects_models,INSERT,null,"(EXISTS ( SELECT 1
+   FROM projects
+  WHERE ((projects.id = projects_models.project_id) AND (projects.user_id = auth.uid()))))",{authenticated}
+Allow admin to unlink models from projects,public,projects_models,DELETE,"(EXISTS ( SELECT 1
+   FROM projects
+  WHERE ((projects.id = projects_models.project_id) AND (projects.user_id = auth.uid()))))",null,{authenticated}
+Allow admin to update model selection,public,projects_models,UPDATE,true,true,"{anon,authenticated}"
+Allow public read-only access to project-models,public,projects_models,SELECT,true,null,"{anon,authenticated}"

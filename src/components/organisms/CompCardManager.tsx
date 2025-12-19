@@ -7,7 +7,7 @@ import { UploadCloud, Trash2, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import Image from 'next/image';
-import { fetchSafe } from '@/lib/utils/fetchSafe';
+import { uploadModelImage, deleteModelImage } from '@/lib/actions/storage';
 
 interface CompCardManagerProps {
     modelId: string;
@@ -80,7 +80,6 @@ export function CompCardManager({
         const [uploadingState, setUploadingState] = useState({ cover: false, compCards: [false, false, false, false], portfolio: false });
 
     const handleUpload = async (file: File, type: 'cover' | 'comp-card' | 'portfolio', slotIndex?: number) => {
-        // 1. Inicia el estado de carga visualmente
         const category = type === 'comp-card' ? 'Contraportada' : (type === 'cover' ? 'Portada' : 'Portfolio');
         
         if (type === 'cover') setUploadingState(p => ({ ...p, cover: true }));
@@ -91,42 +90,33 @@ export function CompCardManager({
         });
 
         try {
-            // 2. Preparamos el FormData para enviarlo a nuestra API Route
             const formData = new FormData();
             formData.append('file', file);
-            formData.append('category', category); // Usamos el nombre de categoría correcto
+            formData.append('modelId', modelId);
+            formData.append('category', category);
             if (slotIndex !== undefined) {
                 formData.append('slotIndex', String(slotIndex));
             }
             
-            // 3. Llamamos a nuestra propia API Route, que se encargará tanto de subir a R2 como de actualizar Supabase
-            // --- CORRECCIÓN: Usar fetch nativo para FormData ---
-            const response = await fetch(`/api/models/${modelId}/storage`, {
-                method: 'POST',
-                body: formData,
-            });
-            // --- FIN DE CORRECCIÓN ---
+            const result = await uploadModelImage(formData);
 
-            const resJson = await response.json();
-
-            if (!response.ok || !resJson?.success) {
-              throw new Error(resJson.error || "La subida falló.");
+            if (!result || !result.success) {
+              throw new Error(result.error || "La subida falló.");
             }
             
             toast.success('Imagen subida y guardada.');
             
-            const { path: returnedPath, signedUrl } = resJson;
+            const { path: returnedPath, publicUrl } = result;
 
-            // 4. Lógica de actualización de estado local con los datos de la respuesta
             if (category === 'Portada') {
-                if (signedUrl) setCoverUrl(signedUrl);
+                if (publicUrl) setCoverUrl(publicUrl);
                 if (returnedPath) setCoverPath(returnedPath);
             } else if (category === 'Portfolio') {
-                if (signedUrl) setPortfolioUrl(signedUrl);
+                if (publicUrl) setPortfolioUrl(publicUrl);
                 if (returnedPath) setPortfolioPath(returnedPath);
             } else if (category === 'Contraportada' && slotIndex !== undefined) {
-                if (signedUrl) setCompCardUrls(prev => {
-                    const copy = [...prev]; copy[slotIndex] = signedUrl; return copy;
+                if (publicUrl) setCompCardUrls(prev => {
+                    const copy = [...prev]; copy[slotIndex] = publicUrl; return copy;
                 });
                 if (returnedPath) setCompCardPaths(prev => {
                     const copy = [...prev]; copy[slotIndex] = returnedPath; return copy;
@@ -137,7 +127,6 @@ export function CompCardManager({
             const message = error instanceof Error ? error.message : 'Ocurrió un error.';
             toast.error('Error al subir la imagen', { description: message });
         } finally {
-             // 5. Detiene el estado de carga visual
              if (type === 'cover') setUploadingState(p => ({ ...p, cover: false }));
              else if (type === 'portfolio') setUploadingState(p => ({ ...p, portfolio: false }));
              else if (slotIndex !== undefined) setUploadingState(p => {
@@ -165,18 +154,10 @@ export function CompCardManager({
         }
 
         try {
-            const res = await fetchSafe<{ success: boolean }>(`/api/models/${modelId}/storage`, {
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    filePath: filePathToDelete,
-                    type: category, // Pasamos el nombre de categoría correcto
-                    slotIndex: slotIndex !== undefined ? String(slotIndex) : undefined
-                }),
-            });
-            if (!res.ok) {
-                console.error('Delete error:', res.error);
-                toast.error(res.error || 'Respuesta no válida del servidor');
+            const res = await deleteModelImage(modelId, filePathToDelete, category, slotIndex);
+
+            if (!res.success) {
+                toast.error(res.error || 'Error desconocido al eliminar.');
             } else {
                 toast.success('Imagen eliminada.');
                 if (category === 'Portada') {
