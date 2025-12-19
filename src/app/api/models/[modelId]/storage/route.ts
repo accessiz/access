@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { supabaseAdmin } from '@/lib/supabase/admin'; // Usar el cliente admin para bypass RLS
+import { createClient } from '@/lib/supabase/server'; // Usar el cliente normal para obtener el usuario
 import { MAX_UPLOAD_BYTES } from '@/lib/constants';
 import { logError } from '@/lib/utils/errors';
 import { uploadImageToR2 } from '@/lib/storage';
@@ -12,8 +13,9 @@ export async function POST(
   context: { params: { modelId: string } }
 ) {
   const { modelId } = context.params;
+  
+  // 1. Verificar autenticación del usuario con el cliente normal
   const supabase = await createClient();
-
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 
@@ -38,11 +40,11 @@ export async function POST(
   }
 
   try {
-    // 1. Subir el archivo a R2 usando la Server Action
+    // 2. Subir el archivo a R2 usando la Server Action
     const r2FormData = new FormData();
     r2FormData.append('file', file);
     r2FormData.append('talentId', modelId);
-    r2FormData.append('category', type); // 'cover', 'portfolio', 'comp-card'
+    r2FormData.append('category', type);
     if (slotIndex !== null) r2FormData.append('slotIndex', slotIndex);
 
     const { publicUrl, path: r2Path } = await uploadImageToR2(r2FormData);
@@ -50,7 +52,7 @@ export async function POST(
       throw new Error("La subida a R2 no devolvió una URL o un path.");
     }
     
-    // 2. Actualizar la tabla 'models' en Supabase con el nuevo R2 path
+    // 3. Actualizar la tabla 'models' en Supabase con el nuevo R2 path usando el cliente ADMIN
     let dbUpdateData: Record<string, unknown> = {};
 
     if (type === 'cover') {
@@ -59,7 +61,7 @@ export async function POST(
       dbUpdateData = { portfolio_path: r2Path };
     } else if (type === 'comp-card' && slotIndex !== null) {
       const index = parseInt(slotIndex, 10);
-      const { data: modelData } = await supabase.from('models').select('comp_card_paths').eq('id', modelId).single();
+      const { data: modelData } = await supabaseAdmin.from('models').select('comp_card_paths').eq('id', modelId).single();
       const existingPaths = (modelData?.comp_card_paths as string[] | null) || [];
       const newPaths: (string | null)[] = [...existingPaths];
       while (newPaths.length < 4) newPaths.push(null);
@@ -67,7 +69,7 @@ export async function POST(
       dbUpdateData = { comp_card_paths: newPaths };
     }
 
-    const { error: dbError } = await supabase.from('models').update(dbUpdateData).eq('id', modelId);
+    const { error: dbError } = await supabaseAdmin.from('models').update(dbUpdateData).eq('id', modelId);
 
     if (dbError) {
       logError(dbError, { action: 'update model path after R2 upload', modelId, dbUpdateData });
@@ -75,7 +77,7 @@ export async function POST(
       return NextResponse.json({ error: 'Archivo subido a R2, pero no se pudo actualizar la base de datos.' }, { status: 500 });
     }
 
-    // 3. Devolver la URL pública para que el cliente la muestre
+    // 4. Devolver la URL pública para que el cliente la muestre
     return NextResponse.json({ success: true, path: r2Path, signedUrl: publicUrl });
 
   } catch (error) {
@@ -92,8 +94,9 @@ export async function DELETE(
   context: { params: { modelId: string } }
 ) {
   const { modelId } = context.params;
+  
+  // 1. Verificar autenticación del usuario con el cliente normal
   const supabase = await createClient();
-
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 
@@ -117,7 +120,8 @@ export async function DELETE(
   } else if (type === 'portfolio') {
     dbUpdateData = { portfolio_path: null };
   } else if (type === 'comp-card' && slotIndex !== null && !isNaN(slotIndex) && slotIndex >= 0 && slotIndex < 4) {
-      const { data: modelData, error: fetchError } = await supabase
+      // Usar cliente admin para leer y escribir
+      const { data: modelData, error: fetchError } = await supabaseAdmin
         .from('models')
         .select('comp_card_paths')
         .eq('id', modelId)
@@ -136,7 +140,8 @@ export async function DELETE(
      return NextResponse.json({ error: 'Tipo de archivo o índice no válido para borrar' }, { status: 400 });
   }
 
-  const { error: dbError } = await supabase
+  // Usar cliente admin para la actualización
+  const { error: dbError } = await supabaseAdmin
     .from('models')
     .update(dbUpdateData)
     .eq('id', modelId);
