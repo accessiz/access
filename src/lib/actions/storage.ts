@@ -28,7 +28,7 @@ const uploadSchema = z.object({
  * Server Action SEGURA para subir una imagen a R2 y actualizar la DB.
  */
 export async function uploadModelImage(formData: FormData) {
-  // 1. Obtener usuario autenticado
+  // 1. Obtener usuario autenticado CON EL CLIENTE DE SERVIDOR NORMAL
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
@@ -52,13 +52,12 @@ export async function uploadModelImage(formData: FormData) {
   const { file, modelId, category, slotIndex } = validation.data;
 
   try {
-    // 3. VERIFICAR PROPIEDAD: Asegurarse de que el usuario es dueño del modelo
-    const { error: ownerError } = await supabaseAdmin
+    // 3. VERIFICAR PROPIEDAD: Usamos el cliente normal (consciente de RLS)
+    const { error: ownerError } = await supabase
       .from('models')
       .select('id')
       .eq('id', modelId)
-      .eq('user_id', user.id)
-      .single();
+      .single(); // La política RLS se encargará de filtrar por user_id
 
     if (ownerError) {
       logError(ownerError, { action: 'uploadModelImage.ownershipCheck', modelId, userId: user.id });
@@ -80,7 +79,7 @@ export async function uploadModelImage(formData: FormData) {
   
     const fullPath = `${modelId}/${category}/${fileName}`;
 
-    // 4. Subir a R2
+    // 4. Subir a R2 (con cliente admin)
     await r2.send(new PutObjectCommand({
       Bucket: process.env.R2_BUCKET_NAME!,
       Key: fullPath,
@@ -91,7 +90,7 @@ export async function uploadModelImage(formData: FormData) {
 
     const publicUrl = `${process.env.R2_PUBLIC_URL}/${fullPath}`;
 
-    // 5. Actualizar Supabase (ahora con permiso verificado)
+    // 5. Actualizar Supabase (con cliente admin para evitar problemas de RLS en escritura)
     let dbError;
     if (category === 'Portada') {
       const { error } = await supabaseAdmin.from('models').update({ cover_path: fullPath }).eq('id', modelId);
@@ -128,7 +127,7 @@ export async function uploadModelImage(formData: FormData) {
  * Server Action SEGURA para eliminar una imagen.
  */
 export async function deleteModelImage(modelId: string, filePath: string, category: 'Portada' | 'Portfolio' | 'Contraportada', slotIndex?: number) {
-    // 1. Obtener usuario autenticado
+    // 1. Obtener usuario autenticado con el cliente normal
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
@@ -136,12 +135,11 @@ export async function deleteModelImage(modelId: string, filePath: string, catego
     }
 
     try {
-        // 2. VERIFICAR PROPIEDAD: Asegurarse de que el usuario es dueño del modelo
-        const { error: ownerError } = await supabaseAdmin
+        // 2. VERIFICAR PROPIEDAD: Usamos el cliente normal (consciente de RLS)
+        const { error: ownerError } = await supabase
           .from('models')
           .select('id')
           .eq('id', modelId)
-          .eq('user_id', user.id)
           .single();
 
         if (ownerError) {
