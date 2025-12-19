@@ -225,6 +225,7 @@ export default function ModelProfilePageClient({ initialModel }: ModelProfileCli
         </div>
       )}
 
+      {/* Aquí es donde se carga el modelo y se le pasan las URLs y Paths iniciales */}
       <CompCardManager
         modelId={initialModel.id}
         initialCoverUrl={initialModel.coverUrl ?? null}
