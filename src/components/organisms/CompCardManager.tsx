@@ -8,7 +8,6 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import Image from 'next/image';
 import { fetchSafe } from '@/lib/utils/fetchSafe';
-import { uploadImageToR2 } from '@/lib/storage';
 
 interface CompCardManagerProps {
     modelId: string;
@@ -81,13 +80,6 @@ export function CompCardManager({
         const [uploadingState, setUploadingState] = useState({ cover: false, compCards: [false, false, false, false], portfolio: false });
 
     const handleUpload = async (file: File, type: 'cover' | 'comp-card' | 'portfolio', slotIndex?: number) => {
-        const categoryMap = {
-            'cover': 'Portada',
-            'portfolio': 'Portfolio',
-            'comp-card': 'Contraportada'
-        };
-        const category = categoryMap[type];
-
         // 1. Inicia el estado de carga visualmente
         if (type === 'cover') setUploadingState(p => ({ ...p, cover: true }));
         else if (type === 'portfolio') setUploadingState(p => ({ ...p, portfolio: true }));
@@ -97,51 +89,42 @@ export function CompCardManager({
         });
 
         try {
-            // 2. Empaqueta los datos en un objeto FormData
+            // 2. Preparamos el FormData para enviarlo a nuestra API Route
             const formData = new FormData();
             formData.append('file', file);
-            formData.append('talentId', modelId);
-            formData.append('category', category);
-            
-            // 3. Llama a la Server Action con el FormData
-            const publicUrl = await uploadImageToR2(formData);
-            
-            // 4. Procesa la respuesta (ahora la URL directa)
-            if (!publicUrl) {
-              throw new Error("La subida a R2 no devolvió una URL.");
+            formData.append('type', type);
+            if (slotIndex !== undefined) {
+                formData.append('slotIndex', String(slotIndex));
             }
             
-            toast.success('Imagen subida correctamente a R2.');
-            
-            // La URL pública devuelta es tanto el path como la URL que se puede mostrar
-            const signed = publicUrl;
-            const returnedPath = publicUrl;
+            // 3. Llamamos a nuestra propia API Route, que se encargará tanto de subir a R2 como de actualizar Supabase
+            const res = await fetchSafe<{ success: boolean, path: string, signedUrl: string }>(`/api/models/${modelId}/storage`, {
+                method: 'POST',
+                body: formData,
+            });
 
-            // Lógica de actualización de estado local
+            if (!res.ok || !res.json?.success) {
+              throw new Error(res.error || "La subida falló.");
+            }
+            
+            toast.success('Imagen subida y guardada.');
+            
+            const { path: returnedPath, signedUrl } = res.json;
+
+            // 4. Lógica de actualización de estado local con los datos de la respuesta
             if (type === 'cover') {
-                if (signed) setCoverUrl(signed);
+                if (signedUrl) setCoverUrl(signedUrl);
                 if (returnedPath) setCoverPath(returnedPath);
             } else if (type === 'portfolio') {
-                if (signed) setPortfolioUrl(signed);
+                if (signedUrl) setPortfolioUrl(signedUrl);
                 if (returnedPath) setPortfolioPath(returnedPath);
             } else if (type === 'comp-card' && slotIndex !== undefined) {
-                if (signed) setCompCardUrls(prev => {
-                    const copy = [...prev]; copy[slotIndex] = signed; return copy;
+                if (signedUrl) setCompCardUrls(prev => {
+                    const copy = [...prev]; copy[slotIndex] = signedUrl; return copy;
                 });
                 if (returnedPath) setCompCardPaths(prev => {
                     const copy = [...prev]; copy[slotIndex] = returnedPath; return copy;
                 });
-            }
-
-            // Llamada para actualizar la DB de Supabase con el nuevo path
-            const res = await fetchSafe<{ success: boolean, path: string, signedUrl: string }>(`/api/models/${modelId}/storage`, {
-                method: 'POST',
-                body: formData, // La API route de Supabase también puede manejar FormData
-            });
-
-            if (!res.ok || !res.json?.success) {
-                console.error("Fallo al actualizar Supabase:", res.error);
-                toast.error('Subida a R2 exitosa, pero falló la actualización en la base de datos.');
             }
 
         } catch (error: unknown) {
@@ -150,7 +133,7 @@ export function CompCardManager({
         } finally {
              // 5. Detiene el estado de carga visual
              if (type === 'cover') setUploadingState(p => ({ ...p, cover: false }));
-             else if (type === 'portfolio') setUploadingState(p => ({ ...p, portfolio: true }));
+             else if (type === 'portfolio') setUploadingState(p => ({ ...p, portfolio: false }));
              else if (slotIndex !== undefined) setUploadingState(p => {
                  const newCompCards = [...p.compCards]; newCompCards[slotIndex] = false;
                  return { ...p, compCards: newCompCards };

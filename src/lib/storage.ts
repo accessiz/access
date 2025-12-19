@@ -16,16 +16,26 @@ export async function uploadImageToR2(formData: FormData) {
   const file = formData.get("file") as File;
   const talentId = formData.get("talentId") as string;
   const category = formData.get("category") as string;
+  const slotIndex = formData.get("slotIndex") as string | null;
 
-  if (!file || !talentId) {
-    throw new Error("Faltan datos para subir la imagen");
+  if (!file || !talentId || !category) {
+    throw new Error("Faltan datos (file, talentId o category) para subir la imagen.");
   }
 
   const buffer = Buffer.from(await file.arrayBuffer());
-  const cleanFileName = file.name.replace(/\s+/g, '-').toLowerCase();
+  const cleanFileName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '').toLowerCase();
+
+  // Estructura de Path: ID / Categoria / Archivo
+  let fileName = `${Date.now()}-${cleanFileName}`;
+  if (type === 'cover') {
+    fileName = 'cover.webp'; // Nombre de archivo estandarizado
+  } else if (type === 'portfolio') {
+    fileName = 'portfolio.webp'; // Nombre de archivo estandarizado
+  } else if (type === 'comp-card' && slotIndex) {
+    fileName = `comp_${slotIndex}.webp`; // Nombre de archivo estandarizado
+  }
   
-  // Estructura: ID / Categoria / Archivo
-  const fullPath = `${talentId}/${category}/${Date.now()}-${cleanFileName}`;
+  const fullPath = `${talentId}/${category}/${fileName}`;
 
   try {
     await r2.send(new PutObjectCommand({
@@ -33,10 +43,13 @@ export async function uploadImageToR2(formData: FormData) {
       Key: fullPath,
       Body: buffer,
       ContentType: file.type,
+      ACL: 'public-read', // ¡Importante! Hace el objeto públicamente legible
     }));
 
+    // Devuelve la URL pública y el path
     const publicUrl = `${process.env.R2_PUBLIC_URL}/${fullPath}`;
-    return publicUrl;
+    return { publicUrl, path: fullPath };
+    
   } catch (error) {
     console.error("Error en servidor R2:", error);
     throw new Error("Fallo la subida a R2");
