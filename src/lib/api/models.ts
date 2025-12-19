@@ -3,8 +3,19 @@ import { unstable_noStore as noStore } from 'next/cache';
 import { Model } from "@/lib/types";
 import { logError } from '@/lib/utils/errors';
 
-const BUCKET_NAME = 'Book_Completo_iZ_Management';
+// const BUCKET_NAME = 'Book_Completo_iZ_Management'; // Ya no se usa para generar URLs
 const ITEMS_PER_PAGE = 24;
+
+// --- INICIO DE LA CORRECCIÓN ---
+// Helper para construir la URL pública de R2
+const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL?.replace(/\/$/, '') || '';
+
+const toPublicUrl = (path: string | null | undefined): string | null => {
+  if (!path || !R2_PUBLIC_URL) return null;
+  // Construye la URL pública. La codificación no es estrictamente necesaria si los nombres de archivo son seguros.
+  return `${R2_PUBLIC_URL}/${path}`;
+};
+// --- FIN DE LA CORRECCIÓN ---
 
 type SearchParams = {
   query?: string;
@@ -29,23 +40,18 @@ export async function getModelsEnriched(searchParams: SearchParams) {
 
   // --- BLOQUE DE BÚSQUEDA FTS ---
   if (searchParams.query) {
-    // console.log(`[DEBUG] Término de búsqueda recibido: ${searchParams.query}`);
-
     const searchQuery = searchParams.query.trim()
       .split(/\s+/)
       .filter(term => term.length > 0)
-      .map(term => term + ':*') // Mantenemos la búsqueda por prefijo
+      .map(term => term + ':*')
       .join(' & ');
 
     if (searchQuery) {
-      // console.log(`[DEBUG] Query FTS construido: ${searchQuery}`);
-
-      // ✅ CORRECTION: Usamos el config name sin el schema 'public.'
       queryBuilder = queryBuilder.textSearch(
         'fts_search_vector',
         searchQuery,
         {
-          config: 'spanish_unaccent' // <--- ¡CAMBIO AQUÍ!
+          config: 'spanish_unaccent'
         }
       );
     }
@@ -72,41 +78,21 @@ export async function getModelsEnriched(searchParams: SearchParams) {
 
   const { data, error, count } = await queryBuilder;
 
-  // console.log(`[DEBUG] Error de Supabase: ${error ? error.message : 'null'}`);
-  // console.log(`[DEBUG] Modelos encontrados: ${data ? data.length : 0} (Total: ${count})`);
-
-
   if (error) {
     logError(error, { action: 'getModelsEnriched.query', searchParams });
     return { data: [], count: 0 };
   }
 
   const rows = data || [];
-  const pathsToSign: string[] = [];
-  for (const row of rows) {
-    if (row.cover_path) pathsToSign.push(row.cover_path);
-  }
 
-  const signedUrlMap = new Map<string, string>();
-  if (pathsToSign.length > 0) {
-    const { data: signedUrlsData, error: signError } = await supabase
-      .storage
-      .from(BUCKET_NAME)
-      .createSignedUrls(pathsToSign, 300);
-
-    if (signError) {
-      logError(signError, { action: 'batch sign model covers', pathsToSign });
-    } else if (signedUrlsData) {
-      for (const item of signedUrlsData) {
-        if (item.path && item.signedUrl) signedUrlMap.set(item.path, item.signedUrl);
-      }
-    }
-  }
-
+  // --- INICIO DE LA CORRECCIÓN ---
+  // Se elimina la lógica de `createSignedUrls`.
+  // Se mapean los resultados para construir la `coverUrl` pública de R2.
   const enrichedData = rows.map((model: Model & { cover_path?: string | null }) => ({
     ...model,
-    coverUrl: model.cover_path ? signedUrlMap.get(model.cover_path) || null : null,
+    coverUrl: toPublicUrl(model.cover_path),
   }));
+  // --- FIN DE LA CORRECCIÓN ---
 
   return { data: enrichedData, count: count || 0 };
 }
@@ -139,34 +125,13 @@ export async function getModelById(id: string): Promise<(Model & {
     comp_card_paths?: (string | null)[];
   };
 
-  const pathsToSign: string[] = [];
-  const coverPath = model.cover_path || null;
-  const portfolioPath = model.portfolio_path || null;
-  const compCardPaths = (model.comp_card_paths || []).slice(0, 4);
-
-  if (coverPath) pathsToSign.push(coverPath);
-  if (portfolioPath) pathsToSign.push(portfolioPath);
-  for (const p of compCardPaths) if (p) pathsToSign.push(p as string);
-
-  const signedUrlMap = new Map<string, string>();
-  if (pathsToSign.length > 0) {
-    const { data: signedUrlsData, error: signError } = await supabase
-      .storage
-      .from(BUCKET_NAME)
-      .createSignedUrls(pathsToSign, 300);
-
-    if (signError) {
-      logError(signError, { action: 'getModelById.batch sign urls', id, pathsToSign });
-    } else if (signedUrlsData) {
-      for (const item of signedUrlsData) {
-        if (item.path && item.signedUrl) signedUrlMap.set(item.path, item.signedUrl);
-      }
-    }
-  }
-
-  const coverUrl = coverPath ? signedUrlMap.get(coverPath) || null : null;
-  const portfolioUrl = portfolioPath ? signedUrlMap.get(portfolioPath) || null : null;
-  const compCardUrls = compCardPaths.map(p => p ? signedUrlMap.get(p as string) || null : null);
+  // --- INICIO DE LA CORRECCIÓN ---
+  // Se elimina la lógica de `createSignedUrls`.
+  // Se construyen las URLs públicas de R2 directamente.
+  const coverUrl = toPublicUrl(model.cover_path);
+  const portfolioUrl = toPublicUrl(model.portfolio_path);
+  const compCardUrls = (model.comp_card_paths || []).slice(0, 4).map(p => toPublicUrl(p));
+  // --- FIN DE LA CORRECCIÓN ---
 
   return {
     ...model,
