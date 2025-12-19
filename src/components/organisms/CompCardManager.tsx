@@ -81,6 +81,8 @@ export function CompCardManager({
 
     const handleUpload = async (file: File, type: 'cover' | 'comp-card' | 'portfolio', slotIndex?: number) => {
         // 1. Inicia el estado de carga visualmente
+        const category = type === 'comp-card' ? 'Contraportada' : (type === 'cover' ? 'Portada' : 'Portfolio');
+        
         if (type === 'cover') setUploadingState(p => ({ ...p, cover: true }));
         else if (type === 'portfolio') setUploadingState(p => ({ ...p, portfolio: true }));
         else if (slotIndex !== undefined) setUploadingState(p => {
@@ -92,33 +94,37 @@ export function CompCardManager({
             // 2. Preparamos el FormData para enviarlo a nuestra API Route
             const formData = new FormData();
             formData.append('file', file);
-            formData.append('type', type);
+            formData.append('category', category); // Usamos el nombre de categoría correcto
             if (slotIndex !== undefined) {
                 formData.append('slotIndex', String(slotIndex));
             }
             
             // 3. Llamamos a nuestra propia API Route, que se encargará tanto de subir a R2 como de actualizar Supabase
-            const res = await fetchSafe<{ success: boolean, path: string, signedUrl: string }>(`/api/models/${modelId}/storage`, {
+            // --- CORRECCIÓN: Usar fetch nativo para FormData ---
+            const response = await fetch(`/api/models/${modelId}/storage`, {
                 method: 'POST',
                 body: formData,
             });
+            // --- FIN DE CORRECCIÓN ---
 
-            if (!res.ok || !res.json?.success) {
-              throw new Error(res.error || "La subida falló.");
+            const resJson = await response.json();
+
+            if (!response.ok || !resJson?.success) {
+              throw new Error(resJson.error || "La subida falló.");
             }
             
             toast.success('Imagen subida y guardada.');
             
-            const { path: returnedPath, signedUrl } = res.json;
+            const { path: returnedPath, signedUrl } = resJson;
 
             // 4. Lógica de actualización de estado local con los datos de la respuesta
-            if (type === 'cover') {
+            if (category === 'Portada') {
                 if (signedUrl) setCoverUrl(signedUrl);
                 if (returnedPath) setCoverPath(returnedPath);
-            } else if (type === 'portfolio') {
+            } else if (category === 'Portfolio') {
                 if (signedUrl) setPortfolioUrl(signedUrl);
                 if (returnedPath) setPortfolioPath(returnedPath);
-            } else if (type === 'comp-card' && slotIndex !== undefined) {
+            } else if (category === 'Contraportada' && slotIndex !== undefined) {
                 if (signedUrl) setCompCardUrls(prev => {
                     const copy = [...prev]; copy[slotIndex] = signedUrl; return copy;
                 });
@@ -143,10 +149,11 @@ export function CompCardManager({
 
     const handleDelete = async (type: 'cover' | 'comp-card' | 'portfolio', slotIndex?: number) => {
         let filePathToDelete: string | null = null;
+        const category = type === 'comp-card' ? 'Contraportada' : (type === 'cover' ? 'Portada' : 'Portfolio');
 
-        if (type === 'cover') {
+        if (category === 'Portada') {
             filePathToDelete = coverPath;
-        } else if (type === 'portfolio') {
+        } else if (category === 'Portfolio') {
             filePathToDelete = portfolioPath;
         } else if (slotIndex !== undefined && slotIndex >= 0 && slotIndex < 4) {
             filePathToDelete = compCardPaths[slotIndex];
@@ -163,7 +170,7 @@ export function CompCardManager({
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     filePath: filePathToDelete,
-                    type: type,
+                    type: category, // Pasamos el nombre de categoría correcto
                     slotIndex: slotIndex !== undefined ? String(slotIndex) : undefined
                 }),
             });
@@ -172,11 +179,11 @@ export function CompCardManager({
                 toast.error(res.error || 'Respuesta no válida del servidor');
             } else {
                 toast.success('Imagen eliminada.');
-                if (type === 'cover') {
+                if (category === 'Portada') {
                     setCoverUrl(null); setCoverPath(null);
-                } else if (type === 'portfolio') {
+                } else if (category === 'Portfolio') {
                     setPortfolioUrl(null); setPortfolioPath(null);
-                } else if (type === 'comp-card' && slotIndex !== undefined) {
+                } else if (category === 'Contraportada' && slotIndex !== undefined) {
                     setCompCardUrls(prev => { const copy = [...prev]; copy[slotIndex] = null; return copy; });
                     setCompCardPaths(prev => { const copy = [...prev]; copy[slotIndex] = null; return copy; });
                 }
