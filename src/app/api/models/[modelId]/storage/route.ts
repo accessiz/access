@@ -1,155 +1,162 @@
-import { NextResponse, type NextRequest } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase/admin'; // Usar el cliente admin para bypass RLS
-import { createClient } from '@/lib/supabase/server'; // Usar el cliente normal para obtener el usuario
-import { MAX_UPLOAD_BYTES } from '@/lib/constants';
-import { logError } from '@/lib/utils/errors';
-import { uploadImageToR2 } from '@/lib/storage';
 
-export const dynamic = 'force-dynamic';
+'use server';
 
-// POST: Subir imagen y actualizar Supabase
-export async function POST(
-  request: NextRequest,
-  context: { params: { modelId: string } }
-) {
-  const { modelId } = context.params;
-  
-  // 1. Verificar autenticación del usuario con el cliente normal
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+import { NextResponse } from 'next/server';
+import { supabaseAdmin } from '@/lib/supabase/admin';
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 
-  const formData = await request.formData();
-  const file = formData.get('file') as File | null;
-  const type = formData.get('type') as 'cover' | 'comp-card' | 'portfolio';
-  const slotIndex = formData.get('slotIndex') as string | null;
+// 1. Configuración de R2 (movida aquí)
+const r2 = new S3Client({
+  region: "auto",
+  endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  credentials: {
+    accessKeyId: process.env.R2_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
+  },
+});
 
-  if (!file || !type) {
-    return NextResponse.json({ error: 'Faltan datos (file o type)' }, { status: 400 });
-  }
+async function uploadAndGetUrl(file: File, modelId: string, category: string, slotIndex: string | null) {
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const cleanFileName = file.name.replace(/[^a-zA-Z0-9.\\-_]/g, '').toLowerCase();
 
-  // Validar tamaño del archivo
-  if (file.size > MAX_UPLOAD_BYTES) {
-    return NextResponse.json({ error: `El archivo excede el límite de ${Math.round(MAX_UPLOAD_BYTES / 1024 / 1024)}MB.` }, { status: 413 });
-  }
-
-  // Validar tipo de archivo
-  const allowedMIMEs = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'];
-  if (!allowedMIMEs.includes(file.type)) {
-    return NextResponse.json({ error: 'Tipo de archivo no permitido.' }, { status: 415 });
-  }
-
-  try {
-    // 2. Subir el archivo a R2 usando la Server Action
-    const r2FormData = new FormData();
-    r2FormData.append('file', file);
-    r2FormData.append('talentId', modelId);
-    r2FormData.append('category', type);
-    if (slotIndex !== null) r2FormData.append('slotIndex', slotIndex);
-
-    const { publicUrl, path: r2Path } = await uploadImageToR2(r2FormData);
-    if (!publicUrl || !r2Path) {
-      throw new Error("La subida a R2 no devolvió una URL o un path.");
+    let fileName = `${Date.now()}-${cleanFileName}`;
+    if (category === 'Portada') {
+        fileName = 'cover.webp';
+    } else if (category === 'Portfolio') {
+        fileName = 'portfolio.webp';
+    } else if (category === 'Contraportada' && slotIndex) {
+        fileName = `comp_${slotIndex}.webp`;
     }
     
-    // 3. Actualizar la tabla 'models' en Supabase con el nuevo R2 path usando el cliente ADMIN
-    let dbUpdateData: Record<string, unknown> = {};
+    const fullPath = `${modelId}/${category}/${fileName}`;
 
-    if (type === 'cover') {
-      dbUpdateData = { cover_path: r2Path };
-    } else if (type === 'portfolio') {
-      dbUpdateData = { portfolio_path: r2Path };
-    } else if (type === 'comp-card' && slotIndex !== null) {
-      const index = parseInt(slotIndex, 10);
-      const { data: modelData } = await supabaseAdmin.from('models').select('comp_card_paths').eq('id', modelId).single();
-      const existingPaths = (modelData?.comp_card_paths as string[] | null) || [];
-      const newPaths: (string | null)[] = [...existingPaths];
-      while (newPaths.length < 4) newPaths.push(null);
-      newPaths[index] = r2Path;
-      dbUpdateData = { comp_card_paths: newPaths };
-    }
+    await r2.send(new PutObjectCommand({
+      Bucket: process.env.R2_BUCKET_NAME!,
+      Key: fullPath,
+      Body: buffer,
+      ContentType: file.type,
+      ACL: 'public-read',
+    }));
 
-    const { error: dbError } = await supabaseAdmin.from('models').update(dbUpdateData).eq('id', modelId);
-
-    if (dbError) {
-      logError(dbError, { action: 'update model path after R2 upload', modelId, dbUpdateData });
-      // Aquí podrías agregar lógica para eliminar el archivo de R2 si la actualización de la DB falla
-      return NextResponse.json({ error: 'Archivo subido a R2, pero no se pudo actualizar la base de datos.' }, { status: 500 });
-    }
-
-    // 4. Devolver la URL pública para que el cliente la muestre
-    return NextResponse.json({ success: true, path: r2Path, signedUrl: publicUrl });
-
-  } catch (error) {
-    logError(error, { action: 'POST /api/models/storage', modelId });
-    const message = error instanceof Error ? error.message : 'Error desconocido.';
-    return NextResponse.json({ error: message }, { status: 500 });
-  }
+    const publicUrl = `${process.env.R2_PUBLIC_URL}/${fullPath}`;
+    return { publicUrl, path: fullPath };
 }
 
 
-// DELETE: Eliminar imagen
-export async function DELETE(
-  request: NextRequest,
-  context: { params: { modelId: string } }
+export async function POST(
+  request: Request,
+  { params }: { params: { modelId: string } }
 ) {
-  const { modelId } = context.params;
-  
-  // 1. Verificar autenticación del usuario con el cliente normal
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+  try {
+    const { modelId } = params;
+    const formData = await request.formData();
+    
+    const file = formData.get("file") as File | null;
+    const category = formData.get("category") as string | null;
+    const slotIndex = formData.get("slotIndex") as string | null;
 
-  const { filePath, type, slotIndex: slotIndexStr } = await request.json() as {
-    filePath: string;
-    type: 'cover' | 'comp-card' | 'portfolio';
-    slotIndex?: string;
-  };
-  const slotIndex = slotIndexStr ? parseInt(slotIndexStr, 10) : null;
+    if (!file || !category) {
+        return NextResponse.json({ success: false, error: 'Faltan datos (file o category).' }, { status: 400 });
+    }
 
-  if (!filePath) {
-    return NextResponse.json({ error: 'Falta la ruta del archivo a eliminar' }, { status: 400 });
+    // 2. Lógica de subida ahora vive aquí
+    const { publicUrl, path } = await uploadAndGetUrl(file, modelId, category, slotIndex);
+
+    if (!publicUrl || !path) {
+      return NextResponse.json({ success: false, error: 'La subida a R2 falló o no devolvió una URL.' }, { status: 500 });
+    }
+
+    // 3. Actualización de Supabase con el cliente Admin
+    let error;
+
+    if (category === 'Portada') {
+      const { error: updateError } = await supabaseAdmin.from('models').update({ cover_path: path }).eq('id', modelId);
+      error = updateError;
+    } else if (category === 'Portfolio') {
+        const { error: updateError } = await supabaseAdmin.from('models').update({ portfolio_path: path }).eq('id', modelId);
+        error = updateError;
+    } else if (category === 'Contraportada' && slotIndex) {
+        const { data: currentModel, error: fetchError } = await supabaseAdmin.from('models').select('comp_card_paths').eq('id', modelId).single();
+        if (fetchError) throw new Error('No se pudo obtener la galería actual del modelo');
+        
+        const currentPaths = currentModel?.comp_card_paths || [];
+        const index = parseInt(slotIndex, 10);
+        // Aseguramos que el array tenga la longitud necesaria
+        while (currentPaths.length <= index) {
+            currentPaths.push(null);
+        }
+        currentPaths[index] = path;
+
+        const { error: updateError } = await supabaseAdmin.from('models').update({ comp_card_paths: currentPaths }).eq('id', modelId);
+        error = updateError;
+    }
+
+    if (error) {
+      console.error('❌ Error Supabase:', error);
+      return NextResponse.json({ success: false, error: "Error al guardar la URL en la base de datos." }, { status: 500 });
+    }
+
+    // 4. Devolvemos la nueva URL y path para que el cliente actualice el estado visual
+    return NextResponse.json({ success: true, path, signedUrl: publicUrl });
+
+  } catch (err: any) {
+    console.error('❌ Error general en la API Route:', err);
+    return NextResponse.json(
+      { success: false, error: err.message || 'Error interno del servidor' },
+      { status: 500 }
+    );
   }
+}
 
-  // No eliminamos de R2 todavía, solo de la base de datos
-  
-  let dbUpdateData: Record<string, string | null | (string | null)[]> = {};
+// --- LÓGICA DELETE (NUEVA) ---
+// Añadimos la lógica para manejar eliminaciones de archivos, que también necesita ser una API route
+export async function DELETE(
+    request: Request,
+    { params }: { params: { modelId: string } }
+) {
+    try {
+        const { modelId } = params;
+        const body = await request.json();
+        const { filePath, type, slotIndex } = body;
 
-  if (type === 'cover') {
-    dbUpdateData = { cover_path: null };
-  } else if (type === 'portfolio') {
-    dbUpdateData = { portfolio_path: null };
-  } else if (type === 'comp-card' && slotIndex !== null && !isNaN(slotIndex) && slotIndex >= 0 && slotIndex < 4) {
-      // Usar cliente admin para leer y escribir
-      const { data: modelData, error: fetchError } = await supabaseAdmin
-        .from('models')
-        .select('comp_card_paths')
-        .eq('id', modelId)
-        .single();
+        if (!filePath || !type) {
+            return NextResponse.json({ success: false, error: 'Faltan datos (filePath o type).' }, { status: 400 });
+        }
+        
+        // Aquí podrías añadir lógica para eliminar el archivo de R2 si lo deseas, pero por ahora solo actualizamos la DB.
+        // const deleteCommand = new DeleteObjectCommand({ Bucket: process.env.R2_BUCKET_NAME, Key: filePath });
+        // await r2.send(deleteCommand);
+        
+        let error;
+        if (type === 'cover') {
+            const { error: updateError } = await supabaseAdmin.from('models').update({ cover_path: null }).eq('id', modelId);
+            error = updateError;
+        } else if (type === 'portfolio') {
+            const { error: updateError } = await supabaseAdmin.from('models').update({ portfolio_path: null }).eq('id', modelId);
+            error = updateError;
+        } else if (type === 'comp-card' && slotIndex !== undefined) {
+             const { data: currentModel, error: fetchError } = await supabaseAdmin.from('models').select('comp_card_paths').eq('id', modelId).single();
+            if (fetchError) throw new Error('No se pudo obtener la galería actual del modelo para eliminar');
+            
+            const currentPaths = currentModel?.comp_card_paths || [];
+            const index = parseInt(slotIndex, 10);
+            if(index >= 0 && index < currentPaths.length) {
+                currentPaths[index] = null;
+            }
 
-      if (fetchError) {
-        logError(fetchError, { action: 'fetch model for array update (delete)', modelId });
-        return NextResponse.json({ error: 'No se pudo leer el modelo para actualizar.' }, { status: 500 });
-      }
+            const { error: updateError } = await supabaseAdmin.from('models').update({ comp_card_paths: currentPaths }).eq('id', modelId);
+            error = updateError;
+        }
 
-      const existingPaths = (modelData?.comp_card_paths as (string | null)[]) || [];
-      const newPaths = [...existingPaths];
-      if(newPaths[slotIndex]) newPaths[slotIndex] = null;
-      dbUpdateData = { comp_card_paths: newPaths };
-  } else {
-     return NextResponse.json({ error: 'Tipo de archivo o índice no válido para borrar' }, { status: 400 });
-  }
+        if (error) {
+            console.error('❌ Error Supabase al eliminar:', error);
+            return NextResponse.json({ success: false, error: "Error al eliminar la referencia en la base de datos." }, { status: 500 });
+        }
 
-  // Usar cliente admin para la actualización
-  const { error: dbError } = await supabaseAdmin
-    .from('models')
-    .update(dbUpdateData)
-    .eq('id', modelId);
+        return NextResponse.json({ success: true });
 
-  if (dbError) {
-    logError(dbError, { action: 'update model path null', modelId, dbUpdateData });
-     return NextResponse.json({ error: 'No se pudo actualizar la base de datos.' }, { status: 500 });
-  }
-
-  return NextResponse.json({ success: true });
+    } catch (err: any) {
+        console.error('❌ Error general en DELETE:', err);
+        return NextResponse.json({ success: false, error: err.message || 'Error interno del servidor' }, { status: 500 });
+    }
 }
