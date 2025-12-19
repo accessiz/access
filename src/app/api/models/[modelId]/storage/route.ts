@@ -75,7 +75,7 @@ export async function POST(
     } else if (category === 'Portfolio') {
         const { error: updateError } = await supabaseAdmin.from('models').update({ portfolio_path: path }).eq('id', modelId);
         error = updateError;
-    } else if (category === 'Contraportada' && slotIndex) {
+    } else if (category === 'Contraportada' && slotIndex !== null) { // Check for not null
         const { data: currentModel, error: fetchError } = await supabaseAdmin.from('models').select('comp_card_paths').eq('id', modelId).single();
         if (fetchError) throw new Error('No se pudo obtener la galería actual del modelo');
         
@@ -92,8 +92,9 @@ export async function POST(
     }
 
     if (error) {
-      console.error('❌ Error Supabase:', error);
-      return NextResponse.json({ success: false, error: "Error al guardar la URL en la base de datos." }, { status: 500 });
+      // Log de error más explícito para la "terminal"
+      console.error('Error al actualizar Supabase:', JSON.stringify(error, null, 2));
+      return NextResponse.json({ success: false, error: "Archivo subido a R2, pero no se pudo actualizar la base de datos." }, { status: 500 });
     }
 
     // 4. Devolvemos la nueva URL y path para que el cliente actualice el estado visual
@@ -128,13 +129,13 @@ export async function DELETE(
         // await r2.send(deleteCommand);
         
         let error;
-        if (type === 'cover') {
+        if (type === 'Portada') {
             const { error: updateError } = await supabaseAdmin.from('models').update({ cover_path: null }).eq('id', modelId);
             error = updateError;
-        } else if (type === 'portfolio') {
+        } else if (type === 'Portfolio') {
             const { error: updateError } = await supabaseAdmin.from('models').update({ portfolio_path: null }).eq('id', modelId);
             error = updateError;
-        } else if (type === 'comp-card' && slotIndex !== undefined) {
+        } else if (type === 'Contraportada' && slotIndex !== undefined) {
              const { data: currentModel, error: fetchError } = await supabaseAdmin.from('models').select('comp_card_paths').eq('id', modelId).single();
             if (fetchError) throw new Error('No se pudo obtener la galería actual del modelo para eliminar');
             
