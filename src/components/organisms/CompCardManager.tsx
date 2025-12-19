@@ -81,11 +81,10 @@ export function CompCardManager({
         const [uploadingState, setUploadingState] = useState({ cover: false, compCards: [false, false, false, false], portfolio: false });
 
     const handleUpload = async (file: File, type: 'cover' | 'comp-card' | 'portfolio', slotIndex?: number) => {
-        // Mapea el `type` a la categoría que espera `uploadImageToR2`
         const categoryMap = {
             'cover': 'Portada',
             'portfolio': 'Portfolio',
-            'comp-card': 'General' // O podrías crear una categoría "Contraportada"
+            'comp-card': 'Contraportada'
         };
         const category = categoryMap[type];
 
@@ -98,43 +97,60 @@ export function CompCardManager({
         });
 
         try {
-            // 2. Llama a la nueva función de subida
-            const publicUrl = await uploadImageToR2(file, modelId, category);
+            // 2. Empaqueta los datos en un objeto FormData
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('talentId', modelId);
+            formData.append('category', category);
             
-            // 3. Simula la respuesta que antes obtenías de la API para mantener la lógica de actualización
-            // Asumimos que la URL pública devuelta es tanto el path como la URL firmada.
-            const res = { ok: true, json: { success: true, path: publicUrl, signedUrl: publicUrl }};
+            // 3. Llama a la Server Action con el FormData
+            const publicUrl = await uploadImageToR2(formData);
             
-            if (!res.ok) {
-                toast.error('Error de subida', { description: `El servidor de imágenes respondió con un error.`});
-            } else {
-                toast.success('Imagen subida correctamente a R2.');
-                const signed = res.json?.signedUrl;
-                const returnedPath = res.json?.path;
-
-                // Esta lógica de actualización de estado local se mantiene
-                if (type === 'cover') {
-                    if (signed) setCoverUrl(signed);
-                    if (returnedPath) setCoverPath(returnedPath);
-                } else if (type === 'portfolio') {
-                    if (signed) setPortfolioUrl(signed);
-                    if (returnedPath) setPortfolioPath(returnedPath);
-                } else if (type === 'comp-card' && slotIndex !== undefined) {
-                    if (signed) setCompCardUrls(prev => {
-                        const copy = [...prev]; copy[slotIndex] = signed; return copy;
-                    });
-                    if (returnedPath) setCompCardPaths(prev => {
-                        const copy = [...prev]; copy[slotIndex] = returnedPath; return copy;
-                    });
-                }
+            // 4. Procesa la respuesta (ahora la URL directa)
+            if (!publicUrl) {
+              throw new Error("La subida a R2 no devolvió una URL.");
             }
+            
+            toast.success('Imagen subida correctamente a R2.');
+            
+            // La URL pública devuelta es tanto el path como la URL que se puede mostrar
+            const signed = publicUrl;
+            const returnedPath = publicUrl;
+
+            // Lógica de actualización de estado local
+            if (type === 'cover') {
+                if (signed) setCoverUrl(signed);
+                if (returnedPath) setCoverPath(returnedPath);
+            } else if (type === 'portfolio') {
+                if (signed) setPortfolioUrl(signed);
+                if (returnedPath) setPortfolioPath(returnedPath);
+            } else if (type === 'comp-card' && slotIndex !== undefined) {
+                if (signed) setCompCardUrls(prev => {
+                    const copy = [...prev]; copy[slotIndex] = signed; return copy;
+                });
+                if (returnedPath) setCompCardPaths(prev => {
+                    const copy = [...prev]; copy[slotIndex] = returnedPath; return copy;
+                });
+            }
+
+            // Llamada para actualizar la DB de Supabase con el nuevo path
+            const res = await fetchSafe<{ success: boolean, path: string, signedUrl: string }>(`/api/models/${modelId}/storage`, {
+                method: 'POST',
+                body: formData, // La API route de Supabase también puede manejar FormData
+            });
+
+            if (!res.ok || !res.json?.success) {
+                console.error("Fallo al actualizar Supabase:", res.error);
+                toast.error('Subida a R2 exitosa, pero falló la actualización en la base de datos.');
+            }
+
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : 'Ocurrió un error.';
             toast.error('Error al subir la imagen', { description: message });
         } finally {
-             // 4. Detiene el estado de carga visual
+             // 5. Detiene el estado de carga visual
              if (type === 'cover') setUploadingState(p => ({ ...p, cover: false }));
-             else if (type === 'portfolio') setUploadingState(p => ({ ...p, portfolio: false }));
+             else if (type === 'portfolio') setUploadingState(p => ({ ...p, portfolio: true }));
              else if (slotIndex !== undefined) setUploadingState(p => {
                  const newCompCards = [...p.compCards]; newCompCards[slotIndex] = false;
                  return { ...p, compCards: newCompCards };

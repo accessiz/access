@@ -1,3 +1,5 @@
+"use server"; // <--- ESTO ES OBLIGATORIO para leer las claves
+
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 
 const r2 = new S3Client({
@@ -9,16 +11,20 @@ const r2 = new S3Client({
   },
 });
 
-/**
- * Sube una imagen a R2 manteniendo la estructura: ID_TALENTO / CARPETA / ARCHIVO
- */
-export async function uploadImageToR2(file: File, talentId: string, category: 'Portada' | 'Portfolio' | 'General' = 'General') {
+export async function uploadImageToR2(formData: FormData) {
+  // Extraemos los datos del paquete seguro (FormData)
+  const file = formData.get("file") as File;
+  const talentId = formData.get("talentId") as string;
+  const category = formData.get("category") as string;
+
+  if (!file || !talentId) {
+    throw new Error("Faltan datos para subir la imagen");
+  }
+
   const buffer = Buffer.from(await file.arrayBuffer());
-  // Limpiamos el nombre del archivo para evitar espacios raros
   const cleanFileName = file.name.replace(/\s+/g, '-').toLowerCase();
   
-  // AQUÍ ESTÁ LA MAGIA: Creamos la ruta igual que en tu Supabase
-  // Ej: 00416e47.../Portada/17345678-foto.jpg
+  // Estructura: ID / Categoria / Archivo
   const fullPath = `${talentId}/${category}/${Date.now()}-${cleanFileName}`;
 
   try {
@@ -29,11 +35,10 @@ export async function uploadImageToR2(file: File, talentId: string, category: 'P
       ContentType: file.type,
     }));
 
-    // Devolvemos la URL pública completa
     const publicUrl = `${process.env.R2_PUBLIC_URL}/${fullPath}`;
     return publicUrl;
   } catch (error) {
-    console.error("Error subiendo a R2:", error);
-    throw new Error("No se pudo subir la imagen a la bodega nueva");
+    console.error("Error en servidor R2:", error);
+    throw new Error("Fallo la subida a R2");
   }
 }
