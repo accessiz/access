@@ -43,7 +43,7 @@ export async function POST(
     r2FormData.append('file', file);
     r2FormData.append('talentId', modelId);
     r2FormData.append('category', type); // 'cover', 'portfolio', 'comp-card'
-    if (slotIndex) r2FormData.append('slotIndex', slotIndex);
+    if (slotIndex !== null) r2FormData.append('slotIndex', slotIndex);
 
     const { publicUrl, path: r2Path } = await uploadImageToR2(r2FormData);
     if (!publicUrl || !r2Path) {
@@ -61,7 +61,7 @@ export async function POST(
       const index = parseInt(slotIndex, 10);
       const { data: modelData } = await supabase.from('models').select('comp_card_paths').eq('id', modelId).single();
       const existingPaths = (modelData?.comp_card_paths as string[] | null) || [];
-      const newPaths = [...existingPaths];
+      const newPaths: (string | null)[] = [...existingPaths];
       while (newPaths.length < 4) newPaths.push(null);
       newPaths[index] = r2Path;
       dbUpdateData = { comp_card_paths: newPaths };
@@ -110,7 +110,7 @@ export async function DELETE(
 
   // No eliminamos de R2 todavía, solo de la base de datos
   
-  let dbUpdateData: Record<string, string | null | (string[] | null)> = {};
+  let dbUpdateData: Record<string, string | null | (string | null)[]> = {};
 
   if (type === 'cover') {
     dbUpdateData = { cover_path: null };
