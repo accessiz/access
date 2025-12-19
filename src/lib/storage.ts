@@ -23,15 +23,15 @@ export async function uploadImageToR2(formData: FormData) {
   }
 
   const buffer = Buffer.from(await file.arrayBuffer());
-  const cleanFileName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '').toLowerCase();
+  const cleanFileName = file.name.replace(/[^a-zA-Z0-9.\\-_]/g, '').toLowerCase();
 
   // Estructura de Path: ID / Categoria / Archivo
   let fileName = `${Date.now()}-${cleanFileName}`;
-  if (type === 'cover') {
+  if (category === 'cover') {
     fileName = 'cover.webp'; // Nombre de archivo estandarizado
-  } else if (type === 'portfolio') {
+  } else if (category === 'portfolio') {
     fileName = 'portfolio.webp'; // Nombre de archivo estandarizado
-  } else if (type === 'comp-card' && slotIndex) {
+  } else if (category === 'comp-card' && slotIndex) {
     fileName = `comp_${slotIndex}.webp`; // Nombre de archivo estandarizado
   }
   
