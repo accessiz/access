@@ -182,19 +182,18 @@ export function CompCardManager({
             
             toast.success('Imagen subida y guardada.');
             
-            // ✅ CACHE BUSTING: Usamos el timestamp devuelto para crear una URL única
-            const { path: returnedPath, publicUrl, timestamp } = result;
-            const urlWithVersion = publicUrl ? `${publicUrl}?v=${timestamp}` : null;
+            // La URL ahora es única, no necesitamos el timestamp
+            const { path: returnedPath, publicUrl } = result;
 
             if (category === 'Portada') {
-                if (urlWithVersion) setCoverUrl(urlWithVersion);
+                if (publicUrl) setCoverUrl(publicUrl);
                 if (returnedPath) setCoverPath(returnedPath);
             } else if (category === 'Portfolio') {
-                if (urlWithVersion) setPortfolioUrl(urlWithVersion);
+                if (publicUrl) setPortfolioUrl(publicUrl);
                 if (returnedPath) setPortfolioPath(returnedPath);
             } else if (category === 'Contraportada' && slotIndex !== undefined) {
-                if (urlWithVersion) setCompCardUrls(prev => {
-                    const copy = [...prev]; copy[slotIndex] = urlWithVersion; return copy;
+                if (publicUrl) setCompCardUrls(prev => {
+                    const copy = [...prev]; copy[slotIndex] = publicUrl; return copy;
                 });
                 if (returnedPath) setCompCardPaths(prev => {
                     const copy = [...prev]; copy[slotIndex] = returnedPath; return copy;
@@ -211,6 +210,8 @@ export function CompCardManager({
                  const newCompCards = [...p.compCards]; newCompCards[slotIndex] = false;
                  return { ...p, compCards: newCompCards };
              });
+             // Cierra el diálogo de recorte al finalizar
+             handleCropDialogClose();
         }
     };
 

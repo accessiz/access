@@ -1,14 +1,14 @@
 
 'use server';
 
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, DeleteObjectCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server'; // Para verificar al usuario
 import { z } from 'zod';
 import { logError } from "../utils/errors";
 import { revalidatePath } from "next/cache";
 
-// Configuración del cliente R2 (sin cambios)
+// Configuración del cliente R2
 const r2 = new S3Client({
   region: "auto",
   endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
@@ -18,6 +18,8 @@ const r2 = new S3Client({
   },
 });
 
+const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME!;
+
 const uploadSchema = z.object({
   file: z.instanceof(File),
   modelId: z.string().uuid(),
@@ -25,18 +27,56 @@ const uploadSchema = z.object({
   slotIndex: z.coerce.number().optional(),
 });
 
+
 /**
- * Server Action SEGURA para subir una imagen a R2 y actualizar la DB.
+ * Helper para eliminar el archivo antiguo de una categoría antes de subir uno nuevo.
  */
+async function deleteOldFileFromCategory(modelId: string, category: 'Portada' | 'Portfolio' | 'Contraportada', slotIndex?: number) {
+    const prefix = `${modelId}/${category}/`;
+    
+    // Para 'Contraportada', el prefijo es más específico si hay slotIndex
+    const searchPrefix = (category === 'Contraportada' && slotIndex !== undefined)
+        ? `${prefix}comp_${slotIndex}_`
+        : prefix;
+
+    try {
+        const listCommand = new ListObjectsV2Command({
+            Bucket: R2_BUCKET_NAME,
+            Prefix: searchPrefix,
+        });
+
+        const listedObjects = await r2.send(listCommand);
+
+        if (listedObjects.Contents && listedObjects.Contents.length > 0) {
+            for (const obj of listedObjects.Contents) {
+                if (obj.Key) {
+                    const deleteCommand = new DeleteObjectCommand({
+                        Bucket: R2_BUCKET_NAME,
+                        Key: obj.Key,
+                    });
+                    await r2.send(deleteCommand);
+                }
+            }
+        }
+    } catch (err) {
+        logError(err, {
+            action: 'deleteOldFileFromCategory',
+            modelId,
+            category,
+            searchPrefix
+        });
+        // No lanzamos un error aquí para no detener la subida, solo lo registramos.
+    }
+}
+
+
 export async function uploadModelImage(formData: FormData) {
-  // 1. Obtener usuario autenticado CON EL CLIENTE DE SERVIDOR NORMAL
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return { success: false, error: "Usuario no autenticado." };
   }
   
-  // 2. Validar los datos del formulario
   const rawData = {
     file: formData.get('file'),
     modelId: formData.get('modelId'),
@@ -53,36 +93,31 @@ export async function uploadModelImage(formData: FormData) {
   const { file, modelId, category, slotIndex } = validation.data;
 
   try {
-    // 3. VERIFICAR PROPIEDAD: Usamos el cliente normal (consciente de RLS)
-    const { error: ownerError } = await supabase
-      .from('models')
-      .select('id')
-      .eq('id', modelId)
-      .single(); // La política RLS se encargará de filtrar por user_id
-
+    const { error: ownerError } = await supabase.from('models').select('id').eq('id', modelId).single();
     if (ownerError) {
       logError(ownerError, { action: 'uploadModelImage.ownershipCheck', modelId, userId: user.id });
       return { success: false, error: "No tienes permiso para modificar este modelo." };
     }
 
-    // --- Si la verificación es exitosa, proceder con la subida y actualización ---
-    
-    const buffer = Buffer.from(await file.arrayBuffer());
-    
-    let fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.\\-_]/g, '').toLowerCase()}`;
-    if (category === 'Portada') {
-        fileName = 'cover.webp';
-    } else if (category === 'Portfolio') {
-        fileName = 'portfolio.webp';
-    } else if (category === 'Contraportada' && slotIndex !== undefined) {
-        fileName = `comp_${slotIndex}.webp`;
-    }
+    // --- LÓGICA DE CACHE BUSTING ---
+    const timestamp = Date.now();
+    let baseFileName = file.name.replace(/[^a-zA-Z0-9.\\-_]/g, '').toLowerCase();
+
+    // 1. Limpiar archivo/s antiguo/s en R2 para esta categoría.
+    await deleteOldFileFromCategory(modelId, category, slotIndex);
+
+    // 2. Crear nombre de archivo único con timestamp.
+    let fileName = `${timestamp}-${baseFileName}`;
+    if (category === 'Portada') fileName = `${timestamp}-cover.webp`;
+    else if (category === 'Portfolio') fileName = `${timestamp}-portfolio.webp`;
+    else if (category === 'Contraportada' && slotIndex !== undefined) fileName = `${timestamp}-comp_${slotIndex}.webp`;
   
     const fullPath = `${modelId}/${category}/${fileName}`;
+    const buffer = Buffer.from(await file.arrayBuffer());
 
-    // 4. Subir a R2 (con cliente admin)
+    // 3. Subir el nuevo archivo a R2
     await r2.send(new PutObjectCommand({
-      Bucket: process.env.R2_BUCKET_NAME!,
+      Bucket: R2_BUCKET_NAME,
       Key: fullPath,
       Body: buffer,
       ContentType: file.type,
@@ -91,7 +126,7 @@ export async function uploadModelImage(formData: FormData) {
 
     const publicUrl = `${process.env.R2_PUBLIC_URL}/${fullPath}`;
 
-    // 5. Actualizar Supabase (con cliente admin para evitar problemas de RLS en escritura)
+    // 4. Actualizar Supabase con el nuevo path
     let dbError;
     if (category === 'Portada') {
       const { error } = await supabaseAdmin.from('models').update({ cover_path: fullPath }).eq('id', modelId);
@@ -113,9 +148,10 @@ export async function uploadModelImage(formData: FormData) {
 
     if (dbError) throw dbError;
     
-    // 6. Revalidar y devolver éxito con timestamp para cache busting
+    // 5. Revalidar y devolver éxito
     revalidatePath(`/dashboard/models/${modelId}`);
-    return { success: true, path: fullPath, publicUrl, timestamp: Date.now() };
+    // No necesitamos devolver el timestamp porque la URL en sí ya es única.
+    return { success: true, path: fullPath, publicUrl };
 
   } catch (err: any) {
     logError(err, { action: 'uploadModelImage.process', modelId, category });
@@ -124,11 +160,7 @@ export async function uploadModelImage(formData: FormData) {
 }
 
 
-/**
- * Server Action SEGURA para eliminar una imagen.
- */
 export async function deleteModelImage(modelId: string, filePath: string, category: 'Portada' | 'Portfolio' | 'Contraportada', slotIndex?: number) {
-    // 1. Obtener usuario autenticado con el cliente normal
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
@@ -136,20 +168,21 @@ export async function deleteModelImage(modelId: string, filePath: string, catego
     }
 
     try {
-        // 2. VERIFICAR PROPIEDAD: Usamos el cliente normal (consciente de RLS)
-        const { error: ownerError } = await supabase
-          .from('models')
-          .select('id')
-          .eq('id', modelId)
-          .single();
-
+        const { error: ownerError } = await supabase.from('models').select('id').eq('id', modelId).single();
         if (ownerError) {
           logError(ownerError, { action: 'deleteModelImage.ownershipCheck', modelId, userId: user.id });
           return { success: false, error: "No tienes permiso para modificar este modelo." };
         }
 
-        // --- Si la verificación es exitosa, proceder con la eliminación ---
+        // --- Lógica de borrado ---
         
+        // 1. Eliminar de R2
+        await r2.send(new DeleteObjectCommand({
+          Bucket: R2_BUCKET_NAME,
+          Key: filePath,
+        }));
+        
+        // 2. Eliminar referencia de Supabase
         let error;
         if (category === 'Portada') {
             const { error: updateError } = await supabaseAdmin.from('models').update({ cover_path: null }).eq('id', modelId);
@@ -171,9 +204,6 @@ export async function deleteModelImage(modelId: string, filePath: string, catego
         }
 
         if (error) throw error;
-
-        // NOTA: No eliminamos el archivo de R2 para permitir recuperación y evitar borrados accidentales complejos.
-        // Solo quitamos la referencia en la base de datos.
 
         revalidatePath(`/dashboard/models/${modelId}`);
         return { success: true };
