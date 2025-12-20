@@ -1,3 +1,4 @@
+
 // Centralized application constants
 
 // NOTA: Estas constantes de Supabase ya no se usan para construir URLs públicas,
@@ -13,5 +14,5 @@ export const SUPABASE_PUBLIC_URL = ((): string => {
 export const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL || '';
 
 
-// Límite de subida de 10 MB por defecto
-export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+// Límite de subida de 5 MB
+export const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;

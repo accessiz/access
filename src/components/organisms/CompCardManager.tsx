@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useRef } from 'react';
@@ -8,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import Image from 'next/image';
 import { uploadModelImage, deleteModelImage } from '@/lib/actions/storage';
+import { ImageCropDialog } from './ImageCropDialog'; // Importar el nuevo componente
 
 interface CompCardManagerProps {
     modelId: string;
@@ -17,6 +19,14 @@ interface CompCardManagerProps {
     initialCoverPath?: string | null;
     initialPortfolioPath?: string | null;
     initialCompCardPaths?: (string | null)[];
+}
+
+// Interfaz para el estado del recorte
+interface CropState {
+  imageSrc: string | null;
+  aspect: number;
+  uploadType: 'cover' | 'comp-card' | 'portfolio';
+  slotIndex?: number;
 }
 
 // Componente reutilizable para cada slot de foto
@@ -69,21 +79,47 @@ export function CompCardManager({
     initialPortfolioPath = null,
     initialCompCardPaths = [null, null, null, null],
 }: CompCardManagerProps) {
-        const [coverUrl, setCoverUrl] = useState<string | null>(initialCoverUrl);
-        const [compCardUrls, setCompCardUrls] = useState<(string | null)[]>(Array(4).fill(null).map((_, i) => initialCompCardUrls[i] || null));
-        const [portfolioUrl, setPortfolioUrl] = useState<string | null>(initialPortfolioUrl);
+    const [coverUrl, setCoverUrl] = useState<string | null>(initialCoverUrl);
+    const [compCardUrls, setCompCardUrls] = useState<(string | null)[]>(Array(4).fill(null).map((_, i) => initialCompCardUrls[i] || null));
+    const [portfolioUrl, setPortfolioUrl] = useState<string | null>(initialPortfolioUrl);
 
-        const [coverPath, setCoverPath] = useState<string | null>(initialCoverPath);
-        const [compCardPaths, setCompCardPaths] = useState<(string | null)[]>(Array(4).fill(null).map((_, i) => initialCompCardPaths[i] || null));
-        const [portfolioPath, setPortfolioPath] = useState<string | null>(initialPortfolioPath);
+    const [coverPath, setCoverPath] = useState<string | null>(initialCoverPath);
+    const [compCardPaths, setCompCardPaths] = useState<(string | null)[]>(Array(4).fill(null).map((_, i) => initialCompCardPaths[i] || null));
+    const [portfolioPath, setPortfolioPath] = useState<string | null>(initialPortfolioPath);
+    
+    // --- NUEVOS ESTADOS ---
+    const [uploadingState, setUploadingState] = useState({ cover: false, compCards: [false, false, false, false], portfolio: false });
+    const [cropState, setCropState] = useState<CropState | null>(null);
 
-        const [uploadingState, setUploadingState] = useState({ cover: false, compCards: [false, false, false, false], portfolio: false });
+    // Abre el diálogo de recorte cuando se selecciona un archivo
+    const handleFileSelect = (file: File, uploadType: CropState['uploadType'], aspect: number, slotIndex?: number) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+            setCropState({
+                imageSrc: reader.result as string,
+                aspect,
+                uploadType,
+                slotIndex,
+            });
+        };
+        reader.readAsDataURL(file);
+    };
 
-    const handleUpload = async (file: File, type: 'cover' | 'comp-card' | 'portfolio', slotIndex?: number) => {
-        const category = type === 'comp-card' ? 'Contraportada' : (type === 'cover' ? 'Portada' : 'Portfolio');
+    // Cierra el diálogo de recorte
+    const handleCropDialogClose = () => {
+        setCropState(null);
+    };
+
+    // --- FUNCIÓN DE SUBIDA (MODIFICADA) ---
+    // Ahora se llama cuando el recorte se completa
+    const handleUpload = async (file: File) => {
+        if (!cropState) return;
+
+        const { uploadType, slotIndex } = cropState;
+        const category = uploadType === 'comp-card' ? 'Contraportada' : (uploadType === 'cover' ? 'Portada' : 'Portfolio');
         
-        if (type === 'cover') setUploadingState(p => ({ ...p, cover: true }));
-        else if (type === 'portfolio') setUploadingState(p => ({ ...p, portfolio: true }));
+        if (uploadType === 'cover') setUploadingState(p => ({ ...p, cover: true }));
+        else if (uploadType === 'portfolio') setUploadingState(p => ({ ...p, portfolio: true }));
         else if (slotIndex !== undefined) setUploadingState(p => {
             const newCompCards = [...p.compCards]; newCompCards[slotIndex] = true;
             return { ...p, compCards: newCompCards };
@@ -127,8 +163,8 @@ export function CompCardManager({
             const message = error instanceof Error ? error.message : 'Ocurrió un error.';
             toast.error('Error al subir la imagen', { description: message });
         } finally {
-             if (type === 'cover') setUploadingState(p => ({ ...p, cover: false }));
-             else if (type === 'portfolio') setUploadingState(p => ({ ...p, portfolio: false }));
+             if (uploadType === 'cover') setUploadingState(p => ({ ...p, cover: false }));
+             else if (uploadType === 'portfolio') setUploadingState(p => ({ ...p, portfolio: false }));
              else if (slotIndex !== undefined) setUploadingState(p => {
                  const newCompCards = [...p.compCards]; newCompCards[slotIndex] = false;
                  return { ...p, compCards: newCompCards };
@@ -176,6 +212,7 @@ export function CompCardManager({
     };
 
     return (
+        <>
         <Card>
             <CardHeader>
                 <CardTitle>Imágenes del Talento</CardTitle>
@@ -189,7 +226,7 @@ export function CompCardManager({
                             <PhotoSlot
                                 className="aspect-[3/4]"
                                 imageUrl={coverUrl}
-                                onFileSelect={(file) => handleUpload(file, 'cover')}
+                                onFileSelect={(file) => handleFileSelect(file, 'cover', 3/4)}
                                 onDelete={() => handleDelete('cover')}
                                 label="Subir Portada"
                                 isUploading={uploadingState.cover}
@@ -203,7 +240,7 @@ export function CompCardManager({
                                         key={index}
                                         className="aspect-square"
                                         imageUrl={compCardUrls[index]}
-                                        onFileSelect={(file) => handleUpload(file, 'comp-card', index)}
+                                        onFileSelect={(file) => handleFileSelect(file, 'comp-card', 1/1, index)}
                                         onDelete={() => handleDelete('comp-card', index)}
                                         label={`Foto ${index + 1}`}
                                         isUploading={uploadingState.compCards[index]}
@@ -217,7 +254,7 @@ export function CompCardManager({
                         <PhotoSlot
                             className="aspect-[11/8.5] max-h-64"
                             imageUrl={portfolioUrl}
-                            onFileSelect={(file) => handleUpload(file, 'portfolio')}
+                            onFileSelect={(file) => handleFileSelect(file, 'portfolio', 11/8.5)}
                             onDelete={() => handleDelete('portfolio')}
                             label="Subir Imagen de Portafolio"
                             isUploading={uploadingState.portfolio}
@@ -226,5 +263,16 @@ export function CompCardManager({
                 </div>
             </CardContent>
         </Card>
+        
+        {cropState && (
+            <ImageCropDialog
+                imageSrc={cropState.imageSrc}
+                aspect={cropState.aspect}
+                onCropComplete={handleUpload}
+                onClose={handleCropDialogClose}
+            />
+        )}
+        </>
     );
 }
+
