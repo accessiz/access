@@ -1,3 +1,4 @@
+
 'use server';
 
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
@@ -112,9 +113,9 @@ export async function uploadModelImage(formData: FormData) {
 
     if (dbError) throw dbError;
     
-    // 6. Revalidar y devolver éxito
+    // 6. Revalidar y devolver éxito con timestamp para cache busting
     revalidatePath(`/dashboard/models/${modelId}`);
-    return { success: true, path: fullPath, publicUrl };
+    return { success: true, path: fullPath, publicUrl, timestamp: Date.now() };
 
   } catch (err: any) {
     logError(err, { action: 'uploadModelImage.process', modelId, category });

@@ -182,17 +182,19 @@ export function CompCardManager({
             
             toast.success('Imagen subida y guardada.');
             
-            const { path: returnedPath, publicUrl } = result;
+            // ✅ CACHE BUSTING: Usamos el timestamp devuelto para crear una URL única
+            const { path: returnedPath, publicUrl, timestamp } = result;
+            const urlWithVersion = publicUrl ? `${publicUrl}?v=${timestamp}` : null;
 
             if (category === 'Portada') {
-                if (publicUrl) setCoverUrl(publicUrl);
+                if (urlWithVersion) setCoverUrl(urlWithVersion);
                 if (returnedPath) setCoverPath(returnedPath);
             } else if (category === 'Portfolio') {
-                if (publicUrl) setPortfolioUrl(publicUrl);
+                if (urlWithVersion) setPortfolioUrl(urlWithVersion);
                 if (returnedPath) setPortfolioPath(returnedPath);
             } else if (category === 'Contraportada' && slotIndex !== undefined) {
-                if (publicUrl) setCompCardUrls(prev => {
-                    const copy = [...prev]; copy[slotIndex] = publicUrl; return copy;
+                if (urlWithVersion) setCompCardUrls(prev => {
+                    const copy = [...prev]; copy[slotIndex] = urlWithVersion; return copy;
                 });
                 if (returnedPath) setCompCardPaths(prev => {
                     const copy = [...prev]; copy[slotIndex] = returnedPath; return copy;
@@ -315,4 +317,3 @@ export function CompCardManager({
         </>
     );
 }
-
