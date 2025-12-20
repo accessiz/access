@@ -30,8 +30,9 @@ const nextConfig: NextConfig = {
       },
     ],
 
-    // --- SOLUCIÓN PARA TUS TIMEOUTS LOCALES ---
-    unoptimized: process.env.NODE_ENV === 'development',
+    // --- SOLUCIÓN PARA EL CONSUMO EN VERCEL ---
+    // Se establece en 'true' para desactivar la optimización de imágenes en producción.
+    unoptimized: true,
   },
 };
 
