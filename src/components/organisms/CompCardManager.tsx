@@ -35,14 +35,52 @@ const PhotoSlot = ({ className, imageUrl, onFileSelect, onDelete, label, isUploa
     onDelete: () => void; label: string; isUploading: boolean;
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
+  const [isDragging, setIsDragging] = useState(false); // Estado para el drag & drop
+
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) onFileSelect(file);
     if (event.target) event.target.value = '';
   };
+  
+  // --- INICIO: LÓGICA DE DRAG & DROP ---
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault(); // Previene el comportamiento por defecto del navegador
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setIsDragging(false);
+    const files = event.dataTransfer.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      // Solo procesamos si es una imagen
+      if (file.type.startsWith('image/')) {
+        onFileSelect(file);
+      } else {
+        toast.error('Archivo no válido', { description: 'Por favor, arrastra un archivo de imagen.' });
+      }
+    }
+  };
+  // --- FIN: LÓGICA DE DRAG & DROP ---
 
   return (
-    <div className={cn("relative group bg-muted/50 border-2 border-dashed border-border rounded-lg flex items-center justify-center overflow-hidden transition-all", className)}>
+    <div 
+        className={cn(
+            "relative group bg-muted/50 border-2 border-dashed border-border rounded-lg flex items-center justify-center overflow-hidden transition-all",
+            isDragging && "border-primary ring-2 ring-primary ring-offset-2", // Estilo cuando se arrastra sobre el elemento
+            className
+        )}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+    >
       {imageUrl ? (
         <>
           <Image src={imageUrl} alt={label} fill className="object-cover" />
@@ -61,7 +99,9 @@ const PhotoSlot = ({ className, imageUrl, onFileSelect, onDelete, label, isUploa
                     ? <Loader2 className="h-8 w-8 text-muted-foreground animate-spin mb-2" />
                     : <UploadCloud className="h-8 w-8 text-muted-foreground mb-2" />
                 }
-                <span className="text-label-12 font-normal text-muted-foreground">{isUploading ? 'Subiendo...' : label}</span>
+                <span className="text-label-12 font-normal text-muted-foreground">
+                    {isUploading ? 'Subiendo...' : (isDragging ? 'Suelta la imagen aquí' : label)}
+                </span>
             </Button>
         </div>
       )}
