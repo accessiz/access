@@ -5,7 +5,16 @@ import { unstable_noStore as noStore } from 'next/cache';
 import { Model, Project } from "@/lib/types"; // Asegúrate que Model incluye client_selection?
 import { logError } from '@/lib/utils/errors';
 
-const BUCKET_NAME = 'Book_Completo_iZ_Management';
+// --- INICIO DE LA CORRECCIÓN ---
+// Se elimina BUCKET_NAME y se añade el helper para construir la URL de R2
+const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL?.replace(/\/$/, '') || '';
+
+const toPublicUrl = (path: string | null | undefined): string | null => {
+  if (!path || !R2_PUBLIC_URL) return null;
+  return `${R2_PUBLIC_URL}/${path}`;
+};
+// --- FIN DE LA CORRECCIÓN ---
+
 const ITEMS_PER_PAGE = 10;
 
 type SearchParams = {
@@ -119,8 +128,6 @@ export async function getModelsForProject(projectId: string): Promise<Model[]> {
     return [];
   }
 
-  // Define los tipos y la guardia aquí también si es necesario,
-  // o importa desde donde definiste isValidClientSelection
   const VALID_CLIENT_SELECTIONS_INNER = ['pending', 'approved', 'rejected'] as const;
   type ClientSelectionInner = typeof VALID_CLIENT_SELECTIONS_INNER[number];
   function isValidClientSelectionInner(selection: unknown): selection is ClientSelectionInner {
@@ -128,48 +135,32 @@ export async function getModelsForProject(projectId: string): Promise<Model[]> {
       return VALID_CLIENT_SELECTIONS_INNER.includes(selection as ClientSelectionInner);
   }
 
-  const models = projectModelsData.flatMap(item => {
+  const modelsWithPaths = projectModelsData.flatMap(item => {
     const modelData = item.models;
     if (!modelData || Array.isArray(modelData) || typeof modelData !== 'object') {
       console.warn(`Invalid model data found for project ${projectId}:`, item);
       return [];
     }
-    const model = modelData as unknown as Model;
-    // Validar el client_selection al mapear
+    const model = modelData as unknown as (Model & { cover_path?: string; portfolio_path?: string });
     const validatedSelection = isValidClientSelectionInner(item.client_selection)
                                ? item.client_selection
-                               : null; // O 'pending'
+                               : null;
 
     return [{
       ...model,
-      client_selection: validatedSelection, // Usar el valor validado
+      client_selection: validatedSelection,
     }];
   });
-
-  const pathsToSign: string[] = [];
-  const modelsWithPaths = models.map(m => m as Model & { cover_path?: string; portfolio_path?: string });
-  for (const m of modelsWithPaths) {
-    if (m.cover_path) pathsToSign.push(m.cover_path);
-    if (m.portfolio_path) pathsToSign.push(m.portfolio_path);
-  }
-
-  const signedUrlMap = new Map<string, string>();
-  if (pathsToSign.length > 0) {
-    const { data: signedUrlsData, error: signError } = await supabase.storage.from(BUCKET_NAME).createSignedUrls(pathsToSign, 300);
-    if (signError) {
-      logError(signError, { action: 'batch sign project model urls', projectId, pathsToSign });
-    } else if (signedUrlsData) {
-      for (const item of signedUrlsData) {
-        if (item.path && item.signedUrl) signedUrlMap.set(item.path, item.signedUrl);
-      }
-    }
-  }
-
+  
+  // --- INICIO DE LA CORRECCIÓN ---
+  // Se elimina toda la lógica de `createSignedUrls`.
+  // Se mapean los resultados para construir la `coverUrl` y `portfolioUrl` públicas de R2.
   const enriched = modelsWithPaths.map(model => ({
     ...model,
-    coverUrl: model.cover_path ? signedUrlMap.get(model.cover_path) || null : null,
-    portfolioUrl: model.portfolio_path ? signedUrlMap.get(model.portfolio_path) || null : null,
+    coverUrl: toPublicUrl(model.cover_path),
+    portfolioUrl: toPublicUrl(model.portfolio_path),
   }));
+  // --- FIN DE LA CORRECCIÓN ---
 
   return enriched;
 }
@@ -186,10 +177,7 @@ function isValidClientSelection(selection: unknown): selection is ClientSelectio
   if (typeof selection !== 'string') {
     return false; // No es válido si no es string
   }
-  // Comprueba si el string está en nuestro array de selecciones válidas
   return VALID_CLIENT_SELECTIONS.includes(selection as ClientSelection);
-  // Alternativa más explícita si la anterior falla:
-  // return (VALID_CLIENT_SELECTIONS as ReadonlyArray<string>).includes(selection);
 }
 // --- FIN: Type Guard para client_selection ---
 
@@ -226,37 +214,20 @@ export async function getModelForProject(projectId: string, modelId: string): Pr
     return null;
   }
 
-  const modelWithPaths = modelData as unknown as Model & { cover_path?: string; portfolio_path?: string };
+  const modelWithPaths = modelData as unknown as (Model & { cover_path?: string; portfolio_path?: string });
 
-  const pathsToSign: string[] = [];
-  if (modelWithPaths.cover_path) pathsToSign.push(modelWithPaths.cover_path);
-  if (modelWithPaths.portfolio_path) pathsToSign.push(modelWithPaths.portfolio_path);
-
-  const signedUrlMap = new Map<string, string>();
-  if (pathsToSign.length > 0) {
-    const { data: signedUrlsData, error: signError } = await supabase.storage
-      .from(BUCKET_NAME)
-      .createSignedUrls(pathsToSign, 300);
-    if (signError) {
-      logError(signError, { action: 'sign urls single model', projectId, modelId, pathsToSign });
-    } else if (signedUrlsData) {
-      for (const item of signedUrlsData) {
-        if (item.path && item.signedUrl) signedUrlMap.set(item.path, item.signedUrl);
-      }
-    }
-  }
-
-  // --- CORRECCIÓN APLICADA AQUÍ ---
-  // Valida el client_selection antes de asignarlo
+  // --- INICIO DE LA CORRECCIÓN ---
+  // Se elimina la lógica de `createSignedUrls` y `signedUrlMap`.
+  // Se construyen las URLs públicas de R2 directamente.
   const validatedSelection = isValidClientSelection(data.client_selection)
                              ? data.client_selection
-                             : null; // O usa 'pending' si prefieres ese default en caso inválido
-  // --- FIN CORRECCIÓN ---
+                             : null;
 
   return {
     ...modelWithPaths,
-    client_selection: validatedSelection, // <-- Usa el valor validado
-    coverUrl: modelWithPaths.cover_path ? signedUrlMap.get(modelWithPaths.cover_path) || null : null,
-    portfolioUrl: modelWithPaths.portfolio_path ? signedUrlMap.get(modelWithPaths.portfolio_path) || null : null,
+    client_selection: validatedSelection,
+    coverUrl: toPublicUrl(modelWithPaths.cover_path),
+    portfolioUrl: toPublicUrl(modelWithPaths.portfolio_path),
   };
+  // --- FIN DE LA CORRECCIÓN ---
 }
