@@ -23,9 +23,7 @@ type ModelWithImages = Model & {
   compCardUrls?: (string | null)[];
   cover_path?: string | null; // Tipicamente string | null desde la DB
   portfolio_path?: string | null; // Tipicamente string | null desde la DB
-  // --- CORRECCIÓN AQUÍ ---
-  comp_card_paths?: (string | null)[] | null; // Acepta un array O null directamente
-  // --- FIN CORRECCIÓN ---
+  comp_card_paths?: (string | null)[] | null;
 };
 
 interface ModelProfileClientProps {
