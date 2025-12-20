@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { ArrowUp, ArrowDown, Download, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 // CORRECCIÓN: Importar la constante directamente
-import { SUPABASE_PUBLIC_URL } from '@/lib/constants';
+import { R2_PUBLIC_URL } from '@/lib/constants';
 
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -25,13 +25,10 @@ type InitialData = {
   models: ModelWithCover[];
   count: number;
   countries: string[];
-  // CORRECCIÓN: 'publicUrl' se elimina de las props
-  // publicUrl: string;
 };
 
 // El cliente recibe los datos listos para renderizar
 export default function ModelsClientPage({ initialData }: { initialData: InitialData }) {
-  // CORRECCIÓN: 'publicUrl' se elimina de la desestructuración
   const { models, count, countries } = initialData;
 
   const router = useRouter();
@@ -139,8 +136,8 @@ export default function ModelsClientPage({ initialData }: { initialData: Initial
             <Card key={model.id} onClick={() => handleRowClick(model.id)} className="cursor-pointer hover:border-primary transition-colors group overflow-hidden">
               <div className="aspect-[3/4] relative bg-muted">
                 <Avatar className="h-full w-full rounded-none">
-                  {/* CORRECCIÓN: Usar la constante importada */}
-                  <AvatarImage src={model.coverUrl || `${SUPABASE_PUBLIC_URL}${model.id}/Portada/cover.jpg`} className="object-cover group-hover:scale-105 transition-transform duration-300" />
+                  {/* CORRECCIÓN: Usar la constante R2_PUBLIC_URL para el fallback */}
+                  <AvatarImage src={model.coverUrl || `${R2_PUBLIC_URL}/${model.id}/Portada/cover.webp`} className="object-cover group-hover:scale-105 transition-transform duration-300" />
                   <AvatarFallback className="rounded-none text-heading-24 bg-transparent">{model.alias?.substring(0, 2) || 'IZ'}</AvatarFallback>
                 </Avatar>
               </div>
@@ -172,8 +169,8 @@ export default function ModelsClientPage({ initialData }: { initialData: Initial
           <TableBody>
             {models.map((model) => (
               <TableRow key={model.id} onClick={() => handleRowClick(model.id)} className="cursor-pointer">
-                {/* CORRECCIÓN: Usar la constante importada */}
-                <TableCell><Avatar><AvatarImage src={model.coverUrl || `${SUPABASE_PUBLIC_URL}${model.id}/Portada/cover.jpg`} /><AvatarFallback>{model.alias?.substring(0, 2) || 'IZ'}</AvatarFallback></Avatar></TableCell>
+                {/* CORRECCIÓN: Usar la constante R2_PUBLIC_URL para el fallback */}
+                <TableCell><Avatar><AvatarImage src={model.coverUrl || `${R2_PUBLIC_URL}/${model.id}/Portada/cover.webp`} /><AvatarFallback>{model.alias?.substring(0, 2) || 'IZ'}</AvatarFallback></Avatar></TableCell>
                 <TableCell className="font-medium">{model.alias}</TableCell>
                 <TableCell>{model.country}</TableCell>
                 <TableCell>{model.height_cm ? `${model.height_cm} cm` : '-'}</TableCell>
