@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
+import { Label } from '@/components/ui/label'
 import { Crop } from 'lucide-react'
 import { MAX_UPLOAD_BYTES } from '@/lib/constants'
 
