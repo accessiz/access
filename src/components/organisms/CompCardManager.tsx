@@ -292,8 +292,22 @@ export function CompCardManager({
                 ? `${printContainerId}-front`
                 : (downloadFormat === 'contraportada' ? `${printContainerId}-back` : printContainerId);
 
+            console.log(`[Download] Starting download process for: ${targetId}, format: ${fileType}`);
+
             const element = document.getElementById(targetId);
-            if (!element) throw new Error(`No se encontró el elemento con ID: ${targetId}`);
+            if (!element) {
+                console.error(`[Download] Element not found: ${targetId}`);
+                throw new Error(`No se encontró el elemento con ID: ${targetId}. Por favor, refresca la página e intenta de nuevo.`);
+            }
+
+            // Validar que el elemento tenga contenido visible
+            if (element.offsetWidth === 0 || element.offsetHeight === 0) {
+                console.error(`[Download] Element has zero dimensions`, {
+                    width: element.offsetWidth,
+                    height: element.offsetHeight
+                });
+                throw new Error('El elemento a descargar no tiene dimensiones visibles. Por favor, verifica que las imágenes estén cargadas.');
+            }
 
             // Hacer el wrapper temporalmente visible
             if (wrapper) {
@@ -318,7 +332,8 @@ export function CompCardManager({
                 wrapper.style.zIndex = '-1';
             }
 
-            console.log(`Element found: ${targetId}`, {
+            console.log(`[Download] Element validated:`, {
+                id: targetId,
                 width: element.offsetWidth,
                 height: element.offsetHeight,
                 visible: window.getComputedStyle(element).visibility,
@@ -327,19 +342,46 @@ export function CompCardManager({
 
             // Verificar si hay imágenes y esperar a que carguen
             const imgs = Array.from(element.getElementsByTagName('img'));
-            console.log(`Checking ${imgs.length} images...`);
-            await Promise.all(imgs.map(img => {
-                if (img.complete) return Promise.resolve<void>(undefined);
-                return new Promise<void>((resolve) => {
-                    img.onload = () => resolve(undefined);
-                    img.onerror = () => {
-                        console.warn(`Failed to load image: ${img.src}`);
-                        resolve(undefined);
+            console.log(`[Download] Checking ${imgs.length} images...`);
+
+            // Validar imágenes y detectar posibles problemas CORS
+            const imageLoadResults = await Promise.all(imgs.map(async (img, index) => {
+                if (img.complete && img.naturalHeight !== 0) {
+                    console.log(`[Download] Image ${index + 1} already loaded:`, img.src);
+                    return { loaded: true, src: img.src };
+                }
+
+                return new Promise<{ loaded: boolean; src: string; error?: string }>((resolve) => {
+                    const timeout = setTimeout(() => {
+                        console.warn(`[Download] Image ${index + 1} timeout:`, img.src);
+                        resolve({ loaded: false, src: img.src, error: 'Timeout' });
+                    }, 10000); // 10 second timeout
+
+                    img.onload = () => {
+                        clearTimeout(timeout);
+                        console.log(`[Download] Image ${index + 1} loaded:`, img.src);
+                        resolve({ loaded: true, src: img.src });
+                    };
+
+                    img.onerror = (e) => {
+                        clearTimeout(timeout);
+                        console.error(`[Download] Image ${index + 1} error:`, img.src, e);
+                        resolve({ loaded: false, src: img.src, error: 'Load failed' });
                     };
                 });
             }));
 
+            // Verificar si alguna imagen falló en cargar
+            const failedImages = imageLoadResults.filter(r => !r.loaded);
+            if (failedImages.length > 0) {
+                console.warn(`[Download] ${failedImages.length} images failed to load:`, failedImages);
+                toast.error(`Algunas imágenes no se cargaron correctamente. La descarga puede estar incompleta.`, {
+                    description: `${failedImages.length} imagen(es) fallaron.`
+                });
+            }
+
             // Esperar un poco más para que la pintura se complete
+            console.log(`[Download] Waiting for render completion...`);
             await new Promise<void>(resolve => setTimeout(() => resolve(undefined), 500));
 
             const captureOptions = {
@@ -349,23 +391,47 @@ export function CompCardManager({
                 skipFonts: false,
             };
 
+            console.log(`[Download] Capturing element as ${fileType}...`);
             let dataUrl: string;
-            if (fileType === 'png') {
-                dataUrl = await toPng(element, captureOptions);
-            } else {
-                dataUrl = await toJpeg(element, captureOptions);
+
+            try {
+                if (fileType === 'png') {
+                    dataUrl = await toPng(element, captureOptions);
+                } else {
+                    dataUrl = await toJpeg(element, captureOptions);
+                }
+            } catch (captureError: any) {
+                console.error(`[Download] Capture failed:`, captureError);
+
+                // Detectar errores CORS
+                if (captureError?.message?.includes('tainted') ||
+                    captureError?.message?.includes('cross-origin') ||
+                    captureError?.message?.includes('CORS')) {
+                    throw new Error('Error de CORS: Las imágenes externas están bloqueando la descarga. Asegúrate de que las imágenes estén hosteadas en el mismo dominio o permitan CORS.');
+                }
+
+                // Lanzar error con más contexto
+                throw new Error(`Error al capturar la imagen: ${captureError?.message || 'Error desconocido en html-to-image'}. Verifica la consola para más detalles.`);
             }
 
             if (!dataUrl || dataUrl.length < 100) {
-                throw new Error("La captura generó una imagen vacía o inválida.");
+                console.error(`[Download] Invalid data URL generated:`, {
+                    exists: !!dataUrl,
+                    length: dataUrl?.length || 0
+                });
+                throw new Error("La captura generó una imagen vacía o inválida. Verifica que todas las imágenes estén cargadas correctamente.");
             }
 
+            console.log(`[Download] Capture successful, data URL length: ${dataUrl.length}`);
+
             if (fileType === 'jpg' || fileType === 'png') {
+                console.log(`[Download] Downloading as ${fileType}...`);
                 const link = document.createElement('a');
                 link.download = `${fileName}.${fileType}`;
                 link.href = dataUrl;
                 link.click();
             } else if (fileType === 'pdf') {
+                console.log(`[Download] Generating PDF...`);
                 const isLandscape = downloadFormat === 'hoja_completa';
                 const pdf = new jsPDF({
                     orientation: isLandscape ? 'l' : 'p',
@@ -379,17 +445,31 @@ export function CompCardManager({
                 pdf.addImage(dataUrl, 'JPEG', 0, 0, width, height);
                 pdf.save(`${fileName}.pdf`);
             } else if (fileType === 'zip') {
+                console.log(`[Download] Generating ZIP archive...`);
                 const zip = new JSZip();
                 const frontEl = document.getElementById(`${printContainerId}-front`);
                 const backEl = document.getElementById(`${printContainerId}-back`);
 
-                if (frontEl) {
+                if (!frontEl || !backEl) {
+                    throw new Error('No se encontraron los elementos de portada y contraportada para crear el archivo ZIP.');
+                }
+
+                try {
                     const frontData = await toJpeg(frontEl, captureOptions);
                     zip.file(`${fileName}_portada.jpg`, frontData.split(',')[1], { base64: true });
+                    console.log(`[Download] Front cover added to ZIP`);
+                } catch (frontError: any) {
+                    console.error(`[Download] Failed to capture front cover:`, frontError);
+                    throw new Error(`Error al capturar la portada: ${frontError?.message || 'Error desconocido'}`);
                 }
-                if (backEl) {
+
+                try {
                     const backData = await toJpeg(backEl, captureOptions);
                     zip.file(`${fileName}_contraportada.jpg`, backData.split(',')[1], { base64: true });
+                    console.log(`[Download] Back cover added to ZIP`);
+                } catch (backError: any) {
+                    console.error(`[Download] Failed to capture back cover:`, backError);
+                    throw new Error(`Error al capturar la contraportada: ${backError?.message || 'Error desconocido'}`);
                 }
 
                 const content = await zip.generateAsync({ type: 'blob' });
@@ -399,11 +479,34 @@ export function CompCardManager({
                 link.click();
             }
 
+            console.log(`[Download] Download completed successfully`);
             toast.success('Descarga iniciada con éxito.');
         } catch (error: any) {
-            console.error('Download error:', error);
-            const errorMsg = error?.message || error?.toString?.() || 'Error desconocido al generar la descarga';
-            toast.error(`Error al generar la descarga: ${errorMsg}`);
+            console.error('[Download] Error details:', {
+                message: error?.message,
+                name: error?.name,
+                stack: error?.stack,
+                fullError: error
+            });
+
+            // Mejorar el mensaje de error
+            let errorMsg = 'Error desconocido al generar la descarga';
+
+            if (error?.message) {
+                errorMsg = error.message;
+            } else if (typeof error === 'string') {
+                errorMsg = error;
+            } else if (error?.toString && typeof error.toString === 'function') {
+                const errorStr = error.toString();
+                if (errorStr !== '[object Object]') {
+                    errorMsg = errorStr;
+                }
+            }
+
+            toast.error(`Error al generar la descarga`, {
+                description: errorMsg,
+                duration: 5000
+            });
         } finally {
             // Restaurar el estilo original del wrapper
             if (wrapper && originalWrapperStyle) {
@@ -417,6 +520,7 @@ export function CompCardManager({
                 wrapper.style.zIndex = originalWrapperStyle.zIndex;
             }
             setIsDownloading(false);
+            console.log(`[Download] Cleanup completed`);
         }
     };
 
