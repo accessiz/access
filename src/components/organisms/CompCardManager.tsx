@@ -9,9 +9,26 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import Image from 'next/image';
 import { uploadModelImage, deleteModelImage } from '@/lib/actions/storage';
-import { ImageCropDialog } from './ImageCropDialog'; // Importar el nuevo componente
+import { ImageCropDialog } from './ImageCropDialog';
+import { Model } from '@/lib/types';
+import { CompCardPrintTemplate } from '@/app/dashboard/models/[id]/_components/CompCardPrintTemplate';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+    DropdownMenuRadioGroup,
+    DropdownMenuRadioItem
+} from '@/components/ui/dropdown-menu';
+import { toJpeg, toPng, toBlob } from 'html-to-image';
+import { jsPDF } from 'jspdf';
+import JSZip from 'jszip';
+import { ChevronDown, Download } from 'lucide-react';
 
 interface CompCardManagerProps {
+    model: Model;
     modelId: string;
     initialCoverUrl?: string | null;
     initialPortfolioUrl?: string | null;
@@ -23,10 +40,10 @@ interface CompCardManagerProps {
 
 // Interfaz para el estado del recorte
 interface CropState {
-  imageSrc: string | null;
-  aspect: number;
-  uploadType: 'cover' | 'comp-card' | 'portfolio';
-  slotIndex?: number;
+    imageSrc: string | null;
+    aspect: number;
+    uploadType: 'cover' | 'comp-card' | 'portfolio';
+    slotIndex?: number;
 }
 
 // Componente reutilizable para cada slot de foto
@@ -34,83 +51,84 @@ const PhotoSlot = ({ className, imageUrl, onFileSelect, onDelete, label, isUploa
     className?: string; imageUrl: string | null; onFileSelect: (file: File) => void;
     onDelete: () => void; label: string; isUploading: boolean;
 }) => {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [isDragging, setIsDragging] = useState(false); // Estado para el drag & drop
+    const inputRef = useRef<HTMLInputElement>(null);
+    const [isDragging, setIsDragging] = useState(false); // Estado para el drag & drop
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) onFileSelect(file);
-    if (event.target) event.target.value = '';
-  };
-  
-  // --- INICIO: LÓGICA DE DRAG & DROP ---
-  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault(); // Previene el comportamiento por defecto del navegador
-    setIsDragging(true);
-  };
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) onFileSelect(file);
+        if (event.target) event.target.value = '';
+    };
 
-  const handleDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    setIsDragging(false);
-  };
+    // --- INICIO: LÓGICA DE DRAG & DROP ---
+    const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+        event.preventDefault(); // Previene el comportamiento por defecto del navegador
+        setIsDragging(true);
+    };
 
-  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    setIsDragging(false);
-    const files = event.dataTransfer.files;
-    if (files && files.length > 0) {
-      const file = files[0];
-      // Solo procesamos si es una imagen
-      if (file.type.startsWith('image/')) {
-        onFileSelect(file);
-      } else {
-        toast.error('Archivo no válido', { description: 'Por favor, arrastra un archivo de imagen.' });
-      }
-    }
-  };
-  // --- FIN: LÓGICA DE DRAG & DROP ---
+    const handleDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
+        event.preventDefault();
+        setIsDragging(false);
+    };
 
-  return (
-    <div 
-        className={cn(
-            "relative group bg-muted/50 border-2 border-dashed border-border rounded-lg flex items-center justify-center overflow-hidden transition-all",
-            isDragging && "border-primary ring-2 ring-primary ring-offset-2", // Estilo cuando se arrastra sobre el elemento
-            className
-        )}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-    >
-      {imageUrl ? (
-        <>
-          <Image src={imageUrl} alt={label} fill className="object-cover" />
-          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-            <Button variant="destructive" size="icon" onClick={onDelete} disabled={isUploading}>
-                <Trash2 />
-                <span className="sr-only">Borrar {label}</span>
-            </Button>
-          </div>
-        </>
-      ) : (
-        <div className="text-center p-4">
-            <input type="file" ref={inputRef} onChange={handleFileChange} accept="image/jpeg, image/png, image/webp" className="hidden" />
-            <Button variant="ghost" className="h-auto p-4 flex flex-col items-center justify-center" onClick={() => inputRef.current?.click()} disabled={isUploading}>
-                {isUploading
-                    ? <Loader2 className="h-8 w-8 text-muted-foreground animate-spin mb-2" />
-                    : <UploadCloud className="h-8 w-8 text-muted-foreground mb-2" />
-                }
-                <span className="text-label-12 font-normal text-muted-foreground">
-                    {isUploading ? 'Subiendo...' : (isDragging ? 'Suelta la imagen aquí' : label)}
-                </span>
-            </Button>
+    const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+        event.preventDefault();
+        setIsDragging(false);
+        const files = event.dataTransfer.files;
+        if (files && files.length > 0) {
+            const file = files[0];
+            // Solo procesamos si es una imagen
+            if (file.type.startsWith('image/')) {
+                onFileSelect(file);
+            } else {
+                toast.error('Archivo no válido', { description: 'Por favor, arrastra un archivo de imagen.' });
+            }
+        }
+    };
+    // --- FIN: LÓGICA DE DRAG & DROP ---
+
+    return (
+        <div
+            className={cn(
+                "relative group bg-muted/50 border-2 border-dashed border-border rounded-lg flex items-center justify-center overflow-hidden transition-all",
+                isDragging && "border-primary ring-2 ring-primary ring-offset-2", // Estilo cuando se arrastra sobre el elemento
+                className
+            )}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+        >
+            {imageUrl ? (
+                <>
+                    <Image src={imageUrl} alt={label} fill className="object-cover" />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                        <Button variant="destructive" size="icon" onClick={onDelete} disabled={isUploading}>
+                            <Trash2 />
+                            <span className="sr-only">Borrar {label}</span>
+                        </Button>
+                    </div>
+                </>
+            ) : (
+                <div className="text-center p-4">
+                    <input type="file" ref={inputRef} onChange={handleFileChange} accept="image/jpeg, image/png, image/webp" className="hidden" />
+                    <Button variant="ghost" className="h-auto p-4 flex flex-col items-center justify-center" onClick={() => inputRef.current?.click()} disabled={isUploading}>
+                        {isUploading
+                            ? <Loader2 className="h-8 w-8 text-muted-foreground animate-spin mb-2" />
+                            : <UploadCloud className="h-8 w-8 text-muted-foreground mb-2" />
+                        }
+                        <span className="text-label-12 font-normal text-muted-foreground">
+                            {isUploading ? 'Subiendo...' : (isDragging ? 'Suelta la imagen aquí' : label)}
+                        </span>
+                    </Button>
+                </div>
+            )}
         </div>
-      )}
-    </div>
-  );
+    );
 };
 
 
 export function CompCardManager({
+    model,
     modelId,
     initialCoverUrl = null,
     initialPortfolioUrl = null,
@@ -126,10 +144,16 @@ export function CompCardManager({
     const [coverPath, setCoverPath] = useState<string | null>(initialCoverPath);
     const [compCardPaths, setCompCardPaths] = useState<(string | null)[]>(Array(4).fill(null).map((_, i) => initialCompCardPaths[i] || null));
     const [portfolioPath, setPortfolioPath] = useState<string | null>(initialPortfolioPath);
-    
+
     // --- NUEVOS ESTADOS ---
     const [uploadingState, setUploadingState] = useState({ cover: false, compCards: [false, false, false, false], portfolio: false });
     const [cropState, setCropState] = useState<CropState | null>(null);
+
+    // --- ESTADOS DE DESCARGA ---
+    const [isDownloading, setIsDownloading] = useState(false);
+    const [downloadFormat, setDownloadFormat] = useState<'portada' | 'contraportada' | 'hoja_completa'>('hoja_completa');
+    const [fileType, setFileType] = useState<'jpg' | 'png' | 'zip' | 'pdf'>('pdf');
+    const printContainerId = 'compcard-print-container';
 
     // Abre el diálogo de recorte cuando se selecciona un archivo
     const handleFileSelect = (file: File, uploadType: CropState['uploadType'], aspect: number, slotIndex?: number) => {
@@ -157,7 +181,7 @@ export function CompCardManager({
 
         const { uploadType, slotIndex } = cropState;
         const category = uploadType === 'comp-card' ? 'Contraportada' : (uploadType === 'cover' ? 'Portada' : 'Portfolio');
-        
+
         if (uploadType === 'cover') setUploadingState(p => ({ ...p, cover: true }));
         else if (uploadType === 'portfolio') setUploadingState(p => ({ ...p, portfolio: true }));
         else if (slotIndex !== undefined) setUploadingState(p => {
@@ -173,15 +197,15 @@ export function CompCardManager({
             if (slotIndex !== undefined) {
                 formData.append('slotIndex', String(slotIndex));
             }
-            
+
             const result = await uploadModelImage(formData);
 
             if (!result || !result.success) {
-              throw new Error(result.error || "La subida falló.");
+                throw new Error(result.error || "La subida falló.");
             }
-            
+
             toast.success('Imagen subida y guardada.');
-            
+
             // La URL ahora es única, no necesitamos el timestamp
             const { path: returnedPath, publicUrl } = result;
 
@@ -204,14 +228,14 @@ export function CompCardManager({
             const message = error instanceof Error ? error.message : 'Ocurrió un error.';
             toast.error('Error al subir la imagen', { description: message });
         } finally {
-             if (uploadType === 'cover') setUploadingState(p => ({ ...p, cover: false }));
-             else if (uploadType === 'portfolio') setUploadingState(p => ({ ...p, portfolio: false }));
-             else if (slotIndex !== undefined) setUploadingState(p => {
-                 const newCompCards = [...p.compCards]; newCompCards[slotIndex] = false;
-                 return { ...p, compCards: newCompCards };
-             });
-             // Cierra el diálogo de recorte al finalizar
-             handleCropDialogClose();
+            if (uploadType === 'cover') setUploadingState(p => ({ ...p, cover: false }));
+            else if (uploadType === 'portfolio') setUploadingState(p => ({ ...p, portfolio: false }));
+            else if (slotIndex !== undefined) setUploadingState(p => {
+                const newCompCards = [...p.compCards]; newCompCards[slotIndex] = false;
+                return { ...p, compCards: newCompCards };
+            });
+            // Cierra el diálogo de recorte al finalizar
+            handleCropDialogClose();
         }
     };
 
@@ -254,67 +278,261 @@ export function CompCardManager({
         }
     };
 
+    // --- LÓGICA DE DESCARGA ---
+    const handleDownload = async () => {
+        setIsDownloading(true);
+        const fileName = `${model.alias || model.full_name || 'compcard'}_${downloadFormat}`.replace(/\s+/g, '_');
+
+        try {
+            const targetId = downloadFormat === 'portada'
+                ? `${printContainerId}-front`
+                : (downloadFormat === 'contraportada' ? `${printContainerId}-back` : printContainerId);
+
+            const element = document.getElementById(targetId);
+            if (!element) throw new Error(`No se encontró el elemento con ID: ${targetId}`);
+
+            console.log(`Element found: ${targetId}`, {
+                width: element.offsetWidth,
+                height: element.offsetHeight,
+                visible: window.getComputedStyle(element).visibility,
+                display: window.getComputedStyle(element).display
+            });
+
+            // Verificar si hay imágenes y esperar a que carguen
+            const imgs = Array.from(element.getElementsByTagName('img'));
+            console.log(`Checking ${imgs.length} images...`);
+            await Promise.all(imgs.map(img => {
+                if (img.complete) return Promise.resolve<void>(undefined);
+                return new Promise<void>((resolve) => {
+                    img.onload = () => resolve(undefined);
+                    img.onerror = () => {
+                        console.warn(`Failed to load image: ${img.src}`);
+                        resolve(undefined); // Resolve anyway to avoid blocking forever
+                    };
+                });
+            }));
+
+            // Esperar un poco más para que la pintura se complete
+            await new Promise<void>(resolve => setTimeout(() => resolve(undefined), 800));
+
+            const captureOptions = {
+                quality: 0.95,
+                pixelRatio: 2, // Mejorar calidad
+                cacheBust: true,
+                skipFonts: false, // Intentar con fuentes de nuevo pero con mejor manejo
+                style: {
+                    visibility: 'visible',
+                    opacity: '1',
+                    transform: 'none',
+                    left: '0',
+                    top: '0',
+                },
+                // Forzar un tamaño si offset es 0
+                width: downloadFormat === 'hoja_completa' ? 3300 : 1650,
+                height: 2550
+            };
+
+            let dataUrl: string;
+            if (fileType === 'png') {
+                dataUrl = await toPng(element, captureOptions);
+            } else {
+                dataUrl = await toJpeg(element, captureOptions);
+            }
+
+            if (!dataUrl || dataUrl.length < 100) {
+                throw new Error("La captura generó una imagen vacía o inválida.");
+            }
+
+            if (fileType === 'jpg' || fileType === 'png') {
+                const link = document.createElement('a');
+                link.download = `${fileName}.${fileType}`;
+                link.href = dataUrl;
+                link.click();
+            } else if (fileType === 'pdf') {
+                const dataUrl = await toJpeg(element, captureOptions);
+                // 11 x 8.5 pulgadas (l) o 8.5 x 11 (p)
+                // Usamos landscape para hoja completa (11x8.5)
+                const isLandscape = downloadFormat === 'hoja_completa';
+                const pdf = new jsPDF({
+                    orientation: isLandscape ? 'l' : 'p',
+                    unit: 'in',
+                    format: [isLandscape ? 11 : 5.5, 8.5] // Ajuste simple para portada/contraportada
+                });
+
+                const width = isLandscape ? 11 : 5.5;
+                const height = 8.5;
+
+                pdf.addImage(dataUrl, 'JPEG', 0, 0, width, height);
+                pdf.save(`${fileName}.pdf`);
+            } else if (fileType === 'zip') {
+                const zip = new JSZip();
+                const frontEl = document.getElementById(`${printContainerId}-front`);
+                const backEl = document.getElementById(`${printContainerId}-back`);
+
+                if (frontEl) {
+                    const frontData = await toJpeg(frontEl, { quality: 0.95, pixelRatio: 1 });
+                    zip.file(`${fileName}_portada.jpg`, frontData.split(',')[1], { base64: true });
+                }
+                if (backEl) {
+                    const backData = await toJpeg(backEl, { quality: 0.95, pixelRatio: 1 });
+                    zip.file(`${fileName}_contraportada.jpg`, backData.split(',')[1], { base64: true });
+                }
+
+                const content = await zip.generateAsync({ type: 'blob' });
+                const link = document.createElement('a');
+                link.download = `${fileName}.zip`;
+                link.href = URL.createObjectURL(content);
+                link.click();
+            }
+
+            toast.success('Descarga iniciada con éxito.');
+        } catch (error: any) {
+            console.error('Download error:', error);
+            // Si el error es un objeto vacío o no tiene mensaje, intentamos serializarlo mejor
+            const errorMsg = error?.message || (typeof error === 'object' ? JSON.stringify(error) : String(error));
+            toast.error(`Error al generar la descarga: ${errorMsg}`);
+        } finally {
+            setIsDownloading(false);
+        }
+    };
+
     return (
         <>
-        <Card>
-            <CardHeader>
-                <CardTitle>Imágenes del Talento</CardTitle>
-                <CardDescription>Sube y administra las imágenes de portada, portafolio y contraportada.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <div className="space-y-8">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-                        <div>
-                            <span className="text-label-14 text-muted-foreground mb-2 block">Portada (Slider)</span>
-                            <PhotoSlot
-                                className="aspect-[3/4]"
-                                imageUrl={coverUrl}
-                                onFileSelect={(file) => handleFileSelect(file, 'cover', 3/4)}
-                                onDelete={() => handleDelete('cover')}
-                                label="Subir Portada"
-                                isUploading={uploadingState.cover}
-                            />
-                        </div>
-                        <div>
-                            <span className="text-label-14 text-muted-foreground mb-2 block">Contraportada (4 Fotos)</span>
-                            <div className="grid grid-cols-2 gap-4">
-                                {Array.from({ length: 4 }).map((_, index) => (
-                                    <PhotoSlot
-                                        key={index}
-                                        className="aspect-square"
-                                        imageUrl={compCardUrls[index]}
-                                        onFileSelect={(file) => handleFileSelect(file, 'comp-card', 1/1, index)}
-                                        onDelete={() => handleDelete('comp-card', index)}
-                                        label={`Foto ${index + 1}`}
-                                        isUploading={uploadingState.compCards[index]}
-                                    />
-                                ))}
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-7">
+                    <div className="space-y-1.5">
+                        <CardTitle>Imágenes del Talento</CardTitle>
+                        <CardDescription>Sube y administra las imágenes de portada, portafolio y contraportada.</CardDescription>
+                    </div>
+
+                    {/* BOTÓN DE DESCARGA DROPDOWN */}
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" className="flex items-center gap-2">
+                                <Download className="h-4 w-4" />
+                                Descargar CompCard
+                                <ChevronDown className="h-3 w-3 opacity-50" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-56">
+                            <DropdownMenuLabel>Formato de descarga</DropdownMenuLabel>
+                            <DropdownMenuRadioGroup value={downloadFormat} onValueChange={(v) => setDownloadFormat(v as any)}>
+                                <DropdownMenuRadioItem value="portada">Portada</DropdownMenuRadioItem>
+                                <DropdownMenuRadioItem value="contraportada">Contraportada</DropdownMenuRadioItem>
+                                <DropdownMenuRadioItem value="hoja_completa">Hoja completa</DropdownMenuRadioItem>
+                            </DropdownMenuRadioGroup>
+
+                            <DropdownMenuSeparator />
+
+                            <DropdownMenuLabel>Formato de archivo</DropdownMenuLabel>
+                            <DropdownMenuRadioGroup value={fileType} onValueChange={(v) => setFileType(v as any)}>
+                                <DropdownMenuRadioItem value="jpg">JPG</DropdownMenuRadioItem>
+                                <DropdownMenuRadioItem value="png">PNG</DropdownMenuRadioItem>
+                                <DropdownMenuRadioItem value="pdf">PDF</DropdownMenuRadioItem>
+                                <DropdownMenuRadioItem value="zip">ZIP</DropdownMenuRadioItem>
+                            </DropdownMenuRadioGroup>
+
+                            <DropdownMenuSeparator />
+
+                            <div className="p-2">
+                                <Button
+                                    className="w-full"
+                                    size="sm"
+                                    onClick={handleDownload}
+                                    disabled={isDownloading}
+                                >
+                                    {isDownloading ? (
+                                        <>
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            Generando...
+                                        </>
+                                    ) : (
+                                        'Comenzar Descarga'
+                                    )}
+                                </Button>
+                            </div>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </CardHeader>
+                <CardContent>
+                    <div className="space-y-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                            <div>
+                                <span className="text-label-14 text-muted-foreground mb-2 block">Portada (Slider)</span>
+                                <PhotoSlot
+                                    className="aspect-[3/4]"
+                                    imageUrl={coverUrl}
+                                    onFileSelect={(file) => handleFileSelect(file, 'cover', 3 / 4)}
+                                    onDelete={() => handleDelete('cover')}
+                                    label="Subir Portada"
+                                    isUploading={uploadingState.cover}
+                                />
+                            </div>
+                            <div>
+                                <span className="text-label-14 text-muted-foreground mb-2 block">Contraportada (4 Fotos)</span>
+                                <div className="grid grid-cols-2 gap-4">
+                                    {Array.from({ length: 4 }).map((_, index) => (
+                                        <PhotoSlot
+                                            key={index}
+                                            className="aspect-square"
+                                            imageUrl={compCardUrls[index]}
+                                            onFileSelect={(file) => handleFileSelect(file, 'comp-card', 1 / 1, index)}
+                                            onDelete={() => handleDelete('comp-card', index)}
+                                            label={`Foto ${index + 1}`}
+                                            isUploading={uploadingState.compCards[index]}
+                                        />
+                                    ))}
+                                </div>
                             </div>
                         </div>
+                        <div>
+                            <span className="text-label-14 text-muted-foreground mb-2 block">Portafolio (Imagen Principal Horizontal)</span>
+                            <PhotoSlot
+                                className="aspect-[11/8.5] max-h-64"
+                                imageUrl={portfolioUrl}
+                                onFileSelect={(file) => handleFileSelect(file, 'portfolio', 11 / 8.5)}
+                                onDelete={() => handleDelete('portfolio')}
+                                label="Subir Imagen de Portafolio"
+                                isUploading={uploadingState.portfolio}
+                            />
+                        </div>
                     </div>
-                     <div>
-                        <span className="text-label-14 text-muted-foreground mb-2 block">Portafolio (Imagen Principal Horizontal)</span>
-                        <PhotoSlot
-                            className="aspect-[11/8.5] max-h-64"
-                            imageUrl={portfolioUrl}
-                            onFileSelect={(file) => handleFileSelect(file, 'portfolio', 11/8.5)}
-                            onDelete={() => handleDelete('portfolio')}
-                            label="Subir Imagen de Portafolio"
-                            isUploading={uploadingState.portfolio}
-                        />
-                    </div>
+                </CardContent>
+            </Card>
+
+            {cropState && (
+                <ImageCropDialog
+                    imageSrc={cropState.imageSrc}
+                    aspect={cropState.aspect}
+                    onCropComplete={handleUpload}
+                    onClose={handleCropDialogClose}
+                />
+            )}
+
+            {/* Template oculto para impresión/descarga */}
+            {/* Usamos opacity: 0.01 y un contenedor rígidamente dimensionado */}
+            <div style={{
+                position: 'fixed',
+                left: 0,
+                top: 0,
+                width: '1px',
+                height: '1px',
+                overflow: 'hidden',
+                pointerEvents: 'none',
+                opacity: 0.01,
+                zIndex: -9999
+            }}>
+                <div style={{ width: '3300px', height: '2550px', backgroundColor: '#ffffff' }}>
+                    <CompCardPrintTemplate
+                        model={{
+                            ...model,
+                            coverUrl,
+                            compCardUrls
+                        }}
+                        containerId={printContainerId}
+                    />
                 </div>
-            </CardContent>
-        </Card>
-        
-        {cropState && (
-            <ImageCropDialog
-                imageSrc={cropState.imageSrc}
-                aspect={cropState.aspect}
-                onCropComplete={handleUpload}
-                onClose={handleCropDialogClose}
-            />
-        )}
+            </div>
         </>
     );
 }

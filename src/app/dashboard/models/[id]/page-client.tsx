@@ -96,7 +96,7 @@ export default function ModelProfilePageClient({ initialModel }: ModelProfileCli
       hips_cm: initialModel.hips_cm ?? null,
       top_size: initialModel.top_size ?? null,
       pants_size: safeParseInt(initialModel.pants_size),
-  shoe_size_us: normalizeShoeSize(initialModel.shoe_size_us),
+      shoe_size_us: normalizeShoeSize(initialModel.shoe_size_us),
       instagram: initialModel.instagram ?? '',
       tiktok: initialModel.tiktok ?? '',
 
@@ -118,10 +118,10 @@ export default function ModelProfilePageClient({ initialModel }: ModelProfileCli
       type ActionResult = { success?: boolean; error?: string; errors?: Record<string, string> };
       const parsed = result as ActionResult;
       if (parsed.errors) {
-          const fieldErrors = parsed.errors as Record<string, string>;
-          for (const key of Object.keys(fieldErrors)) {
-            form.setError(key as keyof ModelFormData, { type: 'server', message: fieldErrors[key] });
-          }
+        const fieldErrors = parsed.errors as Record<string, string>;
+        for (const key of Object.keys(fieldErrors)) {
+          form.setError(key as keyof ModelFormData, { type: 'server', message: fieldErrors[key] });
+        }
         toast.error('Corrige los errores en el formulario.');
       } else {
         toast.error('Error al actualizar el modelo', {
@@ -169,9 +169,9 @@ export default function ModelProfilePageClient({ initialModel }: ModelProfileCli
             </>
           ) : (
             <>
-               <Button variant="outline" asChild className="flex-grow md:flex-grow-0">
+              <Button variant="outline" asChild className="flex-grow md:flex-grow-0">
                 <Link href="/dashboard/models">
-                   Volver
+                  Volver
                 </Link>
               </Button>
               <Button type="button" onClick={(e) => { e.preventDefault(); setTimeout(() => setIsEditing(true), 0); }} className="flex-grow md:flex-grow-0">
@@ -186,45 +186,46 @@ export default function ModelProfilePageClient({ initialModel }: ModelProfileCli
         <FormProvider {...form}>
           <form id="model-edit-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             <ModelForm
-                isSubmitting={isSubmitting}
+              isSubmitting={isSubmitting}
             />
           </form>
         </FormProvider>
       ) : (
         <div className="space-y-8">
-            <Card>
-                <CardHeader><CardTitle>Información Personal</CardTitle></CardHeader>
-                <CardContent>
-                    <Grid cols={3}>
-                        <InfoDisplay label="Nombre Completo" value={initialModel.full_name} />
-                        <InfoDisplay label="Alias" value={initialModel.alias} />
-                        <InfoDisplay label="Género" value={initialModel.gender} />
-                        <InfoDisplay label="DPI (CUI)" value={initialModel.national_id} />
-                        <InfoDisplay label="Teléfono" value={initialModel.phone_e164} />
-                        <InfoDisplay label="Email" value={initialModel.email} />
-                        <InfoDisplay label="País" value={initialModel.country} />
-                    </Grid>
-                </CardContent>
-            </Card>
-            <Card>
-                <CardHeader><CardTitle>Medidas y Tallas</CardTitle></CardHeader>
-                <CardContent>
-                    <Grid cols={2} className="md:grid-cols-3">
-                        <InfoDisplay label="Estatura (cm)" value={initialModel.height_cm} />
-                        {initialModel.gender === 'Male' ? <InfoDisplay label="Pecho (cm)" value={initialModel.chest_cm} /> : <InfoDisplay label="Busto (cm)" value={initialModel.bust_cm} />}
-                        <InfoDisplay label="Cintura (cm)" value={initialModel.waist_cm} />
-                        <InfoDisplay label="Cadera (cm)" value={initialModel.hips_cm} />
-                        <InfoDisplay label="Talla Camisa/Blusa" value={initialModel.top_size} />
-                        <InfoDisplay label="Talla Pantalón" value={initialModel.pants_size} />
-                        <InfoDisplay label="Talla Zapato (US)" value={initialModel.shoe_size_us} />
-                    </Grid>
-                </CardContent>
-            </Card>
+          <Card>
+            <CardHeader><CardTitle>Información Personal</CardTitle></CardHeader>
+            <CardContent>
+              <Grid cols={3}>
+                <InfoDisplay label="Nombre Completo" value={initialModel.full_name} />
+                <InfoDisplay label="Alias" value={initialModel.alias} />
+                <InfoDisplay label="Género" value={initialModel.gender} />
+                <InfoDisplay label="DPI (CUI)" value={initialModel.national_id} />
+                <InfoDisplay label="Teléfono" value={initialModel.phone_e164} />
+                <InfoDisplay label="Email" value={initialModel.email} />
+                <InfoDisplay label="País" value={initialModel.country} />
+              </Grid>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader><CardTitle>Medidas y Tallas</CardTitle></CardHeader>
+            <CardContent>
+              <Grid cols={2} className="md:grid-cols-3">
+                <InfoDisplay label="Estatura (cm)" value={initialModel.height_cm} />
+                {initialModel.gender === 'Male' ? <InfoDisplay label="Pecho (cm)" value={initialModel.chest_cm} /> : <InfoDisplay label="Busto (cm)" value={initialModel.bust_cm} />}
+                <InfoDisplay label="Cintura (cm)" value={initialModel.waist_cm} />
+                <InfoDisplay label="Cadera (cm)" value={initialModel.hips_cm} />
+                <InfoDisplay label="Talla Camisa/Blusa" value={initialModel.top_size} />
+                <InfoDisplay label="Talla Pantalón" value={initialModel.pants_size} />
+                <InfoDisplay label="Talla Zapato (US)" value={initialModel.shoe_size_us} />
+              </Grid>
+            </CardContent>
+          </Card>
         </div>
       )}
 
       {/* Aquí es donde se carga el modelo y se le pasan las URLs y Paths iniciales */}
       <CompCardManager
+        model={initialModel}
         modelId={initialModel.id}
         initialCoverUrl={initialModel.coverUrl ?? null}
         initialPortfolioUrl={initialModel.portfolioUrl ?? null}
