@@ -283,6 +283,10 @@ export function CompCardManager({
         setIsDownloading(true);
         const fileName = `${model.alias || model.full_name || 'compcard'}_${downloadFormat}`.replace(/\s+/g, '_');
 
+        // Obtener el contenedor wrapper
+        const wrapper = document.getElementById('compcard-wrapper');
+        let originalWrapperStyle: any = null;
+
         try {
             const targetId = downloadFormat === 'portada'
                 ? `${printContainerId}-front`
@@ -290,6 +294,29 @@ export function CompCardManager({
 
             const element = document.getElementById(targetId);
             if (!element) throw new Error(`No se encontró el elemento con ID: ${targetId}`);
+
+            // Hacer el wrapper temporalmente visible
+            if (wrapper) {
+                originalWrapperStyle = {
+                    position: wrapper.style.position,
+                    left: wrapper.style.left,
+                    top: wrapper.style.top,
+                    width: wrapper.style.width,
+                    height: wrapper.style.height,
+                    overflow: wrapper.style.overflow,
+                    opacity: wrapper.style.opacity,
+                    zIndex: wrapper.style.zIndex,
+                };
+
+                wrapper.style.position = 'fixed';
+                wrapper.style.left = '-9999px';
+                wrapper.style.top = '0';
+                wrapper.style.width = 'auto';
+                wrapper.style.height = 'auto';
+                wrapper.style.overflow = 'visible';
+                wrapper.style.opacity = '1';
+                wrapper.style.zIndex = '-1';
+            }
 
             console.log(`Element found: ${targetId}`, {
                 width: element.offsetWidth,
@@ -307,29 +334,19 @@ export function CompCardManager({
                     img.onload = () => resolve(undefined);
                     img.onerror = () => {
                         console.warn(`Failed to load image: ${img.src}`);
-                        resolve(undefined); // Resolve anyway to avoid blocking forever
+                        resolve(undefined);
                     };
                 });
             }));
 
             // Esperar un poco más para que la pintura se complete
-            await new Promise<void>(resolve => setTimeout(() => resolve(undefined), 800));
+            await new Promise<void>(resolve => setTimeout(() => resolve(undefined), 500));
 
             const captureOptions = {
                 quality: 0.95,
-                pixelRatio: 2, // Mejorar calidad
+                pixelRatio: 2,
                 cacheBust: true,
-                skipFonts: false, // Intentar con fuentes de nuevo pero con mejor manejo
-                style: {
-                    visibility: 'visible',
-                    opacity: '1',
-                    transform: 'none',
-                    left: '0',
-                    top: '0',
-                },
-                // Forzar un tamaño si offset es 0
-                width: downloadFormat === 'hoja_completa' ? 3300 : 1650,
-                height: 2550
+                skipFonts: false,
             };
 
             let dataUrl: string;
@@ -349,14 +366,11 @@ export function CompCardManager({
                 link.href = dataUrl;
                 link.click();
             } else if (fileType === 'pdf') {
-                const dataUrl = await toJpeg(element, captureOptions);
-                // 11 x 8.5 pulgadas (l) o 8.5 x 11 (p)
-                // Usamos landscape para hoja completa (11x8.5)
                 const isLandscape = downloadFormat === 'hoja_completa';
                 const pdf = new jsPDF({
                     orientation: isLandscape ? 'l' : 'p',
                     unit: 'in',
-                    format: [isLandscape ? 11 : 5.5, 8.5] // Ajuste simple para portada/contraportada
+                    format: [isLandscape ? 11 : 5.5, 8.5]
                 });
 
                 const width = isLandscape ? 11 : 5.5;
@@ -370,11 +384,11 @@ export function CompCardManager({
                 const backEl = document.getElementById(`${printContainerId}-back`);
 
                 if (frontEl) {
-                    const frontData = await toJpeg(frontEl, { quality: 0.95, pixelRatio: 1 });
+                    const frontData = await toJpeg(frontEl, captureOptions);
                     zip.file(`${fileName}_portada.jpg`, frontData.split(',')[1], { base64: true });
                 }
                 if (backEl) {
-                    const backData = await toJpeg(backEl, { quality: 0.95, pixelRatio: 1 });
+                    const backData = await toJpeg(backEl, captureOptions);
                     zip.file(`${fileName}_contraportada.jpg`, backData.split(',')[1], { base64: true });
                 }
 
@@ -388,10 +402,20 @@ export function CompCardManager({
             toast.success('Descarga iniciada con éxito.');
         } catch (error: any) {
             console.error('Download error:', error);
-            // Si el error es un objeto vacío o no tiene mensaje, intentamos serializarlo mejor
-            const errorMsg = error?.message || (typeof error === 'object' ? JSON.stringify(error) : String(error));
+            const errorMsg = error?.message || error?.toString?.() || 'Error desconocido al generar la descarga';
             toast.error(`Error al generar la descarga: ${errorMsg}`);
         } finally {
+            // Restaurar el estilo original del wrapper
+            if (wrapper && originalWrapperStyle) {
+                wrapper.style.position = originalWrapperStyle.position;
+                wrapper.style.left = originalWrapperStyle.left;
+                wrapper.style.top = originalWrapperStyle.top;
+                wrapper.style.width = originalWrapperStyle.width;
+                wrapper.style.height = originalWrapperStyle.height;
+                wrapper.style.overflow = originalWrapperStyle.overflow;
+                wrapper.style.opacity = originalWrapperStyle.opacity;
+                wrapper.style.zIndex = originalWrapperStyle.zIndex;
+            }
             setIsDownloading(false);
         }
     };
@@ -471,17 +495,35 @@ export function CompCardManager({
                             <div>
                                 <span className="text-label-14 text-muted-foreground mb-2 block">Contraportada (4 Fotos)</span>
                                 <div className="grid grid-cols-2 gap-4">
-                                    {Array.from({ length: 4 }).map((_, index) => (
-                                        <PhotoSlot
-                                            key={index}
-                                            className="aspect-square"
-                                            imageUrl={compCardUrls[index]}
-                                            onFileSelect={(file) => handleFileSelect(file, 'comp-card', 1 / 1, index)}
-                                            onDelete={() => handleDelete('comp-card', index)}
-                                            label={`Foto ${index + 1}`}
-                                            isUploading={uploadingState.compCards[index]}
-                                        />
-                                    ))}
+                                    {Array.from({ length: 4 }).map((_, index) => {
+                                        // Ratio calculado de CompCardPrintTemplate (735px / 1031px)
+                                        const aspectRatioClass = "aspect-[735/1031]";
+
+                                        if (index === 1) {
+                                            return (
+                                                <div
+                                                    key={index}
+                                                    className={`${aspectRatioClass} bg-muted/30 border-2 border-dashed border-border/50 rounded-lg flex items-center justify-center p-4 text-center`}
+                                                >
+                                                    <span className="text-muted-foreground/50 text-sm">
+                                                        Reservado para Información
+                                                    </span>
+                                                </div>
+                                            );
+                                        }
+
+                                        return (
+                                            <PhotoSlot
+                                                key={index}
+                                                className={aspectRatioClass}
+                                                imageUrl={compCardUrls[index]}
+                                                onFileSelect={(file) => handleFileSelect(file, 'comp-card', 735 / 1031, index)}
+                                                onDelete={() => handleDelete('comp-card', index)}
+                                                label={`Foto ${index + 1}`}
+                                                isUploading={uploadingState.compCards[index]}
+                                            />
+                                        );
+                                    })}
                                 </div>
                             </div>
                         </div>
@@ -511,17 +553,20 @@ export function CompCardManager({
 
             {/* Template oculto para impresión/descarga */}
             {/* Usamos opacity: 0.01 y un contenedor rígidamente dimensionado */}
-            <div style={{
-                position: 'fixed',
-                left: 0,
-                top: 0,
-                width: '1px',
-                height: '1px',
-                overflow: 'hidden',
-                pointerEvents: 'none',
-                opacity: 0.01,
-                zIndex: -9999
-            }}>
+            <div
+                id="compcard-wrapper"
+                style={{
+                    position: 'fixed',
+                    left: 0,
+                    top: 0,
+                    width: '1px',
+                    height: '1px',
+                    overflow: 'hidden',
+                    pointerEvents: 'none',
+                    opacity: 0.01,
+                    zIndex: -9999
+                }}
+            >
                 <div style={{ width: '3300px', height: '2550px', backgroundColor: '#ffffff' }}>
                     <CompCardPrintTemplate
                         model={{
