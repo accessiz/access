@@ -5,7 +5,7 @@ import React, { useState, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { UploadCloud, Trash2, Loader2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, mediaUrl } from '@/lib/utils';
 import { toast } from 'sonner';
 import Image from 'next/image';
 import { uploadModelImage, deleteModelImage } from '@/lib/actions/storage';
@@ -151,7 +151,7 @@ export function CompCardManager({
 
     // --- ESTADOS DE DESCARGA ---
     const [isDownloading, setIsDownloading] = useState(false);
-    const [downloadFormat, setDownloadFormat] = useState<'portada' | 'contraportada' | 'hoja_completa'>('hoja_completa');
+    const [downloadFormat, setDownloadFormat] = useState<'portada' | 'contraportada' | 'hoja_completa' | 'todos'>('hoja_completa');
     const [fileType, setFileType] = useState<'jpg' | 'png' | 'zip' | 'pdf'>('pdf');
     const printContainerId = 'compcard-print-container';
 
@@ -278,38 +278,38 @@ export function CompCardManager({
         }
     };
 
-    // --- LÓGICA DE DESCARGA ---
+    // --- LÓGICA DE DESCARGA ROBUSTA ---
     const handleDownload = async () => {
         setIsDownloading(true);
-        const fileName = `${model.alias || model.full_name || 'compcard'}_${downloadFormat}`.replace(/\s+/g, '_');
+        const fileName = `${model.alias || model.full_name || 'compcard'}`.replace(/\s+/g, '_');
 
-        // Obtener el contenedor wrapper
         const wrapper = document.getElementById('compcard-wrapper');
         let originalWrapperStyle: any = null;
 
         try {
-            const targetId = downloadFormat === 'portada'
-                ? `${printContainerId}-front`
-                : (downloadFormat === 'contraportada' ? `${printContainerId}-back` : printContainerId);
+            // Definir qué elementos capturar según el formato elegido
+            const targets: { id: string; suffix: string; label: string }[] = [];
 
-            console.log(`[Download] Starting download process for: ${targetId}, format: ${fileType}`);
-
-            const element = document.getElementById(targetId);
-            if (!element) {
-                console.error(`[Download] Element not found: ${targetId}`);
-                throw new Error(`No se encontró el elemento con ID: ${targetId}. Por favor, refresca la página e intenta de nuevo.`);
+            if (downloadFormat === 'todos') {
+                targets.push(
+                    { id: `${printContainerId}-front`, suffix: 'portada', label: 'Portada' },
+                    { id: `${printContainerId}-back`, suffix: 'contraportada', label: 'Contraportada' },
+                    { id: printContainerId, suffix: 'hoja_completa', label: 'Hoja Completa' }
+                );
+            } else {
+                const targetId = downloadFormat === 'portada'
+                    ? `${printContainerId}-front`
+                    : (downloadFormat === 'contraportada' ? `${printContainerId}-back` : printContainerId);
+                targets.push({ id: targetId, suffix: downloadFormat, label: downloadFormat });
             }
 
-            // Validar que el elemento tenga contenido visible
-            if (element.offsetWidth === 0 || element.offsetHeight === 0) {
-                console.error(`[Download] Element has zero dimensions`, {
-                    width: element.offsetWidth,
-                    height: element.offsetHeight
-                });
-                throw new Error('El elemento a descargar no tiene dimensiones visibles. Por favor, verifica que las imágenes estén cargadas.');
+            // Validar existencia de elementos
+            for (const t of targets) {
+                const el = document.getElementById(t.id);
+                if (!el) throw new Error(`Elementos necesarios no encontrados (${t.label}). Refresca la página.`);
             }
 
-            // Hacer el wrapper temporalmente visible
+            // 1. Preparar el wrapper (OFFSCREEN)
             if (wrapper) {
                 originalWrapperStyle = {
                     position: wrapper.style.position,
@@ -323,66 +323,60 @@ export function CompCardManager({
                 };
 
                 wrapper.style.position = 'fixed';
-                wrapper.style.left = '-9999px';
+                wrapper.style.left = '-10000px';
                 wrapper.style.top = '0';
-                wrapper.style.width = 'auto';
-                wrapper.style.height = 'auto';
+                wrapper.style.width = '3300px';
+                wrapper.style.height = '2550px';
                 wrapper.style.overflow = 'visible';
                 wrapper.style.opacity = '1';
-                wrapper.style.zIndex = '-1';
+                wrapper.style.zIndex = '-9999';
             }
 
-            console.log(`[Download] Element validated:`, {
-                id: targetId,
-                width: element.offsetWidth,
-                height: element.offsetHeight,
-                visible: window.getComputedStyle(element).visibility,
-                display: window.getComputedStyle(element).display
+            // 2. Dar tiempo al navegador (Reflow)
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            // 3. Esperar carga de imágenes
+            // Escaneamos TODOS los elementos involucrados
+            const allImages: HTMLImageElement[] = [];
+            targets.forEach(t => {
+                const el = document.getElementById(t.id);
+                if (el) allImages.push(...Array.from(el.getElementsByTagName('img')));
             });
 
-            // Verificar si hay imágenes y esperar a que carguen
-            const imgs = Array.from(element.getElementsByTagName('img'));
-            console.log(`[Download] Checking ${imgs.length} images...`);
+            console.log(`[Download] Validando ${allImages.length} imágenes...`);
 
-            // Validar imágenes y detectar posibles problemas CORS
-            const imageLoadResults = await Promise.all(imgs.map(async (img, index) => {
-                if (img.complete && img.naturalHeight !== 0) {
-                    console.log(`[Download] Image ${index + 1} already loaded:`, img.src);
-                    return { loaded: true, src: img.src };
-                }
+            await Promise.all(allImages.map(img => {
+                if (img.complete && img.naturalHeight > 0) return Promise.resolve();
+                if (!img.src) return Promise.resolve();
 
-                return new Promise<{ loaded: boolean; src: string; error?: string }>((resolve) => {
-                    const timeout = setTimeout(() => {
-                        console.warn(`[Download] Image ${index + 1} timeout:`, img.src);
-                        resolve({ loaded: false, src: img.src, error: 'Timeout' });
-                    }, 10000); // 10 second timeout
+                return new Promise((resolve) => {
+                    const finish = () => resolve(true);
 
-                    img.onload = () => {
-                        clearTimeout(timeout);
-                        console.log(`[Download] Image ${index + 1} loaded:`, img.src);
-                        resolve({ loaded: true, src: img.src });
+                    if (img.complete && img.naturalHeight > 0) { finish(); return; }
+
+                    const onLoad = () => { cleanup(); finish(); };
+                    const onError = () => {
+                        console.warn('Imagen falló al cargar:', img.src);
+                        cleanup(); finish();
+                    };
+                    const cleanup = () => {
+                        img.removeEventListener('load', onLoad);
+                        img.removeEventListener('error', onError);
                     };
 
-                    img.onerror = (e) => {
-                        clearTimeout(timeout);
-                        console.error(`[Download] Image ${index + 1} error:`, img.src, e);
-                        resolve({ loaded: false, src: img.src, error: 'Load failed' });
-                    };
+                    img.addEventListener('load', onLoad);
+                    img.addEventListener('error', onError);
+
+                    setTimeout(() => {
+                        console.warn('Timeout imagen:', img.src);
+                        cleanup();
+                        finish();
+                    }, 5000);
                 });
             }));
 
-            // Verificar si alguna imagen falló en cargar
-            const failedImages = imageLoadResults.filter(r => !r.loaded);
-            if (failedImages.length > 0) {
-                console.warn(`[Download] ${failedImages.length} images failed to load:`, failedImages);
-                toast.error(`Algunas imágenes no se cargaron correctamente. La descarga puede estar incompleta.`, {
-                    description: `${failedImages.length} imagen(es) fallaron.`
-                });
-            }
-
-            // Esperar un poco más para que la pintura se complete
-            console.log(`[Download] Waiting for render completion...`);
-            await new Promise<void>(resolve => setTimeout(() => resolve(undefined), 500));
+            // 4. Delay de estabilización final
+            await new Promise(resolve => setTimeout(resolve, 800));
 
             const captureOptions = {
                 quality: 0.95,
@@ -391,136 +385,140 @@ export function CompCardManager({
                 skipFonts: false,
             };
 
-            console.log(`[Download] Capturing element as ${fileType}...`);
-            let dataUrl: string;
+            const validateDataUrl = (data: string, type: 'png' | 'jpeg') => {
+                const header = type === 'png' ? 'data:image/png' : 'data:image/jpeg';
+                return data && data.startsWith(header) && data.length > 1000;
+            };
 
-            try {
-                if (fileType === 'png') {
-                    dataUrl = await toPng(element, captureOptions);
-                } else {
-                    dataUrl = await toJpeg(element, captureOptions);
-                }
-            } catch (captureError: any) {
-                console.error(`[Download] Capture failed:`, captureError);
-
-                // Detectar errores CORS
-                if (captureError?.message?.includes('tainted') ||
-                    captureError?.message?.includes('cross-origin') ||
-                    captureError?.message?.includes('CORS')) {
-                    throw new Error('Error de CORS: Las imágenes externas están bloqueando la descarga. Asegúrate de que las imágenes estén hosteadas en el mismo dominio o permitan CORS.');
+            // 5. Generar contenido y Descargar
+            if (fileType === 'zip') {
+                if (downloadFormat !== 'todos') {
+                    throw new Error('La descarga ZIP solo está disponible para "Todos los formatos".');
                 }
 
-                // Lanzar error con más contexto
-                throw new Error(`Error al capturar la imagen: ${captureError?.message || 'Error desconocido en html-to-image'}. Verifica la consola para más detalles.`);
-            }
-
-            if (!dataUrl || dataUrl.length < 100) {
-                console.error(`[Download] Invalid data URL generated:`, {
-                    exists: !!dataUrl,
-                    length: dataUrl?.length || 0
-                });
-                throw new Error("La captura generó una imagen vacía o inválida. Verifica que todas las imágenes estén cargadas correctamente.");
-            }
-
-            console.log(`[Download] Capture successful, data URL length: ${dataUrl.length}`);
-
-            if (fileType === 'jpg' || fileType === 'png') {
-                console.log(`[Download] Downloading as ${fileType}...`);
-                const link = document.createElement('a');
-                link.download = `${fileName}.${fileType}`;
-                link.href = dataUrl;
-                link.click();
-            } else if (fileType === 'pdf') {
-                console.log(`[Download] Generating PDF...`);
-                const isLandscape = downloadFormat === 'hoja_completa';
-                const pdf = new jsPDF({
-                    orientation: isLandscape ? 'l' : 'p',
-                    unit: 'in',
-                    format: [isLandscape ? 11 : 5.5, 8.5]
-                });
-
-                const width = isLandscape ? 11 : 5.5;
-                const height = 8.5;
-
-                pdf.addImage(dataUrl, 'JPEG', 0, 0, width, height);
-                pdf.save(`${fileName}.pdf`);
-            } else if (fileType === 'zip') {
-                console.log(`[Download] Generating ZIP archive...`);
                 const zip = new JSZip();
-                const frontEl = document.getElementById(`${printContainerId}-front`);
-                const backEl = document.getElementById(`${printContainerId}-back`);
 
-                if (!frontEl || !backEl) {
-                    throw new Error('No se encontraron los elementos de portada y contraportada para crear el archivo ZIP.');
-                }
+                for (const t of targets) {
+                    const el = document.getElementById(t.id);
+                    if (!el) continue;
 
-                try {
-                    const frontData = await toJpeg(frontEl, captureOptions);
-                    zip.file(`${fileName}_portada.jpg`, frontData.split(',')[1], { base64: true });
-                    console.log(`[Download] Front cover added to ZIP`);
-                } catch (frontError: any) {
-                    console.error(`[Download] Failed to capture front cover:`, frontError);
-                    throw new Error(`Error al capturar la portada: ${frontError?.message || 'Error desconocido'}`);
-                }
-
-                try {
-                    const backData = await toJpeg(backEl, captureOptions);
-                    zip.file(`${fileName}_contraportada.jpg`, backData.split(',')[1], { base64: true });
-                    console.log(`[Download] Back cover added to ZIP`);
-                } catch (backError: any) {
-                    console.error(`[Download] Failed to capture back cover:`, backError);
-                    throw new Error(`Error al capturar la contraportada: ${backError?.message || 'Error desconocido'}`);
+                    // Siempre capturamos como JPEG para el ZIP para ahorrar espacio, o según preferencia.
+                    // Usualmente comp cards son JPEGs.
+                    const data = await toJpeg(el, captureOptions);
+                    if (validateDataUrl(data, 'jpeg')) {
+                        zip.file(`${fileName}_${t.suffix}.jpg`, data.split(',')[1], { base64: true });
+                    }
                 }
 
                 const content = await zip.generateAsync({ type: 'blob' });
+                const url = URL.createObjectURL(content);
+
                 const link = document.createElement('a');
-                link.download = `${fileName}.zip`;
-                link.href = URL.createObjectURL(content);
+                link.href = url;
+                link.download = `${fileName}_completo.zip`;
+                document.body.appendChild(link); // Importante: agregar al DOM
                 link.click();
-            }
+                document.body.removeChild(link); // Limpiar
+                setTimeout(() => URL.revokeObjectURL(url), 1000); // Revocar tras uso
 
-            console.log(`[Download] Download completed successfully`);
-            toast.success('Descarga iniciada con éxito.');
-        } catch (error: any) {
-            console.error('[Download] Error details:', {
-                message: error?.message,
-                name: error?.name,
-                stack: error?.stack,
-                fullError: error
-            });
+            } else {
+                // Caso individual (JPG, PNG, PDF)
+                // Si el usuario seleccionó "Todos" pero un formato NO ZIP, 
+                // descargamos solo la hoja completa o generamos error?
+                // Comportamiento lógico: Si es "Todos" y no es ZIP, generamos hoja completa PDF multipágina o iteramos.
+                // Para simplificar y evitar descargas múltiples bloqueadas, si es "Todos" y NO ZIP, forzamos ZIP o descargamos hoja completa combinada.
+                // Pero según UI constraints, ZIP solo se habilita con "Todos".
+                // Asumiremos que si llega aquí con "Todos" y no ZIP, es un caso borde, fallback a Hoja Completa.
 
-            // Mejorar el mensaje de error
-            let errorMsg = 'Error desconocido al generar la descarga';
+                let targetId = downloadFormat === 'todos' ? printContainerId : targets[0].id;
+                let finalSuffix = downloadFormat === 'todos' ? 'hoja_completa' : downloadFormat;
 
-            if (error?.message) {
-                errorMsg = error.message;
-            } else if (typeof error === 'string') {
-                errorMsg = error;
-            } else if (error?.toString && typeof error.toString === 'function') {
-                const errorStr = error.toString();
-                if (errorStr !== '[object Object]') {
-                    errorMsg = errorStr;
+                // Si el usuario elige "Todos" y "PDF", podríamos hacer un PDF de 3 páginas.
+                // IMPLEMENTACIÓN MEJORADA: PDF Multipágina para "Todos"
+                if (downloadFormat === 'todos' && fileType === 'pdf') {
+                    console.log('[Download] Generando PDF multipágina...');
+                    const pdf = new jsPDF({
+                        orientation: 'landscape',
+                        unit: 'in',
+                        format: [11, 8.5] // Hoja completa landscape por defecto
+                    });
+
+                    // Página 1: Hoja Completa
+                    const elFull = document.getElementById(printContainerId);
+                    if (elFull) {
+                        const dFull = await toJpeg(elFull, captureOptions);
+                        pdf.addImage(dFull, 'JPEG', 0, 0, 11, 8.5);
+                    }
+
+                    // Página 2: Portada (Portrait)
+                    const elFront = document.getElementById(`${printContainerId}-front`);
+                    if (elFront) {
+                        pdf.addPage([5.5, 8.5], 'p');
+                        const dFront = await toJpeg(elFront, captureOptions);
+                        pdf.addImage(dFront, 'JPEG', 0, 0, 5.5, 8.5);
+                    }
+
+                    // Página 3: Contraportada (Portrait)
+                    const elBack = document.getElementById(`${printContainerId}-back`);
+                    if (elBack) {
+                        pdf.addPage([5.5, 8.5], 'p');
+                        const dBack = await toJpeg(elBack, captureOptions);
+                        pdf.addImage(dBack, 'JPEG', 0, 0, 5.5, 8.5);
+                    }
+
+                    pdf.save(`${fileName}_book.pdf`);
+
+                } else {
+                    // Descarga simple (JPG, PNG, PDF simple)
+                    const el = document.getElementById(targetId);
+                    if (!el) throw new Error('Elemento no encontrado');
+
+                    let dataUrl = '';
+                    if (fileType === 'png') dataUrl = await toPng(el, captureOptions);
+                    else dataUrl = await toJpeg(el, captureOptions); // PDF usa JPEG intermedio
+
+                    if (!validateDataUrl(dataUrl, fileType === 'png' ? 'png' : 'jpeg')) {
+                        throw new Error('Imagen generada inválida');
+                    }
+
+                    if (fileType === 'pdf') {
+                        const isLandscape = finalSuffix === 'hoja_completa';
+                        const pdf = new jsPDF({
+                            orientation: isLandscape ? 'l' : 'p',
+                            unit: 'in',
+                            format: [isLandscape ? 11 : 5.5, 8.5]
+                        });
+                        const w = isLandscape ? 11 : 5.5;
+                        const h = 8.5;
+                        pdf.addImage(dataUrl, 'JPEG', 0, 0, w, h);
+                        pdf.save(`${fileName}.pdf`);
+                    } else {
+                        // Descarga directa de imagen
+                        const link = document.createElement('a');
+                        link.download = `${fileName}_${finalSuffix}.${fileType}`;
+                        link.href = dataUrl;
+                        document.body.appendChild(link); // Agregar al DOM
+                        link.click();
+                        document.body.removeChild(link); // Remover
+                    }
                 }
             }
 
-            toast.error(`Error al generar la descarga`, {
-                description: errorMsg,
-                duration: 5000
-            });
+            toast.success('Descarga completada con éxito.');
+
+        } catch (error: any) {
+            console.error('Error en descarga:', error);
+            if (error?.message?.includes('tainted') || error?.message?.includes('CORS')) {
+                toast.error('Error de CORS', { description: 'Recarga la página e intenta de nuevo.' });
+            } else {
+                toast.error('Error al generar', { description: error.message });
+            }
         } finally {
-            // Restaurar el estilo original del wrapper
             if (wrapper && originalWrapperStyle) {
-                wrapper.style.position = originalWrapperStyle.position;
-                wrapper.style.left = originalWrapperStyle.left;
-                wrapper.style.top = originalWrapperStyle.top;
-                wrapper.style.width = originalWrapperStyle.width;
-                wrapper.style.height = originalWrapperStyle.height;
-                wrapper.style.overflow = originalWrapperStyle.overflow;
-                wrapper.style.opacity = originalWrapperStyle.opacity;
-                wrapper.style.zIndex = originalWrapperStyle.zIndex;
+                // Restore wrapper
+                Object.assign(wrapper.style, originalWrapperStyle);
             }
             setIsDownloading(false);
-            console.log(`[Download] Cleanup completed`);
         }
     };
 
@@ -543,21 +541,25 @@ export function CompCardManager({
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-56">
-                            <DropdownMenuLabel>Formato de descarga</DropdownMenuLabel>
+                            <DropdownMenuLabel>Qué descargar</DropdownMenuLabel>
                             <DropdownMenuRadioGroup value={downloadFormat} onValueChange={(v) => setDownloadFormat(v as any)}>
-                                <DropdownMenuRadioItem value="portada">Portada</DropdownMenuRadioItem>
-                                <DropdownMenuRadioItem value="contraportada">Contraportada</DropdownMenuRadioItem>
                                 <DropdownMenuRadioItem value="hoja_completa">Hoja completa</DropdownMenuRadioItem>
+                                <DropdownMenuRadioItem value="portada">Solo Portada</DropdownMenuRadioItem>
+                                <DropdownMenuRadioItem value="contraportada">Solo Contraportada</DropdownMenuRadioItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuRadioItem value="todos" className="font-semibold text-primary">Todos los formatos</DropdownMenuRadioItem>
                             </DropdownMenuRadioGroup>
 
                             <DropdownMenuSeparator />
 
                             <DropdownMenuLabel>Formato de archivo</DropdownMenuLabel>
                             <DropdownMenuRadioGroup value={fileType} onValueChange={(v) => setFileType(v as any)}>
+                                <DropdownMenuRadioItem value="pdf">PDF</DropdownMenuRadioItem>
                                 <DropdownMenuRadioItem value="jpg">JPG</DropdownMenuRadioItem>
                                 <DropdownMenuRadioItem value="png">PNG</DropdownMenuRadioItem>
-                                <DropdownMenuRadioItem value="pdf">PDF</DropdownMenuRadioItem>
-                                <DropdownMenuRadioItem value="zip">ZIP</DropdownMenuRadioItem>
+                                {downloadFormat === 'todos' && (
+                                    <DropdownMenuRadioItem value="zip">ZIP (Pack Completo)</DropdownMenuRadioItem>
+                                )}
                             </DropdownMenuRadioGroup>
 
                             <DropdownMenuSeparator />
@@ -572,10 +574,10 @@ export function CompCardManager({
                                     {isDownloading ? (
                                         <>
                                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                            Generando...
+                                            Procesando...
                                         </>
                                     ) : (
-                                        'Comenzar Descarga'
+                                        'Descargar'
                                     )}
                                 </Button>
                             </div>
@@ -675,8 +677,8 @@ export function CompCardManager({
                     <CompCardPrintTemplate
                         model={{
                             ...model,
-                            coverUrl,
-                            compCardUrls
+                            coverUrl: mediaUrl(coverUrl) ?? null,
+                            compCardUrls: compCardUrls.map(url => mediaUrl(url) ?? null)
                         }}
                         containerId={printContainerId}
                     />
