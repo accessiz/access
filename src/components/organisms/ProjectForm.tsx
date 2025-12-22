@@ -1,3 +1,4 @@
+
 'use client'
 
 import { useActionState, useEffect } from 'react';
@@ -86,13 +87,6 @@ export function ProjectForm() {
               <Input {...form.register('client_name')} placeholder="Ej: Tiendas El Sol" />
               {form.formState.errors.client_name && <p className="text-label-12 text-destructive mt-1">{form.formState.errors.client_name.message}</p>}
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password">Contraseña (Opcional)</Label>
-              <Input type="password" {...form.register('password')} placeholder="Para proteger el enlace del cliente" />
-              {form.formState.errors.password && <p className="text-label-12 text-destructive mt-1">{form.formState.errors.password.message}</p>}
-              <p className="text-label-12 text-muted-foreground">Si dejas esto en blanco, el enlace será público.</p>
-            </div>
           </div>
         </div>
 
@@ -127,6 +121,19 @@ export function ProjectForm() {
             </Button>
           </div>
         </div>
+
+        <div className="space-y-4">
+          <h2 className="text-heading-20">Seguridad del Proyecto</h2>
+          <div className="border bg-card rounded-lg p-8 grid md:grid-cols-2 gap-x-8 gap-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="password">Contraseña (Opcional)</Label>
+              <Input type="password" {...form.register('password')} placeholder="Para proteger el enlace del cliente" />
+              {form.formState.errors.password && <p className="text-label-12 text-destructive mt-1">{form.formState.errors.password.message}</p>}
+              <p className="text-label-12 text-muted-foreground">Si dejas esto en blanco, el enlace será público.</p>
+            </div>
+          </div>
+        </div>
+
       </form>
     </FormProvider>
   );
