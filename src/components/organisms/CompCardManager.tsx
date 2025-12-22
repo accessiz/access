@@ -293,7 +293,19 @@ export function CompCardManager({
     // --- LÓGICA DE DESCARGA ROBUSTA ---
     const handleDownload = async () => {
         setIsDownloading(true);
-        const fileName = `${model.alias || model.full_name || 'compcard'}`.replace(/\s+/g, '_');
+        // Sanitize filename more robustly
+        let fileName = (model.alias || model.full_name || 'compcard')
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "") // Quitar acentos
+            .replace(/[^a-zA-Z0-9]/g, '_') // Solo alfanuméricos y guiones
+            .replace(/_+/g, '_') // Consolidar guiones múltiples
+            .replace(/^_|_$/g, '') // Quitar guiones al inicio/fin
+            .toLowerCase();
+
+        // Fallback si el nombre quedó vacío después de sanitización
+        if (!fileName || fileName.length === 0) {
+            fileName = 'compcard';
+        }
 
         const wrapper = document.getElementById('compcard-wrapper');
         let originalWrapperStyle: any = null;
@@ -422,16 +434,20 @@ export function CompCardManager({
                     }
                 }
 
-                const content = await zip.generateAsync({ type: 'blob' });
+                const content = await zip.generateAsync({
+                    type: 'blob',
+                    mimeType: 'application/zip'
+                });
                 const url = URL.createObjectURL(content);
 
                 const link = document.createElement('a');
+                link.download = `${fileName}_completo.zip`; // Set download BEFORE href
                 link.href = url;
-                link.download = `${fileName}_completo.zip`;
-                document.body.appendChild(link); // Importante: agregar al DOM
+                link.style.display = 'none';
+                document.body.appendChild(link);
                 link.click();
-                document.body.removeChild(link); // Limpiar
-                setTimeout(() => URL.revokeObjectURL(url), 1000); // Revocar tras uso
+                document.body.removeChild(link);
+                setTimeout(() => URL.revokeObjectURL(url), 100);
 
             } else {
                 // Caso individual (JPG, PNG, PDF)
@@ -503,15 +519,25 @@ export function CompCardManager({
                         const w = isLandscape ? 11 : 5.5;
                         const h = 8.5;
                         pdf.addImage(dataUrl, 'JPEG', 0, 0, w, h);
-                        pdf.save(`${fileName}.pdf`);
+                        pdf.save(`${fileName}_${finalSuffix}.pdf`);
                     } else {
-                        // Descarga directa de imagen
+                        // Descarga de imagen convirtiendo dataUrl a Blob para asegurar MIME type
+                        const response = await fetch(dataUrl);
+                        const blob = await response.blob();
+                        const blobWithMime = new Blob([blob], { type: fileType === 'png' ? 'image/png' : 'image/jpeg' });
+                        const url = URL.createObjectURL(blobWithMime);
+
                         const link = document.createElement('a');
-                        link.download = `${fileName}_${finalSuffix}.${fileType}`;
-                        link.href = dataUrl;
-                        document.body.appendChild(link); // Agregar al DOM
+                        link.download = `${fileName}_${finalSuffix}.${fileType}`; // Set download BEFORE href
+                        link.href = url;
+                        link.style.display = 'none';
+                        document.body.appendChild(link);
                         link.click();
-                        document.body.removeChild(link); // Remover
+                        // Clean up immediately after click
+                        setTimeout(() => {
+                            document.body.removeChild(link);
+                            URL.revokeObjectURL(url);
+                        }, 100);
                     }
                 }
             }

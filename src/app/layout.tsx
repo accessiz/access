@@ -1,14 +1,12 @@
 import type { Metadata } from "next";
-import { GeistSans } from 'geist/font/sans';
+import { Inter } from 'next/font/google';
 import "./globals.css";
 import { AuthProvider } from "@/hooks/useAuth";
-import { Toaster } from "@/components/ui/sonner"; // Importamos el Toaster
+import { Toaster } from "@/components/ui/sonner";
 
-const geist = GeistSans;
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  // Solución final para la advertencia de metadataBase:
-  // Se utiliza la variable de entorno para construir la URL base dinámicamente.
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
   title: "IZ ACCESS",
   description: "Portal de Gestión para IZ Management.",
@@ -36,7 +34,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" className="dark" suppressHydrationWarning>
-      <body className={geist.className}>
+      <body className={inter.className}>
         <AuthProvider>
           {children}
           <Toaster />

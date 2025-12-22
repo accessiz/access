@@ -7,7 +7,7 @@ import { SmartCroppedImage } from '@/components/atoms/SmartCroppedImage';
 // Dimensiones exactas de la ficha técnica (11 x 8.5 pulgadas a 300 DPI)
 const PAGE_WIDTH = 3300;
 const PAGE_HEIGHT = 2550;
-const GAP_SIZE = 72;
+const GAP_SIZE = 144; // Gap entre columnas (72px margen derecho + 72px margen izquierdo)
 const PADDING_SIZE = 72;
 
 interface Props {
@@ -49,7 +49,7 @@ export function CompCardPrintTemplate({ model, containerId }: Props) {
                 flexDirection: 'row',
                 boxSizing: 'border-box',
                 color: '#000000',
-                fontFamily: 'sans-serif', // Usar sans-serif base para evitar problemas de fuentes
+                fontFamily: 'Inter, sans-serif', // Usar Inter como fuente principal
                 visibility: 'visible',
             }}
         >

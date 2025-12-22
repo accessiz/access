@@ -39,11 +39,11 @@ Sigue estos pasos para poner en marcha el entorno de desarrollo.
 -   **Animaciones**: GSAP (GreenSock Animation Platform)
 -   **Componentes**: React
 
-## Design System (Tema Geist/Vercel)
+## Design System (Tema Inter)
 
 - Tailwind está conectado a variables CSS (ver `src/app/globals.css`). Puedes usar utilidades como `bg-background`, `text-foreground`, `border-border`, `bg-card`, etc.
 - El radio de borde usa `--radius`. Clases como `rounded-lg` respetan esa variable global para mantener consistencia.
-- Se añadió una escala tipográfica con roles Geist:
+- Se añadió una escala tipográfica con roles personalizados:
     - Encabezados: `text-heading-72`, `text-heading-64`, `text-heading-56`, `text-heading-48`, `text-heading-40`, `text-heading-32`, `text-heading-24`, `text-heading-20`, `text-heading-16`, `text-heading-14`.
     - Botones: `text-button-16`, `text-button-14`, `text-button-12`.
     - Labels: `text-label-20`, `text-label-18`, `text-label-16`, `text-label-14`, `text-label-13`, `text-label-12` (+ variantes `-mono`).
@@ -55,6 +55,6 @@ Usa la escala de Tailwind (múltiplos de 4/8). Evita valores arbitrarios (`mt-[3
 
 ### Íconos
 
-Se recomienda usar los íconos de Geist: https://vercel.com/geist/icons.
+Se recomienda usar los íconos de Lucide: https://lucide.dev.
 - Opción rápida: exportar SVGs desde el sitio e importarlos como componentes.
 - Alternativa: seguir usando `lucide-react` donde ya esté integrado, migrando íconos gradualmente si se desea.

@@ -1,4 +1,4 @@
-# Guía de Uso del Design System (Geist/Vercel)
+# Guía de Uso del Design System (Inter)
 
 Esta guía documenta cómo usar consistentemente el sistema de diseño implementado en NYXA.
 
@@ -124,7 +124,7 @@ Usa exclusivamente en componentes `<Button>`:
 
 ## 🔲 Bordes
 
-El sistema usa `--radius: 0rem` (bordes cuadrados, estilo Geist).
+El sistema usa `--radius: 0rem` (bordes cuadrados).
 
 ✅ **CORRECTO:**
 ```tsx
@@ -226,13 +226,13 @@ Antes de hacer un commit, verifica:
 - [ ] ¿Uso clases tipográficas por ROL (`text-heading-*`, `text-copy-*`)?
 - [ ] ¿Mis espacios son múltiplos de 4px (`p-4`, `p-6`, `p-8`)?
 - [ ] ¿Uso `rounded-lg`/`rounded-md` en lugar de valores hardcoded?
-- [ ] ¿Evito `text-xl`/`text-3xl` y uso la escala Geist?
+- [ ] ¿Evito `text-xl`/`text-3xl` y uso la escala del sistema?
 
 ---
 
 ## 📚 Recursos
 
-- **Íconos:** https://vercel.com/geist/icons (recomendado para consistencia)
+- **Íconos:** https://lucide.dev (recomendado para consistencia)
 - **Variables del tema:** Ver `src/app/globals.css`
 - **Configuración Tailwind:** Ver `tailwind.config.ts`
 
