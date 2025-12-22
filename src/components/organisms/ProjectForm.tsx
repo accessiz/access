@@ -77,13 +77,13 @@ export function ProjectForm() {
           <div className="border bg-card rounded-lg p-8 grid md:grid-cols-2 gap-x-8 gap-y-6">
             <div className="space-y-2">
               <Label htmlFor="project_name">Nombre del Proyecto *</Label>
-              <Input {...form.register('project_name')} placeholder="Ej: Campaña Verano 2025" />
+              <Input {...form.register('project_name')} />
               {form.formState.errors.project_name && <p className="text-label-12 text-destructive mt-1">{form.formState.errors.project_name.message}</p>}
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="client_name">Nombre del Cliente</Label>
-              <Input {...form.register('client_name')} placeholder="Ej: Tiendas El Sol" />
+              <Input {...form.register('client_name')} />
               {form.formState.errors.client_name && <p className="text-label-12 text-destructive mt-1">{form.formState.errors.client_name.message}</p>}
             </div>
           </div>
