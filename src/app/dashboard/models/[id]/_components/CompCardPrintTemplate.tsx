@@ -57,7 +57,7 @@ export function CompCardPrintTemplate({ model, containerId }: Props) {
             {/* --- COLUMNA 1 (IZQUIERDA - PORTADA) --- */}
             <div
                 id={`${containerId}-front`}
-                style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: GAP_SIZE, height: '100%', backgroundColor: '#ffffff', visibility: 'visible' }}
+                style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: GAP_SIZE, height: '100%', backgroundColor: '#ffffff', visibility: 'visible', padding: PADDING_SIZE, boxSizing: 'border-box' }}
             >
 
                 {/* Foto Principal */}
@@ -98,7 +98,7 @@ export function CompCardPrintTemplate({ model, containerId }: Props) {
             {/* --- COLUMNA 2 (DERECHA - CONTRAPORTADA) --- */}
             <div
                 id={`${containerId}-back`}
-                style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: GAP_SIZE, height: '100%', backgroundColor: '#ffffff', visibility: 'visible' }}
+                style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: GAP_SIZE, height: '100%', backgroundColor: '#ffffff', visibility: 'visible', padding: PADDING_SIZE, boxSizing: 'border-box' }}
             >
 
                 {/* Grid Area */}
