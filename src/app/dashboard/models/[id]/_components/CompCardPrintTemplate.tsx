@@ -42,7 +42,6 @@ export function CompCardPrintTemplate({ model, containerId }: Props) {
             style={{
                 width: PAGE_WIDTH,
                 height: PAGE_HEIGHT,
-                padding: PADDING_SIZE,
                 gap: GAP_SIZE,
                 backgroundColor: '#ffffff',
                 display: 'flex',
