@@ -111,6 +111,94 @@ export async function createProject(
   }
 }
 
+export async function updateProject(
+  projectId: string,
+  _prevState: ActionState | undefined,
+  formData: FormData
+): Promise<ActionState> {
+  const supabase = await createSupabaseServerActionClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return { success: false, error: 'Usuario no autenticado.' };
+  }
+  
+  // Verify ownership
+  const { data: projectOwner, error: ownerError } = await supabase
+    .from('projects')
+    .select('user_id')
+    .eq('id', projectId)
+    .single();
+
+  if (ownerError || projectOwner?.user_id !== user.id) {
+    return { success: false, error: 'No tienes permiso para editar este proyecto.' };
+  }
+  
+  const scheduleEntries = Array.from(formData.keys())
+    .filter(key => key.startsWith('schedule.'))
+    .reduce((acc, key) => {
+      const match = key.match(/schedule\.(\d+)\.(date|startTime|endTime)/);
+      if (match) {
+        const index = parseInt(match[1], 10);
+        const field = match[2];
+        if (!acc[index]) acc[index] = {};
+        (acc[index] as any)[field] = formData.get(key);
+      }
+      return acc;
+    }, [] as any[]);
+
+  const rawData = {
+    project_name: formData.get('project_name'),
+    client_name: formData.get('client_name'),
+    password: formData.get('password'),
+    schedule: scheduleEntries.filter(entry => entry.date || entry.startTime || entry.endTime),
+  };
+
+  const parsed = projectFormSchema.safeParse(rawData);
+
+  if (!parsed.success) {
+    const fieldErrors = parsed.error.flatten().fieldErrors;
+    return {
+      success: false,
+      error: 'Campos inválidos.',
+      errors: Object.fromEntries(
+        Object.entries(fieldErrors).map(([k, v]) => [k, v?.[0] ?? ''])
+      ) as Record<string, string>,
+    };
+  }
+
+  const { password, ...restOfData } = parsed.data;
+
+  try {
+    const normalizedPassword = password ? password : null;
+    const schedule = (parsed.data.schedule && parsed.data.schedule.length > 0) ? parsed.data.schedule : null;
+
+    const updatePayload = {
+      ...restOfData,
+      password: normalizedPassword,
+      schedule,
+    };
+
+    const { error } = await supabase
+      .from('projects')
+      .update(updatePayload)
+      .eq('id', projectId);
+
+    if (error) {
+      logError(error, { action: 'updateProject' });
+      return { success: false, error: 'Error al actualizar en la base de datos.' };
+    }
+
+    revalidatePath('/dashboard/projects');
+    revalidatePath(`/dashboard/projects/${projectId}`);
+    return { success: true, projectId };
+
+  } catch (err) {
+    logError(err, { action: 'updateProject.catch_all' });
+    return { success: false, error: 'Error inesperado al actualizar el proyecto.' };
+  }
+}
+
 
 export async function deleteProject(id: string) {
   const supabase = await createSupabaseServerActionClient()
@@ -267,5 +355,3 @@ export async function verifyProjectPassword(projectId: string, password: string)
     return { success: false, error: 'No se pudo verificar la contraseña.' }
   }
 }
-
-    

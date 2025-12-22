@@ -1,4 +1,3 @@
-
 'use client'
 
 import { useActionState, useEffect } from 'react';
@@ -6,24 +5,37 @@ import { useForm, useFieldArray, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { createProject } from '@/lib/actions/projects';
+import { createProject, updateProject } from '@/lib/actions/projects';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { projectFormSchema, ProjectFormData } from '@/lib/schemas/projects';
-import { Trash2, Plus } from 'lucide-react';
+import { Trash2, Plus, Save, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { Project } from '@/lib/types';
 
-export function ProjectForm() {
+interface ProjectFormProps {
+  initialData?: Project;
+  onCancel?: () => void;
+}
+
+export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
   const router = useRouter();
+  const isEditing = !!initialData;
 
   const form = useForm<ProjectFormData>({
     resolver: zodResolver(projectFormSchema),
     defaultValues: {
-      project_name: '',
-      client_name: '',
-      password: '',
-      schedule: [{ date: '', startTime: '', endTime: '' }],
+      project_name: initialData?.project_name || '',
+      client_name: initialData?.client_name || '',
+      password: initialData?.password || '',
+      schedule: initialData?.schedule && initialData.schedule.length > 0
+        ? initialData.schedule.map(item => ({
+            date: item.date ? item.date.split('T')[0] : '', // Formatear fecha
+            startTime: item.startTime || '',
+            endTime: item.endTime || '',
+          }))
+        : [{ date: '', startTime: '', endTime: '' }],
     },
   });
 
@@ -31,16 +43,21 @@ export function ProjectForm() {
     control: form.control,
     name: 'schedule',
   });
-
+  
+  const action = isEditing ? updateProject.bind(null, initialData.id) : createProject;
   type ActionState = { success: boolean; error?: string; errors?: Record<string, string>, projectId?: string };
-  const [state, formAction, isPending] = useActionState<ActionState, FormData>(createProject, undefined);
+  const [state, formAction, isPending] = useActionState<ActionState, FormData>(action, undefined);
 
   useEffect(() => {
-    if (state?.success && state.projectId) {
-      toast.success('¡Proyecto creado con éxito!');
-      router.push(`/dashboard/projects/${state.projectId}`);
+    if (state?.success) {
+      toast.success(isEditing ? '¡Proyecto actualizado!' : '¡Proyecto creado con éxito!');
+      if (onCancel) {
+        onCancel(); // Si está en modo edición, simplemente cancela la edición
+      } else {
+         router.push(`/dashboard/projects/${state.projectId}`);
+      }
     } else if (state?.error) {
-      toast.error('Error al crear el proyecto', {
+      toast.error(isEditing ? 'Error al actualizar' : 'Error al crear', {
         description: state.error,
       });
       // Set field errors from server
@@ -53,21 +70,21 @@ export function ProjectForm() {
         }
       }
     }
-  }, [state, router, form]);
+  }, [state, router, form, isEditing, onCancel]);
 
   return (
     <FormProvider {...form}>
-      <form id="project-create-form" action={formAction} className="space-y-8">
+      <form id="project-form" action={formAction} className="space-y-8">
         <header className="flex flex-col items-start gap-4 pb-6 border-b sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-heading-32">Nuevo Proyecto</h1>
+            <h1 className="text-heading-32">{isEditing ? `Editando: ${initialData.project_name}` : 'Nuevo Proyecto'}</h1>
           </div>
           <div className="flex flex-col-reverse items-stretch gap-2 w-full sm:flex-row sm:w-auto">
-            <Button variant="outline" asChild className="w-full sm:w-auto">
-              <Link href="/dashboard/projects">Cancelar</Link>
+            <Button variant="outline" type="button" onClick={onCancel ? onCancel : () => router.push('/dashboard/projects')} className="w-full sm:w-auto">
+               <X className="mr-2 h-4 w-4" /> Cancelar
             </Button>
             <Button type="submit" disabled={isPending} className="w-full sm:w-auto">
-                {isPending ? 'Creando...' : 'Crear Proyecto'}
+                {isPending ? (isEditing ? 'Guardando...' : 'Creando...') : (isEditing ? <><Save className="mr-2 h-4 w-4"/> Guardar Cambios</> : 'Crear Proyecto')}
             </Button>
           </div>
         </header>
