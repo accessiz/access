@@ -2,8 +2,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import Cropper from 'react-easy-crop'
-import { Area } from 'react-easy-crop/types'
+import Cropper, { Area } from 'react-easy-crop'
 import imageCompression from 'browser-image-compression';
 
 import {
@@ -121,7 +120,7 @@ export function ImageCropDialog({
       onClose()
     }
     image.onerror = () => {
-        onClose();
+      onClose();
     }
   }, [croppedAreaPixels, imageSrc, onCropComplete, onClose])
 
@@ -131,7 +130,7 @@ export function ImageCropDialog({
         <DialogHeader>
           <DialogTitle>Recortar Imagen</DialogTitle>
         </DialogHeader>
-        
+
         <div className="relative h-96 w-full bg-muted">
           {imageSrc && (
             <Cropper
@@ -145,17 +144,17 @@ export function ImageCropDialog({
             />
           )}
         </div>
-        
+
         <div className="space-y-4">
-            <Label htmlFor="zoom">Zoom</Label>
-            <Slider
-                id="zoom"
-                min={1}
-                max={3}
-                step={0.1}
-                value={[zoom]}
-                onValueChange={(value) => setZoom(value[0])}
-            />
+          <Label htmlFor="zoom">Zoom</Label>
+          <Slider
+            id="zoom"
+            min={1}
+            max={3}
+            step={0.1}
+            value={[zoom]}
+            onValueChange={(value) => setZoom(value[0])}
+          />
         </div>
 
         <DialogFooter>
