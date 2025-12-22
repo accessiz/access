@@ -128,7 +128,6 @@ export function ProjectForm() {
               <Label htmlFor="password">Contraseña (Opcional)</Label>
               <Input type="password" {...form.register('password')} placeholder="Para proteger el enlace del cliente" />
               {form.formState.errors.password && <p className="text-label-12 text-destructive mt-1">{form.formState.errors.password.message}</p>}
-              <p className="text-label-12 text-muted-foreground">Si dejas esto en blanco, el enlace será público.</p>
             </div>
           </div>
         </div>
