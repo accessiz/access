@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { getProjectsForUser } from '@/lib/api/projects';
-// CORRECCIÓN: El nombre del archivo a importar es './projects-client-page'
 import ProjectsClientPage from './projects-client-page';
 import { Project } from '@/lib/types';
 
@@ -20,10 +19,11 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
     query: resolvedSearchParams.q as string,
     year: resolvedSearchParams.year as string,
     month: resolvedSearchParams.month as string,
+    status: resolvedSearchParams.status as string,
     currentPage: Number(resolvedSearchParams.page) || 1,
     sortKey: (resolvedSearchParams.sort as keyof Project) || 'created_at',
     sortDir: (resolvedSearchParams.dir as 'asc' | 'desc') || 'desc',
   });
 
-  return <ProjectsClientPage initialProjects={data as Project[]} initialCount={count} />;
+  return <ProjectsClientPage initialProjects={data as Project[]} initialCount={count ?? 0} />;
 }

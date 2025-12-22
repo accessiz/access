@@ -185,7 +185,7 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
         <ClientNavbar clientName={project.client_name} />
 
         <div className="py-24 sm:py-56">
-          <ClientHeader projectName={project.project_name} />
+          <ClientHeader project={project} />
         </div>
 
         <main className="w-full flex-1 space-y-8">

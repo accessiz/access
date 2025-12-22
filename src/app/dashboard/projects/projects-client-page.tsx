@@ -1,22 +1,19 @@
 'use client'
 
 import { useState, useMemo } from 'react';
-import { useSearchParams, usePathname } from 'next/navigation';
+import { useSearchParams, usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Project } from '@/lib/types';
-// CORRECCIÓN: Se elimina 'toast' no utilizado
-// import { toast } from "sonner"; 
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { PlusCircle, Trash2 } from 'lucide-react';
+import { PlusCircle, Trash2, ArrowDown, ArrowUp } from 'lucide-react';
 import { ProjectsToolbar } from '@/components/organisms/ProjectsToolbar';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from "@/components/ui/pagination";
 import { DeleteProjectDialog } from '@/components/organisms/DeleteProjectDialog';
-// CORRECCIÓN: Se elimina 'Skeleton' no utilizado
-// import { Skeleton } from '@/components/ui/skeleton'; 
+import { cn } from '@/lib/utils';
 
 const PAGE_SIZE = 10;
 
@@ -34,7 +31,7 @@ const StatusBadge = ({ status }: { status: string }) => {
         completed: 'bg-green-500/20 text-green-400 border-green-500/30',
         archived: 'bg-gray-500/20 text-gray-400 border-gray-500/30',
     };
-    return <Badge variant="outline" className={`capitalize ${statusStyles[status] || ''}`}>{status}</Badge>;
+    return <Badge variant="outline" className={`capitalize ${statusStyles[status] || ''}`}>{status.replace('-', ' ')}</Badge>;
 };
 
 export default function ProjectsClientPage({ initialProjects, initialCount }: InitialData) {
@@ -43,9 +40,27 @@ export default function ProjectsClientPage({ initialProjects, initialCount }: In
     
     const searchParams = useSearchParams();
     const pathname = usePathname();
+    const router = useRouter();
 
     const currentPage = Number(searchParams.get('page')) || 1;
     const totalPages = Math.ceil(count / PAGE_SIZE);
+
+    const sortConfig = useMemo(() => ({
+        key: (searchParams.get('sort') as keyof Project) || 'created_at',
+        direction: (searchParams.get('dir') as 'asc' | 'desc') || 'desc',
+    }), [searchParams]);
+
+    const handleSort = (key: keyof Project) => {
+        const params = new URLSearchParams(searchParams);
+        let direction: 'asc' | 'desc' = 'asc';
+        if (sortConfig.key === key && sortConfig.direction === 'asc') {
+            direction = 'desc';
+        }
+        params.set('sort', key);
+        params.set('dir', direction);
+        params.set('page', '1');
+        router.replace(`${pathname}?${params.toString()}`);
+    };
 
     const handleProjectDeleted = (deletedProjectId: string) => {
         setProjects(current => current.filter(p => p.id !== deletedProjectId));
@@ -74,6 +89,17 @@ export default function ProjectsClientPage({ initialProjects, initialCount }: In
         return items;
     }, [currentPage, totalPages]);
 
+    const SortableHeader = ({ tkey, label, className }: { tkey: keyof Project; label: string; className?: string }) => (
+        <TableHead onClick={() => handleSort(tkey)} className={cn("cursor-pointer hover:text-foreground transition-colors", className)}>
+          <div className="flex items-center gap-2">
+            {label}
+            {sortConfig.key === tkey && (
+              sortConfig.direction === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+            )}
+          </div>
+        </TableHead>
+    );
+
     const renderContent = () => {
         if (projects.length === 0) {
             return (
@@ -84,49 +110,54 @@ export default function ProjectsClientPage({ initialProjects, initialCount }: In
             );
         }
         return (
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead>Nombre del Proyecto</TableHead>
-                        <TableHead>Cliente</TableHead>
-                        <TableHead>Estado</TableHead>
-                        <TableHead>Fecha de Creación</TableHead>
-                        <TableHead className="text-right">Acciones</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {projects.map((project) => (
-                        <TableRow key={project.id}>
-                            <TableCell>
-                                <Link href={`/dashboard/projects/${project.id}`} className="font-medium text-foreground no-underline hover:text-muted-foreground transition-colors">
-                                    {project.project_name}
-                                </Link>
-                            </TableCell>
-                            <TableCell>{project.client_name || 'N/A'}</TableCell>
-                            <TableCell><StatusBadge status={project.status} /></TableCell>
-                            <TableCell>{formatDate(project.created_at)}</TableCell>
-                            <TableCell className="text-right">
-                                <DeleteProjectDialog projectId={project.id} projectName={project.project_name || ''} onProjectDeleted={() => handleProjectDeleted(project.id)}>
-                                    <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                                </DeleteProjectDialog>
-                            </TableCell>
+            <div className="border rounded-lg">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <SortableHeader tkey="project_name" label="Nombre del Proyecto" />
+                            <SortableHeader tkey="client_name" label="Cliente" />
+                            <SortableHeader tkey="status" label="Estado" />
+                            <SortableHeader tkey="created_at" label="Fecha de Creación" />
+                            <TableHead className="text-right">Acciones</TableHead>
                         </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
+                    </TableHeader>
+                    <TableBody>
+                        {projects.map((project) => (
+                            <TableRow key={project.id}>
+                                <TableCell>
+                                    <Link href={`/dashboard/projects/${project.id}`} className="font-medium text-foreground no-underline hover:text-muted-foreground transition-colors">
+                                        {project.project_name}
+                                    </Link>
+                                </TableCell>
+                                <TableCell>{project.client_name || 'N/A'}</TableCell>
+                                <TableCell><StatusBadge status={project.status} /></TableCell>
+                                <TableCell>{formatDate(project.created_at)}</TableCell>
+                                <TableCell className="text-right">
+                                    <DeleteProjectDialog projectId={project.id} projectName={project.project_name || ''} onProjectDeleted={() => handleProjectDeleted(project.id)}>
+                                        <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                    </DeleteProjectDialog>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </div>
         );
     };
 
     return (
-        <div className="p-8 md:p-12 h-full flex flex-col">
-            <header className="flex flex-col items-start gap-4 pb-6 border-b
-                           sm:flex-row sm:items-center sm:justify-end">
+        <div className="space-y-6">
+             <header className="flex flex-col items-start gap-4 pb-6 border-b sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <h1 className="text-heading-32">Proyectos</h1>
+                    <p className="text-muted-foreground">Crea, busca y gestiona tus castings.</p>
+                </div>
                 <Button asChild className="w-full sm:w-auto">
                     <Link href="/dashboard/projects/new"><PlusCircle className="mr-2 h-4 w-4"/>Nuevo Proyecto</Link>
                 </Button>
             </header>
 
-            <main className="flex-1 py-8 space-y-6">
+            <main className="space-y-6">
                 <Card>
                     <CardHeader>
                         <CardTitle>Tus Proyectos</CardTitle>

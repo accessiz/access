@@ -1,5 +1,5 @@
 // src/lib/types.ts
-import type { Database } from './db-types';
+import type { Database, Json } from './db-types';
 
 // ----------------------------------------------------------------
 // 1. TIPOS EXTRAÍDOS DE LA BASE DE DATOS
@@ -24,7 +24,7 @@ export type ProjectStatus =
 // ----------------------------------------------------------------
 
 export interface Model extends DbModel {
-  id: string; // <--- AGREGADO: Forzamos a TS a saber que el ID existe
+  id: string; 
   coverUrl?: string | null;
   portfolioUrl?: string | null;
   compCardUrls?: (string | null)[];
@@ -33,6 +33,7 @@ export interface Model extends DbModel {
 }
 
 export interface Project extends DbProject {
-  id: string; // <--- AGREGADO: Forzamos a TS a saber que el ID existe
+  id: string; 
   status: ProjectStatus;
+  schedule: { id: string, date: string, startTime: string, endTime: string }[] | null;
 }

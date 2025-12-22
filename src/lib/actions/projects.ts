@@ -1,26 +1,19 @@
 'use server'
 
-// --- IMPORTACIONES MODERNAS ---
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
-// ----------------------------
-
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
-// import { PostgrestError } from '@supabase/supabase-js'
-import { projectFormSchema } from '@/lib/schemas/projects'
+import { cookies } from 'next/headers'
+import { createServerClient } from '@supabase/ssr'
+import { redirect } from 'next/navigation'
 
-// --- IMPORTACIONES CON ALIAS ---
 import { logError } from '@/lib/utils/errors'
 import type { ProjectStatus } from '@/lib/types'
+import { projectFormSchema } from '@/lib/schemas/projects'
 
-// Estado estándar que devuelven las server actions de proyectos
-type ActionState = { success: boolean; error?: string; errors?: Record<string, string> }
+type ActionState = { success: boolean; error?: string; errors?: Record<string, string>; projectId?: string; };
 
-// --- FUNCIÓN HELPER (ASÍNCRONA) ---
-// La versión corregida para Next.js 15+
 const createSupabaseServerActionClient = async () => {
-  const cookieStore = await cookies() // Se usa 'await'
+  const cookieStore = await cookies()
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -30,141 +23,99 @@ const createSupabaseServerActionClient = async () => {
           return cookieStore.get(name)?.value
         },
         set(name: string, value: string, options) {
-          try {
-            cookieStore.set({ name, value, ...options })
-          } catch {}
+          try { cookieStore.set({ name, value, ...options }) } catch {}
         },
         remove(name: string, options) {
-          try {
-            cookieStore.set({ name, value: '', ...options })
-          } catch {}
+          try { cookieStore.set({ name, value: '', ...options }) } catch {}
         },
       },
     }
   )
 }
 
-// --- ESQUEMA DE VALIDACIÓN ---
-// (Tomado de tu nyxa_dump.md)
-const projectSchema = z.object({
-  name: z.string().min(3, 'El nombre debe tener al menos 3 caracteres.'),
-  // ProjectStatus es un tipo (union de strings), por eso usamos z.enum con los valores explícitos
-  status: z.enum(['draft', 'sent', 'in-review', 'completed', 'archived']).default('draft'),
-  password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres.'),
-  public_id: z.string().uuid(),
-  user_id: z.string().uuid(),
-})
-
-// --- ACCIÓN: createProject (COMPLETA Y ACTUALIZADA) ---
-// Nota: con useActionState, la acción recibe (prevState, formData)
 export async function createProject(
   _prevState: ActionState | undefined,
   formData: FormData
 ): Promise<ActionState> {
-  const supabase = await createSupabaseServerActionClient() // CLIENTE CORREGIDO
+  const supabase = await createSupabaseServerActionClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
-    return { success: false, error: 'Usuario no autenticado.' }
+    return { success: false, error: 'Usuario no autenticado.' };
   }
 
-  // Valida los campos que realmente envía el formulario de UI
-  const parsed = projectFormSchema.safeParse({
+  // Manually construct the data object for validation
+  const scheduleEntries = Array.from(formData.keys())
+    .filter(key => key.startsWith('schedule.'))
+    .reduce((acc, key) => {
+      const match = key.match(/schedule\.(\d+)\.(date|startTime|endTime)/);
+      if (match) {
+        const index = parseInt(match[1], 10);
+        const field = match[2];
+        if (!acc[index]) acc[index] = {};
+        (acc[index] as any)[field] = formData.get(key);
+      }
+      return acc;
+    }, [] as any[]);
+
+  const rawData = {
     project_name: formData.get('project_name'),
-    client_name: formData.get('client_name') ?? undefined,
-    description: formData.get('description') ?? undefined,
-    password: formData.get('password') ?? undefined,
-  })
+    client_name: formData.get('client_name'),
+    description: formData.get('description'),
+    password: formData.get('password'),
+    schedule: scheduleEntries.filter(entry => entry.date || entry.startTime || entry.endTime),
+  };
+
+  const parsed = projectFormSchema.safeParse(rawData);
 
   if (!parsed.success) {
-    const fieldErrors = parsed.error.flatten().fieldErrors
+    const fieldErrors = parsed.error.flatten().fieldErrors;
     return {
       success: false,
       error: 'Campos inválidos.',
-      // Mapea a un diccionario simple: { campo: 'primer mensaje' }
       errors: Object.fromEntries(
         Object.entries(fieldErrors).map(([k, v]) => [k, v?.[0] ?? ''])
       ) as Record<string, string>,
-    }
+    };
   }
+  
+  const { password, ...restOfData } = parsed.data;
 
   try {
-    // Normaliza password: cadena vacía -> null (para que sea “sin contraseña”)
-    const normalizedPassword = parsed.data.password ? parsed.data.password : null
-    const insertPayload = {
-      project_name: parsed.data.project_name,
-      client_name: parsed.data.client_name ?? null,
-      description: parsed.data.description ?? null,
-      password: normalizedPassword,
-      status: 'draft' as const,
-      public_id: crypto.randomUUID(), // Asegúrate de que tu BBDD tenga esto como default
-      user_id: user.id,
-    }
+    const normalizedPassword = password ? password : null;
+    const schedule = (parsed.data.schedule && parsed.data.schedule.length > 0) ? parsed.data.schedule : null;
 
-    const { error } = await supabase
+    const insertPayload = {
+      ...restOfData,
+      password: normalizedPassword,
+      schedule,
+      status: 'draft' as const,
+      user_id: user.id,
+    };
+
+    const { data: newProject, error } = await supabase
       .from('projects')
       .insert(insertPayload)
+      .select('id')
+      .single();
 
     if (error) {
-      logError(error, { action: 'createProject' })
-      return { success: false, error: 'Error en la base de datos.' }
+      logError(error, { action: 'createProject' });
+      return { success: false, error: 'Error en la base de datos.' };
     }
 
-    revalidatePath('/dashboard/projects')
-    // NOTA: 'redirect' no funciona bien con useActionState, 
-    // la redirección debe manejarse en el cliente (ProjectForm)
-    return { success: true } 
+    revalidatePath('/dashboard/projects');
+    return { success: true, projectId: newProject.id };
+
   } catch (err) {
-    logError(err, { action: 'createProject.catch_all' })
-    return { success: false, error: 'Error inesperado al crear el proyecto.' }
+    logError(err, { action: 'createProject.catch_all' });
+    return { success: false, error: 'Error inesperado al crear el proyecto.' };
   }
 }
 
-// --- ACCIÓN: updateProject (COMPLETA Y ACTUALIZADA) ---
-export async function updateProject(id: string, formData: FormData) {
-  const supabase = await createSupabaseServerActionClient() // CLIENTE CORREGIDO
 
-  const validatedFields = projectSchema.partial().safeParse({
-    name: formData.get('name'),
-    status: formData.get('status'),
-    password: formData.get('password'),
-  })
-
-  if (!validatedFields.success) {
-    return {
-      success: false,
-      error: 'Campos inválidos.',
-      issues: validatedFields.error.flatten().fieldErrors,
-    }
-  }
-
-  try {
-    const { data, error } = await supabase
-      .from('projects')
-      .update(validatedFields.data)
-      .eq('id', id)
-      .select()
-      .single()
-
-    if (error) {
-      logError(error, { action: 'updateProject', projectId: id })
-      return { success: false, error: 'Error en la base de datos.' }
-    }
-
-    revalidatePath('/dashboard/projects')
-    revalidatePath(`/dashboard/projects/${id}`)
-    return { success: true, data }
-  } catch (err) {
-    logError(err, { action: 'updateProject.catch_all', projectId: id })
-    return { success: false, error: 'Error inesperado al actualizar el proyecto.' }
-  }
-}
-
-// --- ACCIÓN: deleteProject (COMPLETA Y ACTUALIZADA) ---
 export async function deleteProject(id: string) {
-  const supabase = await createSupabaseServerActionClient() // CLIENTE CORREGIDO
+  const supabase = await createSupabaseServerActionClient()
 
   try {
     const { error } = await supabase.from('projects').delete().eq('id', id)
@@ -177,14 +128,10 @@ export async function deleteProject(id: string) {
   }
 }
 
-// --- ACCIÓN: completeProjectReview (COMPLETA Y ACTUALIZADA) ---
 export async function completeProjectReview(projectId: string) {
-  const supabase = await createSupabaseServerActionClient() // CLIENTE CORREGIDO
+  const supabase = await createSupabaseServerActionClient()
 
-  // 1. El estado siempre es 'completed', no importa quién haga clic.
   const statusToSet: ProjectStatus = 'completed'
-  // 2. La fecha actual para la columna 'end_date'.
-  // Guardar solo la fecha (columna 'date' en la DB)
   const completionDate = new Date().toISOString().slice(0, 10)
 
   try {
@@ -192,7 +139,6 @@ export async function completeProjectReview(projectId: string) {
       .from('projects')
       .update({
         status: statusToSet,
-        end_date: completionDate, // Usa la columna 'end_date'
       })
       .eq('id', projectId)
 
@@ -204,7 +150,6 @@ export async function completeProjectReview(projectId: string) {
       }
     }
 
-    // Revalida la ruta pública correcta usando public_id
     try {
       const { data: projRow } = await supabase
         .from('projects')
@@ -223,7 +168,6 @@ export async function completeProjectReview(projectId: string) {
   }
 }
 
-// --- ACCIÓN: updateProjectStatus (para /c y panel) ---
 export async function updateProjectStatus(
   projectId: string,
   status: ProjectStatus
@@ -231,7 +175,6 @@ export async function updateProjectStatus(
   const supabase = await createSupabaseServerActionClient()
 
   try {
-    // Obtenemos public_id para revalidar la ruta pública correcta
     const { data: projRow, error: fetchErr } = await supabase
       .from('projects')
       .select('public_id')
@@ -240,15 +183,10 @@ export async function updateProjectStatus(
 
     if (fetchErr) {
       logError(fetchErr, { action: 'updateProjectStatus.fetch_public_id', projectId, status })
-      // No abortamos, pero no podremos revalidar /c/<public_id>
     }
 
-    // Solo establecer end_date cuando el estado sea 'completed'
     const updatePayload: Record<string, unknown> = { status }
-    if (status === 'completed') {
-      updatePayload.end_date = new Date().toISOString().slice(0, 10)
-    }
-
+    
     const { error } = await supabase
       .from('projects')
       .update(updatePayload)
@@ -259,7 +197,6 @@ export async function updateProjectStatus(
       return { success: false, error: 'No se pudo actualizar el estado del proyecto.' }
     }
 
-    // Revalidaciones útiles
     if (projRow?.public_id) {
       revalidatePath(`/c/${projRow.public_id}`)
     }
@@ -272,7 +209,6 @@ export async function updateProjectStatus(
   }
 }
 
-// --- ACCIÓN: verifyProjectPassword (para acceso público en /c) ---
 export async function verifyProjectPassword(projectId: string, password: string) {
   const supabase = await createSupabaseServerActionClient()
 
@@ -289,7 +225,6 @@ export async function verifyProjectPassword(projectId: string, password: string)
     }
 
     if (!project.password) {
-      // Proyecto sin contraseña: conceder acceso por cookie igualmente para evitar re-prompt
       const cookieStore = await cookies()
       cookieStore.set({
         name: `project_access_${projectId}`,
@@ -297,7 +232,7 @@ export async function verifyProjectPassword(projectId: string, password: string)
         path: '/',
         httpOnly: true,
         sameSite: 'lax',
-        maxAge: 60 * 60 * 24 * 7, // 7 días
+        maxAge: 60 * 60 * 24 * 7,
       })
       return { success: true }
     }
@@ -314,7 +249,7 @@ export async function verifyProjectPassword(projectId: string, password: string)
       path: '/',
       httpOnly: true,
       sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7, // 7 días
+      maxAge: 60 * 60 * 24 * 7,
     })
 
     return { success: true }
