@@ -136,6 +136,7 @@ export async function completeProjectReview(projectId: string) {
       .from('projects')
       .update({
         status: statusToSet,
+        end_date: new Date().toISOString(), // Registrar end_date
       })
       .eq('id', projectId)
 
@@ -167,14 +168,15 @@ export async function completeProjectReview(projectId: string) {
 
 export async function updateProjectStatus(
   projectId: string,
-  status: ProjectStatus
+  status: ProjectStatus,
+  setStartDate: boolean = false
 ) {
   const supabase = await createSupabaseServerActionClient()
 
   try {
     const { data: projRow, error: fetchErr } = await supabase
       .from('projects')
-      .select('public_id')
+      .select('public_id, start_date')
       .eq('id', projectId)
       .single()
 
@@ -184,6 +186,16 @@ export async function updateProjectStatus(
 
     const updatePayload: Record<string, unknown> = { status }
     
+    // Si se indica y no hay fecha de inicio previa, la establecemos
+    if (setStartDate && !projRow?.start_date) {
+        updatePayload.start_date = new Date().toISOString();
+    }
+    
+    // Si el estado es "completed", también establecemos end_date
+    if (status === 'completed') {
+        updatePayload.end_date = new Date().toISOString();
+    }
+
     const { error } = await supabase
       .from('projects')
       .update(updatePayload)
@@ -255,3 +267,5 @@ export async function verifyProjectPassword(projectId: string, password: string)
     return { success: false, error: 'No se pudo verificar la contraseña.' }
   }
 }
+
+    

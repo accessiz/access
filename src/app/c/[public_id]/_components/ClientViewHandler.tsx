@@ -53,7 +53,7 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
   const { user, loading: authLoading } = useAuth(); 
   const [isMounted, setIsMounted] = useState(false);
 
-  // --- EFECTO DE MONTAJE: RECUPERAR ESTADO ---
+  // --- EFECTO DE MONTAJE: RECUPERAR ESTADO Y ACTUALIZAR ESTADO DEL PROYECTO ---
   useEffect(() => {
     setIsMounted(true);
     const savedView = sessionStorage.getItem(getStorageKey(project.public_id, 'view'));
@@ -80,7 +80,19 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
         sessionStorage.removeItem(scrollKey); 
       }, 100); 
     }
-  }, [project.public_id]);
+
+    // Lógica para actualizar el estado del proyecto a "in-review"
+    if (authLoading) return;
+    // Se ejecuta si nadie está logueado (es un cliente) y el proyecto está en "sent"
+    if (user === null && project.status === 'sent' && !isUpdatingStatus) {
+      startStatusUpdateTransition(async () => {
+        // La acción ahora también puede registrar la start_date
+        const result = await updateProjectStatus(project.id, 'in-review', true); 
+        if (!result.success) console.error("Error auto-updating status:", result.error);
+      });
+    }
+
+  }, [project.public_id, project.id, project.status, isUpdatingStatus, user, authLoading]);
 
   // --- EFECTO: PERSISTENCIA DE ESTADO ---
   useEffect(() => {
@@ -140,17 +152,6 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
   const handleViewChange = (view: 'list' | 'grid') => {
     setViewMode(view);
   };
-
-  // Auto-update status logic
-  useEffect(() => {
-    if (authLoading) return; 
-    if (user === null && project.status === 'sent' && !isUpdatingStatus) {
-      startStatusUpdateTransition(async () => {
-        const result = await updateProjectStatus(project.id, 'in-review'); 
-        if (!result.success) console.error("Error auto-updating status:", result.error);
-      });
-    }
-  }, [project.id, project.status, isUpdatingStatus, user, authLoading]);
 
   // Sync initialModels logic
   useEffect(() => {
@@ -290,3 +291,5 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
     </div>
   );
 }
+
+    

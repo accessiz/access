@@ -120,33 +120,39 @@ export type Database = {
         Row: {
           client_name: string | null
           created_at: string
+          end_date: string | null
           id: string
           password: string | null
           project_name: string
           public_id: string
           schedule: Json | null
+          start_date: string | null
           status: string
           user_id: string | null
         }
         Insert: {
           client_name?: string | null
           created_at?: string
+          end_date?: string | null
           id?: string
           password?: string | null
           project_name: string
           public_id?: string
           schedule?: Json | null
+          start_date?: string | null
           status?: string
           user_id?: string | null
         }
         Update: {
           client_name?: string | null
           created_at?: string
+          end_date?: string | null
           id?: string
           password?: string | null
           project_name?: string
           public_id?: string
           schedule?: Json | null
+          start_date?: string | null
           status?: string
           user_id?: string | null
         }
@@ -351,3 +357,5 @@ export const Constants = {
     Enums: {},
   },
 } as const
+
+    

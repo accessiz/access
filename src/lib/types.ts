@@ -35,5 +35,8 @@ export interface Model extends DbModel {
 export interface Project extends DbProject {
   id: string; 
   status: ProjectStatus;
-  schedule: { id: string, date: string, startTime: string, endTime: string }[] | null;
+  // Hacemos que schedule sea un array de objetos con tipos definidos, o null
+  schedule: { date: string, startTime: string, endTime: string }[] | null;
 }
+
+    

@@ -58,7 +58,8 @@ export async function finalizeProjectReview(projectId: string, rejectPending: bo
     }
 
     const statusToSet = 'completed';
-    const completionDate = new Date().toISOString().slice(0, 10); 
+    // Registramos la fecha de finalización
+    const completionDate = new Date().toISOString(); 
 
     const { error: finalizeError } = await supabaseAdmin
       .from('projects')
@@ -96,9 +97,10 @@ export async function reopenProject(projectId: string) {
   }
 
   try {
+    // Al reabrir, el estado vuelve a 'in-review' y quitamos la fecha de finalización
     const { error } = await supabaseAdmin
       .from('projects')
-      .update({ status: 'in-review' })
+      .update({ status: 'in-review', end_date: null })
       .eq('id', projectId);
 
     if (error) throw error;
@@ -118,3 +120,5 @@ export async function reopenProject(projectId: string) {
     return { success: false, error: 'Error al intentar reabrir.' };
   }
 }
+
+    
