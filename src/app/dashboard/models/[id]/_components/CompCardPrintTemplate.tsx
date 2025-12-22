@@ -76,7 +76,7 @@ export function CompCardPrintTemplate({ model, containerId }: Props) {
                     {/* Logo Box 200x200 */}
                     <div style={{ width: 200, height: 200, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <img
-                            src="/images/access-logo_dark.svg"
+                            src="/images/IZ Management Dark Logo-01.svg"
                             alt="IZ Management"
                             style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                         />
@@ -122,7 +122,7 @@ export function CompCardPrintTemplate({ model, containerId }: Props) {
                         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px' }}>
                             <div style={{ width: 200, height: 200, transform: 'scale(0.8)', transformOrigin: 'top right' }}>
                                 <img
-                                    src="/images/access-logo_dark.svg"
+                                    src="/images/IZ Management Dark Logo-01.svg"
                                     alt="IZ Management"
                                     style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                                 />
