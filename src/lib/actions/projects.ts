@@ -4,7 +4,6 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { cookies } from 'next/headers'
 import { createServerClient } from '@supabase/ssr'
-import { redirect } from 'next/navigation'
 
 import { logError } from '@/lib/utils/errors'
 import type { ProjectStatus } from '@/lib/types'
@@ -61,7 +60,6 @@ export async function createProject(
   const rawData = {
     project_name: formData.get('project_name'),
     client_name: formData.get('client_name'),
-    description: formData.get('description'),
     password: formData.get('password'),
     schedule: scheduleEntries.filter(entry => entry.date || entry.startTime || entry.endTime),
   };
@@ -132,7 +130,6 @@ export async function completeProjectReview(projectId: string) {
   const supabase = await createSupabaseServerActionClient()
 
   const statusToSet: ProjectStatus = 'completed'
-  const completionDate = new Date().toISOString().slice(0, 10)
 
   try {
     const { error } = await supabase

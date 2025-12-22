@@ -1,28 +1,17 @@
 'use client'
 
-import { useActionState, useEffect, useState } from 'react';
+import { useActionState, useEffect } from 'react';
 import { useForm, useFieldArray, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useFormStatus } from 'react-dom';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { createProject } from '@/lib/actions/projects';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { projectFormSchema, ProjectFormData } from '@/lib/schemas/projects';
 import { Trash2, Plus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-
-function SubmitButton() {
-  const { pending } = useFormStatus();
-  return (
-    <Button type="submit" disabled={pending} form="project-create-form" className="w-full sm:w-auto">
-      {pending ? 'Creando...' : 'Crear Proyecto'}
-    </Button>
-  );
-}
 
 export function ProjectForm() {
   const router = useRouter();
@@ -32,7 +21,6 @@ export function ProjectForm() {
     defaultValues: {
       project_name: '',
       client_name: '',
-      description: '',
       password: '',
       schedule: [{ date: '', startTime: '', endTime: '' }],
     },
@@ -97,12 +85,6 @@ export function ProjectForm() {
               <Label htmlFor="client_name">Nombre del Cliente</Label>
               <Input {...form.register('client_name')} placeholder="Ej: Tiendas El Sol" />
               {form.formState.errors.client_name && <p className="text-label-12 text-destructive mt-1">{form.formState.errors.client_name.message}</p>}
-            </div>
-
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="description">Descripción</Label>
-              <Textarea {...form.register('description')} placeholder="Notas internas sobre el proyecto, perfil buscado, etc." className="min-h-[120px]" />
-              {form.formState.errors.description && <p className="text-label-12 text-destructive mt-1">{form.formState.errors.description.message}</p>}
             </div>
 
             <div className="space-y-2">

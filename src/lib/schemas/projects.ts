@@ -14,7 +14,6 @@ const scheduleItemSchema = z.object({
 export const projectFormSchema = z.object({
   project_name: z.string().min(3, "El nombre del proyecto es obligatorio."),
   client_name: z.string().optional().nullable(),
-  description: z.string().optional().nullable(),
   password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres.").optional().or(z.literal('')),
   schedule: z.array(scheduleItemSchema).min(1, 'Debes añadir al menos un horario.'),
 });
