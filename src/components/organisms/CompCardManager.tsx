@@ -20,12 +20,24 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
     DropdownMenuRadioGroup,
-    DropdownMenuRadioItem
+    DropdownMenuRadioItem,
+    DropdownMenuSub,
+    DropdownMenuSubContent,
+    DropdownMenuSubTrigger,
+    DropdownMenuPortal
 } from '@/components/ui/dropdown-menu';
 import { toJpeg, toPng, toBlob } from 'html-to-image';
 import { jsPDF } from 'jspdf';
 import JSZip from 'jszip';
-import { ChevronDown, Download } from 'lucide-react';
+import { ChevronDown, Download, FileType, Layers } from 'lucide-react';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+    SelectSeparator,
+} from '@/components/ui/select';
 
 interface CompCardManagerProps {
     model: Model;
@@ -152,7 +164,7 @@ export function CompCardManager({
     // --- ESTADOS DE DESCARGA ---
     const [isDownloading, setIsDownloading] = useState(false);
     const [downloadFormat, setDownloadFormat] = useState<'portada' | 'contraportada' | 'hoja_completa' | 'todos'>('hoja_completa');
-    const [fileType, setFileType] = useState<'jpg' | 'png' | 'zip' | 'pdf'>('pdf');
+    const [fileType, setFileType] = useState<'jpg' | 'png' | 'zip' | 'pdf'>('png');
     const printContainerId = 'compcard-print-container';
 
     // Abre el diálogo de recorte cuando se selecciona un archivo
@@ -540,34 +552,67 @@ export function CompCardManager({
                                 <ChevronDown className="h-3 w-3 opacity-50" />
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-56">
-                            <DropdownMenuLabel>Qué descargar</DropdownMenuLabel>
-                            <DropdownMenuRadioGroup value={downloadFormat} onValueChange={(v) => setDownloadFormat(v as any)}>
-                                <DropdownMenuRadioItem value="hoja_completa">Hoja completa</DropdownMenuRadioItem>
-                                <DropdownMenuRadioItem value="portada">Solo Portada</DropdownMenuRadioItem>
-                                <DropdownMenuRadioItem value="contraportada">Solo Contraportada</DropdownMenuRadioItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuRadioItem value="todos" className="font-semibold text-primary">Todos los formatos</DropdownMenuRadioItem>
-                            </DropdownMenuRadioGroup>
+                        <DropdownMenuContent align="end" className="w-72 p-3 space-y-4">
+                            <div className="space-y-2">
+                                <label className="text-[11px] font-semibold text-muted-foreground uppercase flex items-center gap-1.5 ml-1">
+                                    <Layers className="h-3 w-3" />
+                                    Qué descargar
+                                </label>
+                                <Select
+                                    value={downloadFormat}
+                                    onValueChange={(v) => {
+                                        const val = v as any;
+                                        setDownloadFormat(val);
+                                        // Si selecciona "todos", forzamos a "zip"
+                                        if (val === 'todos') {
+                                            setFileType('zip');
+                                        } else if (fileType === 'zip') {
+                                            // Si vuelve de "todos" a otro formato y estaba en "zip", volvemos a "png"
+                                            setFileType('png');
+                                        }
+                                    }}
+                                >
+                                    <SelectTrigger className="w-full bg-muted/50 border-none h-10">
+                                        <SelectValue placeholder="Selecciona formato" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="hoja_completa">Hoja completa</SelectItem>
+                                        <SelectItem value="portada">Solo Portada</SelectItem>
+                                        <SelectItem value="contraportada">Solo Contraportada</SelectItem>
+                                        <SelectSeparator />
+                                        <SelectItem value="todos" className="font-semibold text-primary">Todos los formatos</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
 
-                            <DropdownMenuSeparator />
+                            <div className="space-y-2">
+                                <label className="text-[11px] font-semibold text-muted-foreground uppercase flex items-center gap-1.5 ml-1">
+                                    <FileType className="h-3 w-3" />
+                                    Formato de archivo
+                                </label>
+                                <Select value={fileType} onValueChange={(v) => setFileType(v as any)}>
+                                    <SelectTrigger className="w-full bg-muted/50 border-none h-10">
+                                        <SelectValue placeholder="Selecciona tipo" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {downloadFormat === 'todos' ? (
+                                            <SelectItem value="zip">ZIP (Pack Completo)</SelectItem>
+                                        ) : (
+                                            <>
+                                                <SelectItem value="pdf">PDF</SelectItem>
+                                                <SelectItem value="jpg">JPG</SelectItem>
+                                                <SelectItem value="png">PNG</SelectItem>
+                                            </>
+                                        )}
+                                    </SelectContent>
+                                </Select>
+                            </div>
 
-                            <DropdownMenuLabel>Formato de archivo</DropdownMenuLabel>
-                            <DropdownMenuRadioGroup value={fileType} onValueChange={(v) => setFileType(v as any)}>
-                                <DropdownMenuRadioItem value="pdf">PDF</DropdownMenuRadioItem>
-                                <DropdownMenuRadioItem value="jpg">JPG</DropdownMenuRadioItem>
-                                <DropdownMenuRadioItem value="png">PNG</DropdownMenuRadioItem>
-                                {downloadFormat === 'todos' && (
-                                    <DropdownMenuRadioItem value="zip">ZIP (Pack Completo)</DropdownMenuRadioItem>
-                                )}
-                            </DropdownMenuRadioGroup>
+                            <DropdownMenuSeparator className="-mx-3" />
 
-                            <DropdownMenuSeparator />
-
-                            <div className="p-2">
+                            <div className="pt-1">
                                 <Button
-                                    className="w-full"
-                                    size="sm"
+                                    className="w-full h-10 font-bold"
                                     onClick={handleDownload}
                                     disabled={isDownloading}
                                 >
