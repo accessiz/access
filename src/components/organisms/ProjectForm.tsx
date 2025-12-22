@@ -125,8 +125,8 @@ export function ProjectForm() {
           <h2 className="text-heading-20">Seguridad del Proyecto</h2>
           <div className="border bg-card rounded-lg p-8 grid md:grid-cols-2 gap-x-8 gap-y-6">
             <div className="space-y-2">
-              <Label htmlFor="password">Contraseña (Opcional)</Label>
-              <Input type="password" {...form.register('password')} placeholder="Para proteger el enlace del cliente" />
+              <Label htmlFor="password">Contraseña</Label>
+              <Input type="password" {...form.register('password')} />
               {form.formState.errors.password && <p className="text-label-12 text-destructive mt-1">{form.formState.errors.password.message}</p>}
             </div>
           </div>
