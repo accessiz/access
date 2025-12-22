@@ -61,7 +61,6 @@ export function ProjectForm() {
         <header className="flex flex-col items-start gap-4 pb-6 border-b sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-heading-32">Crear Nuevo Proyecto</h1>
-            <p className="text-muted-foreground">Rellena los detalles para tu nuevo casting.</p>
           </div>
           <div className="flex flex-col-reverse items-stretch gap-2 w-full sm:flex-row sm:w-auto">
             <Button variant="outline" asChild className="w-full sm:w-auto">
