@@ -61,7 +61,6 @@ projects,user_id,uuid,YES,null
 projects,created_at,timestamp with time zone,NO,now()
 projects,project_name,text,NO,null
 projects,client_name,text,YES,null
-projects,description,text,YES,null
 projects,start_date,date,YES,null
 projects,end_date,date,YES,null
 projects,status,text,NO,'draft'::text
@@ -71,6 +70,7 @@ projects,revenue,numeric,YES,0
 projects,default_model_fee,numeric,YES,0
 projects,default_fee_type,text,YES,'fixed'::text
 projects,application_deadline,timestamp with time zone,YES,null
+projects,schedule,jsonb,YES,null
 projects_models,project_id,uuid,NO,null
 projects_models,model_id,uuid,NO,null
 projects_models,client_selection,text,NO,'pending'::text
