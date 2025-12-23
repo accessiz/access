@@ -11,39 +11,53 @@ interface TimePickerProps {
 }
 
 export function TimePicker({ value, onChange, className }: TimePickerProps) {
-    // Ensure we have a valid format before splitting
-    const safeValue = value && value.includes(":") ? value : "12:00"
-    const [hour24, minuteStr] = safeValue.split(":")
-    const h24 = parseInt(hour24, 10)
-    const m = parseInt(minuteStr, 10)
+    // Ensure we have a valid format before splitting. Support both "HH:mm" and "HH:mm AM/PM"
+    const safeValue = value || "12:00 AM"
 
-    const period = h24 >= 12 ? "PM" : "AM"
+    // Parse time and period
+    let h24 = 12
+    let m = 0
+    let currentPeriod = "AM"
+
+    if (safeValue.includes(" ")) {
+        // Format: "09:00 AM"
+        const [time, p] = safeValue.split(" ")
+        const [hStr, mStr] = time.split(":")
+        let h12 = parseInt(hStr, 10)
+        m = parseInt(mStr, 10)
+        currentPeriod = p
+
+        h24 = h12
+        if (currentPeriod === "PM" && h12 < 12) h24 += 12
+        if (currentPeriod === "AM" && h12 === 12) h24 = 0
+    } else {
+        // Format: "09:00" (24h)
+        const [hStr, mStr] = safeValue.split(":")
+        h24 = parseInt(hStr, 10)
+        m = parseInt(mStr, 10)
+        currentPeriod = h24 >= 12 ? "PM" : "AM"
+    }
+
     const hour12 = h24 % 12 || 12
     const hour12Str = hour12.toString().padStart(2, "0")
     const minStr = m.toString().padStart(2, "0")
 
     const handleHourChange = (newHour12: string) => {
         let h = parseInt(newHour12, 10)
-        if (period === "PM" && h < 12) h += 12
-        if (period === "AM" && h === 12) h = 0
-        updateValue(h, m)
+        const formatted = `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")} ${currentPeriod}`
+        onChange?.(formatted)
     }
 
     const handleMinuteChange = (newMin: string) => {
-        updateValue(h24, parseInt(newMin, 10))
+        const formatted = `${hour12Str}:${newMin.padStart(2, "0")} ${currentPeriod}`
+        onChange?.(formatted)
     }
 
     const handlePeriodChange = (newPeriod: string) => {
-        let h = h24
-        if (newPeriod === "PM" && h < 12) h += 12
-        if (newPeriod === "AM" && h >= 12) h -= 12
-        updateValue(h, m)
-    }
-
-    const updateValue = (h: number, mm: number) => {
-        const formatted = `${h.toString().padStart(2, "0")}:${mm.toString().padStart(2, "0")}`
+        const formatted = `${hour12Str}:${minStr} ${newPeriod}`
         onChange?.(formatted)
     }
+
 
     const hours = Array.from({ length: 12 }, (_, i) => (i + 1).toString().padStart(2, "0"))
     const minutes = Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, "0"))
@@ -78,7 +92,7 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
                 </SelectContent>
             </Select>
 
-            <Select value={period} onValueChange={handlePeriodChange}>
+            <Select value={currentPeriod} onValueChange={handlePeriodChange}>
                 <SelectTrigger className="w-[75px] h-9">
                     <SelectValue placeholder="AM/PM" />
                 </SelectTrigger>
@@ -90,3 +104,4 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
         </div>
     )
 }
+

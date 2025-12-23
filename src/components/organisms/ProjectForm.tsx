@@ -35,10 +35,10 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
       schedule: initialData?.schedule && initialData.schedule.length > 0
         ? initialData.schedule.map(item => ({
           date: item.date ? item.date.split('T')[0] : '', // Formatear fecha
-          startTime: item.startTime || '',
-          endTime: item.endTime || '',
+          startTime: item.startTime || '09:00 AM',
+          endTime: item.endTime || '05:00 PM',
         }))
-        : [{ date: format(new Date(), 'yyyy-MM-dd'), startTime: '09:00', endTime: '17:00' }],
+        : [{ date: format(new Date(), 'yyyy-MM-dd'), startTime: '09:00 AM', endTime: '05:00 PM' }],
     },
   });
 
@@ -120,7 +120,10 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
                     control={form.control}
                     name={`schedule.${index}.date`}
                     render={({ field }) => (
-                      <DatePicker value={field.value} onChange={field.onChange} className="w-full" />
+                      <>
+                        <input type="hidden" name={`schedule.${index}.date`} value={field.value} />
+                        <DatePicker value={field.value} onChange={field.onChange} className="w-full" />
+                      </>
                     )}
                   />
                   {form.formState.errors.schedule?.[index]?.date && <p className="text-label-12 text-destructive mt-1">{form.formState.errors.schedule[index]?.date?.message}</p>}
@@ -131,15 +134,18 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
                     control={form.control}
                     name={`schedule.${index}.startTime`}
                     render={({ field }) => (
-                      <TimePicker
-                        value={field.value}
-                        onChange={(val) => {
-                          field.onChange(val);
-                          // Auto-sync end time if it's currently empty or previously set
-                          // This sets the floor for the end time, user can then adjust forward
-                          form.setValue(`schedule.${index}.endTime`, val);
-                        }}
-                      />
+                      <>
+                        <input type="hidden" name={`schedule.${index}.startTime`} value={field.value} />
+                        <TimePicker
+                          value={field.value}
+                          onChange={(val) => {
+                            field.onChange(val);
+                            // Auto-sync end time if it's currently empty or previously set
+                            // This sets the floor for the end time, user can then adjust forward
+                            form.setValue(`schedule.${index}.endTime`, val);
+                          }}
+                        />
+                      </>
                     )}
                   />
                   {form.formState.errors.schedule?.[index]?.startTime && <p className="text-label-12 text-destructive mt-1">{form.formState.errors.schedule[index]?.startTime?.message}</p>}
@@ -150,7 +156,10 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
                     control={form.control}
                     name={`schedule.${index}.endTime`}
                     render={({ field }) => (
-                      <TimePicker value={field.value} onChange={field.onChange} />
+                      <>
+                        <input type="hidden" name={`schedule.${index}.endTime`} value={field.value} />
+                        <TimePicker value={field.value} onChange={field.onChange} />
+                      </>
                     )}
                   />
                   {form.formState.errors.schedule?.[index]?.endTime && <p className="text-label-12 text-destructive mt-1">{form.formState.errors.schedule[index]?.endTime?.message}</p>}
@@ -161,11 +170,12 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
               </div>
             ))}
             {form.formState.errors.schedule?.root && <p className="text-label-12 text-destructive mt-1">{form.formState.errors.schedule.root.message}</p>}
-            <Button type="button" variant="outline" onClick={() => append({ date: format(new Date(), 'yyyy-MM-dd'), startTime: '09:00', endTime: '17:00' })}>
+            <Button type="button" variant="outline" onClick={() => append({ date: format(new Date(), 'yyyy-MM-dd'), startTime: '09:00 AM', endTime: '05:00 PM' })}>
               <Plus className="mr-2 h-4 w-4" /> Añadir otro horario
             </Button>
           </div>
         </div>
+
 
         <div className="space-y-4">
           <h2 className="text-heading-20">Seguridad del Proyecto</h2>

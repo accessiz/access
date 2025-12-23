@@ -63,7 +63,7 @@ export async function getProjectsForUser(searchParams: SearchParams = {}) {
     const year = parseInt(searchParams.year);
     const startDate = new Date(year, 0, 1).toISOString();
     const endDate = new Date(year, 11, 31, 23, 59, 59).toISOString();
-     queryBuilder = queryBuilder.gte('created_at', startDate).lte('created_at', endDate);
+    queryBuilder = queryBuilder.gte('created_at', startDate).lte('created_at', endDate);
   }
 
   const sortKey = searchParams.sortKey || 'created_at';
@@ -84,27 +84,54 @@ export async function getProjectsForUser(searchParams: SearchParams = {}) {
   return { data: data || [], count: count || 0 };
 }
 
-// Función para obtener un proyecto por ID (MODIFICADA)
+// Helper para formatear hora de DB (24h) a 12h AM/PM
+const formatTimeTo12h = (isoString: string) => {
+  const date = new Date(isoString);
+  let hours = date.getHours();
+  const minutes = date.getMinutes();
+  const period = hours >= 12 ? 'PM' : 'AM';
+
+  hours = hours % 12;
+  hours = hours ? hours : 12; // la hora '0' deberia ser '12'
+
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${period}`;
+};
+
+// Función para obtener un proyecto por ID (MODIFICADA para usar project_schedule)
 export async function getProjectById(idOrPublicId: string): Promise<Project | null> {
   noStore();
   const supabase = await createClient();
 
   const { data, error } = await supabase
-      .from('projects')
-      .select('*')
-      .or(`id.eq.${idOrPublicId},public_id.eq.${idOrPublicId}`)
-      .maybeSingle();
+    .from('projects')
+    .select('*, project_schedule(*)')
+    .or(`id.eq.${idOrPublicId},public_id.eq.${idOrPublicId}`)
+    .maybeSingle();
 
   if (error) {
     if (error.code !== 'PGRST116') {
-        logError(error, { action: 'getProjectById', idOrPublicId });
+      logError(error, { action: 'getProjectById', idOrPublicId });
     }
     return null;
   }
-  // Hacemos una aserción aquí porque sabemos que 'status' debe ser uno de los válidos
-  // si la base de datos está configurada correctamente.
-  return data as Project;
+
+  if (!data) return null;
+
+  const project = data as any;
+
+  // Si tenemos datos en la tabla project_schedule, los usamos para poblar el campo schedule
+  if (project.project_schedule && project.project_schedule.length > 0) {
+    project.schedule = project.project_schedule.map((ps: any) => ({
+      id: ps.id,
+      date: ps.start_time.split('T')[0],
+      startTime: formatTimeTo12h(ps.start_time),
+      endTime: formatTimeTo12h(ps.end_time)
+    }));
+  }
+
+  return project as Project;
 }
+
 
 // Función para obtener modelos de un proyecto (OPTIMIZADA)
 export async function getModelsForProject(projectId: string): Promise<Model[]> {
@@ -114,7 +141,7 @@ export async function getModelsForProject(projectId: string): Promise<Model[]> {
   const { data: projectModelsData, error } = await supabase
     .from('projects_models')
     .select(`
-      client_selection,
+      *,
       models (
         *,
         cover_path,
@@ -131,8 +158,8 @@ export async function getModelsForProject(projectId: string): Promise<Model[]> {
   const VALID_CLIENT_SELECTIONS_INNER = ['pending', 'approved', 'rejected'] as const;
   type ClientSelectionInner = typeof VALID_CLIENT_SELECTIONS_INNER[number];
   function isValidClientSelectionInner(selection: unknown): selection is ClientSelectionInner {
-      if (typeof selection !== 'string') return false;
-      return VALID_CLIENT_SELECTIONS_INNER.includes(selection as ClientSelectionInner);
+    if (typeof selection !== 'string') return false;
+    return VALID_CLIENT_SELECTIONS_INNER.includes(selection as ClientSelectionInner);
   }
 
   const modelsWithPaths = projectModelsData.flatMap(item => {
@@ -143,15 +170,41 @@ export async function getModelsForProject(projectId: string): Promise<Model[]> {
     }
     const model = modelData as unknown as (Model & { cover_path?: string; portfolio_path?: string });
     const validatedSelection = isValidClientSelectionInner(item.client_selection)
-                               ? item.client_selection
-                               : null;
+      ? item.client_selection
+      : null;
 
     return [{
       ...model,
       client_selection: validatedSelection,
+      internal_status: item.internal_status,
+      agreed_fee: item.agreed_fee,
+      fee_type: item.fee_type,
+      currency: item.currency,
+      notes: item.notes,
     }];
   });
-  
+
+  // Fetch model assignments for this project's schedules
+  const { data: projectSchedules } = await supabase
+    .from('project_schedule')
+    .select('id')
+    .eq('project_id', projectId);
+
+  const scheduleIds = projectSchedules?.map(ps => ps.id) || [];
+
+  if (scheduleIds.length > 0) {
+    const { data: assignments } = await supabase
+      .from('model_assignments')
+      .select('*')
+      .in('schedule_id', scheduleIds);
+
+    if (assignments) {
+      modelsWithPaths.forEach(m => {
+        m.assignments = assignments.filter(a => a.model_id === m.id);
+      });
+    }
+  }
+
   // --- INICIO DE LA CORRECCIÓN ---
   // Se elimina toda la lógica de `createSignedUrls`.
   // Se mapean los resultados para construir la `coverUrl` y `portfolioUrl` públicas de R2.
@@ -220,8 +273,8 @@ export async function getModelForProject(projectId: string, modelId: string): Pr
   // Se elimina la lógica de `createSignedUrls` y `signedUrlMap`.
   // Se construyen las URLs públicas de R2 directamente.
   const validatedSelection = isValidClientSelection(data.client_selection)
-                             ? data.client_selection
-                             : null;
+    ? data.client_selection
+    : null;
 
   return {
     ...modelWithPaths,

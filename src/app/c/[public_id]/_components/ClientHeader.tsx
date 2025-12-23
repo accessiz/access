@@ -6,6 +6,20 @@ interface ClientHeaderProps {
   project: Project;
 }
 
+// Helper para convertir hora 12h a minutos totales para ordenamiento
+const timeToMinutes = (timeStr: string) => {
+  const parts = timeStr.split(' ');
+  if (parts.length < 2) return 0; // Fallback para formatos inesperados
+
+  const [time, period] = parts;
+  let [hours, minutes] = time.split(':').map(Number);
+
+  if (period === 'PM' && hours < 12) hours += 12;
+  if (period === 'AM' && hours === 12) hours = 0;
+
+  return hours * 60 + minutes;
+};
+
 // Helper para formatear fechas y horarios
 const formatSchedule = (schedule: Project['schedule']) => {
   if (!schedule || !Array.isArray(schedule) || schedule.length === 0) {
@@ -29,9 +43,10 @@ const formatSchedule = (schedule: Project['schedule']) => {
   // Formatear la salida
   return sortedDates.map(dateStr => {
     const horarios = groupedByDate[dateStr]
-      .sort((a, b) => a.startTime.localeCompare(b.startTime))
+      .sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime))
       .map(h => `${h.startTime} - ${h.endTime}`)
       .join(' | ');
+
 
     const dateObj = new Date(`${dateStr}T00:00:00`); // Asegurar que se interprete en la zona horaria local
     const formattedDate = dateObj.toLocaleDateString('es-ES', {
