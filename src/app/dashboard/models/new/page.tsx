@@ -19,6 +19,9 @@ export default function NewModelPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // 2. INICIALIZAMOS 'useForm' AQUÍ (en el padre)
+  // Obtener la fecha de hoy en formato YYYY-MM-DD
+  const today = new Date().toISOString().split('T')[0];
+
   const form = useForm<ModelFormData>({
     resolver: zodResolver(modelFormSchema),
     // 3. Definimos los valores por defecto para un formulario vacío
@@ -26,6 +29,7 @@ export default function NewModelPage() {
       alias: '',
       full_name: '',
       national_id: '',
+      passport_number: '',
       gender: null,
       birth_date: '',
       country: null,
@@ -36,8 +40,8 @@ export default function NewModelPage() {
       waist_cm: null,
       hips_cm: null,
       top_size: null,
-    pants_size: null,
-    shoe_size_us: null,
+      pants_size: null,
+      shoe_size_us: null,
       eye_color: null,
       hair_color: null,
       instagram: '',
@@ -45,7 +49,7 @@ export default function NewModelPage() {
       email: '',
       phone_e164: '',
       status: 'active',
-      date_joined_agency: '',
+      date_joined_agency: today, // Por defecto la fecha de hoy
     },
   });
 
@@ -74,7 +78,7 @@ export default function NewModelPage() {
         <div className="flex items-center gap-2">
           <Button variant="outline" asChild>
             <Link href="/dashboard/models">
-               Cancelar
+              Cancelar
             </Link>
           </Button>
           <Button form="model-create-form" type="submit" disabled={isSubmitting}>
@@ -84,16 +88,16 @@ export default function NewModelPage() {
       </header>
 
       <div className="mx-auto">
-          {/* 4. ENVOLVEMOS 'ModelForm' CON 'FormProvider' Y '<form>' */}
-          <FormProvider {...form}>
-            <form id="model-create-form" onSubmit={form.handleSubmit(handleSubmit)}>
-              <ModelForm
-                  // No pasamos 'model' (porque es nuevo)
-                  isSubmitting={isSubmitting}
-                  // No pasamos 'onSubmit' (lo maneja el <form>)
-              />
-            </form>
-          </FormProvider>
+        {/* 4. ENVOLVEMOS 'ModelForm' CON 'FormProvider' Y '<form>' */}
+        <FormProvider {...form}>
+          <form id="model-create-form" onSubmit={form.handleSubmit(handleSubmit)}>
+            <ModelForm
+              // No pasamos 'model' (porque es nuevo)
+              isSubmitting={isSubmitting}
+            // No pasamos 'onSubmit' (lo maneja el <form>)
+            />
+          </form>
+        </FormProvider>
       </div>
     </div>
   );

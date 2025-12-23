@@ -28,7 +28,8 @@
     --border: 230 230 230;
     --input: 230 230 230;
     --ring: 135 24 157;
-    --radius: 0rem; /* Bordes cuadrados por defecto */
+    --radius: 0rem;
+    /* Bordes cuadrados por defecto */
 
     /* Design System aliases */
     /* Token solicitado: el negro más oscuro del sistema */
@@ -60,8 +61,10 @@
     --secondary-foreground: 230 230 230;
     --muted: 30 30 30;
     --muted-foreground: 140 140 140;
-    --accent: 30 30 30; /* This is likely the background for active nav links */
-    --accent-foreground: 230 230 230; /* Text color for active nav links */
+    --accent: 30 30 30;
+    /* This is likely the background for active nav links */
+    --accent-foreground: 230 230 230;
+    /* Text color for active nav links */
     --destructive: 255 30 30;
     --destructive-foreground: 230 230 230;
     --border: 28 28 28;
@@ -83,9 +86,11 @@
   html {
     font-size: 88%;
   }
+
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
@@ -98,19 +103,23 @@
   scrollbar-width: thin;
   scrollbar-color: rgb(var(--muted-foreground) / 0.5) transparent;
 }
+
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
   background-color: rgb(var(--muted-foreground) / 0.5);
   border-radius: var(--radius);
   border: 2px solid transparent;
   background-clip: content-box;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background-color: rgb(var(--primary));
 }
@@ -119,19 +128,23 @@
 .dark input {
   color-scheme: dark;
 }
+
 .dark input[type=number]::-webkit-inner-spin-button,
 .dark input[type=number]::-webkit-outer-spin-button {
   opacity: 1;
 }
+
 .dark input[type=number]::-webkit-inner-spin-button {
   filter: invert(0.5) brightness(1.5);
 }
+
 .dark input[type=number]::-webkit-outer-spin-button {
   filter: invert(0.5) brightness(1.5);
 }
 
 /* Capa de Componentes */
 @layer components {
+
   /* FIX SHADCN COMMAND MOUSE */
   [data-disabled] {
     pointer-events: auto !important;
@@ -139,25 +152,39 @@
 
   /* --- GRID RESPONSIVO PARA CLIENTES (GAP 5rem) --- */
   .client-grid {
-    @apply grid gap-20; /* gap-20 = 5rem / 80px */
-    grid-template-columns: repeat(2, minmax(0, 1fr)); /* Mobile Portrait (2) */
+    @apply grid gap-20;
+    /* gap-20 = 5rem / 80px */
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    /* Mobile Portrait (2) */
   }
-  @media (min-width: 480px) { /* Mobile Landscape (3) */
+
+  @media (min-width: 480px) {
+
+    /* Mobile Landscape (3) */
     .client-grid {
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
   }
-  @media (min-width: 900px) { /* Tablet (4) */
+
+  @media (min-width: 900px) {
+
+    /* Tablet (4) */
     .client-grid {
       grid-template-columns: repeat(4, minmax(0, 1fr));
     }
   }
-  @media (min-width: 1200px) { /* Desktop (5) */
+
+  @media (min-width: 1200px) {
+
+    /* Desktop (5) */
     .client-grid {
       grid-template-columns: repeat(5, minmax(0, 1fr));
     }
   }
-  @media (min-width: 1600px) { /* Desktop XL (6) */
+
+  @media (min-width: 1600px) {
+
+    /* Desktop XL (6) */
     .client-grid {
       grid-template-columns: repeat(6, minmax(0, 1fr));
     }
@@ -165,16 +192,175 @@
 
   /* --- EFECTO GLOW PARA NAVBAR ACTIVO --- */
   .active-nav-glow::after {
-    content: ''; /* Obligatorio para pseudo-elementos */
+    content: '';
+    /* Obligatorio para pseudo-elementos */
     position: absolute;
     top: 0;
     bottom: 0;
     right: 0;
-    width: 3px; /* Ancho de la barra de color */
-    background-color: rgb(var(--primary)); /* Usa tu color primario */
+    width: 3px;
+    /* Ancho de la barra de color */
+    background-color: rgb(var(--primary));
+    /* Usa tu color primario */
     /* El efecto de "brillo" con box-shadow */
-    box-shadow: -2px 0 12px 2px rgb(var(--primary) / 0.6); /* Ajusta los valores para el brillo deseado */
+    box-shadow: -2px 0 12px 2px rgb(var(--primary) / 0.6);
+    /* Ajusta los valores para el brillo deseado */
     /* Opcional: redondear la barra misma */
     border-radius: 0 3px 3px 0;
+  }
+
+  /* --- ESTILOS PARA DROPDOWNS DEL CALENDARIO (MES Y AÑO) --- */
+  /* Los dropdowns nativos del react-day-picker necesitan estilizado específico */
+  .rdp-dropdown {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-color: rgb(var(--popover));
+    color: rgb(var(--popover-foreground));
+    border: 1px solid rgb(var(--border));
+    border-radius: var(--radius);
+    padding: 0.25rem 2rem 0.25rem 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    outline: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.5rem center;
+    background-size: 12px;
+  }
+
+  .rdp-dropdown:hover {
+    background-color: rgb(var(--accent));
+  }
+
+  .rdp-dropdown:focus {
+    border-color: rgb(var(--ring));
+    box-shadow: 0 0 0 2px rgb(var(--ring) / 0.2);
+  }
+
+  .rdp-dropdown option {
+    background-color: rgb(var(--popover));
+    color: rgb(var(--popover-foreground));
+    padding: 0.5rem;
+  }
+
+  .rdp-dropdown option:checked,
+  .rdp-dropdown option:hover {
+    background-color: rgb(var(--accent));
+    color: rgb(var(--accent-foreground));
+  }
+
+  /* Estilos específicos para modo oscuro */
+  .dark .rdp-dropdown {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23aaa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  }
+
+  /* --- ESTILOS PARA REACT-PHONE-INPUT-2 --- */
+  .phone-input-container {
+    width: 100%;
+    font-family: inherit;
+  }
+
+  .phone-input-container .phone-input-field {
+    width: 100% !important;
+    height: 2.25rem !important;
+    padding: 0.5rem 0.75rem 0.5rem 3rem !important;
+    background-color: rgb(var(--background)) !important;
+    color: rgb(var(--foreground)) !important;
+    border: 1px solid rgb(var(--input)) !important;
+    border-radius: var(--radius) !important;
+    font-size: 0.875rem !important;
+    outline: none !important;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .phone-input-container .phone-input-field:focus {
+    border-color: rgb(var(--ring)) !important;
+    box-shadow: 0 0 0 2px rgb(var(--ring) / 0.2) !important;
+  }
+
+  .phone-input-container .phone-input-field:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .phone-input-container .phone-input-button {
+    background-color: rgb(var(--background)) !important;
+    border: 1px solid rgb(var(--input)) !important;
+    border-right: none !important;
+    border-radius: var(--radius) 0 0 var(--radius) !important;
+  }
+
+  .phone-input-container .phone-input-button:hover {
+    background-color: rgb(var(--accent)) !important;
+  }
+
+  .phone-input-container .phone-input-dropdown {
+    background-color: rgb(var(--popover)) !important;
+    color: rgb(var(--popover-foreground)) !important;
+    border: 1px solid rgb(var(--border)) !important;
+    border-radius: var(--radius) !important;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1) !important;
+    max-height: 250px !important;
+  }
+
+  .phone-input-container .phone-input-dropdown .country {
+    padding: 0.5rem 0.75rem !important;
+    color: rgb(var(--popover-foreground)) !important;
+  }
+
+  .phone-input-container .phone-input-dropdown .country:hover,
+  .phone-input-container .phone-input-dropdown .country.highlight {
+    background-color: rgb(var(--accent)) !important;
+    color: rgb(var(--accent-foreground)) !important;
+  }
+
+  .phone-input-container .phone-input-dropdown .divider {
+    border-color: rgb(var(--border)) !important;
+  }
+
+  .phone-input-container .phone-input-search {
+    background-color: rgb(var(--background)) !important;
+    border-bottom: 1px solid rgb(var(--border)) !important;
+    padding: 0.5rem !important;
+  }
+
+  .phone-input-container .phone-input-search input {
+    background-color: rgb(var(--background)) !important;
+    color: rgb(var(--foreground)) !important;
+    border: 1px solid rgb(var(--input)) !important;
+    border-radius: var(--radius) !important;
+    padding: 0.25rem 0.5rem !important;
+    width: 100% !important;
+    font-size: 0.875rem !important;
+  }
+
+  .phone-input-container .phone-input-search input::placeholder {
+    color: rgb(var(--muted-foreground)) !important;
+  }
+
+  .phone-input-container .phone-input-search input:focus {
+    outline: none !important;
+    border-color: rgb(var(--ring)) !important;
+  }
+
+  /* Modo oscuro específico */
+  .dark .phone-input-container .selected-flag {
+    background-color: transparent !important;
+  }
+
+  .dark .phone-input-container .selected-flag:hover,
+  .dark .phone-input-container .selected-flag:focus,
+  .dark .phone-input-container .selected-flag.open {
+    background-color: rgb(var(--accent)) !important;
+  }
+
+  .dark .phone-input-container .arrow {
+    border-top-color: rgb(var(--foreground)) !important;
+  }
+
+  .dark .phone-input-container .arrow.up {
+    border-bottom-color: rgb(var(--foreground)) !important;
   }
 }

@@ -85,6 +85,7 @@ export default function ModelProfilePageClient({ initialModel }: ModelProfileCli
       gender: initialModel.gender ?? null,
       birth_date: initialModel.birth_date ?? '',
       national_id: initialModel.national_id ?? '',
+      passport_number: 'passport_number' in initialModel ? String(initialModel.passport_number ?? '') : '',
       phone_e164: initialModel.phone_e164 ?? '',
       email: initialModel.email ?? '',
       country: initialModel.country ?? null,

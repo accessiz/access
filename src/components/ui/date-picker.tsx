@@ -10,6 +10,18 @@ import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
+// Locale español personalizado con meses abreviados
+const esShortMonths = {
+    ...es,
+    localize: {
+        ...es.localize,
+        month: (n: number) => {
+            const months = ['Ene.', 'Feb.', 'Mar.', 'Abr.', 'May.', 'Jun.', 'Jul.', 'Ago.', 'Sep.', 'Oct.', 'Nov.', 'Dic.']
+            return months[n]
+        }
+    }
+}
+
 interface DatePickerProps {
     value?: string
     onChange?: (date: string) => void
@@ -60,7 +72,7 @@ export function DatePicker({ value, onChange, className, placeholder = "Seleccio
                     mode="single"
                     selected={date}
                     onSelect={handleSelect}
-                    locale={es}
+                    locale={esShortMonths}
                     autoFocus
                     captionLayout="dropdown"
                     startMonth={new Date(1960, 0)}

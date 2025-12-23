@@ -22,7 +22,7 @@ const emptyToNull = (val: unknown) => {
 const optionalString = z.preprocess(emptyToNull, z.string().nullable());
 
 // Esquema para un campo de texto opcional con una regex específica
-const optionalStringWithRegex = (regex: RegExp, message: string) => 
+const optionalStringWithRegex = (regex: RegExp, message: string) =>
   z.preprocess(emptyToNull, z.string().regex(regex, message).nullable());
 
 // Esquema para un campo numérico opcional y positivo
@@ -58,7 +58,7 @@ const optionalUSSize = z.preprocess((val) => {
 ]));
 
 // Esquema para un campo enum opcional
-const optionalEnum = <T extends [string, ...string[]]>(values: T) => 
+const optionalEnum = <T extends [string, ...string[]]>(values: T) =>
   z.preprocess(emptyToNull, z.enum(values).nullable());
 
 // ------------------------------------------------------
@@ -68,20 +68,30 @@ const optionalEnum = <T extends [string, ...string[]]>(values: T) =>
 export const modelFormSchema = z.object({
   // --- CAMPOS OBLIGATORIOS ---
   full_name: z.string().min(3, "El nombre completo es obligatorio. Ej: Juan Pérez"),
-  
-  phone_e164: z.string().min(1, "El teléfono es obligatorio.")
-    .regex(phoneRegex, "Ingresa el teléfono en formato internacional, por ejemplo: +50212345678"),
+
+  // Teléfono: preprocess para limpiar formato visual (espacios, guiones, paréntesis)
+  // y convertir a formato E.164 puro antes de validar
+  phone_e164: z.preprocess((val) => {
+    if (typeof val === 'string') {
+      // Eliminar espacios, guiones, paréntesis y otros caracteres de formato
+      // Mantener solo el + inicial y los dígitos
+      return val.replace(/[\s\-\(\)\.]/g, '');
+    }
+    return val;
+  }, z.string().min(1, "El teléfono es obligatorio.")
+    .regex(phoneRegex, "Ingresa el teléfono en formato internacional, por ejemplo: +50212345678")),
 
   // --- CAMPOS OPCIONALES ---
-  
+
   // Email ahora es opcional (se movió aquí y usa preprocess)
   email: z.preprocess(
-    emptyToNull, 
+    emptyToNull,
     z.string().email("El formato del correo no es válido. Ej: usuario@dominio.com").nullable()
   ),
 
   alias: optionalStringWithRegex(nameRegex, "El alias solo puede contener letras, espacios y apóstrofes. Ej: Ana María"),
   national_id: optionalString,
+  passport_number: optionalString,
   gender: optionalEnum(['Male', 'Female']),
   birth_date: optionalString,
   date_joined_agency: optionalString,
@@ -95,8 +105,18 @@ export const modelFormSchema = z.object({
   waist_cm: optionalPositiveNumber,
   hips_cm: optionalPositiveNumber,
   shoe_size_us: optionalUSSize,
-  pants_size: optionalPositiveNumber,
-  
+  pants_size: z.preprocess((val) => {
+    // Convert string to number for database compatibility
+    if (val === undefined || val === null || (typeof val === 'string' && val.trim() === '')) {
+      return null;
+    }
+    if (typeof val === 'string') {
+      const num = parseInt(val, 10);
+      return isNaN(num) ? null : num;
+    }
+    return val;
+  }, z.number().positive().nullable()),
+
   top_size: optionalString,
   eye_color: optionalString,
   hair_color: optionalString,
