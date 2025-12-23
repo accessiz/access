@@ -2,6 +2,7 @@
 
 import { useState, useTransition, useMemo } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Model, Project } from '@/lib/types';
 import { addModelToProject, removeModelFromProject } from '@/lib/actions/projects_models';
@@ -40,23 +41,33 @@ const ClientStatusBadge = ({ status }: { status: Model['client_selection'] }) =>
     return <Badge variant="outline"><Clock className="mr-1 h-3 w-3" /> Pendiente</Badge>;
 };
 
-const TalentRow = ({ model, project, onAction, isPending, actionType }: {
+const TalentRow = ({ model, project, onAction, isPending, actionType, onRefresh, onAssignmentChange }: {
     model: Model;
     project: Project;
     onAction: () => void;
     isPending: boolean;
     actionType: 'add' | 'remove';
+    onRefresh?: () => void;
+    onAssignmentChange?: (modelId: string, scheduleId: string, assigned: boolean) => void;
 }) => {
     const [isAssigning, setIsAssigning] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
 
     const handleToggleAssignment = async (scheduleId: string, currentAssigned: boolean) => {
         setIsAssigning(true);
+        let success = false;
         if (currentAssigned) {
-            await unassignModelFromSchedule(scheduleId, model.id, project.id);
+            const result = await unassignModelFromSchedule(scheduleId, model.id, project.id);
+            success = result.success;
         } else {
-            await assignModelToSchedule(scheduleId, model.id, project.id);
+            const result = await assignModelToSchedule(scheduleId, model.id, project.id);
+            success = result.success;
         }
+        if (success) {
+            // Actualizar el estado local inmediatamente
+            onAssignmentChange?.(model.id, scheduleId, !currentAssigned);
+        }
+        onRefresh?.();
         setIsAssigning(false);
     };
 
@@ -65,6 +76,7 @@ const TalentRow = ({ model, project, onAction, isPending, actionType }: {
         const result = await syncProjectSchedule(project.id);
         if (result.success) {
             toast.success('Horarios sincronizados correctamente.');
+            onRefresh?.();
         } else {
             toast.error(result.error || 'Error al sincronizar.');
         }
@@ -263,17 +275,23 @@ const formatSchedule = (schedule: Project['schedule']) => {
 };
 
 export default function ProjectDetailClient({ project: initialProject, initialSelectedModels, allModels }: ProjectDetailClientProps) {
+    const router = useRouter();
     const [project, setProject] = useState(initialProject);
     const [selectedModels, setSelectedModels] = useState(initialSelectedModels);
     const [searchQuery, setSearchQuery] = useState('');
     const [isPending, startTransition] = useTransition();
     const [isEditing, setIsEditing] = useState(false);
 
+    const handleRefresh = () => {
+        router.refresh();
+    };
+
     const handleStatusChange = (newStatus: Project['status']) => {
         setProject(currentProject => ({ ...currentProject, status: newStatus }));
     };
 
     const scheduleElements = formatSchedule(project.schedule);
+
 
     const availableModels = useMemo(() => {
         const selectedIds = new Set(selectedModels.map(m => m.id));
@@ -304,6 +322,36 @@ export default function ProjectDetailClient({ project: initialProject, initialSe
                 toast.success(`Talento quitado de ${project.project_name}`);
             } else { toast.error(result.error || "Error desconocido al quitar"); }
         });
+    };
+
+    // Función para manejar cambios en asignaciones de horario
+    const handleAssignmentChange = (modelId: string, scheduleId: string, assigned: boolean) => {
+        setSelectedModels(prev => prev.map(model => {
+            if (model.id !== modelId) return model;
+
+            const currentAssignments = model.assignments || [];
+
+            if (assigned) {
+                // Agregar la asignación
+                const newAssignment = {
+                    id: `temp-${Date.now()}`, // ID temporal hasta que se refresque
+                    schedule_id: scheduleId,
+                    model_id: modelId,
+                    is_confirmed: null,
+                    created_at: new Date().toISOString()
+                };
+                return {
+                    ...model,
+                    assignments: [...currentAssignments, newAssignment]
+                };
+            } else {
+                // Eliminar la asignación
+                return {
+                    ...model,
+                    assignments: currentAssignments.filter(a => a.schedule_id !== scheduleId)
+                };
+            }
+        }));
     };
 
     // Función para manejar la cancelación o finalización de la edición
@@ -381,6 +429,7 @@ export default function ProjectDetailClient({ project: initialProject, initialSe
                                         onAction={() => handleAddModel(model.id)}
                                         isPending={isPending}
                                         actionType="add"
+                                        onRefresh={handleRefresh}
                                     />
                                 )) : (
                                     <p className="text-center text-copy-14 text-muted-foreground py-4">No hay más talentos disponibles o que coincidan.</p>
@@ -406,6 +455,8 @@ export default function ProjectDetailClient({ project: initialProject, initialSe
                                         onAction={() => handleRemoveModel(model.id)}
                                         isPending={isPending}
                                         actionType="remove"
+                                        onRefresh={handleRefresh}
+                                        onAssignmentChange={handleAssignmentChange}
                                     />
                                 )) : (
                                     <p className="text-center text-copy-14 text-muted-foreground py-4">Aún no has añadido talentos.</p>
