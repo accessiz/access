@@ -140,3 +140,157 @@ export async function getModelById(id: string): Promise<(Model & {
     compCardUrls,
   };
 }
+
+export async function getModelWorkHistory(modelId: string) {
+  noStore();
+  const supabase = await createClient();
+
+  // Type definitions for query results
+  interface ProjectData {
+    id: string;
+    project_name: string;
+    client_name: string | null;
+    status: string;
+    created_at: string;
+    clients: { name: string } | null;
+    brands: { name: string } | null;
+  }
+
+  interface ProjectModelRow {
+    agreed_fee: number | null;
+    fee_type: string | null;
+    currency: string | null;
+    internal_status: string | null;
+    client_selection: string | null;
+    projects: ProjectData | null;
+  }
+
+  interface AssignmentRow {
+    id: string;
+    schedule_id: string | null;
+    payment_status: string | null;
+    payment_date: string | null;
+    daily_fee: number | null;
+    project_schedule: {
+      project_id: string;
+      start_time: string;
+      end_time: string;
+    } | null;
+  }
+
+  // 1. Obtener proyectos donde el modelo está asignado (projects_models)
+  const { data, error } = await supabase
+    .from('projects_models')
+    .select(`
+      agreed_fee,
+      fee_type,
+      currency,
+      internal_status,
+      client_selection,
+      projects!projects_models_project_id_fkey (
+        id,
+        project_name,
+        client_name,
+        status,
+        created_at,
+        clients (name),
+        brands (name)
+      )
+    `)
+    .eq('model_id', modelId);
+
+  if (error) {
+    logError(error, { action: 'getModelWorkHistory.projects_models', modelId });
+    return [];
+  }
+
+  // 2. Obtener todas las asignaciones detalladas del modelo para contar días y estados de pago
+  const { data: assignments, error: assignmentsError } = await supabase
+    .from('model_assignments')
+    .select(`
+      id,
+      schedule_id,
+      payment_status,
+      payment_date,
+      daily_fee,
+      project_schedule (
+        project_id,
+        start_time,
+        end_time
+      )
+    `)
+    .eq('model_id', modelId);
+
+  if (assignmentsError) {
+    logError(assignmentsError, { action: 'getModelWorkHistory.assignments', modelId });
+  }
+
+  const typedData = (data || []) as unknown as ProjectModelRow[];
+  const typedAssignments = (assignments || []) as unknown as AssignmentRow[];
+
+  // 3. Cruzar los datos y calcular estados de pago consolidados
+  return typedData
+    .filter((pm) => pm.projects)
+    .map((pm) => {
+      const project = pm.projects!;
+      // Asignaciones de este modelo en este proyecto
+      const projectAssignments = typedAssignments.filter(
+        (a) => a.project_schedule?.project_id === project.id
+      );
+
+      // Calcular estado de pago consolidado
+      const paidCount = projectAssignments.filter((a) => a.payment_status === 'paid').length;
+      const totalAssignments = projectAssignments.length;
+
+      let paymentStatus: 'pending' | 'paid' | 'partial' = 'pending';
+      if (totalAssignments > 0) {
+        if (paidCount === totalAssignments) {
+          paymentStatus = 'paid';
+        } else if (paidCount > 0) {
+          paymentStatus = 'partial';
+        }
+      }
+
+      // Fechas del proyecto
+      const dates = projectAssignments
+        .map((a) => a.project_schedule?.start_time)
+        .filter(Boolean)
+        .sort();
+
+      const firstWorkDate = dates[0] || null;
+      const lastWorkDate = dates[dates.length - 1] || null;
+
+      // Último pago
+      const lastPaymentDate = projectAssignments
+        .filter((a) => a.payment_date)
+        .map((a) => a.payment_date)
+        .sort()
+        .pop() || null;
+
+      // Total calculado
+      const fee = pm.agreed_fee || projectAssignments[0]?.daily_fee || 0;
+      const daysWorked = totalAssignments || 1;
+      const totalAmount = fee * daysWorked;
+
+      return {
+        projectId: project.id,
+        projectName: project.project_name,
+        clientName: project.clients?.name || project.client_name,
+        brandName: project.brands?.name || null,
+        projectStatus: project.status,
+        clientSelection: pm.client_selection || 'pending',
+        createdAt: project.created_at,
+        agreedFee: fee,
+        feeType: pm.fee_type || 'per_day',
+        currency: pm.currency || 'GTQ',
+        daysWorked,
+        totalAmount,
+        paymentStatus,
+        lastPaymentDate,
+        firstWorkDate,
+        lastWorkDate,
+        assignments: projectAssignments
+      };
+    })
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+}

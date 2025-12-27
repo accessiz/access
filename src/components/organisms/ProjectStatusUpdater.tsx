@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { Project, Model, ProjectStatus } from '@/lib/types';
 import { updateProjectStatus } from '@/lib/actions/projects';
 
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import {
   Select,

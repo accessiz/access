@@ -60,13 +60,14 @@ export async function GET(
             headers: newHeaders,
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Proxy Error:', error);
-        return new NextResponse(`Internal Server Error: ${error.message}`, { status: 500 });
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        return new NextResponse(`Internal Server Error: ${message}`, { status: 500 });
     }
 }
 
-export async function OPTIONS(request: NextRequest) {
+export async function OPTIONS(_request: NextRequest) {
     return new NextResponse(null, {
         status: 204,
         headers: {

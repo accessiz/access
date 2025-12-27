@@ -15,7 +15,7 @@ export function mediaUrl(url: string | null | undefined): string | undefined {
       return `/api/media${urlObj.pathname}`;
     }
     return url;
-  } catch (e) {
+  } catch (_e) {
     return url;
   }
 }

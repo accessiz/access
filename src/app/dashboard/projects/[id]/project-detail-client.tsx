@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useTransition, useMemo } from 'react';
+import { useState, useTransition, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Model, Project } from '@/lib/types';
-import { addModelToProject, removeModelFromProject } from '@/lib/actions/projects_models';
+import { addModelToProject, updateModelPaymentDetail } from '@/lib/actions/projects_models';
 import { SUPABASE_PUBLIC_URL } from '@/lib/constants';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,14 +21,17 @@ import { ProjectStatusUpdater } from '@/components/organisms/ProjectStatusUpdate
 import {
     PlusCircle, XCircle, Search, Loader2, Share2, Eye,
     CheckCircle2, XCircle as XCircleIcon, Clock, ChevronLeft, Pencil,
-    CalendarCheck2, CalendarX2
+    CalendarCheck2, Banknote, Save, Calculator, Info
 } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ProjectForm } from '@/components/organisms/ProjectForm';
+import { TalentAssignmentPanel } from '@/components/organisms/TalentAssignmentPanel';
 import { assignModelToSchedule, unassignModelFromSchedule } from '@/lib/actions/projects_models';
-import { syncProjectSchedule } from '@/lib/actions/projects';
+import { syncProjectSchedule, autoCloseExpiredProject } from '@/lib/actions/projects';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 
 const ClientStatusBadge = ({ status }: { status: Model['client_selection'] }) => {
@@ -41,7 +44,226 @@ const ClientStatusBadge = ({ status }: { status: Model['client_selection'] }) =>
     return <Badge variant="outline"><Clock className="mr-1 h-3 w-3" /> Pendiente</Badge>;
 };
 
-const TalentRow = ({ model, project, onAction, isPending, actionType, onRefresh, onAssignmentChange }: {
+// Componente de Resumen de Presupuesto
+const BudgetSummaryCard = ({ project, selectedModels }: { project: Project, selectedModels: Model[] }) => {
+    // Calcular estadísticas
+    const approvedModels = selectedModels.filter(m => m.client_selection === 'approved');
+    const pendingModels = selectedModels.filter(m => m.client_selection === 'pending');
+
+    // Calcular total a pagar solo para modelos aprobados
+    const totalApproved = approvedModels.reduce((sum, model) => {
+        const fee = model.agreed_fee || project.default_model_fee || 0;
+        const daysWorked = model.assignments?.length || 1;
+        return sum + (fee * daysWorked);
+    }, 0);
+
+    // Calcular estimado pendiente (si todos los pendientes fueran aprobados)
+    const estimatedPending = pendingModels.reduce((sum, model) => {
+        const fee = model.agreed_fee || project.default_model_fee || 0;
+        const daysWorked = model.assignments?.length || 1;
+        return sum + (fee * daysWorked);
+    }, 0);
+
+    const currency = project.currency || 'GTQ';
+    const feeType = project.default_fee_type === 'per_hour' ? '/hora' : project.default_fee_type === 'fixed' ? 'fijo' : '/día';
+
+    return (
+        <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-blue-200 dark:border-blue-800">
+            <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
+                    <Calculator className="h-5 w-5" />
+                    Resumen de Presupuesto
+                </CardTitle>
+                <CardDescription>
+                    Tarifa base: <span className="font-bold text-foreground">{currency} {(project.default_model_fee || 0).toLocaleString()}</span> {feeType} por modelo
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <div className="grid grid-cols-3 gap-4">
+                    <div className="text-center p-3 bg-white/60 dark:bg-black/20 rounded-lg">
+                        <p className="text-2xl font-black text-green-600">{approvedModels.length}</p>
+                        <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Aprobados</p>
+                    </div>
+                    <div className="text-center p-3 bg-white/60 dark:bg-black/20 rounded-lg">
+                        <p className="text-2xl font-black text-amber-600">{pendingModels.length}</p>
+                        <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Pendientes</p>
+                    </div>
+                    <div className="text-center p-3 bg-white/60 dark:bg-black/20 rounded-lg">
+                        <p className="text-2xl font-black">{selectedModels.length}</p>
+                        <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Total</p>
+                    </div>
+                </div>
+
+                <Separator className="bg-blue-200 dark:bg-blue-700" />
+
+                <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">Total Confirmado (aprobados):</span>
+                        <span className="text-xl font-black text-green-600">
+                            {currency} {totalApproved.toLocaleString()}
+                        </span>
+                    </div>
+                    {estimatedPending > 0 && (
+                        <div className="flex justify-between items-center opacity-70">
+                            <span className="text-sm text-muted-foreground italic">Estimado pendiente:</span>
+                            <span className="text-lg font-semibold text-amber-600">
+                                + {currency} {estimatedPending.toLocaleString()}
+                            </span>
+                        </div>
+                    )}
+                </div>
+
+                {approvedModels.length > 0 && (
+                    <>
+                        <Separator className="bg-blue-200 dark:bg-blue-700" />
+                        <div className="text-xs text-muted-foreground">
+                            <p className="font-semibold mb-1">Desglose de modelos aprobados:</p>
+                            {approvedModels.map(model => {
+                                const fee = model.agreed_fee || project.default_model_fee || 0;
+                                const days = model.assignments?.length || 1;
+                                return (
+                                    <div key={model.id} className="flex justify-between py-0.5">
+                                        <span>{model.alias} ({days} día{days > 1 ? 's' : ''})</span>
+                                        <span className="font-mono">{currency} {(fee * days).toLocaleString()}</span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </>
+                )}
+            </CardContent>
+        </Card>
+    );
+};
+
+const PaymentEditorPopover = ({
+    model,
+    project,
+    onRefresh,
+    onPaymentChange
+}: {
+    model: Model,
+    project: Project,
+    onRefresh?: () => void,
+    onPaymentChange?: (modelId: string, fee: number, feeType: string, currency: string) => void
+}) => {
+    const [fee, setFee] = useState(model.agreed_fee?.toString() || '0');
+    const [feeType, setFeeType] = useState(model.fee_type || 'per_day');
+    const [currency, setCurrency] = useState(model.currency || 'GTQ');
+    const [isUpdating, setIsUpdating] = useState(false);
+    const [open, setOpen] = useState(false);
+
+    const handleSave = async () => {
+        setIsUpdating(true);
+        const parsedFee = parseFloat(fee);
+        const result = await updateModelPaymentDetail(project.id, model.id, {
+            agreed_fee: parsedFee,
+            fee_type: feeType,
+            currency: currency
+        });
+        if (result.success) {
+            toast.success('Pago actualizado correctamente.');
+            // Actualización optimista del estado local
+            onPaymentChange?.(model.id, parsedFee, feeType, currency);
+            setOpen(false);
+            onRefresh?.();
+        } else {
+            toast.error(result.error || 'Error al actualizar pago.');
+        }
+        setIsUpdating(false);
+    };
+
+    return (
+        <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+                <Button size="icon" variant="outline" className="h-8 w-8" title="Editar Pago">
+                    <Banknote className="h-4 w-4" />
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80 p-4" align="end">
+                <div className="space-y-4">
+                    <div className="space-y-1">
+                        <h4 className="font-medium text-copy-14">Detalles de Pago</h4>
+                        <p className="text-label-12 text-muted-foreground">Ajusta la tarifa individual para {model.alias}.</p>
+                    </div>
+
+                    <div className="grid gap-3">
+                        <div className="grid gap-2">
+                            <Label htmlFor="fee">Tarifa</Label>
+                            <Input
+                                id="fee"
+                                type="number"
+                                value={fee}
+                                onChange={(e) => setFee(e.target.value)}
+                                className="h-9"
+                            />
+                        </div>
+
+                        <div className="grid gap-2">
+                            <div className="flex items-center gap-1.5">
+                                <Label>Tipo de Pago</Label>
+                                <TooltipProvider>
+                                    <Tooltip delayDuration={100}>
+                                        <TooltipTrigger asChild>
+                                            <button type="button" className="text-muted-foreground hover:text-foreground transition-colors">
+                                                <Info className="h-3 w-3" />
+                                            </button>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="top" className="max-w-xs p-3 text-sm">
+                                            <p className="font-semibold mb-2">¿Cuál elegir?</p>
+                                            <ul className="space-y-1 text-xs">
+                                                <li><strong>Por día:</strong> Según días trabajados.</li>
+                                                <li><strong>Por hora:</strong> Según horas trabajadas.</li>
+                                                <li><strong>Tarifa fija:</strong> Pago único por el proyecto.</li>
+                                            </ul>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
+                            </div>
+                            <Select value={feeType} onValueChange={setFeeType}>
+                                <SelectTrigger className="h-9">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="per_day">Por día</SelectItem>
+                                    <SelectItem value="per_hour">Por hora</SelectItem>
+                                    <SelectItem value="fixed">Tarifa fija</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className="grid gap-2">
+                            <Label>Moneda</Label>
+                            <Select value={currency} onValueChange={setCurrency}>
+                                <SelectTrigger className="h-9">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="GTQ">GTQ</SelectItem>
+                                    <SelectItem value="USD">USD</SelectItem>
+                                    <SelectItem value="EUR">EUR</SelectItem>
+                                    <SelectItem value="MXN">MXN</SelectItem>
+                                    <SelectItem value="COP">COP</SelectItem>
+                                    <SelectItem value="PEN">PEN</SelectItem>
+                                    <SelectItem value="ARS">ARS</SelectItem>
+                                    <SelectItem value="CLP">CLP</SelectItem>
+                                    <SelectItem value="BRL">BRL</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+
+                    <Button className="w-full" size="sm" onClick={handleSave} disabled={isUpdating}>
+                        {isUpdating ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <Save className="mr-2 h-3 w-3" />}
+                        Guardar Cambios
+                    </Button>
+                </div>
+            </PopoverContent>
+        </Popover>
+    );
+};
+
+const TalentRow = ({ model, project, onAction, isPending, actionType, onRefresh, onAssignmentChange, onPaymentChange }: {
     model: Model;
     project: Project;
     onAction: () => void;
@@ -49,12 +271,17 @@ const TalentRow = ({ model, project, onAction, isPending, actionType, onRefresh,
     actionType: 'add' | 'remove';
     onRefresh?: () => void;
     onAssignmentChange?: (modelId: string, scheduleId: string, assigned: boolean) => void;
+    onPaymentChange?: (modelId: string, fee: number, feeType: string, currency: string) => void;
 }) => {
     const [isAssigning, setIsAssigning] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
 
     const handleToggleAssignment = async (scheduleId: string, currentAssigned: boolean) => {
         setIsAssigning(true);
+
+        // Optimistic update ANTES de la llamada al servidor
+        onAssignmentChange?.(model.id, scheduleId, !currentAssigned);
+
         let success = false;
         if (currentAssigned) {
             const result = await unassignModelFromSchedule(scheduleId, model.id, project.id);
@@ -63,11 +290,13 @@ const TalentRow = ({ model, project, onAction, isPending, actionType, onRefresh,
             const result = await assignModelToSchedule(scheduleId, model.id, project.id);
             success = result.success;
         }
-        if (success) {
-            // Actualizar el estado local inmediatamente
-            onAssignmentChange?.(model.id, scheduleId, !currentAssigned);
+
+        if (!success) {
+            // Revertir si falla
+            onAssignmentChange?.(model.id, scheduleId, currentAssigned);
+            toast.error('Error al actualizar asignación');
         }
-        onRefresh?.();
+
         setIsAssigning(false);
     };
 
@@ -91,7 +320,14 @@ const TalentRow = ({ model, project, onAction, isPending, actionType, onRefresh,
                     <AvatarFallback>{model.alias?.substring(0, 2) || 'IZ'}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                    <p className="text-label-14 font-medium truncate">{model.alias}</p>
+                    <div className="flex items-center gap-2">
+                        <p className="text-label-14 font-medium truncate">{model.alias}</p>
+                        {actionType === 'remove' && (
+                            <Badge variant="outline" className="text-[10px] h-4 px-1 leading-none font-mono">
+                                {model.currency} {model.agreed_fee} {model.fee_type === 'per_day' ? '/d' : model.fee_type === 'per_hour' ? '/h' : ''}
+                            </Badge>
+                        )}
+                    </div>
                     <p className="text-label-13 text-muted-foreground truncate">{model.country}</p>
                 </div>
 
@@ -99,7 +335,7 @@ const TalentRow = ({ model, project, onAction, isPending, actionType, onRefresh,
                     {actionType === 'remove' && (
                         <>
                             <ClientStatusBadge status={model.client_selection} />
-
+                            <PaymentEditorPopover model={model} project={project} onRefresh={onRefresh} onPaymentChange={onPaymentChange} />
                             <Popover>
                                 <PopoverTrigger asChild>
                                     <Button size="icon" variant="outline" className="h-8 w-8" disabled={isPending || isAssigning || isSyncing}>
@@ -142,7 +378,7 @@ const TalentRow = ({ model, project, onAction, isPending, actionType, onRefresh,
                                                     );
                                                 }
 
-                                                return scheduleItems.map((item, idx) => {
+                                                return scheduleItems.map((item, _idx) => {
                                                     if (!item.id) return null;
                                                     const isAssigned = !!model.assignments?.some(a => a.schedule_id === item.id);
                                                     const dateObj = new Date(`${item.date}T00:00:00`);
@@ -231,7 +467,9 @@ const timeToMinutes = (timeStr: string) => {
     const parts = timeStr.split(' ');
     if (parts.length < 2) return 0;
     const [time, period] = parts;
-    let [hours, minutes] = time.split(':').map(Number);
+    const [hoursStr, minutesStr] = time.split(':');
+    let hours = Number(hoursStr);
+    const minutes = Number(minutesStr);
     if (period === 'PM' && hours < 12) hours += 12;
     if (period === 'AM' && hours === 12) hours = 0;
     return hours * 60 + minutes;
@@ -290,6 +528,29 @@ export default function ProjectDetailClient({ project: initialProject, initialSe
         setProject(currentProject => ({ ...currentProject, status: newStatus }));
     };
 
+    // Verificar auto-cierre de proyecto al cargar
+    useEffect(() => {
+        const checkAutoClose = async () => {
+            if (project.status === 'completed' || project.status === 'archived') return;
+
+            const result = await autoCloseExpiredProject(project.id);
+            if (result.closed) {
+                toast.info('Este proyecto ha sido cerrado automáticamente porque pasó su fecha final.', {
+                    description: 'Los modelos pendientes fueron marcados como rechazados.',
+                    duration: 6000,
+                });
+                setProject(prev => ({ ...prev, status: 'completed' }));
+                // Actualizar modelos pendientes a rechazados en el estado local
+                setSelectedModels(prev => prev.map(m =>
+                    m.client_selection === 'pending'
+                        ? { ...m, client_selection: 'rejected' }
+                        : m
+                ));
+            }
+        };
+        checkAutoClose();
+    }, [project.id, project.status]);
+
     const scheduleElements = formatSchedule(project.schedule);
 
 
@@ -305,22 +566,29 @@ export default function ProjectDetailClient({ project: initialProject, initialSe
 
     const handleAddModel = (modelId: string) => {
         startTransition(async () => {
+            // Optimistic update ANTES de la llamada al servidor
+            const modelToAdd = allModels.find(m => m.id === modelId);
+            if (modelToAdd) {
+                setSelectedModels(prev => [...prev, {
+                    ...modelToAdd,
+                    client_selection: 'pending',
+                    agreed_fee: project.default_model_fee || 0,
+                    fee_type: project.default_fee_type || 'per_day',
+                    currency: project.currency || 'GTQ',
+                    assignments: []
+                }]);
+            }
+
             const result = await addModelToProject(project.id, modelId);
             if (result.success) {
-                const modelToAdd = allModels.find(m => m.id === modelId);
-                if (modelToAdd) setSelectedModels(prev => [...prev, { ...modelToAdd, client_selection: 'pending' }]);
                 toast.success(`Talento añadido a ${project.project_name}`);
-            } else { toast.error(result.error || "Error desconocido al añadir"); }
-        });
-    };
-
-    const handleRemoveModel = (modelId: string) => {
-        startTransition(async () => {
-            const result = await removeModelFromProject(project.id, modelId);
-            if (result.success) {
-                setSelectedModels(prev => prev.filter(m => m.id !== modelId));
-                toast.success(`Talento quitado de ${project.project_name}`);
-            } else { toast.error(result.error || "Error desconocido al quitar"); }
+            } else {
+                // Revertir si falla
+                if (modelToAdd) {
+                    setSelectedModels(prev => prev.filter(m => m.id !== modelId));
+                }
+                toast.error(result.error || "Error desconocido al añadir");
+            }
         });
     };
 
@@ -337,8 +605,17 @@ export default function ProjectDetailClient({ project: initialProject, initialSe
                     id: `temp-${Date.now()}`, // ID temporal hasta que se refresque
                     schedule_id: scheduleId,
                     model_id: modelId,
+                    project_id: project.id, // Nuevo campo requerido
                     is_confirmed: null,
-                    created_at: new Date().toISOString()
+                    created_at: new Date().toISOString(),
+                    // Nuevos campos de pago (defaults)
+                    daily_fee: null,
+                    hours_worked: null,
+                    adjustment_amount: 0,
+                    adjustment_reason: null,
+                    payment_status: 'pending',
+                    payment_date: null,
+                    notes: null,
                 };
                 return {
                     ...model,
@@ -407,7 +684,10 @@ export default function ProjectDetailClient({ project: initialProject, initialSe
 
             <ProjectStatusUpdater project={project} selectedModels={selectedModels} />
 
-            <div className="grid md:grid-cols-2 gap-8 items-start">
+            {/* Resumen de Presupuesto */}
+            <BudgetSummaryCard project={project} selectedModels={selectedModels} />
+
+            <div className="grid md:grid-cols-[30%_1fr] gap-6 items-start">
                 <Card>
                     <CardHeader>
                         <CardTitle>Selección de Talentos</CardTitle>
@@ -439,32 +719,16 @@ export default function ProjectDetailClient({ project: initialProject, initialSe
                     </CardContent>
                 </Card>
 
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Talentos en el Proyecto</CardTitle>
-                        <CardDescription>Hay {selectedModels.length} talento(s) en esta selección.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <ScrollArea className="h-[28.5rem]">
-                            <div className="space-y-2 pr-4">
-                                {selectedModels.length > 0 ? selectedModels.map(model => (
-                                    <TalentRow
-                                        key={model.id}
-                                        model={model}
-                                        project={project}
-                                        onAction={() => handleRemoveModel(model.id)}
-                                        isPending={isPending}
-                                        actionType="remove"
-                                        onRefresh={handleRefresh}
-                                        onAssignmentChange={handleAssignmentChange}
-                                    />
-                                )) : (
-                                    <p className="text-center text-copy-14 text-muted-foreground py-4">Aún no has añadido talentos.</p>
-                                )}
-                            </div>
-                        </ScrollArea>
-                    </CardContent>
-                </Card>
+                {/* Panel unificado de Talentos con Grid de Asignaciones */}
+                <TalentAssignmentPanel
+                    project={project}
+                    models={selectedModels}
+                    onAssignmentChange={handleAssignmentChange}
+                    onModelRemoved={(_modelId) => {
+                        // El componente ya maneja el refresh internamente
+                    }}
+                    onRefresh={handleRefresh}
+                />
             </div>
 
             <DangerZone project={project} />

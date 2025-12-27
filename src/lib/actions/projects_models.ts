@@ -61,7 +61,22 @@ export async function addModelToProject(projectId: string, modelId: string) {
   }
 
   try {
-    const { error } = await supabase.from('projects_models').insert({ project_id: projectId, model_id: modelId });
+    // 4. Obtener valores por defecto del proyecto
+    const { data: project } = await supabase
+      .from('projects')
+      .select('default_model_fee, default_fee_type, currency')
+      .eq('id', projectId)
+      .single();
+
+    const insertData = {
+      project_id: projectId,
+      model_id: modelId,
+      agreed_fee: project?.default_model_fee || 0,
+      fee_type: project?.default_fee_type || 'per_day',
+      currency: project?.currency || 'GTQ'
+    };
+
+    const { error } = await supabase.from('projects_models').insert(insertData);
 
     if (error) {
       logError(error, { action: 'addModelToProject', projectId, modelId });
@@ -212,5 +227,44 @@ export async function unassignModelFromSchedule(scheduleId: string, modelId: str
   } catch (err) {
     logError(err, { action: 'unassignModelFromSchedule.catch_all', scheduleId, modelId });
     return { success: false, error: 'Error inesperado al desasignar.' };
+  }
+}
+
+// --- Acción: updateModelPaymentDetail (Nueva) ---
+export async function updateModelPaymentDetail(
+  projectId: string,
+  modelId: string,
+  data: {
+    agreed_fee?: number | null;
+    fee_type?: string | null;
+    currency?: string | null;
+    internal_status?: string | null;
+    notes?: string | null;
+  }
+) {
+  const supabase = await createSupabaseServerActionClient();
+
+  if (!z.string().uuid().safeParse(projectId).success || !z.string().uuid().safeParse(modelId).success) {
+    return { success: false, error: 'IDs de proyecto o modelo inválidos.' };
+  }
+
+  try {
+    const { error } = await supabase
+      .from('projects_models')
+      .update(data)
+      .eq('project_id', projectId)
+      .eq('model_id', modelId);
+
+    if (error) {
+      logError(error, { action: 'updateModelPaymentDetail', projectId, modelId, data });
+      return { success: false, error: 'No se pudo actualizar la información de pago.' };
+    }
+
+    revalidatePath(`/dashboard/projects/${projectId}`);
+    return { success: true };
+
+  } catch (err) {
+    logError(err, { action: 'updateModelPaymentDetail.catch_all', projectId, modelId });
+    return { success: false, error: "Error inesperado al actualizar el pago." };
   }
 }

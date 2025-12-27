@@ -38,7 +38,7 @@ export default async function ProjectDetailPage({ params }: PageProps) {
   }
 
   // Auto-sync if using old data format
-  if ((!project.project_schedule || project.project_schedule.length === 0) && project.schedule && (project.schedule as any[]).length > 0) {
+  if ((!project.project_schedule || project.project_schedule.length === 0) && project.schedule && Array.isArray(project.schedule) && project.schedule.length > 0) {
     await syncProjectSchedule(id);
     // Re-fetch to get IDs
     const updatedProject = await getProjectById(id);

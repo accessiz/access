@@ -12,7 +12,9 @@ const timeToMinutes = (timeStr: string) => {
   if (parts.length < 2) return 0; // Fallback para formatos inesperados
 
   const [time, period] = parts;
-  let [hours, minutes] = time.split(':').map(Number);
+  const [hoursStr, minutesStr] = time.split(':');
+  let hours = Number(hoursStr);
+  const minutes = Number(minutesStr);
 
   if (period === 'PM' && hours < 12) hours += 12;
   if (period === 'AM' && hours === 12) hours = 0;

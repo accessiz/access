@@ -84,11 +84,12 @@ export async function getProjectsForUser(searchParams: SearchParams = {}) {
   return { data: data || [], count: count || 0 };
 }
 
-// Helper para formatear hora de DB (24h) a 12h AM/PM
+// Helper para formatear hora de DB (UTC) a 12h AM/PM
+// IMPORTANTE: Usamos UTC porque los timestamps se guardan en UTC y queremos mostrarlos tal cual
 const formatTimeTo12h = (isoString: string) => {
   const date = new Date(isoString);
-  let hours = date.getHours();
-  const minutes = date.getMinutes();
+  let hours = date.getUTCHours();
+  const minutes = date.getUTCMinutes();
   const period = hours >= 12 ? 'PM' : 'AM';
 
   hours = hours % 12;
@@ -97,16 +98,36 @@ const formatTimeTo12h = (isoString: string) => {
   return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${period}`;
 };
 
+// Helper para extraer la fecha del timestamp (en UTC)
+const extractDateFromTimestampUTC = (isoString: string) => {
+  const date = new Date(isoString);
+  const year = date.getUTCFullYear();
+  const month = (date.getUTCMonth() + 1).toString().padStart(2, '0');
+  const day = date.getUTCDate().toString().padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 // Función para obtener un proyecto por ID (MODIFICADA para usar project_schedule)
 export async function getProjectById(idOrPublicId: string): Promise<Project | null> {
   noStore();
   const supabase = await createClient();
 
-  const { data, error } = await supabase
+  // Determinar si parece un UUID (36 caracteres con guiones) o un public_id corto
+  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrPublicId);
+
+  let query = supabase
     .from('projects')
-    .select('*, project_schedule(*)')
-    .or(`id.eq.${idOrPublicId},public_id.eq.${idOrPublicId}`)
-    .maybeSingle();
+    .select('*, project_schedule(*)');
+
+  if (isUUID) {
+    // Si es UUID, buscar en ambos campos
+    query = query.or(`id.eq.${idOrPublicId},public_id.eq.${idOrPublicId}`);
+  } else {
+    // Si no es UUID, solo buscar en public_id para evitar errores de formato
+    query = query.eq('public_id', idOrPublicId);
+  }
+
+  const { data, error } = await query.maybeSingle();
 
   if (error) {
     if (error.code !== 'PGRST116') {
@@ -117,13 +138,24 @@ export async function getProjectById(idOrPublicId: string): Promise<Project | nu
 
   if (!data) return null;
 
-  const project = data as any;
+  // Define proper type for project_schedule row
+  interface ProjectScheduleRow {
+    id: string;
+    start_time: string;
+    end_time: string;
+    project_id: string;
+  }
+
+  const project = data as typeof data & {
+    schedule?: { id: string; date: string; startTime: string; endTime: string }[];
+    project_schedule?: ProjectScheduleRow[];
+  };
 
   // Si tenemos datos en la tabla project_schedule, los usamos para poblar el campo schedule
   if (project.project_schedule && project.project_schedule.length > 0) {
-    project.schedule = project.project_schedule.map((ps: any) => ({
+    project.schedule = project.project_schedule.map((ps: ProjectScheduleRow) => ({
       id: ps.id,
-      date: ps.start_time.split('T')[0],
+      date: extractDateFromTimestampUTC(ps.start_time),
       startTime: formatTimeTo12h(ps.start_time),
       endTime: formatTimeTo12h(ps.end_time)
     }));

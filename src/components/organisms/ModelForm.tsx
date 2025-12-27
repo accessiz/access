@@ -1,7 +1,7 @@
 'use client'
 
-// 1. Importamos 'FieldPath' además de los otros
-import { useFormContext, Controller, ControllerRenderProps, FieldPath } from 'react-hook-form'
+// Import only used items from react-hook-form
+import { useFormContext, Controller } from 'react-hook-form'
 import { ModelFormData } from '@/lib/schemas'
 import { countries } from '@/lib/countries'
 import { genderOptions, eyeColorOptions, hairColorOptions, topSizeOptions, statusOptions, malePantsSizeOptions, femalePantsSizeOptions } from '@/lib/options'
@@ -70,23 +70,6 @@ export const ModelForm = ({ isSubmitting }: ModelFormProps) => {
       )}
     />
   );
-
-  // ✅ INICIO DE LA CORRECCIÓN
-  // El tipo del 'field' ahora usa 'ModelFormData' directamente,
-  // que es el tipo del 'useFormContext'.
-  const handleNumericChange = (
-    field: ControllerRenderProps<ModelFormData, FieldPath<ModelFormData>>,
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    // ✅ FIN DE LA CORRECCIÓN
-    const value = e.target.value;
-    if (value === '') {
-      field.onChange(null);
-      return;
-    }
-    const parsed = parseInt(value, 10);
-    field.onChange(isNaN(parsed) ? null : parsed);
-  };
 
   return (
     <div className="space-y-16">

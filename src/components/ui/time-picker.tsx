@@ -1,70 +1,114 @@
 "use client"
 
 import * as React from "react"
+import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
 
 interface TimePickerProps {
-    value?: string // format "HH:mm"
+    value?: string // format "HH:mm AM/PM" (e.g., "09:00 AM")
     onChange?: (value: string) => void
     className?: string
 }
 
+// Convierte formato 12h a 24h para el input nativo
+function to24h(time12h: string): string {
+    if (!time12h) return "09:00"
+
+    const match = time12h.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i)
+    if (!match) return "09:00"
+
+    let hours = parseInt(match[1], 10)
+    const minutes = match[2]
+    const period = match[3]?.toUpperCase()
+
+    if (period === "PM" && hours < 12) hours += 12
+    if (period === "AM" && hours === 12) hours = 0
+
+    return `${hours.toString().padStart(2, "0")}:${minutes}`
+}
+
+// Convierte formato 24h a 12h 
+function to12h(time24h: string): string {
+    if (!time24h) return "09:00 AM"
+
+    const [hoursStr, minutes] = time24h.split(":")
+    let hours = parseInt(hoursStr, 10)
+
+    const period = hours >= 12 ? "PM" : "AM"
+    hours = hours % 12 || 12
+
+    return `${hours.toString().padStart(2, "0")}:${minutes} ${period}`
+}
+
 export function TimePicker({ value, onChange, className }: TimePickerProps) {
-    // Ensure we have a valid format before splitting. Support both "HH:mm" and "HH:mm AM/PM"
-    const safeValue = value || "12:00 AM"
+    // Estado local para manejar el valor 24h del input nativo
+    const [time24h, setTime24h] = React.useState(() => to24h(value || "09:00 AM"))
 
-    // Parse time and period
-    let h24 = 12
-    let m = 0
-    let currentPeriod = "AM"
+    // Sincronizar cuando el valor externo cambie
+    React.useEffect(() => {
+        if (value) {
+            setTime24h(to24h(value))
+        }
+    }, [value])
 
-    if (safeValue.includes(" ")) {
-        // Format: "09:00 AM"
-        const [time, p] = safeValue.split(" ")
-        const [hStr, mStr] = time.split(":")
-        let h12 = parseInt(hStr, 10)
-        m = parseInt(mStr, 10)
-        currentPeriod = p
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newTime24h = e.target.value
+        setTime24h(newTime24h)
 
-        h24 = h12
-        if (currentPeriod === "PM" && h12 < 12) h24 += 12
-        if (currentPeriod === "AM" && h12 === 12) h24 = 0
-    } else {
-        // Format: "09:00" (24h)
-        const [hStr, mStr] = safeValue.split(":")
-        h24 = parseInt(hStr, 10)
-        m = parseInt(mStr, 10)
-        currentPeriod = h24 >= 12 ? "PM" : "AM"
+        // Convertir a 12h y notificar
+        const time12h = to12h(newTime24h)
+        onChange?.(time12h)
     }
 
-    const hour12 = h24 % 12 || 12
-    const hour12Str = hour12.toString().padStart(2, "0")
-    const minStr = m.toString().padStart(2, "0")
+    return (
+        <Input
+            type="time"
+            value={time24h}
+            onChange={handleChange}
+            className={cn("w-[140px]", className)}
+        />
+    )
+}
 
-    const handleHourChange = (newHour12: string) => {
-        let h = parseInt(newHour12, 10)
-        const formatted = `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")} ${currentPeriod}`
-        onChange?.(formatted)
+// Versión con selects (alternativa visual) - por si se necesita después
+export function TimePickerSelect({ value, onChange, className }: TimePickerProps) {
+    const safeValue = value || "09:00 AM"
+
+    // Parse time
+    let hour12 = 9
+    let minute = 0
+    let period = "AM"
+
+    const match = safeValue.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i)
+    if (match) {
+        hour12 = parseInt(match[1], 10)
+        minute = parseInt(match[2], 10)
+        period = match[3]?.toUpperCase() || "AM"
     }
 
-    const handleMinuteChange = (newMin: string) => {
-        const formatted = `${hour12Str}:${newMin.padStart(2, "0")} ${currentPeriod}`
-        onChange?.(formatted)
+    const formatTime = (h: number, m: number, p: string) => {
+        return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")} ${p}`
+    }
+
+    const handleHourChange = (newHour: string) => {
+        onChange?.(formatTime(parseInt(newHour, 10), minute, period))
+    }
+
+    const handleMinuteChange = (newMinute: string) => {
+        onChange?.(formatTime(hour12, parseInt(newMinute, 10), period))
     }
 
     const handlePeriodChange = (newPeriod: string) => {
-        const formatted = `${hour12Str}:${minStr} ${newPeriod}`
-        onChange?.(formatted)
+        onChange?.(formatTime(hour12, minute, newPeriod))
     }
 
-
     const hours = Array.from({ length: 12 }, (_, i) => (i + 1).toString().padStart(2, "0"))
-    const minutes = Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, "0"))
+    const minutes = ["00", "15", "30", "45"] // Intervalos de 15 min para simplificar
 
     return (
         <div className={cn("flex items-center gap-1", className)}>
-            <Select value={hour12Str} onValueChange={handleHourChange}>
+            <Select value={hour12.toString().padStart(2, "0")} onValueChange={handleHourChange}>
                 <SelectTrigger className="w-[70px] h-9">
                     <SelectValue placeholder="HH" />
                 </SelectTrigger>
@@ -79,11 +123,11 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
 
             <span className="text-muted-foreground font-medium">:</span>
 
-            <Select value={minStr} onValueChange={handleMinuteChange}>
+            <Select value={minute.toString().padStart(2, "0")} onValueChange={handleMinuteChange}>
                 <SelectTrigger className="w-[70px] h-9">
                     <SelectValue placeholder="mm" />
                 </SelectTrigger>
-                <SelectContent className="max-h-[200px]">
+                <SelectContent>
                     {minutes.map((mm) => (
                         <SelectItem key={mm} value={mm}>
                             {mm}
@@ -92,7 +136,7 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
                 </SelectContent>
             </Select>
 
-            <Select value={currentPeriod} onValueChange={handlePeriodChange}>
+            <Select value={period} onValueChange={handlePeriodChange}>
                 <SelectTrigger className="w-[75px] h-9">
                     <SelectValue placeholder="AM/PM" />
                 </SelectTrigger>
@@ -104,4 +148,3 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
         </div>
     )
 }
-

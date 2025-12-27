@@ -15,18 +15,10 @@ import { CompCardPrintTemplate } from '@/app/dashboard/models/[id]/_components/C
 import {
     DropdownMenu,
     DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
-    DropdownMenuRadioGroup,
-    DropdownMenuRadioItem,
-    DropdownMenuSub,
-    DropdownMenuSubContent,
-    DropdownMenuSubTrigger,
-    DropdownMenuPortal
 } from '@/components/ui/dropdown-menu';
-import { toJpeg, toPng, toBlob } from 'html-to-image';
+import { toJpeg, toPng } from 'html-to-image';
 import { jsPDF } from 'jspdf';
 import JSZip from 'jszip';
 import { ChevronDown, Download, FileType, Layers } from 'lucide-react';
@@ -308,7 +300,7 @@ export function CompCardManager({
         }
 
         const wrapper = document.getElementById('compcard-wrapper');
-        let originalWrapperStyle: any = null;
+        let originalWrapperStyle: Record<string, string> | null = null;
 
         try {
             // Definir qué elementos capturar según el formato elegido
@@ -458,8 +450,8 @@ export function CompCardManager({
                 // Pero según UI constraints, ZIP solo se habilita con "Todos".
                 // Asumiremos que si llega aquí con "Todos" y no ZIP, es un caso borde, fallback a Hoja Completa.
 
-                let targetId = downloadFormat === 'todos' ? printContainerId : targets[0].id;
-                let finalSuffix = downloadFormat === 'todos' ? 'hoja_completa' : downloadFormat;
+                const targetId = downloadFormat === 'todos' ? printContainerId : targets[0].id;
+                const finalSuffix = downloadFormat === 'todos' ? 'hoja_completa' : downloadFormat;
 
                 // Si el usuario elige "Todos" y "PDF", podríamos hacer un PDF de 3 páginas.
                 // IMPLEMENTACIÓN MEJORADA: PDF Multipágina para "Todos"
@@ -544,12 +536,13 @@ export function CompCardManager({
 
             toast.success('Descarga completada con éxito.');
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Error en descarga:', error);
-            if (error?.message?.includes('tainted') || error?.message?.includes('CORS')) {
+            const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+            if (errorMessage?.includes('tainted') || errorMessage?.includes('CORS')) {
                 toast.error('Error de CORS', { description: 'Recarga la página e intenta de nuevo.' });
             } else {
-                toast.error('Error al generar', { description: error.message });
+                toast.error('Error al generar', { description: errorMessage });
             }
         } finally {
             if (wrapper && originalWrapperStyle) {
@@ -587,7 +580,7 @@ export function CompCardManager({
                                 <Select
                                     value={downloadFormat}
                                     onValueChange={(v) => {
-                                        const val = v as any;
+                                        const val = v as typeof downloadFormat;
                                         setDownloadFormat(val);
                                         // Si selecciona "todos", forzamos a "zip"
                                         if (val === 'todos') {
@@ -616,7 +609,7 @@ export function CompCardManager({
                                     <FileType className="h-3 w-3" />
                                     Formato de archivo
                                 </label>
-                                <Select value={fileType} onValueChange={(v) => setFileType(v as any)}>
+                                <Select value={fileType} onValueChange={(v) => setFileType(v as typeof fileType)}>
                                     <SelectTrigger className="w-full bg-muted/50 border-none h-10">
                                         <SelectValue placeholder="Selecciona tipo" />
                                     </SelectTrigger>

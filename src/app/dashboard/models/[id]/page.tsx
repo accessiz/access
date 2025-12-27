@@ -27,11 +27,12 @@ export default async function ModelProfilePage({ params }: PageProps) {
   }
 
   const model = await getModelById(id);
+  const workHistory = await import('@/lib/api/models').then(m => m.getModelWorkHistory(id));
 
   if (!model) {
     return <div>Modelo no encontrado</div>;
   }
 
   // Model ahora viene enriquecido con coverUrl, portfolioUrl y compCardUrls
-  return <ModelProfilePageClient initialModel={model} />;
+  return <ModelProfilePageClient initialModel={model} workHistory={workHistory} />;
 }
