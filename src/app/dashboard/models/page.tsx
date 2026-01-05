@@ -62,6 +62,7 @@ export default async function ModelsPage({ searchParams }: PageProps) {
       {/* Right column: Full profile of selected model */}
       {selectedModel && (
         <ModelProfilePageClient
+          key={selectedModel.id}
           initialModel={selectedModel}
           workHistory={workHistory}
         />

@@ -161,6 +161,56 @@ export async function uploadModelImage(formData: FormData) {
 }
 
 
+/**
+ * Lista los archivos de una carpeta en R2 y devuelve el path del primer archivo encontrado.
+ * Útil para encontrar imágenes cuando el nombre exacto no se conoce.
+ */
+export async function getFirstFileInFolder(modelId: string, category: 'Portada' | 'Portfolio' | 'Contraportada'): Promise<string | null> {
+  const prefix = `${modelId}/${category}/`;
+
+  console.log('[getFirstFileInFolder] Buscando en:', prefix);
+
+  try {
+    const listCommand = new ListObjectsV2Command({
+      Bucket: R2_BUCKET_NAME,
+      Prefix: prefix,
+      MaxKeys: 10, // Solo necesitamos los primeros archivos
+    });
+
+    const listedObjects = await r2.send(listCommand);
+
+    console.log('[getFirstFileInFolder] Objetos encontrados:', listedObjects.Contents?.length || 0);
+
+    if (listedObjects.Contents && listedObjects.Contents.length > 0) {
+      // Ordenar por LastModified descendente para obtener el más reciente
+      const sortedObjects = listedObjects.Contents
+        .filter(obj => obj.Key && !obj.Key.endsWith('/')) // Excluir "directorios"
+        .sort((a, b) => {
+          const dateA = a.LastModified ? new Date(a.LastModified).getTime() : 0;
+          const dateB = b.LastModified ? new Date(b.LastModified).getTime() : 0;
+          return dateB - dateA; // Más reciente primero
+        });
+
+      if (sortedObjects.length > 0 && sortedObjects[0].Key) {
+        console.log('[getFirstFileInFolder] Archivo encontrado:', sortedObjects[0].Key);
+        return sortedObjects[0].Key;
+      }
+    }
+
+    console.log('[getFirstFileInFolder] No se encontraron archivos');
+    return null;
+  } catch (err) {
+    console.error('[getFirstFileInFolder] Error:', err);
+    logError(err, {
+      action: 'getFirstFileInFolder',
+      modelId,
+      category,
+      prefix
+    });
+    return null;
+  }
+}
+
 export async function deleteModelImage(modelId: string, filePath: string, category: 'Portada' | 'Portfolio' | 'Contraportada', slotIndex?: number) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();

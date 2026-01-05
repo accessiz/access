@@ -97,11 +97,14 @@ export async function getModelsEnriched(searchParams: SearchParams) {
   return { data: enrichedData, count: count || 0 };
 }
 
-// getModelById remains unchanged
+// getModelById - Ahora busca en R2 si los paths no existen en la DB
 export async function getModelById(id: string): Promise<(Model & {
   coverUrl?: string | null;
   portfolioUrl?: string | null;
   compCardUrls?: (string | null)[];
+  cover_path?: string | null;
+  portfolio_path?: string | null;
+  comp_card_paths?: (string | null)[];
 }) | null> {
   noStore();
   const supabase = await createClient();
@@ -125,16 +128,39 @@ export async function getModelById(id: string): Promise<(Model & {
     comp_card_paths?: (string | null)[];
   };
 
-  // --- INICIO DE LA CORRECCIÓN ---
-  // Se elimina la lógica de `createSignedUrls`.
-  // Se construyen las URLs públicas de R2 directamente.
-  const coverUrl = toPublicUrl(model.cover_path);
-  const portfolioUrl = toPublicUrl(model.portfolio_path);
+  console.log('[getModelById] Model ID:', id);
+  console.log('[getModelById] cover_path en DB:', model.cover_path);
+
+  // --- INICIO: BÚSQUEDA DINÁMICA EN R2 ---
+  // SIEMPRE buscamos en R2 para cover y portfolio porque el cover_path de la DB
+  // puede no coincidir con el nombre real del archivo en R2
+  const { getFirstFileInFolder } = await import('@/lib/actions/storage');
+
+  // Buscar cover en R2 (siempre, ignorando el valor de la DB)
+  console.log('[getModelById] Buscando cover en R2...');
+  const finalCoverPath = await getFirstFileInFolder(id, 'Portada');
+  console.log('[getModelById] Resultado cover R2:', finalCoverPath);
+
+  // Buscar portfolio en R2 solo si no hay valor en la DB
+  let finalPortfolioPath = model.portfolio_path;
+  if (!finalPortfolioPath) {
+    console.log('[getModelById] Buscando portfolio en R2...');
+    finalPortfolioPath = await getFirstFileInFolder(id, 'Portfolio');
+    console.log('[getModelById] Resultado portfolio R2:', finalPortfolioPath);
+  }
+  // --- FIN: BÚSQUEDA DINÁMICA EN R2 ---
+
+  // Se construyen las URLs públicas de R2
+  const coverUrl = toPublicUrl(finalCoverPath);
+  const portfolioUrl = toPublicUrl(finalPortfolioPath);
   const compCardUrls = (model.comp_card_paths || []).slice(0, 4).map(p => toPublicUrl(p));
-  // --- FIN DE LA CORRECCIÓN ---
+
+  console.log('[getModelById] coverUrl final:', coverUrl);
 
   return {
     ...model,
+    cover_path: finalCoverPath,
+    portfolio_path: finalPortfolioPath,
     coverUrl,
     portfolioUrl,
     compCardUrls,

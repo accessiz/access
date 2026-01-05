@@ -159,8 +159,126 @@ export function CompCardManager({
     const [fileType, setFileType] = useState<'jpg' | 'png' | 'zip' | 'pdf'>('png');
     const printContainerId = 'compcard-print-container';
 
-    // Abre el diálogo de recorte cuando se selecciona un archivo
+    // --- FUNCIÓN DE COMPRESIÓN EN EL CLIENTE ---
+    const compressImage = async (file: File, maxWidth = 3000, maxHeight = 3000, quality = 0.85): Promise<File> => {
+        return new Promise((resolve, reject) => {
+            const img = new window.Image();
+            img.onload = () => {
+                // Calcular nuevas dimensiones manteniendo aspect ratio
+                let { width, height } = img;
+                if (width > maxWidth) {
+                    height = (height * maxWidth) / width;
+                    width = maxWidth;
+                }
+                if (height > maxHeight) {
+                    width = (width * maxHeight) / height;
+                    height = maxHeight;
+                }
+
+                // Crear canvas y dibujar imagen redimensionada
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                if (!ctx) {
+                    reject(new Error('No se pudo crear el contexto del canvas'));
+                    return;
+                }
+                ctx.drawImage(img, 0, 0, width, height);
+
+                // Convertir a WebP blob
+                canvas.toBlob(
+                    (blob) => {
+                        if (!blob) {
+                            reject(new Error('No se pudo comprimir la imagen'));
+                            return;
+                        }
+                        const compressedFile = new File([blob], file.name.replace(/\.[^.]+$/, '.webp'), {
+                            type: 'image/webp',
+                            lastModified: Date.now(),
+                        });
+                        resolve(compressedFile);
+                    },
+                    'image/webp',
+                    quality
+                );
+            };
+            img.onerror = () => reject(new Error('No se pudo cargar la imagen'));
+            img.src = URL.createObjectURL(file);
+        });
+    };
+
+    // --- SUBIDA DIRECTA (para Portfolio, sin recorte) ---
+    const handleDirectUpload = async (file: File, uploadType: CropState['uploadType'], slotIndex?: number) => {
+        const category = uploadType === 'comp-card' ? 'Contraportada' : (uploadType === 'cover' ? 'Portada' : 'Portfolio');
+
+        if (uploadType === 'cover') setUploadingState(p => ({ ...p, cover: true }));
+        else if (uploadType === 'portfolio') setUploadingState(p => ({ ...p, portfolio: true }));
+        else if (slotIndex !== undefined) setUploadingState(p => {
+            const newCompCards = [...p.compCards]; newCompCards[slotIndex] = true;
+            return { ...p, compCards: newCompCards };
+        });
+
+        try {
+            // Comprimir imagen en el cliente antes de subir
+            const compressedFile = await compressImage(file);
+            console.log(`[Portfolio] Imagen original: ${(file.size / 1024 / 1024).toFixed(2)}MB → Comprimida: ${(compressedFile.size / 1024 / 1024).toFixed(2)}MB`);
+
+            const formData = new FormData();
+            formData.append('file', compressedFile);
+            formData.append('modelId', modelId);
+            formData.append('category', category);
+            if (slotIndex !== undefined) {
+                formData.append('slotIndex', String(slotIndex));
+            }
+
+            const result = await uploadModelImage(formData);
+
+            if (!result || !result.success) {
+                throw new Error(result.error || "La subida falló.");
+            }
+
+            toast.success('Imagen subida y guardada.');
+
+            const { path: returnedPath, publicUrl } = result;
+
+            if (category === 'Portada') {
+                if (publicUrl) setCoverUrl(publicUrl);
+                if (returnedPath) setCoverPath(returnedPath);
+            } else if (category === 'Portfolio') {
+                if (publicUrl) setPortfolioUrl(publicUrl);
+                if (returnedPath) setPortfolioPath(returnedPath);
+            } else if (category === 'Contraportada' && slotIndex !== undefined) {
+                if (publicUrl) setCompCardUrls(prev => {
+                    const copy = [...prev]; copy[slotIndex] = publicUrl; return copy;
+                });
+                if (returnedPath) setCompCardPaths(prev => {
+                    const copy = [...prev]; copy[slotIndex] = returnedPath; return copy;
+                });
+            }
+
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Ocurrió un error.';
+            toast.error('Error al subir la imagen', { description: message });
+        } finally {
+            if (uploadType === 'cover') setUploadingState(p => ({ ...p, cover: false }));
+            else if (uploadType === 'portfolio') setUploadingState(p => ({ ...p, portfolio: false }));
+            else if (slotIndex !== undefined) setUploadingState(p => {
+                const newCompCards = [...p.compCards]; newCompCards[slotIndex] = false;
+                return { ...p, compCards: newCompCards };
+            });
+        }
+    };
+
+    // Abre el diálogo de recorte cuando se selecciona un archivo (excepto Portfolio)
     const handleFileSelect = (file: File, uploadType: CropState['uploadType'], aspect: number, slotIndex?: number) => {
+        // Portfolio: subir directamente sin recorte
+        if (uploadType === 'portfolio') {
+            handleDirectUpload(file, uploadType, slotIndex);
+            return;
+        }
+
+        // Cover y Contraportada: abrir diálogo de recorte
         const reader = new FileReader();
         reader.onload = () => {
             setCropState({
@@ -178,8 +296,8 @@ export function CompCardManager({
         setCropState(null);
     };
 
-    // --- FUNCIÓN DE SUBIDA (MODIFICADA) ---
-    // Ahora se llama cuando el recorte se completa
+    // --- FUNCIÓN DE SUBIDA DESPUÉS DEL RECORTE ---
+    // Se llama cuando el recorte se completa (Cover y Contraportada)
     const handleUpload = async (file: File) => {
         if (!cropState) return;
 
