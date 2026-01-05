@@ -70,16 +70,21 @@ export const modelFormSchema = z.object({
   full_name: z.string().min(3, "El nombre completo es obligatorio. Ej: Juan Pérez"),
 
   // Teléfono: preprocess para limpiar formato visual (espacios, guiones, paréntesis)
-  // y convertir a formato E.164 puro antes de validar
+  // y convertir a formato E.164 puro antes de validar. AHORA ES OPCIONAL.
   phone_e164: z.preprocess((val) => {
+    if (val === undefined || val === null) return null;
     if (typeof val === 'string') {
       // Eliminar espacios, guiones, paréntesis y otros caracteres de formato
-      // Mantener solo el + inicial y los dígitos
-      return val.replace(/[\s\-\(\)\.]/g, '');
+      const cleaned = val.replace(/[\s\-\(\)\.]/g, '');
+      // Si queda vacío después de limpiar, devolver null
+      if (cleaned === '' || cleaned === '+') return null;
+      return cleaned;
     }
     return val;
-  }, z.string().min(1, "El teléfono es obligatorio.")
-    .regex(phoneRegex, "Ingresa el teléfono en formato internacional, por ejemplo: +50212345678")),
+  }, z.union([
+    z.string().regex(phoneRegex, "Ingresa el teléfono en formato internacional, por ejemplo: +50212345678"),
+    z.null()
+  ])),
 
   // --- CAMPOS OPCIONALES ---
 

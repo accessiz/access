@@ -337,14 +337,16 @@ export async function getBusyModelsToday(): Promise<Set<string>> {
   // Get today's date in ISO format (YYYY-MM-DD)
   const today = new Date().toISOString().split('T')[0];
 
-  // Query: Get all model_assignments where the related schedule has today's date
+  // Query: Get all model_assignments where the related schedule's start_time is today
+  // Using start_time since 'date' column doesn't exist
   const { data, error } = await supabase
     .from('model_assignments')
     .select(`
       model_id,
-      project_schedule!inner(date)
+      project_schedule!inner(start_time)
     `)
-    .eq('project_schedule.date', today);
+    .gte('project_schedule.start_time', `${today}T00:00:00`)
+    .lt('project_schedule.start_time', `${today}T23:59:59`);
 
   if (error) {
     logError(error, { action: 'getBusyModelsToday', today });
