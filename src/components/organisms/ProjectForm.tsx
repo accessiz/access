@@ -209,6 +209,7 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
   const selectedClientId = form.watch('client_id');
   const selectedBrandId = form.watch('brand_id');
   const selectedProjectTypes = form.watch('project_types') || [];
+  const watchedClientName = form.watch('client_name'); // <-- Watch client_name directly
 
   const selectedClient = useMemo(() =>
     clients.find(c => c.id === selectedClientId),
@@ -229,11 +230,11 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
   const generatedProjectName = useMemo(() => {
     return generateProjectName(
       selectedProjectTypes,
-      selectedClient?.name || form.watch('client_name'),
+      selectedClient?.name || watchedClientName,
       selectedBrand?.name,
       customProjectName
     );
-  }, [selectedProjectTypes, selectedClient, selectedBrand, customProjectName, form]);
+  }, [selectedProjectTypes, selectedClient, selectedBrand, customProjectName, watchedClientName]);
 
   // Sincronizar el nombre generado con el formulario
   useEffect(() => {
