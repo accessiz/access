@@ -6,6 +6,43 @@
 
 ---
 
+## 0. 👤 Usuario Principal (Brief)
+
+> **Diseñamos para María, no para nosotros.**
+
+### Contexto Real
+María es la asistente principal de una agencia de modelos en Guatemala. Su perfil:
+
+| Factor | Realidad |
+|--------|----------|
+| **Familia** | Madre de 2 hijos pequeños que requieren mucha atención |
+| **Trabajo** | Tiene OTRO trabajo además de este |
+| **Jefe** | El dueño es desorganizado, mandón, y exigente |
+| **Carga** | Ella lleva la mayor parte del trabajo operativo |
+| **Equipo** | No hay empleados fijos, solo freelancers |
+| **Estrés** | ALTO - constantemente interrumpida |
+
+### Implicaciones de Diseño
+
+Basado en **Steve Jobs**, **Des Traynor (Intercom)**, y **Don Norman**:
+
+| Principio | Aplicación |
+|-----------|------------|
+| **Simplicidad (Jobs)** | Cada elemento debe GANAR su lugar en pantalla |
+| **JTBD (Traynor)** | María está BUSCANDO, no navegando. La búsqueda es protagonista. |
+| **Signifiers (Norman)** | Todo debe ser obvio. ¿Qué puedo hacer? ¿Qué significa esto? |
+| **Error Tolerance (Norman)** | Ella está distraída. Los errores deben ser reversibles. |
+| **Cognitive Load** | Su cerebro ya está agotado. Mínima información por pantalla. |
+
+### Reglas Derivadas
+1. **Máximo 3-4 datos** visibles en items de lista
+2. **Búsqueda siempre visible** y grande
+3. **Indicadores de estado claros** (ocupado hoy = dot rojo pulsante)
+4. **Acciones con etiquetas**, no solo iconos
+5. **Mobile-first** - ella probablemente está con el teléfono mientras cuida niños
+
+---
+
 ## 1. 🏗️ Fundamentos del Sistema (Core)
 
 #### 1.1 Sistema de Color (roles M3)
@@ -137,11 +174,91 @@ Material 3 define 9 tipos de botones. Aquí su mapeo en nuestra App:
 *   **Archivo:** `card.tsx` (Default = Outlined + Shadow híbrido)
 *   **M3 Standard:** 3 Tipos distintos. Radio **12dp** (`rounded-xl`).
 *   **App Reality:** Radio **8px** (`rounded-lg`) por consistencia.
-*   **Variantes M3:**
-    1.  **Elevated:** `bg-surface-container-low` + `shadow-sm`. *Para contenido movible.*
-    2.  **Filled:** `bg-surface-container-highest` + `border-none`. *Mayor énfasis visual.*
-    3.  **Outlined:** `bg-surface` + `border-outline-variant` + `shadow-none`. *Contenido agrupado (Default).*
-*   **Anatomía:** Header (Title/Desc), Content (Body), Footer (Actions). Padding 16dp.
+
+##### Uso
+Las cards muestran contenido y acciones sobre un tema único. Deben ser fáciles de escanear para encontrar información relevante y accionable.
+
+##### Tipos de Cards
+| Tipo | Estilo App | Descripción |
+| :--- | :--- | :--- |
+| **Elevated** | `bg-surface-container-low` + `shadow-sm` | Sombra para mayor separación del fondo. Para contenido movible. |
+| **Filled** | `bg-surface-container-highest` + `border-none` | Separación sutil del fondo. Menor énfasis que Elevated u Outlined. |
+| **Outlined** | `bg-surface` + `border-outline-variant` + `shadow-none` | Borde visual alrededor del contenedor. Mayor énfasis. **(Default)** |
+
+##### Anatomía
+| # | Elemento | Descripción |
+| :--- | :--- | :--- |
+| 1 | **Container** | Único elemento requerido. Tamaño determinado por el contenido. |
+| 2 | **Headline** | Comunica el sujeto de la card (nombre del álbum, artículo). |
+| 3 | **Subhead** | Elementos de texto más pequeños (byline, ubicación). |
+| 4 | **Supporting text** | Contenido del cuerpo (resumen, descripción). |
+| 5 | **Image** | Fotos, ilustraciones y gráficos. |
+| 6 | **Button** | Acciones como "Learn more" o "Add to cart". |
+
+##### Bloques de Contenido
+Los contenidos se agrupan en bloques con diferentes niveles de énfasis visual según importancia.
+
+##### Dividers en Cards
+| Tipo | Uso |
+| :--- | :--- |
+| **Full-width** | Para contenido que puede expandirse. |
+| **Inset** | Para separar contenido relacionado (no cubre todo el ancho). |
+
+##### Media
+| Tipo | Descripción |
+| :--- | :--- |
+| **Thumbnail** | Avatar o logo. |
+| **Image** | Fotos, ilustraciones, iconos (ej: clima). |
+| **Video** | Contenido de video embebido. |
+
+##### Texto sobre Imágenes
+> [!CAUTION]
+> No se recomienda colocar texto o iconos sobre imágenes. Si es necesario, añadir un scrim translúcido o forma contenedora debajo para asegurar contraste accesible.
+
+##### Acciones
+| Área | Descripción |
+| :--- | :--- |
+| **Primary action area** | La card completa puede ser un target táctil que expande a pantalla detalle. |
+| **Buttons** | Botones para acciones (Learn more, Add to cart). |
+| **Icon Buttons** | Iconos para acciones (Save, Heart, Rating). |
+| **Selection controls** | Chips, sliders, checkboxes y otros controles. |
+| **Linked text** | Enlaces en el texto de soporte. |
+| **Overflow Menu** | Menú `...` ubicado en esquina superior-derecha o inferior-derecha. |
+
+##### Cards en Colección
+| Layout | Descripción |
+| :--- | :--- |
+| **Grid** | Cards en cuadrícula. Puede ser staggered o mosaic. |
+| **Vertical List** | Cards en lista vertical. |
+| **Carousel** | Cards en fila horizontal, scrollable. |
+
+*   Las cards en colección son **coplanares** (misma elevación) hasta que se levantan o arrastran.
+*   Los filtros/ordenamiento se colocan **fuera** de la colección de cards.
+
+##### Diseño Adaptativo
+| Factor | Regla |
+| :--- | :--- |
+| **Posición y alineación** | Cambia según el tamaño de ventana (izq/der/centro). |
+| **Ergonomía** | Card horizontal en móvil → vertical más grande en tablet. |
+| **Espaciado** | Optimizar espacio según breakpoint. |
+| **Columnas** | En pantallas grandes, usar múltiples columnas en lugar de estirar UI. |
+| **Compact fallback** | En pantallas pequeñas, considerar reemplazar cards por listas. |
+
+##### Comportamiento
+| Interacción | Descripción |
+| :--- | :--- |
+| **Expanding** | Container transform para revelar contenido. Reservar para momentos hero. |
+| **Navigation** | Patrón forward/backward para navegar entre pantallas consecutivas. |
+| **Swipe** | Descartar o cambiar estado (archivar, marcar). Solo una acción swipe por card. |
+| **Pick up & move** | Mover y reordenar cards. Aumentar elevación al levantar. |
+| **Scrolling** | Contenido más alto que el máximo se trunca. Card puede expandirse y scrollear dentro de pantalla. |
+
+##### Medidas
+| Atributo | Valor |
+| :--- | :--- |
+| Container padding | 16dp |
+| Border radius (M3) | 12dp (`rounded-xl`) |
+| Border radius (App) | 8px (`rounded-lg`) |
 
 #### 8. Dialogs (Modals)
 *   **Archivo:** `alert-dialog.tsx` / `dialog.tsx`
@@ -171,6 +288,93 @@ Material 3 define 9 tipos de botones. Aquí su mapeo en nuestra App:
 *   **Archivo:** `tabs.tsx`
 *   **M3 Guideline:** Organizar contenido al mismo nivel jerárquico.
 *   **Regla:** Usar estilo "Underline" para páginas contenidas, "Pill" para filtros en tablas.
+
+##### Anatomía Primary Tabs
+| # | Elemento | Descripción |
+| :--- | :--- | :--- |
+| 0 | **Container** | Contenedor principal de las tabs. |
+| 1 | **Badge** | Opcional. Indicador de notificación. |
+| 2 | **Icon** | Opcional. Icono representativo. |
+| 3 | **Label** | Texto de la tab. |
+| 4 | **Divider** | Línea separadora en la base. |
+| 5 | **Active indicator** | Indicador visual del tab activo. |
+
+##### Primary Tabs Color Roles (Light/Dark)
+| # | Elemento | Rol de Color |
+| :--- | :--- | :--- |
+| 0 | Container | `surface` |
+| 1 | Active indicator | `primary` |
+| 2 | Active icon | `primary` |
+| 3 | Active label | `on-surface-variant` |
+| 4 | Inactive icon/label | `on-surface-variant` |
+| 5 | Divider | `outline-variant` |
+| 6 | Focus/Hover state | `primary` |
+
+##### Estados de Primary Tabs
+| # | Estado | Descripción |
+| :--- | :--- | :--- |
+| 0 | Enabled (active) | Tab activo por defecto. |
+| 1 | Hover (active) | Hover sobre tab activo. |
+| 2 | Focused (active) | Focus de teclado sobre tab activo. |
+| 3 | Pressed (active) | Click/tap sobre tab activo. |
+| 4 | Enabled (inactive) | Tab inactivo por defecto. |
+| 5 | Hover (inactive) | Hover sobre tab inactivo. |
+| 6 | Focused (inactive) | Focus de teclado sobre tab inactivo. |
+| 7 | Pressed (inactive) | Click/tap sobre tab inactivo. |
+
+##### Anatomía Secondary Tabs
+| # | Elemento | Descripción |
+| :--- | :--- | :--- |
+| 0 | **Container** | Contenedor principal. |
+| 1 | **Badge** | Opcional. Indicador de notificación. |
+| 2 | **Label** | Texto de la tab. |
+| 3 | **Divider** | Línea separadora en la base. |
+| 4 | **Active indicator** | Indicador visual del tab activo. |
+
+> [!NOTE]
+> Secondary tabs no incluyen iconos, solo badges opcionales y labels.
+
+##### Secondary Tabs Color Roles (Light/Dark)
+| # | Elemento | Rol de Color |
+| :--- | :--- | :--- |
+| 0 | Container | `surface` |
+| 1 | Active label | `on-surface` |
+| 2 | Inactive label | `on-surface-variant` |
+| 3 | Divider | `outline-variant` |
+| 4 | Active indicator | `primary` |
+
+##### Estados de Secondary Tabs
+| # | Estado | Descripción |
+| :--- | :--- | :--- |
+| 0 | Enabled (active) | Tab activo por defecto. |
+| 1 | Hover (active) | Hover sobre tab activo. |
+| 2 | Focused (active) | Focus de teclado sobre tab activo. |
+| 3 | Pressed (active) | Click/tap sobre tab activo. |
+| 4 | Enabled (inactive) | Tab inactivo por defecto. |
+| 5 | Hover (inactive) | Hover sobre tab inactivo. |
+| 6 | Focused (inactive) | Focus de teclado sobre tab inactivo. |
+| 7 | Pressed (inactive) | Click/tap sobre tab inactivo. |
+
+##### Medidas
+| Atributo | Valor |
+| :--- | :--- |
+| Container height (label only) | 48dp |
+| Container height (icon + label) | 64dp |
+| Icon size | 24dp |
+| Divider height | 1dp |
+| Primary active indicator height | 3dp |
+| Secondary active indicator height | 2dp |
+| Active indicator shape | 3, 3, 0, 0 (top-rounded) |
+| Active indicator min length | 24dp |
+| Padding (inline icon-text) | 8dp |
+| Padding (inline text-badge) | 4dp |
+| Badge overlap on stacked icon | 6dp |
+
+> [!IMPORTANT]
+> Las tabs se dividen en secciones iguales. Labels e iconos se centran verticalmente. El divider se incluye en la altura, dentro del contenedor.
+
+> [!TIP]
+> Los indicadores activos de Primary tabs tienen inset de 2dp en cada lado, border-radius completamente redondeado, y longitud mínima de 24dp.
 
 #### 13. App Bars (Top/Bottom)
 *   **Estado:** ⚠️ No usamos Top App Bar estándar.

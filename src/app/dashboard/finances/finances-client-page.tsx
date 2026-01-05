@@ -60,36 +60,36 @@ type FinancesClientPageProps = {
     };
 };
 
-// Configuración de estados de pago
+// DS: Use semantic badge variants (§2.B.4a)
 const PAYMENT_STATUS_CONFIG: Record<PaymentStatus, {
     label: string;
     icon: React.ElementType;
     className: string;
-    badgeVariant: 'default' | 'secondary' | 'outline' | 'destructive';
+    badgeVariant: 'warning' | 'success' | 'info' | 'neutral';
 }> = {
     pending: {
         label: 'Pendiente',
         icon: Clock,
-        className: 'text-yellow-600 dark:text-yellow-400',
-        badgeVariant: 'outline',
+        className: 'text-warning',
+        badgeVariant: 'warning',
     },
     paid: {
         label: 'Pagado',
         icon: CheckCircle2,
-        className: 'text-green-600 dark:text-green-400',
-        badgeVariant: 'default',
+        className: 'text-success',
+        badgeVariant: 'success',
     },
     partial: {
         label: 'Parcial',
         icon: AlertCircle,
-        className: 'text-blue-600 dark:text-blue-400',
-        badgeVariant: 'secondary',
+        className: 'text-info',
+        badgeVariant: 'info',
     },
     cancelled: {
         label: 'Cancelado',
         icon: XCircle,
         className: 'text-muted-foreground',
-        badgeVariant: 'outline',
+        badgeVariant: 'neutral',
     },
 };
 

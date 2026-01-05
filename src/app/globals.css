@@ -14,14 +14,19 @@
    * CSS GRID LAYOUT SYSTEM
    * Symmetric layouts with consistent spacing
    * ============================================ */
-  
+
   /* Grid variables */
   :root {
-    --grid-gutter: 1rem;          /* 16px - default gap */
-    --grid-gutter-sm: 0.5rem;     /* 8px - compact gap */
-    --grid-gutter-lg: 1.5rem;     /* 24px - spacious gap */
-    --master-width: 400px;        /* Fixed width for master column */
-    --master-width-sm: 320px;     /* Smaller master on tablets */
+    --grid-gutter: 1rem;
+    /* 16px - default gap */
+    --grid-gutter-sm: 0.5rem;
+    /* 8px - compact gap */
+    --grid-gutter-lg: 1.5rem;
+    /* 24px - spacious gap */
+    --master-width: 400px;
+    /* Fixed width for master column */
+    --master-width-sm: 320px;
+    /* Smaller master on tablets */
   }
 
   /* Base grid container */
@@ -31,15 +36,27 @@
   }
 
   /* Symmetric column layouts */
-  .layout-1-col { grid-template-columns: 1fr; }
-  .layout-2-col { grid-template-columns: repeat(2, 1fr); }
-  .layout-3-col { grid-template-columns: repeat(3, 1fr); }
-  .layout-4-col { grid-template-columns: repeat(4, 1fr); }
+  .layout-1-col {
+    grid-template-columns: 1fr;
+  }
+
+  .layout-2-col {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .layout-3-col {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .layout-4-col {
+    grid-template-columns: repeat(4, 1fr);
+  }
 
   /* Master-detail layout (sidebar + content) */
   .layout-master-detail {
     display: grid;
-    grid-template-columns: 1fr;   /* Mobile: single column */
+    grid-template-columns: 1fr;
+    /* Mobile: single column */
     gap: var(--grid-gutter);
   }
 
@@ -90,19 +107,27 @@
   }
 
   @media (min-width: 640px) {
-    .layout-responsive { grid-template-columns: repeat(2, 1fr); }
+    .layout-responsive {
+      grid-template-columns: repeat(2, 1fr);
+    }
   }
 
   @media (min-width: 768px) {
-    .layout-responsive { grid-template-columns: repeat(3, 1fr); }
+    .layout-responsive {
+      grid-template-columns: repeat(3, 1fr);
+    }
   }
 
   @media (min-width: 1024px) {
-    .layout-responsive { grid-template-columns: repeat(4, 1fr); }
+    .layout-responsive {
+      grid-template-columns: repeat(4, 1fr);
+    }
   }
 
   @media (min-width: 1280px) {
-    .layout-responsive { grid-template-columns: repeat(5, 1fr); }
+    .layout-responsive {
+      grid-template-columns: repeat(5, 1fr);
+    }
   }
 }
 
@@ -144,6 +169,17 @@
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* M3 Semantic Colors (Custom Extension) */
+    --success: 34 139 34;
+    /* Forest Green */
+    --success-foreground: 255 255 255;
+    --warning: 234 179 8;
+    /* Amber */
+    --warning-foreground: 28 26 29;
+    --info: 59 130 246;
+    /* Blue */
+    --info-foreground: 255 255 255;
   }
 
   .dark {
@@ -183,6 +219,17 @@
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* M3 Semantic Colors (Custom Extension) - Dark Mode */
+    --success: 74 222 128;
+    /* Lighter Green */
+    --success-foreground: 28 26 29;
+    --warning: 250 204 21;
+    /* Brighter Amber */
+    --warning-foreground: 28 26 29;
+    --info: 96 165 250;
+    /* Lighter Blue */
+    --info-foreground: 28 26 29;
   }
 }
 

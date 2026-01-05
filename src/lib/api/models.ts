@@ -294,3 +294,44 @@ export async function getModelWorkHistory(modelId: string) {
     })
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
+
+/**
+ * Get the IDs of models that have assignments for TODAY
+ * 
+ * Simple availability check:
+ * - Returns Set of model IDs that are "busy" today
+ * - A model is busy if they have any assignment for today's date
+ * 
+ * @returns Set<string> of busy model IDs
+ */
+export async function getBusyModelsToday(): Promise<Set<string>> {
+  noStore();
+  const supabase = await createClient();
+
+  // Get today's date in ISO format (YYYY-MM-DD)
+  const today = new Date().toISOString().split('T')[0];
+
+  // Query: Get all model_assignments where the related schedule has today's date
+  const { data, error } = await supabase
+    .from('model_assignments')
+    .select(`
+      model_id,
+      project_schedule!inner(date)
+    `)
+    .eq('project_schedule.date', today);
+
+  if (error) {
+    logError(error, { action: 'getBusyModelsToday', today });
+    return new Set();
+  }
+
+  // Extract unique model IDs
+  const busyModelIds = new Set<string>();
+  for (const row of data || []) {
+    if (row.model_id) {
+      busyModelIds.add(row.model_id);
+    }
+  }
+
+  return busyModelIds;
+}

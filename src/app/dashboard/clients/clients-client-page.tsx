@@ -150,13 +150,11 @@ export default function ClientsClientPage({ initialData }: ClientsClientPageProp
 
     return (
         <div className="flex flex-col gap-6 p-6 md:p-8">
-            {/* Header */}
+            {/* DS §0: Simplified header */}
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
-                    <h1 className="text-heading-28 font-semibold">Clientes</h1>
-                    <p className="text-copy-14 text-muted-foreground">
-                        Gestiona tus clientes y las marcas que representan.
-                    </p>
+                    <h1 className="text-heading-24 font-semibold">Clientes</h1>
+                    <p className="text-copy-12 text-muted-foreground">{clients.length} clientes</p>
                 </div>
 
                 <Dialog open={isFormOpen} onOpenChange={(open) => {
@@ -256,10 +254,11 @@ function ClientCard({
         .toUpperCase()
         .slice(0, 2);
 
+    // DS: Use semantic badge variants (§2.B.4a)
     const statusBadge = {
         active: null,
-        inactive: <Badge variant="secondary">Inactivo</Badge>,
-        archived: <Badge variant="outline">Archivado</Badge>,
+        inactive: <Badge variant="warning" size="small">Inactivo</Badge>,
+        archived: <Badge variant="neutral" size="small">Archivado</Badge>,
     };
 
     return (

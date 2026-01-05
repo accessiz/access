@@ -81,7 +81,6 @@ export function ScheduleMigrationModal({
     onOpenChange,
     changes,
     newSchedules,
-    _projectName,
     onConfirm,
     isProcessing = false,
 }: ScheduleMigrationModalProps) {

@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { Project } from '@/lib/types';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { PlusCircle, Trash2, ArrowDown, ArrowUp } from 'lucide-react';
@@ -18,26 +17,31 @@ import { cn } from '@/lib/utils';
 const PAGE_SIZE = 10;
 
 type InitialData = {
-  initialProjects: Project[];
-  initialCount: number;
+    initialProjects: Project[];
+    initialCount: number;
 };
 
-const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+
+// DS: Use semantic badge variants (§2.B.4a)
 const StatusBadge = ({ status }: { status: string }) => {
-    const statusStyles: { [key: string]: string } = {
-        draft: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-        sent: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-        'in-review': 'bg-purple-500/20 text-purple-400 border-purple-500/30',
-        completed: 'bg-green-500/20 text-green-400 border-green-500/30',
-        archived: 'bg-gray-500/20 text-gray-400 border-gray-500/30',
+    // Map project status to semantic meaning
+    const variantMap: Record<string, 'warning' | 'info' | 'accent' | 'success' | 'neutral'> = {
+        draft: 'warning',      // Yellow - needs attention
+        sent: 'info',          // Blue - in progress
+        'in-review': 'accent', // Purple - special state
+        completed: 'success',  // Green - done
+        archived: 'neutral',   // Gray - inactive
     };
-    return <Badge variant="outline" className={`capitalize ${statusStyles[status] || ''}`}>{status.replace('-', ' ')}</Badge>;
+    const variant = variantMap[status] || 'neutral';
+    return <Badge variant={variant} size="small" className="capitalize">{status.replace('-', ' ')}</Badge>;
 };
+
 
 export default function ProjectsClientPage({ initialProjects, initialCount }: InitialData) {
     const [projects, setProjects] = useState(initialProjects);
     const [count, setCount] = useState(initialCount);
-    
+
     const searchParams = useSearchParams();
     const pathname = usePathname();
     const router = useRouter();
@@ -91,12 +95,12 @@ export default function ProjectsClientPage({ initialProjects, initialCount }: In
 
     const SortableHeader = ({ tkey, label, className }: { tkey: keyof Project; label: string; className?: string }) => (
         <TableHead onClick={() => handleSort(tkey)} className={cn("cursor-pointer hover:text-foreground transition-colors", className)}>
-          <div className="flex items-center gap-2">
-            {label}
-            {sortConfig.key === tkey && (
-              sortConfig.direction === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
-            )}
-          </div>
+            <div className="flex items-center gap-2">
+                {label}
+                {sortConfig.key === tkey && (
+                    sortConfig.direction === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                )}
+            </div>
         </TableHead>
     );
 
@@ -146,30 +150,26 @@ export default function ProjectsClientPage({ initialProjects, initialCount }: In
     };
 
     return (
-        <div className="space-y-6">
-             <header className="flex flex-col items-start gap-4 pb-6 border-b sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                    <h1 className="text-heading-32">Proyectos</h1>
-                    <p className="text-muted-foreground">Crea, busca y gestiona tus castings.</p>
+        <div className="space-y-4">
+            {/* DS §0: Simplified header - less cognitive load for María */}
+            <header className="flex flex-col gap-4 pb-4 border-b sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-4">
+                    <div>
+                        <h1 className="text-heading-24 font-semibold">Proyectos</h1>
+                        <p className="text-copy-12 text-muted-foreground">{count} proyectos</p>
+                    </div>
                 </div>
-                <Button asChild className="w-full sm:w-auto">
-                    <Link href="/dashboard/projects/new"><PlusCircle className="mr-2 h-4 w-4"/>Nuevo Proyecto</Link>
-                </Button>
+                <div className="flex items-center gap-3">
+                    <ProjectsToolbar />
+                    <Button asChild>
+                        <Link href="/dashboard/projects/new"><PlusCircle className="mr-2 h-4 w-4" />Nuevo</Link>
+                    </Button>
+                </div>
             </header>
 
-            <main className="space-y-6">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Tus Proyectos</CardTitle>
-                        <CardDescription className="flex flex-col gap-4 pt-2 sm:flex-row sm:justify-between sm:items-center">
-                            <span>Filtra y busca entre tus castings activos y pasados.</span>
-                            <ProjectsToolbar />
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        {renderContent()}
-                    </CardContent>
-                </Card>
+            {/* Content directly, no extra Card wrapper */}
+            <main className="space-y-4">
+                {renderContent()}
 
                 {totalPages > 1 && (
                     <footer className="flex justify-between items-center pt-4 w-full">
@@ -186,12 +186,12 @@ export default function ProjectsClientPage({ initialProjects, initialCount }: In
                                 </PaginationContent>
                             </Pagination>
                         </div>
-                        <div className="text-label-13 text-muted-foreground whitespace-nowrap ml-4">
+                        <div className="text-label-12 text-muted-foreground whitespace-nowrap ml-4">
                             Página {currentPage} de {totalPages}
                         </div>
                     </footer>
                 )}
             </main>
-        </div>
+        </div >
     );
 }
