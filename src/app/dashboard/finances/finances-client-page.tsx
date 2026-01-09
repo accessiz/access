@@ -485,12 +485,12 @@ export default function FinancesClientPage({ initialData }: FinancesClientPagePr
             {/* Header */}
             <div className="flex justify-between items-start">
                 <div>
-                    <h1 className="text-heading-28 font-semibold">Finanzas</h1>
+                    <h1 className="text-heading-24 font-semibold">Finanzas</h1>
                 </div>
             </div>
 
             {/* KPI Cards */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
                 <KPICard
                     title="Por Cobrar"
                     value={formatCurrency(kpis.totalPendingClients)}

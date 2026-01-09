@@ -86,8 +86,8 @@ export function ModelsPageContent({
                 // Desktop (md+): fixed width side panel (más angosto)
                 'md:w-[280px] md:min-w-[260px] md:max-w-[300px]'
             )}>
-                {/* Search Header - DS: p-4 for containers */}
-                <div className="sticky top-0 z-10 bg-background border-b border-border p-4 space-y-3">
+                {/* Search Header - DS: p-6 for containers */}
+                <div className="sticky top-0 z-10 bg-background border-b border-border p-6 space-y-4">
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input

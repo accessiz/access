@@ -198,10 +198,10 @@ export function BirthdaysClientPage() {
     const todayFormatted = `${today.getDate()} de ${MONTHS[today.getMonth()]}`
 
     return (
-        <div className="space-y-8">
+        <div className="grid gap-6">
             <header className="flex flex-col items-start gap-4 pb-6 border-b md:flex-row md:items-center md:justify-between">
                 <div>
-                    <h1 className="text-heading-32">Cumpleaños</h1>
+                    <h1 className="text-heading-24 font-semibold">Cumpleaños</h1>
                 </div>
             </header>
 

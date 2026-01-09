@@ -16,9 +16,9 @@ export default async function DashboardPage() {
   const lowModels = await getLowCompletenessModels(5);
 
   return (
-    <div className="space-y-6">
-      
-      <div className="grid gap-4 md:grid-cols-3 items-stretch">
+    <div className="grid gap-6">
+
+      <div className="grid gap-6 md:grid-cols-3 items-stretch">
         {/* Resumen de Estatus de Proyectos */}
         <div className="md:col-span-2 h-full">
           <Card className="h-full">
@@ -28,7 +28,7 @@ export default async function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                {['in-review','draft','sent','completed'].map((s) => (
+                {['in-review', 'draft', 'sent', 'completed'].map((s) => (
                   <Link key={s} href={`/dashboard/projects?status=${s}`} className="p-4 rounded-md border hover:bg-muted/50 transition-colors h-full flex flex-col justify-center">
                     <div className="text-label-13 text-muted-foreground capitalize">{s.replace('-', ' ')}</div>
                     <div className="text-heading-24 font-semibold">{counts[s] ?? 0}</div>
@@ -61,7 +61,7 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-6 md:grid-cols-2">
         {/* Actividad Reciente */}
         <Card>
           <CardHeader>
@@ -94,9 +94,8 @@ export default async function DashboardPage() {
               {lowModels.map((m: { id: string; alias: string | null; profile_completeness: number | null }) => (
                 <li key={m.id} className="flex justify-between items-center text-copy-14">
                   <Link href={`/dashboard/models/${m.id}`} className="hover:underline font-medium">{m.alias || 'Sin alias'}</Link>
-                  <span className={`px-2 py-1 rounded-full text-label-12 ${
-                    (m.profile_completeness || 0) < 50 ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 'bg-yellow-100 text-yellow-700'
-                  }`}>
+                  <span className={`px-2 py-1 rounded-full text-label-12 ${(m.profile_completeness || 0) < 50 ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 'bg-yellow-100 text-yellow-700'
+                    }`}>
                     {Math.round(m.profile_completeness || 0)}%
                   </span>
                 </li>

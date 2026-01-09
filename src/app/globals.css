@@ -129,6 +129,37 @@
       grid-template-columns: repeat(5, 1fr);
     }
   }
+
+  /* ==========================================
+   * SEMANTIC GRID UTILITIES
+   * Pre-built layouts using spacing tokens
+   * ========================================== */
+
+  /* Page-level grid with 24px gaps */
+  .page-grid {
+    display: grid;
+    gap: var(--spacing-lg);
+  }
+
+  /* Section-level grid with 16px gaps */
+  .section-grid {
+    display: grid;
+    gap: var(--spacing-md);
+  }
+
+  /* Card content grid with 16px gaps */
+  .card-grid {
+    display: grid;
+    gap: var(--spacing-md);
+  }
+
+  /* Inline items with 8px gaps */
+  .inline-grid {
+    display: grid;
+    grid-auto-flow: column;
+    gap: var(--spacing-sm);
+    align-items: center;
+  }
 }
 
 @layer base {
@@ -157,8 +188,25 @@
     --border: 230 230 230;
     --input: 230 230 230;
     --ring: 135 24 157;
-    --radius: 0rem;
-    /* Bordes cuadrados por defecto */
+    --radius: 8px;
+    /* M3 default radius for inputs/buttons */
+
+    /* ==========================================
+     * SPACING TOKENS (8pt Grid System)
+     * Based on DESIGN_SYSTEM.md Section 1.3
+     * ========================================== */
+    --spacing-xs: 4px;
+    /* Micro gaps: icon-text */
+    --spacing-sm: 8px;
+    /* Inline elements, small gaps */
+    --spacing-md: 16px;
+    /* Card padding, item gaps */
+    --spacing-lg: 24px;
+    /* Page padding, section gaps */
+    --spacing-xl: 32px;
+    /* Block separation */
+    --spacing-2xl: 48px;
+    /* Hero sections */
 
     /* Design System aliases */
     /* Token solicitado: el negro más oscuro del sistema */

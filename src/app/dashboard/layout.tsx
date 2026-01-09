@@ -42,7 +42,7 @@ export default async function DashboardLayout({
         </header>
 
         {/* Aquí se renderiza tu página (Dashboard, Tabla de modelos, etc) */}
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-4 bg-background rounded-xl overflow-hidden">
+        <div className="flex flex-1 flex-col gap-6 p-6 bg-background rounded-xl overflow-hidden">
           {children}
         </div>
       </SidebarInset>

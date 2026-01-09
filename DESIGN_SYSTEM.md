@@ -82,13 +82,111 @@ M3 no usa sombras para profundidad, usa **tonos de superficie**.
 | **On Surface Variant** | `--muted-foreground` | Texto secundario (Gris). |
 
 
-### 1.3 Layout & Grid
-*   **Master-Detail:** Sidebar fijo (`18rem`) + Master (`400px`) + Detail (Flex).
-*   **Espaciado:** Grid de 4pt. Contenedores `p-6`, items `p-4`, separación `gap-2`.
-*   **Radios:** 
-    *   *M3 Default:* Cards 12px, Dialogs 28px.
-    *   *App Actual:* Cards 8px (`rounded-lg`), Inputs 4px (`rounded-md`).
-    *   *Regla:* Mantener 8px para consistencia hasta refactorización mayor.
+### 1.3 Master Grid System (Pixel-Perfect Layout)
+
+> **Regla de Oro:** Todo elemento debe alinearse a la cuadrícula de 8pt. Sin excepciones.
+
+#### A. Estructura de Página Principal
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│                         VIEWPORT (100vw)                             │
+├────────────┬─────────────────────────────────────────────────────────┤
+│            │                    MAIN CONTENT AREA                    │
+│  SIDEBAR   │  ┌──────────────────────────────────────────────────┐   │
+│            │  │ HEADER (Título + Acciones)          h: 64px      │   │
+│  w: 288px  │  ├──────────────────────────────────────────────────┤   │
+│  (18rem)   │  │                                                  │   │
+│            │  │ PAGE CONTENT                                     │   │
+│ collapsed: │  │ padding: 24px (p-6)                              │   │
+│  56px      │  │ gap entre secciones: 24px                        │   │
+│            │  │                                                  │   │
+│            │  └──────────────────────────────────────────────────┘   │
+└────────────┴─────────────────────────────────────────────────────────┘
+```
+
+#### B. Espaciado Global (Tokens)
+
+| Token | Valor | Uso |
+|-------|-------|-----|
+| `--spacing-xs` | 4px | Micro gaps (icon-text) |
+| `--spacing-sm` | 8px | Gaps entre elementos inline |
+| `--spacing-md` | 16px | Padding interno cards, gaps de items |
+| `--spacing-lg` | 24px | Padding de página, gaps entre secciones |
+| `--spacing-xl` | 32px | Separación de bloques grandes |
+| `--spacing-2xl` | 48px | Hero sections, separación mayor |
+
+#### C. Alineación Sidebar ↔ Contenido
+
+> **Problema Detectado:** Los íconos del sidebar no alinean con los títulos de sección.
+
+**Solución:** 
+
+```
+SIDEBAR (expanded)              CONTENIDO
+┌──────────────────────┐       ┌─────────────────────────────────┐
+│ px-4 (16px)          │       │ pl-6 (24px)                     │
+│                      │       │                                 │
+│ ┌──────────────────┐ │       │ ┌─────────────────────────────┐ │
+│ │⚙️ Icon  Texto    │ │       │ │ Título de Sección           │ │
+│ │  24px   rest     │ │       │ │ ← alignado con ícono        │ │
+│ └──────────────────┘ │       │ └─────────────────────────────┘ │
+```
+
+| Elemento | Medida | Clase Tailwind |
+|----------|--------|----------------|
+| Sidebar padding X | 16px | `px-4` |
+| Sidebar icon size | 24px | `h-6 w-6` |
+| Sidebar gap icon-text | 12px | `gap-3` |
+| Content padding left | 24px | `pl-6` |
+| Content padding right | 24px | `pr-6` |
+| Content padding top | 24px | `pt-6` |
+
+#### D. Page Header Consistente
+
+Todas las páginas deben seguir este patrón exacto:
+
+```jsx
+<header className="flex flex-col gap-4 pb-4 border-b sm:flex-row sm:items-center sm:justify-between">
+  <div>
+    <h1 className="text-heading-24 font-semibold">Título</h1>
+    <p className="text-copy-12 text-muted-foreground">Subtítulo/conteo</p>
+  </div>
+  <div className="flex items-center gap-3">
+    {/* Acciones */}
+  </div>
+</header>
+```
+
+| Elemento | Especificación |
+|----------|----------------|
+| Título (h1) | `text-heading-24` (24px), `font-semibold` |
+| Subtítulo | `text-copy-12` (12px), `text-muted-foreground` |
+| Gap título-subtítulo | 4px (implícito en div) |
+| Padding bottom header | 16px (`pb-4`) |
+| Border bottom | `border-b` (1px, outline-variant) |
+| Gap header-content | 16px (`space-y-4` en parent) |
+
+#### E. Breakpoints Responsivos
+
+| Breakpoint | Valor | Sidebar | Layout |
+|------------|-------|---------|--------|
+| `sm` | ≥640px | Colapsado (56px) | Single column |
+| `md` | ≥768px | Expandible | Two columns |
+| `lg` | ≥1024px | Expandido | Master-Detail |
+| `xl` | ≥1280px | Expandido | Master-Detail + Extra space |
+
+#### F. Border Radius
+
+| Elemento | Radio | Clase |
+|----------|-------|-------|
+| Cards | 8px | `rounded-lg` |
+| Inputs | 6px | `rounded-md` |
+| Buttons | 6px | `rounded-md` |
+| Dialogs | 16px | `rounded-xl` |
+| Avatars | 50% | `rounded-full` |
+| Badges | 4px | `rounded` |
+| Chips | 8px | `rounded-lg` |
 
 
 ### 1.4 Movimiento (Motion)
@@ -123,7 +221,7 @@ Material 3 define 9 tipos de botones. Aquí su mapeo en nuestra App:
 | **2. Icon Buttons** | `button.tsx` | Usar `size="icon"` y `variant="ghost"`. <br> Ideal para Top Bars o acciones de tabla (`Edit`, `Delete`). |
 | **3. Floating Action (FAB)** | `button.tsx` (Custom) | ✅ **Simulado.** Usar `h-14 w-14 rounded-2xl shadow-md`. <br> *Solo una por pantalla.* |
 | **4. Extended FAB** | `button.tsx` (Custom) | ✅ **Simulado.** Botón con Icono + Texto. <br> Altura 56px (`h-14`). Radio `rounded-2xl`. |
-| **5. Segmented Buttons** | --- | ❌ **No instalado.** (Falta `toggle-group`). <br> *Alternativa:* Usar `Tabs` (estilo Pill) para selectores. |
+| **5. Segmented Buttons** | `toggle-group.tsx` | ✅ **Implementado.** Usar para selectores tipo on/off múltiples. |
 | **6. Split Button** | `button.tsx` + `dropdown` | ⚠️ **Manual.** Unir un botón y un trigger de dropdown con `gap-px`. |
 | **7. Button Groups** | --- | ❌ **No existe.** Evitar agrupar botones pegados. Usar spacing `gap-2`. |
 | **8. FAB Menu** | --- | ❌ **No existe.** Evitar complejidad. Usar Dropdown Menu estándar. |
@@ -414,8 +512,9 @@ Los contenidos se agrupan en bloques con diferentes niveles de énfasis visual s
 *   **Regla:** Selección de valores en rango. Mostrar valor numérico `tooltip` al arrastrar.
 
 #### 19. Switch
-*   **Estado:** ❌ No instalado.
-*   **Regla:** Usar para configuraciones de encendido/apagado inmediato (ej: "Modo Oscuro"). Si no está crítico, usar Checkbox.
+*   **Archivo:** `switch.tsx`
+*   **Estado:** ✅ Implementado.
+*   **Regla:** Usar para configuraciones de encendido/apagado inmediato (ej: "Modo Oscuro").
 
 #### 20a. Text Fields (Outlined) - **Default**
 *   **Archivo:** `input.tsx`
@@ -478,8 +577,294 @@ Los contenidos se agrupan en bloques con diferentes niveles de énfasis visual s
 
 ---
 
-## 3. ✅ Checklist de Calidad
-1. [ ] ¿El componente usa tokens `surface` en lugar de `white`?
-2. [ ] ¿Tiene estados `hover`, `focus`, `pressed` definidos?
-3. [ ] ¿El texto cumple con la escala 14px?
-4. [ ] ¿Es accesible por teclado (`Tab`, `Enter`)?
+## 3. 📋 Form Layout
+
+> **Principio:** Formularios deben ser legibles, predecibles, y con mínimo esfuerzo cognitivo.
+
+### A. Estructura de Formulario
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ Section Header (opcional)                                        │
+│ ┌───────────────────────┐ ┌───────────────────────┐             │
+│ │ Label               ⓘ │ │ Label               ⓘ │             │
+│ │ ┌───────────────────┐ │ │ ┌───────────────────┐ │             │
+│ │ │ Input             │ │ │ │ Input / Select    │ │             │
+│ │ └───────────────────┘ │ │ └───────────────────┘ │             │
+│ │ Helper text           │ │ Helper text           │             │
+│ └───────────────────────┘ └───────────────────────┘             │
+├─────────────────────────────────────────────────────────────────┤
+│ [ Cancelar ]                                    [ Guardar (●) ] │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### B. Especificaciones
+
+| Elemento | Medida | Clase |
+|----------|--------|-------|
+| Gap entre campos (horizontal) | 16px | `gap-4` |
+| Gap entre campos (vertical) | 16px | `gap-4` |
+| Gap label-input | 8px | `gap-2` (Field component) |
+| Gap input-helper | 4px | Implícito |
+| Section header margin-top | 24px | `mt-6` |
+| Section header margin-bottom | 16px | `mb-4` |
+| Form padding | 24px | `p-6` |
+| Buttons gap | 12px | `gap-3` |
+
+### C. Layouts de Columnas
+
+| Contexto | Columnas | Breakpoint |
+|----------|----------|------------|
+| Móvil | 1 columna full-width | `< md` |
+| Tablet | 2 columnas | `md` |
+| Desktop | 2-3 columnas según densidad | `lg+` |
+
+### D. Estados de Campos
+
+| Estado | Visual |
+|--------|--------|
+| **Default** | Borde `outline-variant` (gris) |
+| **Focused** | Borde `primary` (2px), ring `primary/20` |
+| **Error** | Borde `destructive`, texto helper rojo |
+| **Disabled** | Opacity 50%, cursor not-allowed |
+| **Read-only** | Fondo `surface-container-low`, sin borde activo |
+
+### E. Reglas
+
+1. **Labels siempre visibles** - No flotan dentro del input
+2. **Helper text** - Solo 1 línea, texto de error REEMPLAZA helper (no se suma)
+3. **Asterisco obligatorio** - `*` después de label para campos requeridos
+4. **Grupos lógicos** - Separar secciones con `Section Header` + divider opcional
+5. **Botones al final** - Alineados a la derecha, primario al final
+
+---
+
+## 4. 🖼️ Avatar
+
+**Archivo:** `avatar.tsx`
+
+### A. Tamaños
+
+| Nombre | Medida | Clase | Uso |
+|--------|--------|-------|-----|
+| `xs` | 24px | `h-6 w-6` | Inline mentions, dense lists |
+| `sm` | 32px | `h-8 w-8` | Table cells, chips |
+| `md` | 40px | `h-10 w-10` | List items, cards |
+| `lg` | 48px | `h-12 w-12` | Headers, destacados |
+| `xl` | 64px | `h-16 w-16` | Profile pages |
+| `2xl` | 96px | `h-24 w-24` | Hero profile |
+
+### B. Variantes
+
+| Tipo | Uso |
+|------|-----|
+| **Image** | Foto de perfil (personas) |
+| **Initials** | Fallback con iniciales (1-2 chars) |
+| **Icon** | Fallback con icono User |
+
+### C. Estados
+
+| Estado | Visual |
+|--------|--------|
+| **Online** | Dot verde esquina inferior derecha |
+| **Busy/Working** | Dot rojo pulsante |
+| **Offline** | Sin indicador |
+
+### D. Anatomía
+
+```
+┌───────────────┐
+│               │
+│    Image      │  ← rounded-full
+│               │
+│          🟢   │  ← status indicator (opcional)
+└───────────────┘
+```
+
+---
+
+## 5. 📄 Pagination
+
+**Archivo:** `pagination.tsx`
+
+### A. Anatomía
+
+```
+◀ Anterior   1  2  3  ...  10  11  12   Siguiente ▶     Página 5 de 12
+└──────────────────────────────────────────────────┘    └──────────────┘
+           Navigation                                       Info
+```
+
+### B. Especificaciones
+
+| Elemento | Medida | Clase |
+|----------|--------|-------|
+| Button size | 32px | `h-8 w-8` |
+| Gap entre items | 4px | `gap-1` |
+| Font size | 14px | `text-sm` |
+| Border radius | 6px | `rounded-md` |
+
+### C. Estados
+
+| Estado | Visual |
+|--------|--------|
+| **Active** | `bg-primary`, `text-primary-foreground` |
+| **Inactive** | `bg-transparent`, `text-foreground` |
+| **Hover** | `bg-muted` |
+| **Disabled** | `opacity-50`, `pointer-events-none` |
+
+### D. Reglas
+
+1. Mostrar máximo 7 números + 2 ellipsis
+2. Siempre mostrar primera y última página
+3. Mostrar `Página X de Y` al final (opcional)
+4. Flechas disabled en primera/última página
+
+---
+
+## 6. 📅 Calendar / Date Picker
+
+**Archivo:** `calendar.tsx`, `date-picker.tsx`
+
+### A. Anatomía del Calendario
+
+```
+┌─────────────────────────────────────┐
+│  ◀   Enero 2026                 ▶   │  ← Header con navegación
+├─────────────────────────────────────┤
+│  Lu   Ma   Mi   Ju   Vi   Sa   Do   │  ← Weekday headers
+├─────────────────────────────────────┤
+│  29   30   31    1    2    3    4   │
+│   5    6    7   [8]   9   10   11   │  ← [8] = selected
+│  12   13   14   15   16   17   18   │
+│  19   20   21   22   23   24   25   │
+│  26   27   28   29   30   31    1   │
+└─────────────────────────────────────┘
+```
+
+### B. Especificaciones
+
+| Elemento | Medida | Clase |
+|----------|--------|-------|
+| Day cell size | 36px | `h-9 w-9` |
+| Gap entre cells | 0 | Grid tight |
+| Border radius (selected) | 50% | `rounded-full` |
+| Weekday font | 12px | `text-xs` |
+| Day font | 14px | `text-sm` |
+
+### C. Estados de Día
+
+| Estado | Visual |
+|--------|--------|
+| **Default** | `text-foreground` |
+| **Selected** | `bg-primary`, `text-primary-foreground`, `rounded-full` |
+| **Today** | `border-primary` (ring), no fill |
+| **Outside month** | `text-muted-foreground`, opacity 50% |
+| **Disabled** | `text-muted-foreground`, `line-through` |
+| **Hover** | `bg-muted` |
+
+### D. Date Picker Input
+
+```
+┌─────────────────────────────────────┐
+│ 📅  15 de Enero, 2026          ▼   │
+└─────────────────────────────────────┘
+```
+
+- Formato display: `DD de MMMM, YYYY` (Guatemala)
+- Icono leading: Calendar
+- Trailing: Chevron o Clear (si tiene valor)
+
+---
+
+## 7. 📋 Lists (Material Design 3)
+
+### A. Descripción General
+
+Las listas son arreglos verticales de elementos optimizados para escaneo rápido. Establecen jerarquía visual clara y soportan acciones.
+
+### B. Variantes de Altura
+
+| Variante | Altura Min | Contenido |
+|----------|------------|-----------|
+| **1-Line** | 56dp | Solo label |
+| **2-Line** | 72dp | Label + supporting text (1 línea) |
+| **3-Line** | 88dp | Label + supporting text (2-3 líneas, truncado) |
+
+### C. Anatomía
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│  ┌────┐                                              ┌────┐   │
+│  │ 📷 │  Headline (Label)                    Meta    │ ⋮  │   │
+│  │    │  Supporting text...                  text    │    │   │
+│  └────┘                                              └────┘   │
+│  Leading                Content                      Trailing │
+└────────────────────────────────────────────────────────────────┘
+```
+
+| Slot | Tamaño | Contenido |
+|------|--------|-----------|
+| **Leading** | 24-56dp | Avatar (40px círculo), Icono (24px), Media (56px) |
+| **Content** | Fluid | Headline (16px) + Supporting (14px). Max 3 líneas. |
+| **Trailing** | Variable | Meta text, Checkbox, Radio, Switch, Menu (...) |
+
+### D. Espaciado
+
+| Elemento | Medida |
+|----------|--------|
+| Padding horizontal | 16px |
+| Padding vertical | 8-12px |
+| Gap leading-content | 16px |
+| Gap content-trailing | 16px |
+
+### E. Tipos de Interacción
+
+| Modo | Control Trailing |
+|------|------------------|
+| **Selección única** | Radio button |
+| **Selección múltiple** | Checkbox o Switch |
+| **Navegación** | Item entero clickeable |
+| **Multi-acción** | Área central navega, trailing ejecuta secundaria |
+
+### F. Reglas
+
+> [!IMPORTANT]
+> 1. **Alineación consistente** - No varíes posiciones dentro de una lista
+> 2. **Elementos distintivos al inicio** - Avatar/icono en leading
+> 3. **Texto meta al final** - Precio, fecha en trailing
+> 4. **Limitar texto** - Truncar para escaneabilidad
+> 5. **No centrar visuals** - Siempre alinear a la izquierda
+> 6. **Gaps en listas contenidas** - Evitar dividers en listas simples
+> 7. **Dividers solo si necesario** - En listas complejas o no contenidas
+
+---
+
+## 8. ✅ Checklist de Calidad
+
+### Componentes
+- [ ] ¿Usa tokens `surface` en lugar de `white`?
+- [ ] ¿Tiene estados `hover`, `focus`, `pressed` definidos?
+- [ ] ¿El texto cumple con la escala tipográfica?
+- [ ] ¿Es accesible por teclado (`Tab`, `Enter`)?
+- [ ] ¿Los radios coinciden con la tabla de Border Radius?
+
+### Layout
+- [ ] ¿El espaciado sigue la cuadrícula de 8pt?
+- [ ] ¿El header sigue el patrón documentado?
+- [ ] ¿Los íconos alinean verticalmente con el contenido?
+- [ ] ¿El padding lateral es consistente (24px)?
+
+### Formularios
+- [ ] ¿Labels siempre visibles (no flotan)?
+- [ ] ¿Campos obligatorios marcados con `*`?
+- [ ] ¿Helper text es de 1 línea?
+- [ ] ¿Error reemplaza helper (no se suma)?
+- [ ] ¿Botones alineados a la derecha?
+
+### Listas
+- [ ] ¿Alineación consistente en toda la lista?
+- [ ] ¿Leading/Trailing correctamente posicionados?
+- [ ] ¿Texto truncado si excede límite?
+- [ ] ¿Gaps en vez de dividers para listas contenidas?
+
