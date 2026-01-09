@@ -94,7 +94,7 @@ export function AppSidebar({ user, ...props }: React.ComponentProps<typeof Sideb
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild tooltip="ACCESS">
-              <Link href="/dashboard" className="flex items-center justify-center">
+              <Link href="/dashboard" className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-end'}`}>
                 {/* Logo con transición suave */}
                 <div className="relative flex items-center justify-center overflow-hidden">
                   {/* Logo pequeño - visible cuando colapsado */}

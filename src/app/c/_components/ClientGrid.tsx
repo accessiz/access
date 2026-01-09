@@ -91,30 +91,30 @@ function QuickApprovalButtons({
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1">
       <button
         onClick={(e) => handleClick(e, 'approved')}
         className={cn(
-          "flex items-center justify-center size-7 rounded-full transition-all shadow-sm border",
+          "flex items-center justify-center size-7 rounded-full transition-all",
           localSelection === 'approved'
-            ? "bg-green-600 text-white border-green-600"
-            : "bg-white text-gray-400 border-gray-200 hover:bg-green-50 hover:text-green-600 hover:border-green-300"
+            ? "text-green-500"
+            : "text-neutral-500 hover:text-green-500"
         )}
         aria-label="Aprobar"
       >
-        <CheckCircle2 className="size-4" />
+        <CheckCircle2 className="size-5" />
       </button>
       <button
         onClick={(e) => handleClick(e, 'rejected')}
         className={cn(
-          "flex items-center justify-center size-7 rounded-full transition-all shadow-sm border",
+          "flex items-center justify-center size-7 rounded-full transition-all",
           localSelection === 'rejected'
-            ? "bg-red-600 text-white border-red-600"
-            : "bg-white text-gray-400 border-gray-200 hover:bg-red-50 hover:text-red-600 hover:border-red-300"
+            ? "text-red-500"
+            : "text-neutral-500 hover:text-red-500"
         )}
         aria-label="Rechazar"
       >
-        <XCircle className="size-4" />
+        <XCircle className="size-5" />
       </button>
     </div>
   );

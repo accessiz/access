@@ -8,7 +8,8 @@ import { Project } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { PlusCircle, Trash2, ArrowDown, ArrowUp } from 'lucide-react';
+import { PlusCircle, Trash2, ArrowDown, ArrowUp, List, CalendarDays } from 'lucide-react';
+import { ProjectCalendarView } from '@/components/organisms/ProjectCalendarView';
 import { ProjectsToolbar } from '@/components/organisms/ProjectsToolbar';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from "@/components/ui/pagination";
 import { DeleteProjectDialog } from '@/components/organisms/DeleteProjectDialog';
@@ -52,6 +53,7 @@ const StatusBadge = ({ status }: { status: string }) => {
 export default function ProjectsClientPage({ initialProjects, initialCount }: InitialData) {
     const [projects, setProjects] = useState(initialProjects);
     const [count, setCount] = useState(initialCount);
+    const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
 
     // Sincronizar estado cuando los props cambian (navegación de página)
     useEffect(() => {
@@ -219,6 +221,27 @@ export default function ProjectsClientPage({ initialProjects, initialCount }: In
                     </div>
                 </div>
                 <div className="flex items-center gap-3">
+                    {/* View Toggle */}
+                    <div className="flex items-center rounded-lg border bg-background p-1 gap-0.5">
+                        <Button
+                            variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+                            size="sm"
+                            onClick={() => setViewMode('list')}
+                            className="h-8 px-3 gap-1.5"
+                        >
+                            <List className="h-4 w-4" />
+                            <span className="hidden sm:inline">Lista</span>
+                        </Button>
+                        <Button
+                            variant={viewMode === 'calendar' ? 'secondary' : 'ghost'}
+                            size="sm"
+                            onClick={() => setViewMode('calendar')}
+                            className="h-8 px-3 gap-1.5"
+                        >
+                            <CalendarDays className="h-4 w-4" />
+                            <span className="hidden sm:inline">Calendario</span>
+                        </Button>
+                    </div>
                     <ProjectsToolbar />
                     <Button asChild>
                         <Link href="/dashboard/projects/new"><PlusCircle className="mr-2 h-4 w-4" />Nuevo</Link>
@@ -226,29 +249,34 @@ export default function ProjectsClientPage({ initialProjects, initialCount }: In
                 </div>
             </header>
 
-            {/* Content directly, no extra Card wrapper */}
+            {/* Content */}
             <main className="space-y-4">
-                {renderContent()}
-
-                {totalPages > 1 && (
-                    <footer className="flex justify-between items-center pt-4 w-full">
-                        <div className="flex-1">
-                            <Pagination>
-                                <PaginationContent className="justify-start">
-                                    <PaginationItem><PaginationPrevious href={createPageURL(currentPage - 1)} className={currentPage <= 1 ? "pointer-events-none opacity-50" : ""} /></PaginationItem>
-                                    {paginationItems.map((page, index) => (
-                                        <PaginationItem key={index}>
-                                            {page === "..." ? <PaginationEllipsis /> : <PaginationLink href={createPageURL(page as number)} isActive={currentPage === page}>{page}</PaginationLink>}
-                                        </PaginationItem>
-                                    ))}
-                                    <PaginationItem><PaginationNext href={createPageURL(currentPage + 1)} className={currentPage >= totalPages ? "pointer-events-none opacity-50" : ""} /></PaginationItem>
-                                </PaginationContent>
-                            </Pagination>
-                        </div>
-                        <div className="text-label-12 text-muted-foreground whitespace-nowrap ml-4">
-                            Página {currentPage} de {totalPages}
-                        </div>
-                    </footer>
+                {viewMode === 'list' ? (
+                    <>
+                        {renderContent()}
+                        {totalPages > 1 && (
+                            <footer className="flex justify-between items-center pt-4 w-full">
+                                <div className="flex-1">
+                                    <Pagination>
+                                        <PaginationContent className="justify-start">
+                                            <PaginationItem><PaginationPrevious href={createPageURL(currentPage - 1)} className={currentPage <= 1 ? "pointer-events-none opacity-50" : ""} /></PaginationItem>
+                                            {paginationItems.map((page, index) => (
+                                                <PaginationItem key={index}>
+                                                    {page === "..." ? <PaginationEllipsis /> : <PaginationLink href={createPageURL(page as number)} isActive={currentPage === page}>{page}</PaginationLink>}
+                                                </PaginationItem>
+                                            ))}
+                                            <PaginationItem><PaginationNext href={createPageURL(currentPage + 1)} className={currentPage >= totalPages ? "pointer-events-none opacity-50" : ""} /></PaginationItem>
+                                        </PaginationContent>
+                                    </Pagination>
+                                </div>
+                                <div className="text-label-12 text-muted-foreground whitespace-nowrap ml-4">
+                                    Página {currentPage} de {totalPages}
+                                </div>
+                            </footer>
+                        )}
+                    </>
+                ) : (
+                    <ProjectCalendarView projects={projects} />
                 )}
             </main>
         </div >

@@ -214,7 +214,7 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
           <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
             <div className="space-y-4 max-w-2xl">
               <p className="text-sm text-muted-foreground sm:text-base">
-                Revisa el talento disponible. Utiliza los filtros para encontrar perfiles específicos.
+                Selecciona y aprueba el talento que te interesa.
               </p>
             </div>
 
