@@ -15,7 +15,7 @@ const toPublicUrl = (path: string | null | undefined): string | null => {
 };
 // --- FIN DE LA CORRECCIÓN ---
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 25;
 
 type SearchParams = {
   query?: string;
@@ -27,7 +27,7 @@ type SearchParams = {
   limit?: number;
 };
 
-// Función para obtener la lista de proyectos (sin cambios)
+// Función para obtener la lista de proyectos (con conteo de modelos asignados)
 export async function getProjectsForUser(searchParams: SearchParams = {}) {
   noStore();
   const supabase = await createClient();
@@ -41,9 +41,17 @@ export async function getProjectsForUser(searchParams: SearchParams = {}) {
   const currentPage = searchParams.currentPage || 1;
   const limit = searchParams.limit || ITEMS_PER_PAGE;
 
+  // Incluir modelos aprobados con sus detalles (solo campos necesarios para evitar conflictos)
   let queryBuilder = supabase
     .from('projects')
-    .select('*', { count: 'exact' })
+    .select(`
+      *,
+      projects_models!fk_projects_models_project(
+        client_selection,
+        model_id,
+        models!fk_projects_models_model(id, alias, cover_path)
+      )
+    `, { count: 'exact' })
     .eq('user_id', user.id);
 
   if (searchParams.query) {
@@ -81,7 +89,38 @@ export async function getProjectsForUser(searchParams: SearchParams = {}) {
     return { data: [], count: 0 };
   }
 
-  return { data: data || [], count: count || 0 };
+  // Tipo para los datos de la relación
+  type ProjectModelRelation = {
+    client_selection: string | null;
+    model_id: string;
+    models: {
+      id: string;
+      alias: string | null;
+      cover_path: string | null;
+    } | null;
+  };
+
+  // Enriquecer con modelos aprobados
+  const enrichedData = (data || []).map((project: Record<string, unknown>) => {
+    const projectModels = project.projects_models as ProjectModelRelation[] | null;
+
+    // Filtrar solo los aprobados y mapear a formato simplificado
+    const approvedModels = (projectModels || [])
+      .filter(pm => pm.client_selection === 'approved' && pm.models)
+      .map(pm => ({
+        id: pm.models!.id,
+        alias: pm.models!.alias || 'Sin nombre',
+        coverUrl: toPublicUrl(pm.models!.cover_path),
+      }));
+
+    return {
+      ...project,
+      assigned_models_count: projectModels?.length ?? 0,
+      approved_models: approvedModels,
+    };
+  });
+
+  return { data: enrichedData, count: count || 0 };
 }
 
 // Helper para formatear hora de DB (UTC) a 12h AM/PM

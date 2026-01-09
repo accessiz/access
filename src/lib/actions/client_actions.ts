@@ -47,9 +47,9 @@ export async function finalizeProjectReview(projectId: string, rejectPending: bo
     if (rejectPending) {
       const { error: updateError } = await supabaseAdmin
         .from('projects_models')
-        .update({ 
-            client_selection: 'rejected',
-            client_selection_date: new Date().toISOString()
+        .update({
+          client_selection: 'rejected',
+          client_selection_date: new Date().toISOString()
         })
         .eq('project_id', projectId)
         .or('client_selection.is.null,client_selection.eq.pending');
@@ -59,7 +59,7 @@ export async function finalizeProjectReview(projectId: string, rejectPending: bo
 
     const statusToSet = 'completed';
     // Registramos la fecha de finalización
-    const completionDate = new Date().toISOString(); 
+    const completionDate = new Date().toISOString();
 
     const { error: finalizeError } = await supabaseAdmin
       .from('projects')
@@ -121,4 +121,53 @@ export async function reopenProject(projectId: string) {
   }
 }
 
-    
+// --- Acción: Cambiar selección de modelo por el cliente ---
+export async function updateClientModelSelection(
+  projectId: string,
+  modelId: string,
+  selection: 'approved' | 'rejected' | 'pending'
+) {
+  // Validar IDs
+  if (!z.string().uuid().safeParse(projectId).success) {
+    return { success: false, error: 'ID de proyecto inválido.' };
+  }
+  if (!z.string().uuid().safeParse(modelId).success) {
+    return { success: false, error: 'ID de modelo inválido.' };
+  }
+
+  // 🔒 Verificar acceso
+  const hasAccess = await verifyAccess(projectId);
+  if (!hasAccess) {
+    return { success: false, error: 'No tienes autorización.' };
+  }
+
+  try {
+    const { error } = await supabaseAdmin
+      .from('projects_models')
+      .update({
+        client_selection: selection,
+        client_selection_date: new Date().toISOString()
+      })
+      .eq('project_id', projectId)
+      .eq('model_id', modelId);
+
+    if (error) throw error;
+
+    // Revalidar la página del cliente
+    const { data: project } = await supabaseAdmin
+      .from('projects')
+      .select('public_id')
+      .eq('id', projectId)
+      .single();
+
+    if (project?.public_id) {
+      revalidatePath(`/c/${project.public_id}`);
+    }
+
+    return { success: true };
+
+  } catch (err) {
+    logError(err, { action: 'updateClientModelSelection', projectId, modelId });
+    return { success: false, error: 'Error al actualizar selección.' };
+  }
+}

@@ -55,12 +55,10 @@ function generateProjectName(
 ): string {
   const parts: string[] = [];
 
-  // 1. Tipos de proyecto (ordenados por jerarquía si hay múltiples)
+  // 1. Tipos de proyecto (solo el primero para nombres cortos)
   if (types && types.length > 0) {
-    const typeLabels = types
-      .map(t => PROJECT_TYPES.find(pt => pt.value === t)?.label || t)
-      .slice(0, 2); // Máximo 2
-    parts.push(typeLabels.join(', '));
+    const firstType = PROJECT_TYPES.find(pt => pt.value === types[0])?.label || types[0];
+    parts.push(firstType);
   }
 
   // 2. Marca o Cliente
@@ -197,6 +195,12 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
       default_model_fee: initialData?.default_model_fee ?? null,
       default_fee_type: (initialData?.default_fee_type as 'per_day' | 'per_hour' | 'fixed') ?? 'per_day',
       currency: (initialData?.currency as 'GTQ' | 'USD' | 'EUR' | 'MXN' | 'COP' | 'PEN' | 'ARS' | 'CLP' | 'BRL') ?? 'GTQ',
+      // Campos de facturación al cliente
+      revenue: (initialData as any)?.revenue ?? null,
+      tax_percentage: (initialData as any)?.tax_percentage ?? 12,
+      client_payment_status: ((initialData as any)?.client_payment_status as 'pending' | 'invoiced' | 'paid') ?? 'pending',
+      invoice_number: (initialData as any)?.invoice_number ?? '',
+      invoice_date: (initialData as any)?.invoice_date ?? '',
     },
   });
 
@@ -336,6 +340,12 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
     fd.set('default_model_fee', values.default_model_fee?.toString() || '');
     fd.set('default_fee_type', values.default_fee_type || 'per_day');
     fd.set('currency', values.currency || 'GTQ');
+    // Campos de facturación al cliente
+    fd.set('revenue', values.revenue?.toString() || '');
+    fd.set('tax_percentage', values.tax_percentage?.toString() || '12');
+    fd.set('client_payment_status', values.client_payment_status || 'pending');
+    fd.set('invoice_number', values.invoice_number || '');
+    fd.set('invoice_date', values.invoice_date || '');
 
     // Project types
     if (values.project_types && values.project_types.length > 0) {
@@ -473,6 +483,8 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
             <div className="flex flex-wrap gap-2">
               {PROJECT_TYPES.map((type) => {
                 const isSelected = selectedProjectTypes.includes(type.value);
+                const selectionIndex = selectedProjectTypes.indexOf(type.value);
+                const isPrimary = selectionIndex === 0; // El primero es el que aparece en el nombre
                 return (
                   <Button
                     key={type.value}
@@ -480,13 +492,22 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
                     variant={isSelected ? "default" : "outline"}
                     size="sm"
                     className={cn(
-                      "h-9 px-4 transition-all",
+                      "h-9 px-4 transition-all relative",
                       isSelected && "bg-primary text-primary-foreground shadow-md"
                     )}
                     onClick={() => toggleProjectType(type.value)}
                   >
                     {type.label}
-                    {isSelected && <Check className="ml-2 h-4 w-4" />}
+                    {isSelected && (
+                      <span className={cn(
+                        "ml-2 flex items-center justify-center size-5 rounded-full text-[10px] font-bold",
+                        isPrimary
+                          ? "bg-white text-primary"
+                          : "bg-primary-foreground/20 text-primary-foreground"
+                      )}>
+                        {selectionIndex + 1}
+                      </span>
+                    )}
                   </Button>
                 );
               })}
@@ -761,7 +782,82 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
           </div>
         </div>
 
-        {/* ========== PASO 6: SEGURIDAD ========== */}
+        {/* ========== PASO 6: FACTURACIÓN AL CLIENTE ========== */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <DollarSign className="h-5 w-5 text-green-600" />
+            <h2 className="text-heading-20">Facturación al Cliente</h2>
+            <span className="text-copy-12 text-muted-foreground">(opcional)</span>
+          </div>
+          <div className="border bg-card rounded-lg p-6">
+            <div className="grid md:grid-cols-3 gap-6">
+              <div className="space-y-2">
+                <Label>Subtotal a cobrar</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
+                    {form.watch('currency') || 'GTQ'}
+                  </span>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="0.00"
+                    className="pl-14"
+                    {...form.register('revenue')}
+                  />
+                </div>
+                <input type="hidden" name="revenue" value={form.watch('revenue')?.toString() || ''} />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Impuesto (%)</Label>
+                <Controller
+                  control={form.control}
+                  name="tax_percentage"
+                  render={({ field }) => (
+                    <>
+                      <input type="hidden" name="tax_percentage" value={field.value?.toString() || '12'} />
+                      <Select
+                        value={field.value?.toString() || '12'}
+                        onValueChange={(v) => field.onChange(Number(v))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="0">0% (Sin impuesto)</SelectItem>
+                          <SelectItem value="5">5%</SelectItem>
+                          <SelectItem value="8">8%</SelectItem>
+                          <SelectItem value="10">10%</SelectItem>
+                          <SelectItem value="12">12% (IVA Guatemala)</SelectItem>
+                          <SelectItem value="15">15%</SelectItem>
+                          <SelectItem value="16">16%</SelectItem>
+                          <SelectItem value="18">18%</SelectItem>
+                          <SelectItem value="19">19%</SelectItem>
+                          <SelectItem value="21">21%</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </>
+                  )}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Total con impuesto</Label>
+                <div className="h-10 px-3 py-2 bg-muted rounded-md flex items-center font-medium text-lg">
+                  {form.watch('currency') || 'GTQ'}{' '}
+                  {((
+                    (Number(form.watch('revenue')) || 0) *
+                    (1 + (Number(form.watch('tax_percentage')) || 12) / 100)
+                  ).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}
+                </div>
+                <p className="text-copy-12 text-muted-foreground">Calculado automáticamente</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ========== PASO 7: SEGURIDAD ========== */}
         <div className="space-y-4">
           <h2 className="text-heading-20">Seguridad</h2>
           <div className="border bg-card rounded-lg p-6">

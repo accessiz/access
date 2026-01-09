@@ -276,6 +276,12 @@ export async function createProject(
     default_model_fee: formData.get('default_model_fee') || null,
     default_fee_type: formData.get('default_fee_type') || 'per_day',
     currency: formData.get('currency') || 'GTQ',
+    // Campos de facturación al cliente
+    revenue: formData.get('revenue') || null,
+    tax_percentage: formData.get('tax_percentage') || 12,
+    client_payment_status: formData.get('client_payment_status') || 'pending',
+    invoice_number: formData.get('invoice_number') || null,
+    invoice_date: formData.get('invoice_date') || null,
   };
 
   const parsed = projectFormSchema.safeParse(rawData);
@@ -450,6 +456,12 @@ export async function updateProject(
     default_model_fee: formData.get('default_model_fee') || null,
     default_fee_type: formData.get('default_fee_type') || 'per_day',
     currency: formData.get('currency') || 'GTQ',
+    // Campos de facturación al cliente
+    revenue: formData.get('revenue') || null,
+    tax_percentage: formData.get('tax_percentage') || 12,
+    client_payment_status: formData.get('client_payment_status') || 'pending',
+    invoice_number: formData.get('invoice_number') || null,
+    invoice_date: formData.get('invoice_date') || null,
   };
 
   const parsed = projectFormSchema.safeParse(rawData);

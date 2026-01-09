@@ -4,10 +4,11 @@ import { useState, useCallback, useMemo, useEffect, useRef } from 'react'
 import { toast } from 'sonner'
 import {
     Check, Loader2, Save, CheckCircle2,
-    Search, Filter, X, Users, Calendar
+    Search, Filter, X, Users, Calendar, CheckCheck,
+    ThumbsUp, ThumbsDown
 } from 'lucide-react'
 import { Model, Project } from '@/lib/types'
-import { assignModelToSchedule, unassignModelFromSchedule, removeModelFromProject } from '@/lib/actions/projects_models'
+import { assignModelToSchedule, unassignModelFromSchedule, removeModelFromProject, updateModelSelection } from '@/lib/actions/projects_models'
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -33,6 +34,7 @@ interface TalentAssignmentPanelProps {
     models: Model[]
     onAssignmentChange?: (modelId: string, scheduleId: string, assigned: boolean) => void
     onModelRemoved?: (modelId: string) => void
+    onSelectionChange?: (modelId: string, status: Model['client_selection']) => void
     onRefresh?: () => void
 }
 
@@ -64,6 +66,7 @@ export function TalentAssignmentPanel({
     models,
     onAssignmentChange,
     onModelRemoved,
+    onSelectionChange,
     onRefresh,
 }: TalentAssignmentPanelProps) {
     // Estados de búsqueda y filtros
@@ -105,15 +108,24 @@ export function TalentAssignmentPanel({
     }, [sortedSchedule])
 
     // Inicializar asignaciones locales desde los modelos
+    // Si solo hay 1 fecha, auto-asignar todos los modelos
     useEffect(() => {
         const initial: Record<string, Set<string>> = {}
+        const scheduleIds = sortedSchedule.map(s => s.id!)
+        const isSingleDate = scheduleIds.length === 1
+
         models.forEach(model => {
-            initial[model.id] = new Set(
-                model.assignments?.map(a => a.schedule_id).filter(Boolean) as string[]
-            )
+            const existingAssignments = model.assignments?.map(a => a.schedule_id).filter(Boolean) as string[] || []
+
+            if (isSingleDate && existingAssignments.length === 0) {
+                // Auto-asignar si es 1 sola fecha y no tiene asignaciones
+                initial[model.id] = new Set(scheduleIds)
+            } else {
+                initial[model.id] = new Set(existingAssignments)
+            }
         })
         setLocalAssignments(initial)
-    }, [models])
+    }, [models, sortedSchedule])
 
     // Filtrar modelos según búsqueda y filtros
     const filteredModels = useMemo(() => {
@@ -327,6 +339,71 @@ export function TalentAssignmentPanel({
         }, DEBOUNCE_MS)
     }, [localAssignments, onAssignmentChange, processChangesQueue])
 
+    // Marcar/desmarcar todas las fechas para un modelo
+    const handleToggleAllDates = useCallback((modelId: string) => {
+        const modelAssignments = localAssignments[modelId] || new Set()
+        const scheduleIds = sortedSchedule.map(s => s.id!)
+        const allAssigned = scheduleIds.every(id => modelAssignments.has(id))
+
+        // Si todas están marcadas, desmarcar todas; si no, marcar todas
+        const newAssigned = !allAssigned
+
+        scheduleIds.forEach(scheduleId => {
+            const currentlyAssigned = modelAssignments.has(scheduleId)
+
+            // Solo procesar si el estado cambia
+            if (currentlyAssigned !== newAssigned) {
+                setLocalAssignments(prev => {
+                    const newSet = new Set(prev[modelId] || [])
+                    if (newAssigned) {
+                        newSet.add(scheduleId)
+                    } else {
+                        newSet.delete(scheduleId)
+                    }
+                    return { ...prev, [modelId]: newSet }
+                })
+
+                onAssignmentChange?.(modelId, scheduleId, newAssigned)
+
+                const change: PendingChange = {
+                    modelId,
+                    scheduleId,
+                    assigned: newAssigned,
+                    status: 'pending',
+                }
+
+                const existingIndex = changesQueueRef.current.findIndex(
+                    c => c.modelId === modelId && c.scheduleId === scheduleId
+                )
+
+                if (existingIndex !== -1) {
+                    changesQueueRef.current.splice(existingIndex, 1)
+                } else {
+                    changesQueueRef.current.push(change)
+                }
+
+                setPendingChanges(prev => {
+                    const existingIdx = prev.findIndex(
+                        c => c.modelId === modelId && c.scheduleId === scheduleId
+                    )
+                    if (existingIdx !== -1) {
+                        const updated = [...prev]
+                        updated[existingIdx] = change
+                        return updated
+                    }
+                    return [...prev, change]
+                })
+            }
+        })
+
+        if (debounceTimerRef.current) {
+            clearTimeout(debounceTimerRef.current)
+        }
+        debounceTimerRef.current = setTimeout(() => {
+            processChangesQueue()
+        }, DEBOUNCE_MS)
+    }, [localAssignments, sortedSchedule, onAssignmentChange, processChangesQueue])
+
     // Eliminar modelo del proyecto
     const handleRemoveModel = useCallback(async (modelId: string) => {
         setRemovingModelId(modelId)
@@ -344,6 +421,49 @@ export function TalentAssignmentPanel({
         }
         setRemovingModelId(null)
     }, [project.id, onModelRemoved, onRefresh])
+
+    // Estados locales de selección (para feedback optimista)
+    const [localSelections, setLocalSelections] = useState<Record<string, Model['client_selection']>>({})
+    const [updatingSelection, setUpdatingSelection] = useState<string | null>(null)
+
+    // Inicializar localSelections desde los modelos
+    useEffect(() => {
+        const initial: Record<string, Model['client_selection']> = {}
+        models.forEach(m => {
+            initial[m.id] = m.client_selection
+        })
+        setLocalSelections(initial)
+    }, [models])
+
+    // Cambiar estado de aprobación con un click
+    const handleQuickSelection = useCallback(async (modelId: string, newStatus: 'approved' | 'rejected') => {
+        const currentStatus = localSelections[modelId] || 'pending'
+
+        // Toggle: si ya está en ese estado, volver a pending
+        const finalStatus: 'approved' | 'rejected' | 'pending' = currentStatus === newStatus ? 'pending' : newStatus
+
+        // Optimistic update
+        setLocalSelections(prev => ({ ...prev, [modelId]: finalStatus }))
+        setUpdatingSelection(modelId)
+
+        // Llamar al servidor (solo si es approved o rejected, no pending)
+        if (finalStatus !== 'pending') {
+            const result = await updateModelSelection(project.id, modelId, finalStatus)
+            if (result.success) {
+                onSelectionChange?.(modelId, finalStatus)
+            } else {
+                // Revertir si falla
+                setLocalSelections(prev => ({ ...prev, [modelId]: currentStatus }))
+                toast.error('Error al cambiar estado')
+            }
+        } else {
+            // Para volver a pending, usamos rejected como workaround (o necesitamos otra función)
+            // Por ahora solo actualizamos local
+            onSelectionChange?.(modelId, finalStatus)
+        }
+
+        setUpdatingSelection(null)
+    }, [project.id, localSelections, onSelectionChange])
 
     // Guardar ahora
     const handleSaveNow = useCallback(() => {
@@ -686,18 +806,89 @@ export function TalentAssignmentPanel({
                                                         )}>
                                                             {model.gender?.toLowerCase() === 'male' ? 'H' : 'M'}
                                                         </span>
-                                                        <span className="text-muted-foreground">•</span>
-                                                        {model.client_selection === 'approved' && (
-                                                            <span className="text-green-600">Aprobado</span>
-                                                        )}
-                                                        {model.client_selection === 'rejected' && (
-                                                            <span className="text-red-600">Rechazado</span>
-                                                        )}
-                                                        {model.client_selection === 'pending' && (
-                                                            <span className="text-muted-foreground">Pendiente</span>
-                                                        )}
                                                     </div>
                                                 </div>
+
+                                                {/* Botones de aprobación rápida ✓/✗ */}
+                                                <div className="flex items-center gap-1">
+                                                    {updatingSelection === model.id ? (
+                                                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                                                    ) : (
+                                                        <>
+                                                            <TooltipProvider>
+                                                                <Tooltip>
+                                                                    <TooltipTrigger asChild>
+                                                                        <Button
+                                                                            variant="ghost"
+                                                                            size="icon"
+                                                                            className={cn(
+                                                                                "h-7 w-7 transition-all",
+                                                                                (localSelections[model.id] || model.client_selection) === 'approved'
+                                                                                    ? "bg-green-100 text-green-600 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400"
+                                                                                    : "text-muted-foreground hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20"
+                                                                            )}
+                                                                            onClick={() => handleQuickSelection(model.id, 'approved')}
+                                                                            disabled={isSaving || isRemoving}
+                                                                        >
+                                                                            <ThumbsUp className="h-4 w-4" />
+                                                                        </Button>
+                                                                    </TooltipTrigger>
+                                                                    <TooltipContent>Aprobar</TooltipContent>
+                                                                </Tooltip>
+                                                            </TooltipProvider>
+                                                            <TooltipProvider>
+                                                                <Tooltip>
+                                                                    <TooltipTrigger asChild>
+                                                                        <Button
+                                                                            variant="ghost"
+                                                                            size="icon"
+                                                                            className={cn(
+                                                                                "h-7 w-7 transition-all",
+                                                                                (localSelections[model.id] || model.client_selection) === 'rejected'
+                                                                                    ? "bg-red-100 text-red-600 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400"
+                                                                                    : "text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                                                            )}
+                                                                            onClick={() => handleQuickSelection(model.id, 'rejected')}
+                                                                            disabled={isSaving || isRemoving}
+                                                                        >
+                                                                            <ThumbsDown className="h-4 w-4" />
+                                                                        </Button>
+                                                                    </TooltipTrigger>
+                                                                    <TooltipContent>Rechazar</TooltipContent>
+                                                                </Tooltip>
+                                                            </TooltipProvider>
+                                                        </>
+                                                    )}
+                                                </div>
+
+                                                {/* Botón marcar todas las fechas (solo si hay 2+ fechas) */}
+                                                {sortedSchedule.length > 1 && (
+                                                    <TooltipProvider>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className={cn(
+                                                                        "h-7 w-7 shrink-0",
+                                                                        sortedSchedule.every(s => modelAssignments.has(s.id!))
+                                                                            ? "text-primary"
+                                                                            : "text-muted-foreground"
+                                                                    )}
+                                                                    onClick={() => handleToggleAllDates(model.id)}
+                                                                    disabled={isSaving || isRemoving}
+                                                                >
+                                                                    <CheckCheck className="h-4 w-4" />
+                                                                </Button>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>
+                                                                {sortedSchedule.every(s => modelAssignments.has(s.id!))
+                                                                    ? "Desmarcar todas las fechas"
+                                                                    : "Marcar todas las fechas"}
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    </TooltipProvider>
+                                                )}
                                             </div>
 
                                             {/* Checkboxes de asignación */}

@@ -4,6 +4,7 @@ import { logError } from '@/lib/utils/errors';
 
 // Tipos para el resumen financiero v2 (consolidado por modelo+proyecto)
 export type PaymentStatus = 'pending' | 'paid' | 'partial' | 'cancelled';
+export type ClientPaymentStatus = 'pending' | 'invoiced' | 'paid';
 
 export type FinanceSummaryItem = {
     id: string;                        // ID único compuesto
@@ -27,15 +28,42 @@ export type FinanceSummaryItem = {
     currency: string;
 };
 
+// Tipo para cobros a clientes
+export type ClientBillingItem = {
+    project_id: string;
+    project_name: string;
+    client_name: string | null;
+    registered_client_name: string | null;
+    brand_name: string | null;
+    subtotal: number;
+    tax_percentage: number;
+    tax_amount: number;
+    total_with_tax: number;
+    currency: string;
+    payment_status: ClientPaymentStatus;
+    payment_date: string | null;
+    invoice_number: string | null;
+    invoice_date: string | null;
+    created_at: string;
+};
+
 export type FinanceKPIs = {
-    totalPending: number;
-    totalPaidThisMonth: number;
-    pendingCount: number;
+    // Pagos a Modelos
+    totalPendingModels: number;
+    totalPaidModelsThisMonth: number;
+    pendingModelPayments: number;
     modelsWithPendingPayments: number;
+    // Cobros a Clientes
+    totalPendingClients: number;
+    totalReceivedThisMonth: number;
+    pendingClientPayments: number;
+    // Margen
+    grossMargin: number;
 };
 
 type InitialData = {
-    items: FinanceSummaryItem[];
+    modelPayments: FinanceSummaryItem[];
+    clientBilling: ClientBillingItem[];
     kpis: FinanceKPIs;
 };
 
@@ -49,22 +77,45 @@ export default async function FinancesPage() {
         return <div>No autorizado</div>;
     }
 
-    // Obtenemos los datos de la vista finance_summary v2
+    // 1. Obtener pagos a modelos de la vista finance_summary v2
     const { data: summaryData, error: summaryError } = await supabase
         .from('finance_summary')
         .select('*')
         .eq('user_id', user.id)
         .order('last_work_date', { ascending: false });
 
-    console.log('[FinancesPage] summaryData raw:', JSON.stringify(summaryData, null, 2));
-    console.log('[FinancesPage] summaryError:', summaryError);
-
     if (summaryError) {
         logError(summaryError, { action: 'financesPage.fetch finance_summary' });
     }
 
-    // Filtrar y mapear datos
-    const items: FinanceSummaryItem[] = (summaryData || [])
+    // 2. Obtener cobros a clientes (proyectos con datos de facturación)
+    const { data: projectsData, error: projectsError } = await supabase
+        .from('projects')
+        .select(`
+            id,
+            project_name,
+            client_name,
+            revenue,
+            tax_percentage,
+            client_payment_status,
+            client_payment_date,
+            invoice_number,
+            invoice_date,
+            currency,
+            created_at,
+            client:clients(name),
+            brand:brands(name)
+        `)
+        .eq('user_id', user.id)
+        .neq('status', 'draft')
+        .order('created_at', { ascending: false });
+
+    if (projectsError) {
+        logError(projectsError, { action: 'financesPage.fetch projects billing' });
+    }
+
+    // Mapear pagos a modelos
+    const modelPayments: FinanceSummaryItem[] = (summaryData || [])
         .filter(item =>
             item.id &&
             item.model_id &&
@@ -94,28 +145,78 @@ export default async function FinancesPage() {
             currency: item.currency || 'GTQ',
         }));
 
+    // Mapear cobros a clientes
+    const clientBilling: ClientBillingItem[] = (projectsData || [])
+        .filter(p => p.revenue && p.revenue > 0)
+        .map(p => {
+            const subtotal = Number(p.revenue) || 0;
+            const taxPercent = Number(p.tax_percentage) || 12;
+            const taxAmount = subtotal * (taxPercent / 100);
+            const totalWithTax = subtotal + taxAmount;
+
+            return {
+                project_id: p.id,
+                project_name: p.project_name,
+                client_name: p.client_name,
+                registered_client_name: (p.client as any)?.name || null,
+                brand_name: (p.brand as any)?.name || null,
+                subtotal,
+                tax_percentage: taxPercent,
+                tax_amount: taxAmount,
+                total_with_tax: totalWithTax,
+                currency: p.currency || 'GTQ',
+                payment_status: (p.client_payment_status as ClientPaymentStatus) || 'pending',
+                payment_date: p.client_payment_date,
+                invoice_number: p.invoice_number,
+                invoice_date: p.invoice_date,
+                created_at: p.created_at,
+            };
+        });
+
     // Calcular KPIs
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    const pendingItems = items.filter(i => i.payment_status === 'pending' || i.payment_status === 'partial');
-    const paidThisMonth = items.filter(i =>
+    // KPIs de Pagos a Modelos
+    const pendingModelItems = modelPayments.filter(i => i.payment_status === 'pending' || i.payment_status === 'partial');
+    const paidModelsThisMonth = modelPayments.filter(i =>
         i.payment_status === 'paid' &&
         i.payment_date &&
         new Date(i.payment_date) >= startOfMonth
     );
 
+    // KPIs de Cobros a Clientes
+    const pendingClientItems = clientBilling.filter(i => i.payment_status === 'pending' || i.payment_status === 'invoiced');
+    const receivedThisMonth = clientBilling.filter(i =>
+        i.payment_status === 'paid' &&
+        i.payment_date &&
+        new Date(i.payment_date) >= startOfMonth
+    );
+
+    // Margen bruto (cobros - pagos)
+    const totalClientRevenue = clientBilling.reduce((acc, i) => acc + i.subtotal, 0);
+    const totalModelCosts = modelPayments.reduce((acc, i) => acc + i.total_amount, 0);
+
     const kpis: FinanceKPIs = {
-        totalPending: pendingItems.reduce((acc, i) => acc + (i.pending_amount || 0), 0),
-        totalPaidThisMonth: paidThisMonth.reduce((acc, i) => acc + (i.total_paid || 0), 0),
-        pendingCount: pendingItems.length,
-        modelsWithPendingPayments: new Set(pendingItems.map(i => i.model_id)).size,
+        // Pagos a Modelos
+        totalPendingModels: pendingModelItems.reduce((acc, i) => acc + (i.pending_amount || 0), 0),
+        totalPaidModelsThisMonth: paidModelsThisMonth.reduce((acc, i) => acc + (i.total_paid || 0), 0),
+        pendingModelPayments: pendingModelItems.length,
+        modelsWithPendingPayments: new Set(pendingModelItems.map(i => i.model_id)).size,
+        // Cobros a Clientes
+        totalPendingClients: pendingClientItems.reduce((acc, i) => acc + i.total_with_tax, 0),
+        totalReceivedThisMonth: receivedThisMonth.reduce((acc, i) => acc + i.total_with_tax, 0),
+        pendingClientPayments: pendingClientItems.length,
+        // Margen
+        grossMargin: totalClientRevenue - totalModelCosts,
     };
 
     const initialData: InitialData = {
-        items,
+        modelPayments,
+        clientBilling,
         kpis,
     };
 
     return <FinancesClientPage initialData={initialData} />;
 }
+

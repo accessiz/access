@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams, usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Project } from '@/lib/types';
@@ -14,14 +14,25 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink, Paginati
 import { DeleteProjectDialog } from '@/components/organisms/DeleteProjectDialog';
 import { cn } from '@/lib/utils';
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 25;
 
 type InitialData = {
     initialProjects: Project[];
     initialCount: number;
 };
 
-const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+// Formatear fecha evitando problemas de zona horaria (Guatemala GMT-6)
+// Al parsear YYYY-MM-DD como UTC y formatear en UTC, evitamos el desfase de un día
+const formatDate = (dateString: string) => {
+    // Si es formato YYYY-MM-DD, parseamos como UTC
+    const [year, month, day] = dateString.split('-').map(Number);
+    if (year && month && day) {
+        const months = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+        return `${day} ${months[month - 1]}`;
+    }
+    // Fallback para otros formatos
+    return new Date(dateString).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+};
 
 // DS: Use semantic badge variants (§2.B.4a)
 const StatusBadge = ({ status }: { status: string }) => {
@@ -41,6 +52,12 @@ const StatusBadge = ({ status }: { status: string }) => {
 export default function ProjectsClientPage({ initialProjects, initialCount }: InitialData) {
     const [projects, setProjects] = useState(initialProjects);
     const [count, setCount] = useState(initialCount);
+
+    // Sincronizar estado cuando los props cambian (navegación de página)
+    useEffect(() => {
+        setProjects(initialProjects);
+        setCount(initialCount);
+    }, [initialProjects, initialCount]);
 
     const searchParams = useSearchParams();
     const pathname = usePathname();
@@ -118,31 +135,73 @@ export default function ProjectsClientPage({ initialProjects, initialCount }: In
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <SortableHeader tkey="project_name" label="Nombre del Proyecto" />
+                            <TableHead className="w-12">#</TableHead>
+                            <SortableHeader tkey="project_name" label="Proyecto" />
                             <SortableHeader tkey="client_name" label="Cliente" />
                             <SortableHeader tkey="status" label="Estado" />
-                            <SortableHeader tkey="created_at" label="Fecha de Creación" />
+                            <TableHead>Talento Aprobado</TableHead>
+                            <SortableHeader tkey="created_at" label="Fecha" />
                             <TableHead className="text-right">Acciones</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {projects.map((project) => (
-                            <TableRow key={project.id}>
-                                <TableCell>
-                                    <Link href={`/dashboard/projects/${project.id}`} className="font-medium text-foreground no-underline hover:text-muted-foreground transition-colors">
-                                        {project.project_name}
-                                    </Link>
-                                </TableCell>
-                                <TableCell>{project.client_name || 'N/A'}</TableCell>
-                                <TableCell><StatusBadge status={project.status} /></TableCell>
-                                <TableCell>{formatDate(project.created_at)}</TableCell>
-                                <TableCell className="text-right">
-                                    <DeleteProjectDialog projectId={project.id} projectName={project.project_name || ''} onProjectDeleted={() => handleProjectDeleted(project.id)}>
-                                        <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                                    </DeleteProjectDialog>
-                                </TableCell>
-                            </TableRow>
-                        ))}
+                        {projects.map((project, index) => {
+                            const rowNumber = ((currentPage - 1) * PAGE_SIZE) + index + 1;
+                            return (
+                                <TableRow key={project.id}>
+                                    <TableCell className="text-muted-foreground font-mono text-label-12">
+                                        {rowNumber.toString().padStart(2, '0')}
+                                    </TableCell>
+                                    <TableCell>
+                                        <Link href={`/dashboard/projects/${project.id}`} className="font-medium text-foreground no-underline hover:text-muted-foreground transition-colors">
+                                            {project.project_name}
+                                        </Link>
+                                    </TableCell>
+                                    <TableCell>{project.client_name || '-'}</TableCell>
+                                    <TableCell><StatusBadge status={project.status} /></TableCell>
+                                    <TableCell>
+                                        {project.approved_models && project.approved_models.length > 0 ? (
+                                            <div className="flex items-center gap-1">
+                                                <div className="flex -space-x-2">
+                                                    {project.approved_models.slice(0, 4).map((model) => (
+                                                        <div
+                                                            key={model.id}
+                                                            className="h-6 w-6 rounded-full border-2 border-background overflow-hidden bg-muted"
+                                                            title={model.alias}
+                                                        >
+                                                            {model.coverUrl ? (
+                                                                <img src={model.coverUrl} alt={model.alias} className="h-full w-full object-cover" />
+                                                            ) : (
+                                                                <div className="h-full w-full flex items-center justify-center text-[10px] text-muted-foreground">
+                                                                    {model.alias.charAt(0).toUpperCase()}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                                {project.approved_models.length > 4 && (
+                                                    <span className="text-label-12 text-muted-foreground">+{project.approved_models.length - 4}</span>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <span className="text-muted-foreground text-label-12">—</span>
+                                        )}
+                                    </TableCell>
+                                    <TableCell>
+                                        {project.schedule && project.schedule.length > 0 ? (
+                                            project.schedule.length === 1
+                                                ? formatDate(project.schedule[0].date)
+                                                : `${formatDate(project.schedule[0].date)} - ${formatDate(project.schedule[project.schedule.length - 1].date)}`
+                                        ) : '-'}
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <DeleteProjectDialog projectId={project.id} projectName={project.project_name || ''} onProjectDeleted={() => handleProjectDeleted(project.id)}>
+                                            <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                        </DeleteProjectDialog>
+                                    </TableCell>
+                                </TableRow>
+                            );
+                        })}
                     </TableBody>
                 </Table>
             </div>

@@ -1,0 +1,101 @@
+table_name,column_name,data_type,is_nullable,column_default
+activity_logs,id,uuid,NO,gen_random_uuid()
+activity_logs,created_at,timestamp with time zone,NO,now()
+activity_logs,user_id,uuid,YES,null
+activity_logs,category,text,NO,null
+activity_logs,title,text,NO,null
+activity_logs,message,text,YES,null
+activity_logs,metadata,jsonb,YES,'{}'::jsonb
+activity_logs,is_urgent,boolean,YES,false
+brands,id,uuid,NO,gen_random_uuid()
+brands,client_id,uuid,NO,null
+brands,user_id,uuid,NO,null
+brands,name,character varying,NO,null
+brands,logo_url,character varying,YES,null
+brands,created_at,timestamp with time zone,YES,now()
+brands,updated_at,timestamp with time zone,YES,now()
+brands,status,text,YES,'active'::text
+brands,industry,text,YES,null
+clients,id,uuid,NO,gen_random_uuid()
+clients,user_id,uuid,NO,null
+clients,name,character varying,NO,null
+clients,email,character varying,YES,null
+clients,phone,character varying,YES,null
+clients,company,character varying,YES,null
+clients,notes,text,YES,null
+clients,created_at,timestamp with time zone,YES,now()
+clients,updated_at,timestamp with time zone,YES,now()
+clients,status,text,YES,'active'::text
+clients,avatar_url,text,YES,null
+finance_summary,id,uuid,YES,null
+finance_summary,model_id,uuid,YES,null
+finance_summary,model_name,text,YES,null
+finance_summary,model_alias,text,YES,null
+finance_summary,project_id,uuid,YES,null
+finance_summary,project_name,text,YES,null
+finance_summary,client_name,text,YES,null
+finance_summary,registered_client_name,character varying,YES,null
+finance_summary,brand_name,character varying,YES,null
+finance_summary,days_worked,bigint,YES,null
+finance_summary,daily_fee,numeric,YES,null
+finance_summary,total_amount,numeric,YES,null
+finance_summary,first_work_date,timestamp with time zone,YES,null
+finance_summary,last_work_date,timestamp with time zone,YES,null
+finance_summary,currency,text,YES,null
+finance_summary,payment_status,text,YES,null
+finance_summary,payment_date,timestamp with time zone,YES,null
+finance_summary,total_paid,numeric,YES,null
+finance_summary,pending_amount,numeric,YES,null
+finance_summary,user_id,uuid,YES,null
+model_assignments,id,uuid,NO,gen_random_uuid()
+model_assignments,schedule_id,uuid,YES,null
+model_assignments,model_id,uuid,NO,null
+model_assignments,is_confirmed,boolean,YES,false
+model_assignments,created_at,timestamp with time zone,YES,now()
+model_assignments,daily_fee,numeric,YES,NULL::numeric
+model_assignments,hours_worked,numeric,YES,NULL::numeric
+model_assignments,adjustment_amount,numeric,YES,0
+model_assignments,adjustment_reason,text,YES,null
+model_assignments,payment_status,text,YES,'pending'::text
+model_assignments,payment_date,timestamp with time zone,YES,null
+model_assignments,notes,text,YES,null
+model_assignments,project_id,uuid,YES,null
+models,id,uuid,NO,gen_random_uuid()
+models,created_at,timestamp with time zone,NO,now()
+models,alias,text,YES,null
+models,full_name,text,NO,null
+models,birth_date,date,YES,null
+models,national_id,character varying,YES,null
+models,phone_e164,character varying,YES,null
+models,email,text,YES,null
+models,gender,text,YES,null
+models,country,text,YES,'Guatemala'::text
+models,eye_color,text,YES,null
+models,hair_color,text,YES,null
+models,height_cm,integer,YES,null
+models,shoulders_cm,integer,YES,null
+models,chest_cm,integer,YES,null
+models,bust_cm,integer,YES,null
+models,waist_cm,integer,YES,null
+models,hips_cm,integer,YES,null
+models,top_size,text,YES,null
+models,pants_size,integer,YES,null
+models,shoe_size_us,numeric,YES,null
+models,instagram,text,YES,null
+models,tiktok,text,YES,null
+models,status,text,NO,'active'::text
+models,date_joined_agency,date,YES,null
+models,user_id,uuid,YES,null
+models,profile_completeness,integer,YES,0
+models,cover_path,text,YES,null
+models,portfolio_path,text,YES,null
+models,comp_card_paths,ARRAY,YES,null
+models,fts_search_vector,tsvector,YES,null
+models,gallery_paths,ARRAY,YES,null
+models,passport_number,text,YES,null
+payment_transactions,id,uuid,NO,gen_random_uuid()
+payment_transactions,user_id,uuid,NO,null
+payment_transactions,model_assignment_id,uuid,YES,null
+payment_transactions,amount,numeric,NO,null
+payment_transactions,currency,text,NO,'GTQ'::text
+payment_transactions,payment_method,text,YES,'transfer'::text

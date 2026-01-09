@@ -83,8 +83,8 @@ export function ModelsPageContent({
                 'flex flex-col bg-background border-r border-border',
                 // Mobile: full width
                 'w-full',
-                // Desktop (md+): fixed width side panel
-                'md:w-[30%] md:min-w-[280px] md:max-w-[400px]'
+                // Desktop (md+): fixed width side panel (más angosto)
+                'md:w-[280px] md:min-w-[260px] md:max-w-[300px]'
             )}>
                 {/* Search Header - DS: p-4 for containers */}
                 <div className="sticky top-0 z-10 bg-background border-b border-border p-4 space-y-3">

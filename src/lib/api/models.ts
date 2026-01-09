@@ -199,7 +199,7 @@ export async function getModelWorkHistory(modelId: string) {
     daily_fee: number | null;
     project_schedule: {
       project_id: string;
-      start_time: string;
+      start_time: string;  // ISO timestamp, e.g. "2026-01-06T10:00:00+00:00"
       end_time: string;
     } | null;
   }
@@ -251,10 +251,28 @@ export async function getModelWorkHistory(modelId: string) {
     logError(assignmentsError, { action: 'getModelWorkHistory.assignments', modelId });
   }
 
+  // 3. Obtener los schedules de todos los proyectos del modelo como fallback
   const typedData = (data || []) as unknown as ProjectModelRow[];
+  const projectIds = typedData.map(pm => pm.projects?.id).filter(Boolean) as string[];
+
+  interface ScheduleRow {
+    project_id: string;
+    start_time: string;
+    end_time: string;
+  }
+
+  let projectSchedules: ScheduleRow[] = [];
+  if (projectIds.length > 0) {
+    const { data: scheduleData } = await supabase
+      .from('project_schedule')
+      .select('project_id, start_time, end_time')
+      .in('project_id', projectIds);
+    projectSchedules = (scheduleData || []) as ScheduleRow[];
+  }
+
   const typedAssignments = (assignments || []) as unknown as AssignmentRow[];
 
-  // 3. Cruzar los datos y calcular estados de pago consolidados
+  // 4. Cruzar los datos y calcular estados de pago consolidados
   return typedData
     .filter((pm) => pm.projects)
     .map((pm) => {
@@ -277,11 +295,25 @@ export async function getModelWorkHistory(modelId: string) {
         }
       }
 
-      // Fechas del proyecto
-      const dates = projectAssignments
-        .map((a) => a.project_schedule?.start_time)
-        .filter(Boolean)
+      // Fechas del proyecto - extraer fecha del timestamp start_time
+      // Primero intentar de las asignaciones individuales
+      let dates = projectAssignments
+        .map((a) => {
+          const startTime = a.project_schedule?.start_time;
+          if (!startTime) return null;
+          return startTime.split('T')[0];
+        })
+        .filter((d): d is string => d !== null)
         .sort();
+
+      // Fallback: si no hay asignaciones individuales, usar schedules del proyecto
+      if (dates.length === 0) {
+        dates = projectSchedules
+          .filter(s => s.project_id === project.id)
+          .map(s => s.start_time.split('T')[0])
+          .filter((d): d is string => d !== null)
+          .sort();
+      }
 
       const firstWorkDate = dates[0] || null;
       const lastWorkDate = dates[dates.length - 1] || null;
@@ -295,7 +327,8 @@ export async function getModelWorkHistory(modelId: string) {
 
       // Total calculado
       const fee = pm.agreed_fee || projectAssignments[0]?.daily_fee || 0;
-      const daysWorked = totalAssignments || 1;
+      // Días trabajados: usar asignaciones si hay, sino usar schedules del proyecto
+      const daysWorked = totalAssignments > 0 ? totalAssignments : dates.length || 1;
       const totalAmount = fee * daysWorked;
 
       return {

@@ -516,8 +516,34 @@ export function CompCardManager({
                 quality: 0.95,
                 pixelRatio: 2,
                 cacheBust: true,
-                skipFonts: false,
+                // FIX Firefox: skipFonts evita error "font is undefined"
+                skipFonts: true,
+                // Fix para Firefox: evita error "can't access property 'trim', e is undefined"
+                // causado por estilos computados que devuelven undefined en Firefox
+                filter: (node: HTMLElement | Node): boolean => {
+                    // Excluir elementos que no son relevantes para la captura
+                    if (node instanceof HTMLElement) {
+                        // Excluir inputs y scripts que pueden causar problemas
+                        const tagName = node.tagName?.toLowerCase();
+                        if (tagName === 'script' || tagName === 'noscript') {
+                            return false;
+                        }
+                    }
+                    return true;
+                },
+                // SkipAutoScale mejora compatibilidad cross-browser
+                skipAutoScale: true,
             };
+
+            console.log('[CompCard Download] Opciones de captura:', JSON.stringify({
+                quality: captureOptions.quality,
+                pixelRatio: captureOptions.pixelRatio,
+                skipFonts: captureOptions.skipFonts,
+                skipAutoScale: captureOptions.skipAutoScale,
+                downloadFormat,
+                fileType,
+                targetsCount: targets.length
+            }));
 
             const validateDataUrl = (data: string, type: 'png' | 'jpeg') => {
                 const header = type === 'png' ? 'data:image/png' : 'data:image/jpeg';

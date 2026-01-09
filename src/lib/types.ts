@@ -90,6 +90,10 @@ export interface Project extends DbProject {
   schedule: { id?: string, date: string, startTime: string, endTime: string }[] | null;
   // Opcionalmente podemos tener la relación directa si la necesitamos
   project_schedule?: DbProjectSchedule[];
+  // Conteo de modelos asignados (calculado en queries)
+  assigned_models_count?: number;
+  // Modelos aprobados con sus detalles (para lista de proyectos)
+  approved_models?: { id: string; alias: string; coverUrl: string | null }[];
 }
 
 export interface Client extends DbClient {

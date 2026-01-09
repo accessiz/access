@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 // IMPORTANTE: Estamos importando NUESTRO sidebar, no el generico
 import { AppSidebar } from "@/components/organisms/AppSidebar"
 import { DynamicBreadcrumb } from "@/components/molecules/DynamicBreadcrumb"
+import { HeaderActions } from "@/components/molecules/HeaderActions"
 import { Separator } from "@/components/ui/separator"
 import {
   SidebarInset,
@@ -29,12 +30,15 @@ export default async function DashboardLayout({
 
       <SidebarInset className="bg-sidebar">
         {/* Header superior flotante */}
-        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 px-4 bg-sidebar text-sidebar-foreground">
+        <header className="flex h-16 shrink-0 items-center justify-between gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 px-4 bg-sidebar text-sidebar-foreground">
           <div className="flex items-center gap-2">
             <SidebarTrigger className="-ml-1" />
             <Separator orientation="vertical" className="mr-2 h-4" />
             <DynamicBreadcrumb />
           </div>
+
+          {/* Iconos de notificaciones y tema */}
+          <HeaderActions />
         </header>
 
         {/* Aquí se renderiza tu página (Dashboard, Tabla de modelos, etc) */}

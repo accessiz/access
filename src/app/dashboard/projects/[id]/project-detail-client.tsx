@@ -520,6 +520,12 @@ export default function ProjectDetailClient({ project: initialProject, initialSe
     const [isPending, startTransition] = useTransition();
     const [isEditing, setIsEditing] = useState(false);
 
+    // Sincronizar estado cuando los props cambian (después de router.refresh())
+    useEffect(() => {
+        setProject(initialProject);
+        setSelectedModels(initialSelectedModels);
+    }, [initialProject, initialSelectedModels]);
+
     const handleRefresh = () => {
         router.refresh();
     };
@@ -726,6 +732,12 @@ export default function ProjectDetailClient({ project: initialProject, initialSe
                     onAssignmentChange={handleAssignmentChange}
                     onModelRemoved={(_modelId) => {
                         // El componente ya maneja el refresh internamente
+                    }}
+                    onSelectionChange={(modelId, status) => {
+                        // Actualizar estado local para feedback inmediato
+                        setSelectedModels(prev => prev.map(m =>
+                            m.id === modelId ? { ...m, client_selection: status } : m
+                        ));
                     }}
                     onRefresh={handleRefresh}
                 />
