@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 
 // Tipos para los parámetros de exportación
 type ExportType = 'models' | 'clients';
@@ -44,7 +44,7 @@ async function exportModelPayments(
     filters: { month?: string | null; year?: string | null; startDay?: string | null; endDay?: string | null; modelId?: string | null }
 ) {
     // Obtener datos de la vista finance_summary
-    let query = supabase
+    const query = supabase
         .from('finance_summary')
         .select('*')
         .eq('user_id', userId)
@@ -93,50 +93,58 @@ async function exportModelPayments(
         filteredData = filteredData.filter(item => item.model_id === filters.modelId);
     }
 
-    // Formatear datos para Excel
-    const excelData = filteredData.map(item => ({
-        'Modelo': item.model_alias || item.model_name,
-        'Nombre Completo': item.model_name,
-        'Proyecto': item.project_name,
-        'Cliente': item.registered_client_name || item.client_name || '-',
-        'Marca': item.brand_name || '-',
-        'Fecha Trabajo': formatDate(item.first_work_date || ''),
-        'Días': item.days_worked,
-        'Tarifa/Día': item.daily_fee,
-        'Total': item.total_amount,
-        'Pagado': item.total_paid,
-        'Pendiente': item.pending_amount,
-        'Moneda': item.currency,
-        'Estado': translatePaymentStatus(item.payment_status),
-        'Fecha Pago': item.payment_date ? formatDate(item.payment_date) : '-',
-    }));
+    // Crear workbook con ExcelJS
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet('Pagos a Modelos');
 
-    // Crear workbook
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.json_to_sheet(excelData);
-
-    // Ajustar anchos de columna
-    ws['!cols'] = [
-        { wch: 20 }, // Modelo
-        { wch: 25 }, // Nombre Completo
-        { wch: 30 }, // Proyecto
-        { wch: 20 }, // Cliente
-        { wch: 15 }, // Marca
-        { wch: 12 }, // Fecha Trabajo
-        { wch: 6 },  // Días
-        { wch: 12 }, // Tarifa/Día
-        { wch: 12 }, // Total
-        { wch: 12 }, // Pagado
-        { wch: 12 }, // Pendiente
-        { wch: 8 },  // Moneda
-        { wch: 12 }, // Estado
-        { wch: 12 }, // Fecha Pago
+    // Definir columnas con headers y anchos
+    ws.columns = [
+        { header: 'Modelo', key: 'modelo', width: 20 },
+        { header: 'Nombre Completo', key: 'nombre_completo', width: 25 },
+        { header: 'Proyecto', key: 'proyecto', width: 30 },
+        { header: 'Cliente', key: 'cliente', width: 20 },
+        { header: 'Marca', key: 'marca', width: 15 },
+        { header: 'Fecha Trabajo', key: 'fecha_trabajo', width: 12 },
+        { header: 'Días', key: 'dias', width: 6 },
+        { header: 'Tarifa/Día', key: 'tarifa_dia', width: 12 },
+        { header: 'Total', key: 'total', width: 12 },
+        { header: 'Pagado', key: 'pagado', width: 12 },
+        { header: 'Pendiente', key: 'pendiente', width: 12 },
+        { header: 'Moneda', key: 'moneda', width: 8 },
+        { header: 'Estado', key: 'estado', width: 12 },
+        { header: 'Fecha Pago', key: 'fecha_pago', width: 12 },
     ];
 
-    XLSX.utils.book_append_sheet(wb, ws, 'Pagos a Modelos');
+    // Agregar filas de datos
+    filteredData.forEach(item => {
+        ws.addRow({
+            modelo: item.model_alias || item.model_name,
+            nombre_completo: item.model_name,
+            proyecto: item.project_name,
+            cliente: item.registered_client_name || item.client_name || '-',
+            marca: item.brand_name || '-',
+            fecha_trabajo: formatDate(item.first_work_date || ''),
+            dias: item.days_worked,
+            tarifa_dia: item.daily_fee,
+            total: item.total_amount,
+            pagado: item.total_paid,
+            pendiente: item.pending_amount,
+            moneda: item.currency,
+            estado: translatePaymentStatus(item.payment_status),
+            fecha_pago: item.payment_date ? formatDate(item.payment_date) : '-',
+        });
+    });
+
+    // Estilizar header
+    ws.getRow(1).font = { bold: true };
+    ws.getRow(1).fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFE0E0E0' }
+    };
 
     // Generar buffer
-    const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    const buf = await wb.xlsx.writeBuffer();
 
     // Nombre del archivo
     const now = new Date();
@@ -160,6 +168,22 @@ async function exportClientBilling(
     userId: string,
     filters: { month?: string | null; year?: string | null; startDay?: string | null; endDay?: string | null; clientId?: string | null }
 ) {
+    type ProjectBillingRow = {
+        id: string;
+        project_name: string;
+        client_name: string | null;
+        revenue: number | null;
+        tax_percentage: number | null;
+        client_payment_status: string | null;
+        client_payment_date: string | null;
+        invoice_number: string | null;
+        invoice_date: string | null;
+        currency: string | null;
+        created_at: string;
+        client: { name: string } | null;
+        brand: { name: string } | null;
+    };
+
     // Consulta para proyectos con datos de facturación
     let query = supabase
         .from('projects')
@@ -193,7 +217,7 @@ async function exportClientBilling(
     }
 
     // Filtrar por mes/año si se especifica
-    let filteredData = data || [];
+    let filteredData = (data || []) as ProjectBillingRow[];
 
     if (filters.year) {
         const yearNum = parseInt(filters.year);
@@ -222,53 +246,59 @@ async function exportClientBilling(
         });
     }
 
-    // Formatear datos para Excel
-    const excelData = filteredData.map(item => {
+    // Crear workbook con ExcelJS
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet('Cobros a Clientes');
+
+    // Definir columnas con headers y anchos
+    ws.columns = [
+        { header: 'Proyecto', key: 'proyecto', width: 30 },
+        { header: 'Cliente', key: 'cliente', width: 20 },
+        { header: 'Marca', key: 'marca', width: 15 },
+        { header: 'Subtotal', key: 'subtotal', width: 12 },
+        { header: 'IVA (%)', key: 'iva_percent', width: 10 },
+        { header: 'Monto IVA', key: 'iva_monto', width: 12 },
+        { header: 'Total', key: 'total', width: 12 },
+        { header: 'Moneda', key: 'moneda', width: 8 },
+        { header: 'Estado', key: 'estado', width: 12 },
+        { header: 'Fecha Factura', key: 'fecha_factura', width: 12 },
+        { header: 'No. Factura', key: 'no_factura', width: 15 },
+        { header: 'Fecha Pago', key: 'fecha_pago', width: 12 },
+    ];
+
+    // Agregar filas de datos
+    filteredData.forEach((item) => {
         const subtotal = item.revenue || 0;
         const taxPercent = item.tax_percentage || 12;
         const taxAmount = subtotal * (taxPercent / 100);
         const total = subtotal + taxAmount;
 
-        return {
-            'Proyecto': item.project_name,
-            'Cliente': (item.client as any)?.name || item.client_name || '-',
-            'Marca': (item.brand as any)?.name || '-',
-            'Subtotal': subtotal,
-            'IVA (%)': taxPercent,
-            'Monto IVA': taxAmount,
-            'Total': total,
-            'Moneda': item.currency || 'GTQ',
-            'Estado': translateClientPaymentStatus(item.client_payment_status),
-            'Fecha Factura': item.invoice_date ? formatDate(item.invoice_date) : '-',
-            'No. Factura': item.invoice_number || '-',
-            'Fecha Pago': item.client_payment_date ? formatDate(item.client_payment_date) : '-',
-        };
+        ws.addRow({
+            proyecto: item.project_name,
+            cliente: item.client?.name || item.client_name || '-',
+            marca: item.brand?.name || '-',
+            subtotal: subtotal,
+            iva_percent: taxPercent,
+            iva_monto: taxAmount,
+            total: total,
+            moneda: item.currency || 'GTQ',
+            estado: translateClientPaymentStatus(item.client_payment_status),
+            fecha_factura: item.invoice_date ? formatDate(item.invoice_date) : '-',
+            no_factura: item.invoice_number || '-',
+            fecha_pago: item.client_payment_date ? formatDate(item.client_payment_date) : '-',
+        });
     });
 
-    // Crear workbook
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.json_to_sheet(excelData);
-
-    // Ajustar anchos de columna
-    ws['!cols'] = [
-        { wch: 30 }, // Proyecto
-        { wch: 20 }, // Cliente
-        { wch: 15 }, // Marca
-        { wch: 12 }, // Subtotal
-        { wch: 10 }, // IVA (%)
-        { wch: 12 }, // Monto IVA
-        { wch: 12 }, // Total
-        { wch: 8 },  // Moneda
-        { wch: 12 }, // Estado
-        { wch: 12 }, // Fecha Factura
-        { wch: 15 }, // No. Factura
-        { wch: 12 }, // Fecha Pago
-    ];
-
-    XLSX.utils.book_append_sheet(wb, ws, 'Cobros a Clientes');
+    // Estilizar header
+    ws.getRow(1).font = { bold: true };
+    ws.getRow(1).fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFE0E0E0' }
+    };
 
     // Generar buffer
-    const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    const buf = await wb.xlsx.writeBuffer();
 
     // Nombre del archivo
     const now = new Date();

@@ -141,8 +141,8 @@ function Detail({
     const defaultEmptyState = (
         <div className="flex flex-col items-center justify-center h-full text-center p-8">
             <div className="text-muted-foreground space-y-2">
-                <p className="text-heading-20 font-medium">Selecciona un elemento</p>
-                <p className="text-copy-14">
+                <p className="text-title font-medium">Selecciona un elemento</p>
+                <p className="text-body">
                     Elige un elemento de la lista para ver sus detalles aquí.
                 </p>
             </div>

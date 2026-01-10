@@ -81,6 +81,23 @@ M3 no usa sombras para profundidad, usa **tonos de superficie**.
 | **On Surface** | `--foreground` | Texto principal (Negro/Blanco). |
 | **On Surface Variant** | `--muted-foreground` | Texto secundario (Gris). |
 
+#### 1.2 Tipografía (SOLO 4 tamaños)
+*Fuente de Verdad: `tailwind.config.ts` (`theme.extend.fontSize`)*
+
+Regla estricta: en todo el producto solo existen estas 4 clases.
+
+| Token | Pixels | Rem (para 16px base) | Uso principal |
+| :--- | :---: | :---: | :--- |
+| `text-label` | 11px | 0.6875rem | Metadatos, ayudas, counters.  |
+| `text-body` | 13 px | 0.8125 rem | Texto por defecto: inputs, tablas, navegación, botones, segmented labels y badges compactos |
+| `text-title` | 18.72px | 1.17rem | Títulos de secciones/cards, encabezados de diálogos/paneles. |
+| `text-display` | 22.464px | 1.404rem | KPIs, números/valores destacados, hero/title grande (sin tamaños crudos). |
+
+Prohibido:
+- `text-heading-*`, `text-copy-*`, `text-label-*`, `text-button-*` (ya no existen)
+- `text-sm`, `text-lg`, etc.
+- `text-[...]` (tamaños arbitrarios)
+
 
 ### 1.3 Master Grid System (Pixel-Perfect Layout)
 
@@ -149,8 +166,8 @@ Todas las páginas deben seguir este patrón exacto:
 ```jsx
 <header className="flex flex-col gap-4 pb-4 border-b sm:flex-row sm:items-center sm:justify-between">
   <div>
-    <h1 className="text-heading-24 font-semibold">Título</h1>
-    <p className="text-copy-12 text-muted-foreground">Subtítulo/conteo</p>
+        <h1 className="text-title font-semibold">Título</h1>
+        <p className="text-label text-muted-foreground">Subtítulo/conteo</p>
   </div>
   <div className="flex items-center gap-3">
     {/* Acciones */}
@@ -160,8 +177,8 @@ Todas las páginas deben seguir este patrón exacto:
 
 | Elemento | Especificación |
 |----------|----------------|
-| Título (h1) | `text-heading-24` (24px), `font-semibold` |
-| Subtítulo | `text-copy-12` (12px), `text-muted-foreground` |
+| Título (h1) | `text-title`, `font-semibold` |
+| Subtítulo | `text-label`, `text-muted-foreground` |
 | Gap título-subtítulo | 4px (implícito en div) |
 | Padding bottom header | 16px (`pb-4`) |
 | Border bottom | `border-b` (1px, outline-variant) |
@@ -215,6 +232,15 @@ M3 usa movimiento expresivo. Las transiciones no deben ser instantáneas ni line
 
 Material 3 define 9 tipos de botones. Aquí su mapeo en nuestra App:
 
+**Altura Estándar de Controles (Responsive):**
+- **Mobile:** 48px (`h-12`)
+- **Tablet/Desktop (`md+`):** 40px (`md:h-10`)
+
+> [!NOTE]
+> Esta es la **altura total del control** (tap-target). En `SegmentedControl`, el contenedor NO debe sumar altura extra con padding; usa `ring/outline` en lugar de `border + p-*` si necesitas borde visual.
+
+Aplicar en **botones**, **inputs/search**, y **segmented**.
+
 | Tipo M3 | Archivo / Estado | Regla de Diseño |
 | :--- | :--- | :--- |
 | **1. Buttons (Common)** | `button.tsx` | **Mapeo de Variantes M3:** <br> 1. **Filled:** `variant="default"` (Alta Énfasis). <br> 2. **Tonal:** `variant="secondary"` (Media Énfasis). <br> 3. **Elevated:** No existe (Usar `secondary` + `shadow`). <br> 4. **Outlined:** `variant="outline"` (Baja Énfasis/Bordes). <br> 5. **Text:** `variant="ghost"` (Iconos/Tablas). |
@@ -225,6 +251,10 @@ Material 3 define 9 tipos de botones. Aquí su mapeo en nuestra App:
 | **6. Split Button** | `button.tsx` + `dropdown` | ⚠️ **Manual.** Unir un botón y un trigger de dropdown con `gap-px`. |
 | **7. Button Groups** | --- | ❌ **No existe.** Evitar agrupar botones pegados. Usar spacing `gap-2`. |
 | **8. FAB Menu** | --- | ❌ **No existe.** Evitar complejidad. Usar Dropdown Menu estándar. |
+
+**Regla de Estándar (Segmented):**
+- **O icono, o texto. Nunca ambos en el mismo item.**
+- Para filtros de estado (ej. "Todas / En revisión / Aprobadas / Rechazadas"), usar **solo texto**.
 
 #### Reglas de Comportamiento (Best Practices)
 1.  **Ancho Dinámico:** Los botones deben ajustarse a su texto (`w-auto`). No cortes el texto.
@@ -456,8 +486,8 @@ Los contenidos se agrupan en bloques con diferentes niveles de énfasis visual s
 ##### Medidas
 | Atributo | Valor |
 | :--- | :--- |
-| Container height (label only) | 48dp |
-| Container height (icon + label) | 64dp |
+| Container height (label only) | 48px mobile / 40px md+ |
+| Container height (icon + label) | 48px mobile / 40px md+ |
 | Icon size | 24dp |
 | Divider height | 1dp |
 | Primary active indicator height | 3dp |
@@ -519,7 +549,7 @@ Los contenidos se agrupan en bloques con diferentes niveles de énfasis visual s
 #### 20a. Text Fields (Outlined) - **Default**
 *   **Archivo:** `input.tsx`
 *   **M3 Standard:** Altura 56dp. Label corta la línea.
-*   **App Reality:** Altura **36dp** (h-9) para densidad SaaS.
+*   **App Reality:** Altura **48px mobile** (`h-12`) y **40px md+** (`md:h-10`) como estándar.
 *   **Anatomía:**
     1.  **Container:** Borde `outline` (gris) -> `primary` (foco) -> `destructive` (error).
     2.  **Label:** Arriba del input (no flota dentro).
@@ -699,7 +729,7 @@ Los contenidos se agrupan en bloques con diferentes niveles de énfasis visual s
 
 | Elemento | Medida | Clase |
 |----------|--------|-------|
-| Button size | 32px | `h-8 w-8` |
+| Button size | 48px mobile / 40px md+ | `h-12 w-12 md:h-10 md:w-10` |
 | Gap entre items | 4px | `gap-1` |
 | Font size | 14px | `text-sm` |
 | Border radius | 6px | `rounded-md` |

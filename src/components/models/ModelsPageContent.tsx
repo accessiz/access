@@ -3,11 +3,10 @@
 import * as React from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Model } from '@/lib/types';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Search, Plus, X, MapPin, ChevronRight } from 'lucide-react';
+import { MapPin, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { SearchBar } from '@/components/molecules/SearchBar';
 
 /**
  * ModelsPageContent
@@ -77,7 +76,7 @@ export function ModelsPageContent({
     }, [filteredModels, busyModelIds]);
 
     return (
-        <div className="h-[calc(100vh-60px)] flex">
+        <div className="flex flex-1 min-h-0">
             {/* LEFT COLUMN - Full on mobile, 30% on desktop */}
             <div className={cn(
                 'flex flex-col bg-background border-r border-border',
@@ -88,27 +87,17 @@ export function ModelsPageContent({
             )}>
                 {/* Search Header - DS: p-6 for containers */}
                 <div className="sticky top-0 z-10 bg-background border-b border-border p-6 space-y-4">
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                            type="search"
-                            placeholder="Buscar modelo..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-10 pr-10 h-10"
-                        />
-                        {searchQuery && (
-                            <button
-                                onClick={clearSearch}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                            >
-                                <X className="h-4 w-4" />
-                            </button>
-                        )}
-                    </div>
+                    <SearchBar
+                        value={searchQuery}
+                        onValueChange={setSearchQuery}
+                        onClear={clearSearch}
+                        placeholder="Buscar modelo..."
+                        ariaLabel="Buscar modelo"
+                        inputClassName="h-10"
+                    />
 
                     <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3 text-copy-12 text-muted-foreground">
+                        <div className="flex items-center gap-3 text-label text-muted-foreground">
                             <span>{filteredModels.length} modelos</span>
                             {busyCount > 0 && (
                                 <span className="flex items-center gap-1.5">
@@ -120,18 +109,13 @@ export function ModelsPageContent({
                                 </span>
                             )}
                         </div>
-
-                        <Button size="sm" variant="default" onClick={() => router.push('/dashboard/models/new')}>
-                            <Plus className="h-4 w-4 mr-1.5" />
-                            Añadir
-                        </Button>
                     </div>
                 </div>
 
                 {/* Model List - Scrollable */}
                 <div className="flex-1 overflow-y-auto">
                     {filteredModels.length === 0 ? (
-                        <div className="p-6 text-center text-muted-foreground text-copy-14">
+                        <div className="p-6 text-center text-muted-foreground text-body">
                             No se encontraron modelos
                         </div>
                     ) : (
@@ -158,13 +142,13 @@ export function ModelsPageContent({
                                     >
                                         <Avatar className="h-10 w-10 flex-shrink-0">
                                             <AvatarImage src={model.coverUrl || undefined} alt={model.alias || ''} />
-                                            <AvatarFallback className="text-copy-12 bg-muted">{initials}</AvatarFallback>
+                                            <AvatarFallback className="text-label bg-muted">{initials}</AvatarFallback>
                                         </Avatar>
 
                                         <div className="flex-1 min-w-0">
-                                            <p className="font-medium text-copy-14 truncate">{model.alias || 'Sin nombre'}</p>
+                                            <p className="font-medium text-body truncate">{model.alias || 'Sin nombre'}</p>
                                             {model.country && (
-                                                <p className="text-copy-12 text-muted-foreground flex items-center gap-1">
+                                                <p className="text-label text-muted-foreground flex items-center gap-1">
                                                     <MapPin className="h-3 w-3" />
                                                     {model.country}
                                                 </p>
@@ -200,7 +184,7 @@ export function ModelsPageContent({
                     </div>
                 ) : (
                     <div className="flex-1 flex items-center justify-center text-muted-foreground">
-                        <p className="text-copy-14">Selecciona un modelo de la lista</p>
+                        <p className="text-body">Selecciona un modelo de la lista</p>
                     </div>
                 )}
             </div>

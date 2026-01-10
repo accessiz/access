@@ -31,6 +31,7 @@ import {
 import { createClient } from '@/lib/supabase/client';
 import { Brand } from '@/lib/types';
 import { ClientWithBrands } from '@/app/dashboard/clients/page';
+import { toTitleCase } from '@/lib/utils';
 
 // Schema de validación con Zod
 const brandSchema = z.object({
@@ -127,10 +128,10 @@ export default function ClientForm({ client, onSave, onCancel }: ClientFormProps
                 const { data: updatedClient, error: clientError } = await supabase
                     .from('clients')
                     .update({
-                        name: values.name,
+                        name: toTitleCase(values.name),
                         email: values.email || null,
                         phone: values.phone || null,
-                        company: values.company || null,
+                        company: toTitleCase(values.company),
                         notes: values.notes || null,
                         status: values.status,
                         avatar_url: values.avatar_url || null,
@@ -164,7 +165,7 @@ export default function ClientForm({ client, onSave, onCancel }: ClientFormProps
                         const { data: updatedBrand, error } = await supabase
                             .from('brands')
                             .update({
-                                name: brand.name,
+                                name: toTitleCase(brand.name),
                                 industry: brand.industry || null,
                                 logo_url: brand.logo_url || null,
                                 status: brand.status,
@@ -182,7 +183,7 @@ export default function ClientForm({ client, onSave, onCancel }: ClientFormProps
                             .insert({
                                 client_id: client.id,
                                 user_id: user.id,
-                                name: brand.name,
+                                name: toTitleCase(brand.name),
                                 industry: brand.industry || null,
                                 logo_url: brand.logo_url || null,
                                 status: brand.status,
@@ -208,10 +209,10 @@ export default function ClientForm({ client, onSave, onCancel }: ClientFormProps
                     .from('clients')
                     .insert({
                         user_id: user.id,
-                        name: values.name,
+                        name: toTitleCase(values.name),
                         email: values.email || null,
                         phone: values.phone || null,
-                        company: values.company || null,
+                        company: toTitleCase(values.company),
                         notes: values.notes || null,
                         status: values.status,
                         avatar_url: values.avatar_url || null,
@@ -229,7 +230,7 @@ export default function ClientForm({ client, onSave, onCancel }: ClientFormProps
                         .insert({
                             client_id: newClient.id,
                             user_id: user.id,
-                            name: brand.name,
+                            name: toTitleCase(brand.name),
                             industry: brand.industry || null,
                             logo_url: brand.logo_url || null,
                             status: brand.status,
@@ -268,7 +269,7 @@ export default function ClientForm({ client, onSave, onCancel }: ClientFormProps
                 <div className="space-y-4">
                     <div className="flex items-center gap-2 text-muted-foreground">
                         <Building2 className="h-4 w-4" />
-                        <span className="text-copy-14 font-medium">Información del Cliente</span>
+                        <span className="text-body font-medium">Información del Cliente</span>
                     </div>
 
                     <div className="grid gap-4 sm:grid-cols-2">
@@ -379,7 +380,7 @@ export default function ClientForm({ client, onSave, onCancel }: ClientFormProps
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 text-muted-foreground">
                             <Tag className="h-4 w-4" />
-                            <span className="text-copy-14 font-medium">Marcas que Representa</span>
+                            <span className="text-body font-medium">Marcas que Representa</span>
                         </div>
                         <Button
                             type="button"
@@ -395,7 +396,7 @@ export default function ClientForm({ client, onSave, onCancel }: ClientFormProps
                     {fields.length === 0 ? (
                         <div className="rounded-lg border border-dashed border-muted-foreground/25 p-6 text-center">
                             <Tag className="mx-auto h-8 w-8 text-muted-foreground/50 mb-2" />
-                            <p className="text-copy-14 text-muted-foreground">
+                            <p className="text-body text-muted-foreground">
                                 No hay marcas agregadas. Agrega las marcas que representa este cliente.
                             </p>
                         </div>
@@ -412,7 +413,7 @@ export default function ClientForm({ client, onSave, onCancel }: ClientFormProps
                                             name={`brands.${index}.name`}
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel className="text-copy-12">Nombre de la Marca *</FormLabel>
+                                                    <FormLabel className="text-label">Nombre de la Marca *</FormLabel>
                                                     <FormControl>
                                                         <Input placeholder="Ej: Coca-Cola" {...field} />
                                                     </FormControl>
@@ -426,7 +427,7 @@ export default function ClientForm({ client, onSave, onCancel }: ClientFormProps
                                             name={`brands.${index}.industry`}
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel className="text-copy-12">Industria</FormLabel>
+                                                    <FormLabel className="text-label">Industria</FormLabel>
                                                     <Select onValueChange={field.onChange} value={field.value || ''}>
                                                         <FormControl>
                                                             <SelectTrigger>

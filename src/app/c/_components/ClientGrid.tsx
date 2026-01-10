@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { Model } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { CheckCircle2, XCircle, Clock, Loader2 } from 'lucide-react';
@@ -26,21 +25,21 @@ interface ClientGridProps {
 function StatusIndicator({ status }: { status: GridModel['selection'] }) {
   if (status === 'approved') {
     return (
-      <div className="absolute top-2 right-2 flex size-6 items-center justify-center rounded-full bg-green-600 text-white shadow-md">
+      <div className="absolute top-2 right-2 flex size-6 items-center justify-center rounded-full bg-success text-success-foreground shadow-md">
         <CheckCircle2 className="size-4" />
       </div>
     );
   }
   if (status === 'rejected') {
     return (
-      <div className="absolute top-2 right-2 flex size-6 items-center justify-center rounded-full bg-red-600 text-white shadow-md">
+      <div className="absolute top-2 right-2 flex size-6 items-center justify-center rounded-full bg-destructive text-destructive-foreground shadow-md">
         <XCircle className="size-4" />
       </div>
     );
   }
   // Pendiente o null
   return (
-    <div className="absolute top-2 right-2 flex size-6 items-center justify-center rounded-full bg-gray-400/80 text-white backdrop-blur-sm shadow-md">
+    <div className="absolute top-2 right-2 flex size-6 items-center justify-center rounded-full bg-muted/80 text-muted-foreground backdrop-blur-sm shadow-md ring-1 ring-border">
       <Clock className="size-4" />
     </div>
   );
@@ -97,8 +96,8 @@ function QuickApprovalButtons({
         className={cn(
           "flex items-center justify-center size-7 rounded-full transition-all",
           localSelection === 'approved'
-            ? "text-green-500"
-            : "text-neutral-500 hover:text-green-500"
+            ? "text-success"
+            : "text-muted-foreground hover:text-success"
         )}
         aria-label="Aprobar"
       >
@@ -109,8 +108,8 @@ function QuickApprovalButtons({
         className={cn(
           "flex items-center justify-center size-7 rounded-full transition-all",
           localSelection === 'rejected'
-            ? "text-red-500"
-            : "text-neutral-500 hover:text-red-500"
+            ? "text-destructive"
+            : "text-muted-foreground hover:text-destructive"
         )}
         aria-label="Rechazar"
       >
@@ -161,7 +160,7 @@ export function ClientGrid({ models, projectId, realProjectId, onSelectionChange
             key={model.id}
             className={cn(
               "group relative transition-all duration-300",
-              currentSelection === 'approved' && 'ring-2 ring-green-500 ring-offset-2 rounded-sm',
+              currentSelection === 'approved' && 'ring-2 ring-success ring-offset-2 rounded-sm',
               currentSelection === 'rejected' && 'opacity-50'
             )}
           >
@@ -174,16 +173,16 @@ export function ClientGrid({ models, projectId, realProjectId, onSelectionChange
               {/* Contenedor de la Imagen */}
               <div className="relative aspect-[3/4] bg-muted overflow-hidden">
                 {model.coverUrl ? (
-                  <Image
+                  <img
                     src={model.coverUrl}
                     alt={model.alias || 'Modelo'}
-                    fill
-                    className="object-cover transition-transform duration-300 group-hover:scale-105"
-                    sizes="(min-width: 1600px) 16.6vw, (min-width: 1200px) 20vw, (min-width: 900px) 25vw, (min-width: 480px) 33vw, 50vw"
+                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    loading="lazy"
+                    decoding="async"
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center">
-                    <span className="text-copy-14 text-muted-foreground">Sin foto</span>
+                    <span className="text-body text-muted-foreground">Sin foto</span>
                   </div>
                 )}
 
@@ -194,7 +193,7 @@ export function ClientGrid({ models, projectId, realProjectId, onSelectionChange
 
             {/* Nombre del modelo y botones de aprobación */}
             <div className="mt-2 flex items-center justify-between gap-2">
-              <h3 className="text-label-14 text-foreground truncate flex-1">{model.alias || 'Sin Alias'}</h3>
+              <h3 className="text-body text-foreground truncate flex-1">{model.alias || 'Sin Alias'}</h3>
               <QuickApprovalButtons
                 model={model}
                 realProjectId={realProjectId}

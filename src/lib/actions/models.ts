@@ -7,6 +7,8 @@ import { z } from 'zod'
 import { zodErrorToFieldErrors } from '@/lib/utils/zod'
 import { logError } from '@/lib/utils/errors';
 import { PostgrestError } from '@supabase/supabase-js';
+import { logActivity } from '@/lib/activity-logger';
+import { ActivityTitles } from '@/lib/activity-titles';
 
 // Helper function to check for Supabase errors
 const isPostgrestError = (error: unknown): error is PostgrestError => {
@@ -63,16 +65,24 @@ export async function createModel(data: ModelFormData) {
     }
 
     // 4. Revalidate cache and return success
-    revalidatePath('/dashboard/models'); //
-    return { success: true, modelId: newModel.id }; //
+    revalidatePath('/dashboard/models');
+
+    // Log activity
+    await logActivity({
+      category: 'model',
+      title: ActivityTitles.modelCreated(validation.data.alias || validation.data.full_name),
+      metadata: { entity_id: newModel.id, entity_type: 'model', action: 'created' },
+    });
+
+    return { success: true, modelId: newModel.id };
 
   } catch (err) {
     // Catch unexpected errors during the process
     logError(err, { action: 'createModel.catch_all' });
     // **CORRECTION: Use isPostgrestError check**
     if (isPostgrestError(err)) {
-        const { message, fieldErrors } = mapDbError(err);
-        return { success: false, error: message, errors: fieldErrors };
+      const { message, fieldErrors } = mapDbError(err);
+      return { success: false, error: message, errors: fieldErrors };
     }
     return { success: false, error: 'Ocurrió un error inesperado al intentar crear el modelo.' };
   }
@@ -101,17 +111,25 @@ export async function updateModel(modelId: string, data: ModelFormData) {
     }
 
     // 3. Revalidate cache and return success
-    revalidatePath(`/dashboard/models`); //
-    revalidatePath(`/dashboard/models/${modelId}`); //
-    return { success: true }; //
+    revalidatePath(`/dashboard/models`);
+    revalidatePath(`/dashboard/models/${modelId}`);
+
+    // Log activity
+    await logActivity({
+      category: 'model',
+      title: ActivityTitles.modelUpdated(validation.data.alias || validation.data.full_name),
+      metadata: { entity_id: modelId, entity_type: 'model', action: 'updated' },
+    });
+
+    return { success: true };
 
   } catch (err) {
     // Catch unexpected errors
     logError(err, { action: 'updateModel.catch_all', modelId });
     // **CORRECTION: Use isPostgrestError check**
     if (isPostgrestError(err)) {
-        const { message, fieldErrors } = mapDbError(err);
-        return { success: false, error: message, errors: fieldErrors };
+      const { message, fieldErrors } = mapDbError(err);
+      return { success: false, error: message, errors: fieldErrors };
     }
     return { success: false, error: 'Ocurrió un error inesperado al intentar actualizar el modelo.' };
   }
@@ -123,7 +141,7 @@ export async function deleteModel(modelId: string) {
 
   // 1. Validate ID format (basic check)
   if (!z.string().uuid().safeParse(modelId).success) {
-     return { success: false, error: 'ID de modelo inválido.' }; //
+    return { success: false, error: 'ID de modelo inválido.' }; //
   }
 
   // 2. Try deleting from the database
@@ -146,9 +164,37 @@ export async function deleteModel(modelId: string) {
     logError(err, { action: 'deleteModel.catch_all', modelId });
     // **CORRECTION: Use isPostgrestError check**
     if (isPostgrestError(err)) {
-        const { message } = mapDbError(err);
-        return { success: false, error: message };
+      const { message } = mapDbError(err);
+      return { success: false, error: message };
     }
     return { success: false, error: 'Ocurrió un error inesperado al intentar eliminar el modelo.' };
+  }
+}
+
+// --- toggleModelVisibility ---
+export async function toggleModelVisibility(modelId: string, isPublic: boolean) {
+  const supabase = await createClient();
+
+  if (!z.string().uuid().safeParse(modelId).success) {
+    return { success: false, error: 'ID de modelo inválido.' };
+  }
+
+  try {
+    const { error } = await supabase
+      .from('models')
+      .update({ is_public: isPublic })
+      .eq('id', modelId);
+
+    if (error) {
+      logError(error, { action: 'toggleModelVisibility', modelId, isPublic });
+      return { success: false, error: 'No se pudo actualizar la visibilidad.' };
+    }
+
+    revalidatePath('/dashboard/web');
+    return { success: true };
+
+  } catch (err) {
+    logError(err, { action: 'toggleModelVisibility.catch_all', modelId });
+    return { success: false, error: 'Error inesperado al cambiar visibilidad.' };
   }
 }

@@ -2,12 +2,12 @@
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import { Search, ListFilter, Ruler, LayoutGrid, List, PlusCircle } from 'lucide-react';
+import { ListFilter, Ruler, LayoutGrid, List, PlusCircle } from 'lucide-react';
 import { useDebouncedCallback } from 'use-debounce';
 import { useMemo } from 'react';
+import { SearchBar } from '@/components/molecules/SearchBar';
 
 const heightRanges = [
   { label: "Cualquier Estatura", min: null, max: null },
@@ -65,16 +65,12 @@ export function ModelsToolbar({ countries }: { countries: string[] }) {
   return (
     <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
       <div className="flex w-full sm:w-auto items-center gap-2">
-        <div className="relative flex-1 sm:flex-initial sm:w-64">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Buscar por nombre o alias..."
-            className="pl-9"
-            onChange={(e) => handleSearch(e.target.value)}
-            defaultValue={searchParams.get('q')?.toString()}
-          />
-        </div>
+        <SearchBar
+          className="flex-1 sm:flex-initial sm:w-64"
+          placeholder="Buscar por nombre o alias..."
+          defaultValue={searchParams.get('q')?.toString()}
+          onValueChange={handleSearch}
+        />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="icon" className="flex-shrink-0">

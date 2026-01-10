@@ -9,7 +9,6 @@ import { Button } from '@/components/ui/button';
 import { ClientNavbar } from '../../_components/ClientNavbar';
 import { ClientFooter } from '../../_components/ClientFooter';
 import { Loader2, Pencil } from 'lucide-react';
-import Image from 'next/image';
 
 interface SummaryProps {
   project: Project;
@@ -43,10 +42,10 @@ export default function ClientSummaryView({ project, models }: SummaryProps) {
           
           {/* 1. TÍTULO Y TEXTO */}
           <div className="text-center space-y-4 mb-12 max-w-2xl">
-            <h1 className="text-heading-40 md:text-heading-48 font-semibold">
+            <h1 className="text-display md:text-display font-semibold">
               ¡Selección Enviada!
             </h1>
-            <p className="text-copy-16 text-muted-foreground">
+            <p className="text-body text-muted-foreground">
               {approved.length > 0 
                 ? `Elegiste ${approved.length} talento${approved.length === 1 ? '' : 's'} que encajan perfectamente con tu proyecto.`
                 : 'No seleccionaste ningún talento en esta revisión.'}
@@ -57,28 +56,25 @@ export default function ClientSummaryView({ project, models }: SummaryProps) {
           {approved.length > 0 && (
             // CAMBIO REALIZADO: Se eliminó 'max-w-5xl' para permitir el ancho completo del contenedor padre (1340px)
             <div className="w-full mb-16"> 
-              <h3 className="text-heading-20 mb-6 text-center md:text-left">Talento aprobado:</h3>
+              <h3 className="text-title mb-6 text-center md:text-left">Talento aprobado:</h3>
               
               <div className="client-grid">  
                 {approved.map(model => (
                   <div key={model.id} className="group relative">
                     <div className="aspect-[3/4] relative rounded-md overflow-hidden border bg-muted shadow-sm">
                       {model.coverUrl ? (
-                        <Image 
-                          src={model.coverUrl} 
-                          alt={model.alias || ''} 
-                          fill 
-                          className="object-cover"
-                          // CAMBIO REALIZADO: Sizes actualizados para coincidir con ClientGrid.tsx
-                          sizes="(min-width: 1600px) 16.6vw, (min-width: 1200px) 20vw, (min-width: 900px) 25vw, (min-width: 480px) 33vw, 50vw"
-                        />
+						<img
+							src={model.coverUrl}
+							alt={model.alias || ''}
+							className="absolute inset-0 h-full w-full object-cover"
+						/>
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-muted text-muted-foreground text-label-12">
+                        <div className="w-full h-full flex items-center justify-center bg-muted text-muted-foreground text-label">
                           Sin foto
                         </div>
                       )}
                       <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-3 pt-6">
-                        <p className="text-white font-medium truncate text-label-14">{model.alias}</p>
+                        <p className="text-white font-medium truncate text-body">{model.alias}</p>
                       </div>
                     </div>
                   </div>

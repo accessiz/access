@@ -4,9 +4,9 @@ import Link from 'next/link';
 import { Model } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, XCircle, Clock, ChevronRight } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
+import { ProjectStatusBadge } from '@/components/molecules/ProjectStatusBadge';
 
 // Definimos el tipo localmente para incluir la selección
 type GridModel = Model & {
@@ -18,17 +18,6 @@ interface ClientListViewProps {
   projectId: string;
 }
 
-// Helper para mostrar el estado en formato Badge (etiqueta)
-function StatusBadge({ status }: { status: GridModel['selection'] }) {
-  if (status === 'approved') {
-    return <Badge variant="outline" className="border-green-600 text-green-600 bg-green-50 dark:bg-green-900/20 gap-1"><CheckCircle2 className="h-3 w-3" /> Aprobado</Badge>;
-  }
-  if (status === 'rejected') {
-    return <Badge variant="outline" className="border-red-500 text-red-500 bg-red-50 dark:bg-red-900/20 gap-1"><XCircle className="h-3 w-3" /> Descartado</Badge>;
-  }
-  return <Badge variant="outline" className="text-muted-foreground gap-1"><Clock className="h-3 w-3" /> Pendiente</Badge>;
-}
-
 export function ClientListView({ models, projectId }: ClientListViewProps) {
   // Guardar posición de scroll antes de navegar (igual que en Grid)
   const saveScrollPosition = () => {
@@ -38,7 +27,7 @@ export function ClientListView({ models, projectId }: ClientListViewProps) {
   if (models.length === 0) {
     return (
       <div className="flex h-64 items-center justify-center rounded-lg border border-dashed">
-        <p className="text-copy-14 text-muted-foreground">No se encontraron talentos con estos filtros.</p>
+        <p className="text-body text-muted-foreground">No se encontraron talentos con estos filtros.</p>
       </div>
     );
   }
@@ -72,7 +61,7 @@ export function ClientListView({ models, projectId }: ClientListViewProps) {
               <TableCell className="font-medium">
                  <div className="flex flex-col">
                     <span>{model.alias || 'Sin Alias'}</span>
-                    <span className="text-label-12 text-muted-foreground sm:hidden">{model.country}</span>
+                    <span className="text-label text-muted-foreground sm:hidden">{model.country}</span>
                  </div>
               </TableCell>
               
@@ -83,7 +72,7 @@ export function ClientListView({ models, projectId }: ClientListViewProps) {
               </TableCell>
               
               <TableCell>
-                <StatusBadge status={model.selection} />
+                <ProjectStatusBadge status={model.selection} />
               </TableCell>
               
               <TableCell className="text-right">

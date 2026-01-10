@@ -11,10 +11,10 @@ interface ModelHeaderProps {
 export function ModelHeader({ modelName }: ModelHeaderProps) {
   return (
     <header className="px-0 text-left">
-      <p className="text-label-12 uppercase tracking-widest text-muted-foreground">
+      <p className="text-label uppercase tracking-widest text-muted-foreground">
         TALENTO
       </p>
-      <h1 className="mt-1 text-heading-20 sm:text-heading-24 md:text-heading-32">
+      <h1 className="mt-1 text-title sm:text-display md:text-display">
         {modelName || 'Talento Sin Asignar'}
       </h1>
     </header>

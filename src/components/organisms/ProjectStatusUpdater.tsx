@@ -20,32 +20,32 @@ const statusConfig: Record<ProjectStatus, { label: string; icon: React.ReactNode
   draft: {
     label: 'Borrador',
     icon: <ListChecks className="mr-2 h-4 w-4" />,
-    color: 'text-yellow-500',
-    bgColor: 'bg-yellow-500/10 border-yellow-500/20'
+    color: 'text-warning',
+    bgColor: 'bg-warning/10 border-warning/20'
   },
   sent: {
     label: 'Enviado',
     icon: <Send className="mr-2 h-4 w-4" />,
-    color: 'text-blue-500',
-    bgColor: 'bg-blue-500/10 border-blue-500/20'
+    color: 'text-info',
+    bgColor: 'bg-info/10 border-info/20'
   },
   'in-review': {
     label: 'En Revisión',
     icon: <Clock className="mr-2 h-4 w-4" />,
-    color: 'text-purple-500',
-    bgColor: 'bg-purple-500/10 border-purple-500/20'
+    color: 'text-primary',
+    bgColor: 'bg-primary/10 border-primary/20'
   },
   completed: {
     label: 'Completado',
     icon: <CheckCircle2 className="mr-2 h-4 w-4" />,
-    color: 'text-green-500',
-    bgColor: 'bg-green-500/10 border-green-500/20'
+    color: 'text-success',
+    bgColor: 'bg-success/10 border-success/20'
   },
   archived: {
     label: 'Archivado',
     icon: <Archive className="mr-2 h-4 w-4" />,
-    color: 'text-gray-500',
-    bgColor: 'bg-gray-500/10 border-gray-500/20'
+    color: 'text-muted-foreground',
+    bgColor: 'bg-muted/50 border-border'
   },
 };
 
@@ -133,7 +133,7 @@ export function ProjectStatusUpdater({ project, selectedModels }: ProjectStatusU
       </CardHeader>
       <CardContent>
         <div className="space-y-2">
-          <div className="flex justify-between text-copy-14 text-muted-foreground">
+          <div className="flex justify-between text-body text-muted-foreground">
             <span>Revisión del Cliente</span>
             <span>{reviewedCount} de {totalCount} talentos revisados</span>
           </div>

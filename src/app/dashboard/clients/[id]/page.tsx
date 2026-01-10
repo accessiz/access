@@ -44,6 +44,7 @@ export type ClientDetailData = {
         full_name: string;
         alias: string | null;
         cover_path: string | null;
+        gender: string | null;
         usage_count: number;
     }[];
 };
@@ -70,8 +71,8 @@ export default async function ClientPage({ params }: PageProps) {
 
     if (clientError || !clientData) {
         return (
-            <div className="p-8 md:p-12 text-center">
-                <h1 className="text-heading-24">Cliente no encontrado</h1>
+            <div className="text-center">
+                <h1 className="text-display">Cliente no encontrado</h1>
                 <p className="text-muted-foreground">El cliente que buscas no existe o no tienes permiso para verlo.</p>
             </div>
         );
@@ -79,7 +80,7 @@ export default async function ClientPage({ params }: PageProps) {
 
     // Obtener proyectos del cliente (por client_id o por client_name)
     // Primero intentamos por client_id
-    const { data: projectsDataById, error: _projectsError } = await supabase
+    const { data: projectsDataById } = await supabase
         .from('projects')
         .select(`
             id,
@@ -171,17 +172,17 @@ export default async function ClientPage({ params }: PageProps) {
         modelUsageCount.set(modelId, (modelUsageCount.get(modelId) || 0) + 1);
     });
 
-    // Obtener datos de los modelos más usados (top 5)
+    // Obtener datos de los modelos más usados (top 10)
     const topModelIds = Array.from(modelUsageCount.entries())
         .sort((a, b) => b[1] - a[1])
-        .slice(0, 5)
+        .slice(0, 10)
         .map(([modelId]) => modelId);
 
     let frequentModels: ClientDetailData['frequent_models'] = [];
     if (topModelIds.length > 0) {
         const { data: modelsData } = await supabase
             .from('models')
-            .select('id, full_name, alias, cover_path')
+            .select('id, full_name, alias, cover_path, gender')
             .in('id', topModelIds);
 
         if (modelsData) {
@@ -190,6 +191,7 @@ export default async function ClientPage({ params }: PageProps) {
                 full_name: m.full_name,
                 alias: m.alias,
                 cover_path: m.cover_path,
+                gender: m.gender,
                 usage_count: modelUsageCount.get(m.id) || 0,
             })).sort((a, b) => b.usage_count - a.usage_count);
         }

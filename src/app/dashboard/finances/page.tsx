@@ -110,6 +110,22 @@ export default async function FinancesPage() {
         .neq('status', 'draft')
         .order('created_at', { ascending: false });
 
+    type ProjectBillingRow = {
+        id: string;
+        project_name: string;
+        client_name: string | null;
+        revenue: number | null;
+        tax_percentage: number | null;
+        client_payment_status: string | null;
+        client_payment_date: string | null;
+        invoice_number: string | null;
+        invoice_date: string | null;
+        currency: string | null;
+        created_at: string;
+        client: { name: string } | null;
+        brand: { name: string } | null;
+    };
+
     if (projectsError) {
         logError(projectsError, { action: 'financesPage.fetch projects billing' });
     }
@@ -146,7 +162,7 @@ export default async function FinancesPage() {
         }));
 
     // Mapear cobros a clientes
-    const clientBilling: ClientBillingItem[] = (projectsData || [])
+    const clientBilling: ClientBillingItem[] = ((projectsData || []) as ProjectBillingRow[])
         .filter(p => p.revenue && p.revenue > 0)
         .map(p => {
             const subtotal = Number(p.revenue) || 0;
@@ -158,8 +174,8 @@ export default async function FinancesPage() {
                 project_id: p.id,
                 project_name: p.project_name,
                 client_name: p.client_name,
-                registered_client_name: (p.client as any)?.name || null,
-                brand_name: (p.brand as any)?.name || null,
+                registered_client_name: p.client?.name || null,
+                brand_name: p.brand?.name || null,
                 subtotal,
                 tax_percentage: taxPercent,
                 tax_amount: taxAmount,

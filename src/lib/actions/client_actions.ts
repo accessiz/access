@@ -6,6 +6,39 @@ import { cookies } from 'next/headers' // Necesitamos leer cookies
 import { z } from 'zod'
 import { logError } from '@/lib/utils/errors'
 import { supabaseAdmin } from '@/lib/supabase/admin'
+import { ActivityTitles } from '@/lib/activity-titles'
+
+// Helper para loguear acciones del cliente (no autenticado)
+// Obtiene el user_id del proyecto para saber a quién notificar
+async function logClientActivity(params: {
+  projectId: string;
+  title: string;
+  message?: string;
+  metadata?: Record<string, unknown>;
+}) {
+  try {
+    // Obtener el user_id del proyecto
+    const { data: project } = await supabaseAdmin
+      .from('projects')
+      .select('user_id')
+      .eq('id', params.projectId)
+      .single();
+
+    if (!project?.user_id) return;
+
+    // Insertar en activity_logs con is_urgent=true (para campanita)
+    await supabaseAdmin.from('activity_logs').insert({
+      user_id: project.user_id,
+      category: 'client',
+      title: params.title,
+      message: params.message || null,
+      metadata: params.metadata || null,
+      is_urgent: true, // Esto hace que aparezca en la campanita
+    });
+  } catch (error) {
+    console.error('[logClientActivity] Error:', error);
+  }
+}
 
 // --- FUNCIÓN HELPER DE SEGURIDAD ---
 async function verifyAccess(projectId: string) {
@@ -76,6 +109,13 @@ export async function finalizeProjectReview(projectId: string, rejectPending: bo
       .single();
 
     if (project?.public_id) revalidatePath(`/c/${project.public_id}`);
+
+    // Log activity for notification bell
+    await logClientActivity({
+      projectId,
+      title: `Cliente finalizó el proyecto "${project?.public_id || 'proyecto'}"`,
+      metadata: { entity_id: projectId, entity_type: 'project', action: 'finalized' },
+    });
 
     return { success: true };
 
@@ -153,13 +193,36 @@ export async function updateClientModelSelection(
 
     if (error) throw error;
 
-    // Revalidar la página del cliente
+    // Get names for the log
     const { data: project } = await supabaseAdmin
       .from('projects')
-      .select('public_id')
+      .select('public_id, project_name, user_id')
       .eq('id', projectId)
       .single();
 
+    const { data: model } = await supabaseAdmin
+      .from('models')
+      .select('alias')
+      .eq('id', modelId)
+      .single();
+
+    // Log activity for notification bell (only approved/rejected, not pending)
+    if (selection !== 'pending') {
+      await logClientActivity({
+        projectId,
+        title: selection === 'approved'
+          ? ActivityTitles.clientApprovedModel(model?.alias || 'Talento', project?.project_name || 'Proyecto')
+          : ActivityTitles.clientRejectedModel(model?.alias || 'Talento', project?.project_name || 'Proyecto'),
+        metadata: {
+          entity_id: modelId,
+          entity_type: 'model',
+          action: selection === 'approved' ? 'client_approved' : 'client_rejected',
+          project_id: projectId
+        },
+      });
+    }
+
+    // Revalidar la página del cliente (usamos project de línea 197)
     if (project?.public_id) {
       revalidatePath(`/c/${project.public_id}`);
     }

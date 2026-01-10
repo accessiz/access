@@ -4,7 +4,7 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const badgeVariants = cva(
-  "inline-flex items-center rounded-md border font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  "inline-flex items-center rounded border font-semibold text-body whitespace-nowrap transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
   {
     variants: {
       variant: {
@@ -15,26 +15,21 @@ const badgeVariants = cva(
           "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
         destructive:
           "border-transparent bg-destructive text-destructive-foreground shadow hover:bg-destructive/80",
-        outline: "text-foreground",
+        outline: "bg-transparent border-border text-foreground",
 
         // Semantic variants (new)
-        success:
-          "border-green-500/30 bg-green-500/20 text-green-600 dark:text-green-400",
-        warning:
-          "border-yellow-500/30 bg-yellow-500/20 text-yellow-600 dark:text-yellow-400",
-        info:
-          "border-blue-500/30 bg-blue-500/20 text-blue-600 dark:text-blue-400",
-        danger:
-          "border-red-500/30 bg-red-500/20 text-red-600 dark:text-red-400",
-        neutral:
-          "border-gray-500/30 bg-gray-500/20 text-gray-600 dark:text-gray-400",
-        accent:
-          "border-purple-500/30 bg-purple-500/20 text-purple-600 dark:text-purple-400",
+        success: "border-success/30 bg-success/15 text-success",
+        warning: "border-warning/30 bg-warning/15 text-warning",
+        info: "border-info/30 bg-info/15 text-info",
+        danger: "border-destructive/30 bg-destructive/10 text-destructive",
+        neutral: "border-border bg-muted/30 text-muted-foreground",
+        accent: "border-accent/30 bg-accent/20 text-foreground",
+        review: "border-primary/30 bg-primary/15 text-primary",
       },
       size: {
-        small: "h-5 px-1.5 text-label-12",      // 20px height, 6px padding (1.5 * 4px)
-        medium: "h-6 px-2 text-label-12",        // 24px height, 8px padding (default)
-        large: "h-7 px-2.5 text-label-14",       // 28px height, 10px padding (2.5 * 4px)
+        small: "h-6 px-2", // 24px height
+        medium: "h-7 px-3", // 28px height (default)
+        large: "h-8 px-4", // 32px height
       },
     },
     defaultVariants: {

@@ -1,11 +1,11 @@
 'use client';
 
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import { Search, ListFilter, Ruler, LayoutGrid, List } from 'lucide-react';
+import { ListFilter, Ruler, LayoutGrid, List } from 'lucide-react';
 import { useMemo } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
+import { SearchBar } from '@/components/molecules/SearchBar';
 
 const heightRanges = [
   { label: "Cualquier Estatura", min: null, max: null },
@@ -52,13 +52,12 @@ export function ClientToolbar({ countries, onFilterChange, onViewChange, current
       <div className="flex w-full sm:w-auto items-center gap-2 overflow-x-auto pb-2 sm:pb-0 no-scrollbar">
         {/* Campo de Búsqueda */}
         <div className="relative flex-1 min-w-[200px] sm:flex-initial sm:w-64">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
+          <SearchBar
             placeholder="Buscar nombre o alias..."
-            className="pl-9"
-            onChange={(e) => handleSearch(e.target.value)}
+            ariaLabel="Buscar nombre o alias"
+            onValueChange={handleSearch}
             defaultValue={currentFilters.query}
+            expand={false}
           />
         </div>
         

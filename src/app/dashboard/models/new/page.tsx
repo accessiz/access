@@ -70,12 +70,12 @@ export default function NewModelPage() {
 
   return (
     <div className="space-y-8">
-      <header className="flex items-center justify-between gap-4 pb-6 border-b">
+      <header className="flex items-center justify-between gap-x-4 gap-y-4 pb-6 border-b">
         <div>
-          <h1 className="text-heading-32">Añadir Nuevo Talento</h1>
-          <p className="text-muted-foreground">Rellena los datos para crear un nuevo perfil.</p>
+          <h1 className="text-display">Añadir Nuevo Talento</h1>
+          <p className="text-label text-muted-foreground">Rellena los datos para crear un nuevo perfil.</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-x-2 gap-y-2">
           <Button variant="outline" asChild>
             <Link href="/dashboard/models">
               Cancelar

@@ -5,14 +5,9 @@ import React from 'react';
 // Garantiza que el padding, el scroll y el contenedor principal sean idénticos.
 export default function ModelsLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="h-full flex flex-col">
-      {/* El contenedor principal ahora vive aquí */}
-      <div className="flex-1 overflow-y-auto">
-        {/* El padding se aplica aquí para ser consistente en todas las sub-páginas */}
-        <div className="p-8 md:p-12">
-          {children}
-        </div>
-      </div>
+    <div className="h-full flex flex-col min-h-0">
+      {/* El padding lo controla /dashboard/layout.tsx (single source of truth: p-6) */}
+      <div className="flex-1 min-h-0 overflow-y-auto">{children}</div>
     </div>
   );
 }

@@ -1,6 +1,5 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@config "../../tailwind.config.ts";
+@import "tailwindcss";
 
 /* Animación personalizada para el sidebar */
 @layer utilities {
@@ -183,6 +182,11 @@
     --muted-foreground: 120 120 120;
     --accent: 242 242 242;
     --accent-foreground: 28 26 29;
+    /* M3 Tertiary (Design System) */
+    --tertiary: 120 81 123;
+    --tertiary-foreground: 255 255 255;
+    --tertiary-container: 234 186 235;
+    --tertiary-container-foreground: 109 71 113;
     --destructive: 220 38 38;
     --destructive-foreground: 250 250 250;
     --border: 230 230 230;
@@ -253,6 +257,11 @@
     /* This is likely the background for active nav links */
     --accent-foreground: 230 230 230;
     /* Text color for active nav links */
+    /* M3 Tertiary (Design System) */
+    --tertiary: 255 218 254;
+    --tertiary-foreground: 70 35 74;
+    --tertiary-container: 234 186 235;
+    --tertiary-container-foreground: 109 71 113;
     --destructive: 255 30 30;
     --destructive-foreground: 230 230 230;
     --border: 28 28 28;
@@ -283,7 +292,7 @@
 
 @layer base {
   html {
-    font-size: 88%;
+    font-size: 100%;
   }
 
   * {

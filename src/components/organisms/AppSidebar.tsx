@@ -12,6 +12,7 @@ import {
   Wallet,
   Settings,
   Cake,
+  Globe,
 } from "lucide-react"
 
 import { NavUser } from "@/components/organisms/NavUser"
@@ -64,6 +65,11 @@ const navMain = [
     icon: Cake,
   },
   {
+    title: "Web",
+    url: "/dashboard/web",
+    icon: Globe,
+  },
+  {
     title: "Configuración",
     url: "/dashboard/settings",
     icon: Settings,
@@ -72,9 +78,16 @@ const navMain = [
 
 export function AppSidebar({ user, ...props }: React.ComponentProps<typeof Sidebar> & { user: User }) {
   const pathname = usePathname()
-  const { state } = useSidebar()
+  const { state, isMobile, setOpenMobile } = useSidebar()
   const isCollapsed = state === "collapsed"
   const [hasTodayBirthdays, setHasTodayBirthdays] = useState(false)
+
+  // Handler para cerrar el sidebar en mobile al hacer clic en un link
+  const handleNavClick = () => {
+    if (isMobile) {
+      setOpenMobile(false)
+    }
+  }
 
   // Cargar si hay cumpleaños hoy
   useEffect(() => {
@@ -94,7 +107,7 @@ export function AppSidebar({ user, ...props }: React.ComponentProps<typeof Sideb
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild tooltip="ACCESS">
-              <Link href="/dashboard" className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-end'}`}>
+              <Link href="/dashboard" className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-start'}`}>
                 {/* Logo con transición suave */}
                 <div className="relative flex items-center justify-center overflow-hidden">
                   {/* Logo pequeño - visible cuando colapsado */}
@@ -118,7 +131,7 @@ export function AppSidebar({ user, ...props }: React.ComponentProps<typeof Sideb
         </SidebarMenu>
       </SidebarHeader>
 
-      <SidebarContent className="overflow-visible">
+      <SidebarContent className="overflow-visible px-2">
         <SidebarMenu className="overflow-visible">
           {navMain.map((item) => {
             // Lógica para determinar si el item está activo
@@ -137,7 +150,7 @@ export function AppSidebar({ user, ...props }: React.ComponentProps<typeof Sideb
                   tooltip={item.title}
                   className={isActive ? 'data-[active=true]:bg-primary data-[active=true]:text-primary-foreground group-data-[collapsible=icon]:rounded-full' : ''}
                 >
-                  <Link href={item.url}>
+                  <Link href={item.url} onClick={handleNavClick}>
                     <item.icon />
                     <span>{item.title}</span>
                     {/* Indicador en modo expandido - al final de la fila */}

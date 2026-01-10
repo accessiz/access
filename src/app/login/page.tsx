@@ -2,7 +2,6 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { GalleryVerticalEnd } from "lucide-react";
 import { LoginForm } from "@/components/organisms/LoginForm";
-import Image from 'next/image';
 import Link from 'next/link';
 
 export default async function LoginPage() {
@@ -29,7 +28,7 @@ export default async function LoginPage() {
         {/* ↑↑↑ Aumentamos el espacio entre elementos */}
           <div className="grid gap-4 text-center"> 
           {/* ↑↑↑ Aumentamos espacio interno */}
-            <Link href="/" className="flex items-center justify-center gap-3 font-semibold text-label-20"> 
+            <Link href="/" className="flex items-center justify-center gap-3 font-semibold text-title"> 
             {/* ↑↑↑ Gap aumentado ↑↑↑ Texto más grande */}
               {/* Icono más grande */}
               <div className="bg-primary text-primary-foreground flex size-9 items-center justify-center rounded-lg"> 
@@ -40,8 +39,8 @@ export default async function LoginPage() {
               IZ Access
             </Link>
             {/* Texto descriptivo un poco más grande */}
-            <p className="text-balance text-muted-foreground mt-2 text-copy-14"> 
-            {/* ↑↑↑ text-sm */}
+            <p className="text-balance text-muted-foreground mt-2 text-body"> 
+            {/* ↑↑↑ tamaño pequeño */}
               Bienvenido de nuevo. Accede a tu panel de gestión.
             </p>
           </div>
@@ -53,16 +52,15 @@ export default async function LoginPage() {
 
       {/* Columna Derecha (Imagen - sin cambios) */}
       <div className="hidden lg:block relative">
-        <Image
-            src="/images/JMTS_13.jpg"
-            alt="Imagen decorativa de la página de inicio de sesión"
-            fill
-            className="object-cover"
-            priority
+        <img
+          src="/images/JMTS_13.jpg"
+          alt="Imagen decorativa de la página de inicio de sesión"
+          className="absolute inset-0 h-full w-full object-cover"
+          loading="eager"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
         <div className="absolute bottom-0 left-0 p-8 text-primary-foreground">
-            <h2 className="text-heading-32">Tu Visión, Nuestro Talento</h2>
+            <h2 className="text-display">Tu Visión, Nuestro Talento</h2>
             <p className="opacity-80 mt-2">La plataforma exclusiva para la gestión de talentos de IZ Management.</p>
         </div>
       </div>

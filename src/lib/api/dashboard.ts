@@ -53,50 +53,34 @@ export type ActivityItem = {
   meta?: string;
 };
 
-export async function getRecentActivity(limit = 5): Promise<ActivityItem[]> {
+export async function getRecentActivity(limit = 10): Promise<ActivityItem[]> {
   noStore();
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return [];
 
-  const res = (await Promise.all([
-    supabase
-      .from('models')
-      .select('id, alias, created_at, updated_at')
-      .eq('user_id', user.id)
-      .order('updated_at', { ascending: false })
-      .limit(limit),
-    supabase
-      .from('projects')
-      .select('id, project_name, created_at, updated_at, status')
-      .eq('user_id', user.id)
-      .order('updated_at', { ascending: false })
-      .limit(limit),
-  ])) as unknown as [
-    { data: Array<{ id: string; alias?: string | null; created_at?: string | null; updated_at?: string | null }> | null },
-    { data: Array<{ id: string; project_name?: string | null; created_at?: string | null; updated_at?: string | null; status?: string | null }> | null }
-  ];
-  const { data: models } = res[0];
-  const { data: projects } = res[1];
+  // Query the activity_logs table for real activity data
+  const { data, error } = await supabase
+    .from('activity_logs')
+    .select('id, category, title, message, created_at, metadata, is_urgent')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+    .limit(limit);
 
-  const modelItems: ActivityItem[] = (models || []).map((m) => ({
-    id: m.id,
-    type: 'model',
-    title: m.alias || 'Sin alias',
-    when: m.updated_at || m.created_at || '',
+  if (error) {
+    logError(error, { action: 'getRecentActivity' });
+    return [];
+  }
+
+  if (!data) return [];
+
+  return data.map(log => ({
+    id: log.id,
+    type: (log.category === 'project' ? 'project' : 'model') as 'model' | 'project',
+    title: log.title,
+    when: log.created_at,
+    meta: log.message || undefined,
   }));
-
-  const projectItems: ActivityItem[] = (projects || []).map((p) => ({
-    id: p.id,
-    type: 'project',
-    title: p.project_name || 'Proyecto',
-    when: p.updated_at || p.created_at || '',
-    meta: p.status ?? undefined,
-  }));
-
-  // Merge and sort by when desc
-  const merged = [...modelItems, ...projectItems].sort((a, b) => (new Date(b.when).getTime() - new Date(a.when).getTime()));
-  return merged.slice(0, limit);
 }
 
 export async function getLowCompletenessModels(limit = 5) {

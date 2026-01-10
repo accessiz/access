@@ -1,7 +1,9 @@
 'use client'
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Input } from '@/components/ui/input';
+import { SearchBar } from '@/components/molecules/SearchBar';
+import { MonthSelect, type MonthValue } from '@/components/molecules/MonthSelect';
+import { YearSelect, type YearValue } from '@/components/molecules/YearSelect';
 import {
     Select,
     SelectContent,
@@ -9,18 +11,11 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { Search } from 'lucide-react';
 import { useDebouncedCallback } from 'use-debounce';
 
-const availableYears = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
-const availableMonths = [
-    { label: 'Enero', value: '1' }, { label: 'Febrero', value: '2' },
-    { label: 'Marzo', value: '3' }, { label: 'Abril', value: '4' },
-    { label: 'Mayo', value: '5' }, { label: 'Junio', value: '6' },
-    { label: 'Julio', value: '7' }, { label: 'Agosto', value: '8' },
-    { label: 'Septiembre', value: '9' }, { label: 'Octubre', value: '10' },
-    { label: 'Noviembre', value: '11' }, { label: 'Diciembre', value: '12' },
-];
+type ProjectsToolbarProps = {
+    availableYears: number[];
+};
 const statusOptions = [
     { label: 'Todos', value: 'all' },
     { label: 'Borrador', value: 'draft' },
@@ -30,10 +25,31 @@ const statusOptions = [
     { label: 'Archivado', value: 'archived' },
 ];
 
-export function ProjectsToolbar() {
+export function ProjectsToolbar({ availableYears }: ProjectsToolbarProps) {
     const searchParams = useSearchParams();
     const pathname = usePathname();
     const router = useRouter();
+
+    const monthValues = ['all', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'] as const;
+    const isMonthValue = (value: string): value is MonthValue => (monthValues as readonly string[]).includes(value);
+
+    const yearParam = searchParams.get('year');
+    const yearDefaultValue: YearValue | undefined =
+        yearParam === null
+            ? undefined
+            : yearParam === 'all'
+                ? 'all'
+                : /^\d{4}$/.test(yearParam)
+                    ? (yearParam as YearValue)
+                    : undefined;
+
+    const monthParam = searchParams.get('month');
+    const monthDefaultValue: MonthValue | undefined =
+        monthParam === null
+            ? undefined
+            : isMonthValue(monthParam)
+                ? monthParam
+                : undefined;
 
     const handleSearch = useDebouncedCallback((term: string) => {
         const params = new URLSearchParams(searchParams);
@@ -45,8 +61,14 @@ export function ProjectsToolbar() {
     const handleFilterChange = (key: 'year' | 'month' | 'status', value: string) => {
         const params = new URLSearchParams(searchParams);
         params.set('page', '1');
+
         if (value === 'all') {
-            params.delete(key);
+            // For month, keep `month=all` so selecting "Todos" persists on refresh.
+            if (key === 'month') {
+                params.set(key, 'all');
+            } else {
+                params.delete(key);
+            }
         } else {
             params.set(key, value);
         }
@@ -55,46 +77,33 @@ export function ProjectsToolbar() {
 
     return (
         <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
-            <div className="relative w-full sm:w-64">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                    type="search"
-                    placeholder="Buscar por proyecto o cliente..."
-                    className="pl-9 w-full"
-                    onChange={(e) => handleSearch(e.target.value)}
-                    defaultValue={searchParams.get('q')?.toString()}
-                />
-            </div>
+            <SearchBar
+                className="w-full sm:w-64"
+                placeholder="Buscar por proyecto o cliente..."
+                defaultValue={searchParams.get('q')?.toString()}
+                onValueChange={handleSearch}
+            />
             <div className="flex items-stretch gap-2">
                 <Select
                     onValueChange={(value) => handleFilterChange('status', value)}
                     defaultValue={searchParams.get('status') || 'all'}
                 >
-                    <SelectTrigger className="w-full sm:w-auto min-w-[140px]"><SelectValue placeholder="Estado" /></SelectTrigger>
+                    <SelectTrigger className="w-full sm:w-auto min-w-35"><SelectValue placeholder="Estado" /></SelectTrigger>
                     <SelectContent>
                         {statusOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}
                     </SelectContent>
                 </Select>
-                <Select
+                <YearSelect
+                    years={availableYears}
                     onValueChange={(value) => handleFilterChange('year', value)}
-                    defaultValue={searchParams.get('year') || 'all'}
-                >
-                    <SelectTrigger className="w-full sm:w-auto"><SelectValue placeholder="Año" /></SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">Todos</SelectItem>
-                        {availableYears.map(year => <SelectItem key={year} value={String(year)}>{year}</SelectItem>)}
-                    </SelectContent>
-                </Select>
-                <Select
+                    defaultValue={yearDefaultValue}
+                    triggerClassName="w-full sm:w-auto"
+                />
+                <MonthSelect
                     onValueChange={(value) => handleFilterChange('month', value)}
-                    defaultValue={searchParams.get('month') || 'all'}
-                >
-                    <SelectTrigger className="w-full sm:w-auto"><SelectValue placeholder="Mes" /></SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">Todos</SelectItem>
-                        {availableMonths.map(month => <SelectItem key={month.value} value={month.value}>{month.label}</SelectItem>)}
-                    </SelectContent>
-                </Select>
+                    defaultValue={monthDefaultValue}
+                    triggerClassName="w-full sm:w-auto"
+                />
             </div>
         </div>
     );

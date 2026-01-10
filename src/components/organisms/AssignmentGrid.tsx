@@ -12,6 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Checkbox } from '@/components/ui/checkbox'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
+import { ProjectStatusBadge } from '@/components/molecules/ProjectStatusBadge'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
@@ -253,7 +254,7 @@ export function AssignmentGrid({
                     <p className="text-muted-foreground">
                         No hay horarios definidos para este proyecto.
                     </p>
-                    <p className="text-sm text-muted-foreground mt-1">
+                    <p className="text-body text-muted-foreground mt-1">
                         Edita el proyecto para agregar fechas y horarios.
                     </p>
                 </CardContent>
@@ -269,7 +270,7 @@ export function AssignmentGrid({
                     <p className="text-muted-foreground">
                         No hay modelos asignados a este proyecto.
                     </p>
-                    <p className="text-sm text-muted-foreground mt-1">
+                    <p className="text-body text-muted-foreground mt-1">
                         Agrega modelos desde la sección de selección.
                     </p>
                 </CardContent>
@@ -282,7 +283,7 @@ export function AssignmentGrid({
             <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                     <div>
-                        <CardTitle className="text-lg">Asignaciones por Fecha</CardTitle>
+                        <CardTitle className="text-title">Asignaciones por Fecha</CardTitle>
                         <CardDescription>
                             Marca las casillas para indicar qué días trabajará cada modelo
                         </CardDescription>
@@ -308,7 +309,7 @@ export function AssignmentGrid({
                             </Button>
                         )}
                         {!hasPendingChanges && !isSaving && pendingChanges.some(c => c.status === 'saved') && (
-                            <Badge variant="outline" className="border-green-500 text-green-600">
+                            <Badge variant="success">
                                 <CheckCircle2 className="h-3 w-3 mr-1" />
                                 Guardado
                             </Badge>
@@ -323,7 +324,7 @@ export function AssignmentGrid({
                         {/* Cabecera con fechas */}
                         <div className="flex border-b bg-muted/50 sticky top-0 z-10">
                             {/* Columna fija de modelos */}
-                            <div className="w-48 min-w-48 px-4 py-3 font-medium text-sm border-r bg-muted/80 sticky left-0 z-20">
+                            <div className="w-48 min-w-48 px-4 py-3 font-medium text-body border-r bg-muted/80 sticky left-0 z-20">
                                 Modelo
                             </div>
 
@@ -339,11 +340,11 @@ export function AssignmentGrid({
                                             <Tooltip>
                                                 <TooltipTrigger asChild>
                                                     <div className="cursor-help">
-                                                        <p className="text-xs text-muted-foreground capitalize">
+                                                        <p className="text-label text-muted-foreground capitalize">
                                                             {dayName}
                                                         </p>
-                                                        <p className="text-lg font-bold">{dayNumber}</p>
-                                                        <p className="text-xs text-muted-foreground capitalize">
+                                                        <p className="text-title font-semibold">{dayNumber}</p>
+                                                        <p className="text-label text-muted-foreground capitalize">
                                                             {month}
                                                         </p>
                                                     </div>
@@ -373,25 +374,17 @@ export function AssignmentGrid({
                                             <AvatarImage
                                                 src={model.coverUrl || `${SUPABASE_PUBLIC_URL}${model.id}/Portada/cover.jpg`}
                                             />
-                                            <AvatarFallback className="text-xs">
+                                            <AvatarFallback className="text-label">
                                                 {model.alias?.substring(0, 2) || 'M'}
                                             </AvatarFallback>
                                         </Avatar>
                                         <div className="min-w-0 flex-1">
-                                            <p className="text-sm font-medium truncate">
+                                            <p className="text-body font-medium truncate">
                                                 {model.alias}
                                             </p>
-                                            <p className="text-xs text-muted-foreground truncate">
-                                                {model.client_selection === 'approved' && (
-                                                    <span className="text-green-600">Aprobado</span>
-                                                )}
-                                                {model.client_selection === 'rejected' && (
-                                                    <span className="text-red-600">Rechazado</span>
-                                                )}
-                                                {model.client_selection === 'pending' && (
-                                                    <span className="text-muted-foreground">Pendiente</span>
-                                                )}
-                                            </p>
+                                            <div className="mt-1">
+                                                <ProjectStatusBadge status={model.client_selection || 'pending'} size="small" />
+                                            </div>
                                         </div>
                                     </div>
 
@@ -411,9 +404,9 @@ export function AssignmentGrid({
                                                 key={scheduleItem.id}
                                                 className={cn(
                                                     'w-20 min-w-20 flex items-center justify-center border-r last:border-r-0',
-                                                    isPendingSave && 'bg-amber-50 dark:bg-amber-950/20',
-                                                    savedThis && 'bg-green-50 dark:bg-green-950/20',
-                                                    errorThis && 'bg-red-50 dark:bg-red-950/20'
+                                                    isPendingSave && 'bg-warning/10',
+                                                    savedThis && 'bg-success/10',
+                                                    errorThis && 'bg-destructive/10'
                                                 )}
                                             >
                                                 {isSavingThis ? (

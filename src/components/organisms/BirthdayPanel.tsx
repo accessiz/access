@@ -1,8 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Cake, ChevronLeft, ChevronRight, PartyPopper, User } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Cake, PartyPopper, User } from 'lucide-react'
 import {
     Dialog,
     DialogContent,
@@ -13,6 +12,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
+import { MonthSelect, type MonthValue } from '@/components/molecules/MonthSelect'
 import { getBirthdaysByMonth, getTodayBirthdays, BirthdayModel } from '@/lib/actions/birthdays'
 import Link from 'next/link'
 import { SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar'
@@ -21,6 +21,18 @@ const MONTHS = [
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
 ]
+
+const GUATEMALA_TIME_ZONE = 'America/Guatemala'
+
+function getCurrentMonthInGuatemala(): number {
+    const monthStr = new Intl.DateTimeFormat('en-US', {
+        timeZone: GUATEMALA_TIME_ZONE,
+        month: 'numeric',
+    }).format(new Date())
+
+    const month = Number(monthStr)
+    return month >= 1 && month <= 12 ? month : new Date().getMonth() + 1
+}
 
 // Helper para generar URL de imagen
 const mediaUrl = (path: string | null): string | null => {
@@ -67,8 +79,8 @@ function BirthdayCard({ model, isToday }: BirthdayCardProps) {
                 </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{name}</p>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <p className="text-body font-medium truncate">{name}</p>
+                <div className="flex items-center gap-2 text-label text-muted-foreground">
                     {model.instagram && (
                         <span className="truncate">@{model.instagram.replace('@', '')}</span>
                     )}
@@ -88,7 +100,7 @@ function BirthdayCard({ model, isToday }: BirthdayCardProps) {
 
 export function BirthdayPanel() {
     const [open, setOpen] = useState(false)
-    const [currentMonth, setCurrentMonth] = useState(new Date().getMonth() + 1)
+    const [currentMonth, setCurrentMonth] = useState(() => getCurrentMonthInGuatemala())
     const [birthdays, setBirthdays] = useState<BirthdayModel[]>([])
     const [todayBirthdays, setTodayBirthdays] = useState<BirthdayModel[]>([])
     const [loading, setLoading] = useState(false)
@@ -120,14 +132,6 @@ export function BirthdayPanel() {
         fetchMonthBirthdays()
     }, [open, currentMonth])
 
-    const handlePrevMonth = () => {
-        setCurrentMonth(prev => prev === 1 ? 12 : prev - 1)
-    }
-
-    const handleNextMonth = () => {
-        setCurrentMonth(prev => prev === 12 ? 1 : prev + 1)
-    }
-
     // IDs de cumpleañeros de hoy para resaltarlos
     const todayIds = new Set(todayBirthdays.map(b => b.id))
 
@@ -158,7 +162,7 @@ export function BirthdayPanel() {
                     <div className="mb-4 p-4 rounded-lg bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20">
                         <div className="flex items-center gap-2 mb-3">
                             <PartyPopper className="h-4 w-4 text-primary" />
-                            <span className="text-sm font-semibold text-primary">¡Hoy cumplen años!</span>
+                            <span className="text-body font-semibold text-primary">¡Hoy cumplen años!</span>
                         </div>
                         <div className="space-y-2">
                             {todayBirthdays.map(model => (
@@ -169,14 +173,17 @@ export function BirthdayPanel() {
                 )}
 
                 {/* Selector de mes */}
-                <div className="flex items-center justify-between mb-4">
-                    <Button variant="ghost" size="icon" onClick={handlePrevMonth}>
-                        <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <span className="text-sm font-semibold">{MONTHS[currentMonth - 1]}</span>
-                    <Button variant="ghost" size="icon" onClick={handleNextMonth}>
-                        <ChevronRight className="h-4 w-4" />
-                    </Button>
+                <div className="mb-4">
+                    <MonthSelect
+                        includeAll={false}
+                        value={String(currentMonth) as MonthValue}
+                        onValueChange={(v) => {
+                            if (v === 'all') return
+                            setCurrentMonth(Number(v))
+                        }}
+                        placeholder="Mes"
+                        triggerClassName="w-full"
+                    />
                 </div>
 
                 {/* Lista de cumpleaños del mes */}
@@ -198,14 +205,14 @@ export function BirthdayPanel() {
                     ) : (
                         <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
                             <Cake className="h-8 w-8 mb-2 opacity-50" />
-                            <p className="text-sm">No hay cumpleaños en {MONTHS[currentMonth - 1]}</p>
+                            <p className="text-body">No hay cumpleaños en {MONTHS[currentMonth - 1]}</p>
                         </div>
                     )}
                 </ScrollArea>
 
                 {/* Contador */}
                 {!loading && birthdays.length > 0 && (
-                    <p className="text-xs text-center text-muted-foreground mt-2">
+                    <p className="text-label text-center text-muted-foreground mt-2">
                         {birthdays.length} cumpleaños en {MONTHS[currentMonth - 1]}
                     </p>
                 )}

@@ -1,0 +1,1756 @@
+{
+  "generatedAt": "2026-01-10T01:20:35.449Z",
+  "root": "src",
+  "files": [
+    {
+      "file": "src/app/api/dashboard/activity/route.ts",
+      "report": "audits/src/app/api/dashboard/activity/route.ts.md",
+      "summary": {
+        "relPath": "src/app/api/dashboard/activity/route.ts",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/app/api/finances/export/route.ts",
+      "report": "audits/src/app/api/finances/export/route.ts.md",
+      "summary": {
+        "relPath": "src/app/api/finances/export/route.ts",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/app/api/media/[...path]/route.ts",
+      "report": "audits/src/app/api/media/[...path]/route.ts.md",
+      "summary": {
+        "relPath": "src/app/api/media/[...path]/route.ts",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/app/api/notifications/route.ts",
+      "report": "audits/src/app/api/notifications/route.ts.md",
+      "summary": {
+        "relPath": "src/app/api/notifications/route.ts",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/app/auth/signout/route.ts",
+      "report": "audits/src/app/auth/signout/route.ts.md",
+      "summary": {
+        "relPath": "src/app/auth/signout/route.ts",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/app/c/_components/ClientFooter.tsx",
+      "report": "audits/src/app/c/_components/ClientFooter.tsx.md",
+      "summary": {
+        "relPath": "src/app/c/_components/ClientFooter.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/app/c/_components/ClientGrid.tsx",
+      "report": "audits/src/app/c/_components/ClientGrid.tsx.md",
+      "summary": {
+        "relPath": "src/app/c/_components/ClientGrid.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/app/c/_components/ClientHeader.tsx",
+      "report": "audits/src/app/c/_components/ClientHeader.tsx.md",
+      "summary": {
+        "relPath": "src/app/c/_components/ClientHeader.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/app/c/_components/ClientNavbar.tsx",
+      "report": "audits/src/app/c/_components/ClientNavbar.tsx.md",
+      "summary": {
+        "relPath": "src/app/c/_components/ClientNavbar.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/app/c/_components/ModelHeader.tsx",
+      "report": "audits/src/app/c/_components/ModelHeader.tsx.md",
+      "summary": {
+        "relPath": "src/app/c/_components/ModelHeader.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/app/c/[public_id]/_components/ClientHeader.tsx",
+      "report": "audits/src/app/c/[public_id]/_components/ClientHeader.tsx.md",
+      "summary": {
+        "relPath": "src/app/c/[public_id]/_components/ClientHeader.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/app/c/[public_id]/_components/ClientListView.tsx",
+      "report": "audits/src/app/c/[public_id]/_components/ClientListView.tsx.md",
+      "summary": {
+        "relPath": "src/app/c/[public_id]/_components/ClientListView.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/app/c/[public_id]/_components/ClientSummaryView.tsx",
+      "report": "audits/src/app/c/[public_id]/_components/ClientSummaryView.tsx.md",
+      "summary": {
+        "relPath": "src/app/c/[public_id]/_components/ClientSummaryView.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/app/c/[public_id]/_components/ClientToolbar.tsx",
+      "report": "audits/src/app/c/[public_id]/_components/ClientToolbar.tsx.md",
+      "summary": {
+        "relPath": "src/app/c/[public_id]/_components/ClientToolbar.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/app/c/[public_id]/_components/ClientViewHandler.tsx",
+      "report": "audits/src/app/c/[public_id]/_components/ClientViewHandler.tsx.md",
+      "summary": {
+        "relPath": "src/app/c/[public_id]/_components/ClientViewHandler.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/app/c/[public_id]/_components/PasswordProtect.tsx",
+      "report": "audits/src/app/c/[public_id]/_components/PasswordProtect.tsx.md",
+      "summary": {
+        "relPath": "src/app/c/[public_id]/_components/PasswordProtect.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/app/c/[public_id]/[model_id]/_components/PortfolioView.tsx",
+      "report": "audits/src/app/c/[public_id]/[model_id]/_components/PortfolioView.tsx.md",
+      "summary": {
+        "relPath": "src/app/c/[public_id]/[model_id]/_components/PortfolioView.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/app/c/[public_id]/[model_id]/loading.tsx",
+      "report": "audits/src/app/c/[public_id]/[model_id]/loading.tsx.md",
+      "summary": {
+        "relPath": "src/app/c/[public_id]/[model_id]/loading.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/app/c/[public_id]/[model_id]/page.tsx",
+      "report": "audits/src/app/c/[public_id]/[model_id]/page.tsx.md",
+      "summary": {
+        "relPath": "src/app/c/[public_id]/[model_id]/page.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/app/c/[public_id]/page.tsx",
+      "report": "audits/src/app/c/[public_id]/page.tsx.md",
+      "summary": {
+        "relPath": "src/app/c/[public_id]/page.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/app/dashboard/birthdays/birthdays-client-page.tsx",
+      "report": "audits/src/app/dashboard/birthdays/birthdays-client-page.tsx.md",
+      "summary": {
+        "relPath": "src/app/dashboard/birthdays/birthdays-client-page.tsx",
+        "issueCount": 1,
+        "hasWarn": false,
+        "hasNote": true
+      }
+    },
+    {
+      "file": "src/app/dashboard/birthdays/page.tsx",
+      "report": "audits/src/app/dashboard/birthdays/page.tsx.md",
+      "summary": {
+        "relPath": "src/app/dashboard/birthdays/page.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/app/dashboard/clients/[id]/client-detail-page.tsx",
+      "report": "audits/src/app/dashboard/clients/[id]/client-detail-page.tsx.md",
+      "summary": {
+        "relPath": "src/app/dashboard/clients/[id]/client-detail-page.tsx",
+        "issueCount": 1,
+        "hasWarn": false,
+        "hasNote": true
+      }
+    },
+    {
+      "file": "src/app/dashboard/clients/[id]/page.tsx",
+      "report": "audits/src/app/dashboard/clients/[id]/page.tsx.md",
+      "summary": {
+        "relPath": "src/app/dashboard/clients/[id]/page.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/app/dashboard/clients/clients-client-page.tsx",
+      "report": "audits/src/app/dashboard/clients/clients-client-page.tsx.md",
+      "summary": {
+        "relPath": "src/app/dashboard/clients/clients-client-page.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/app/dashboard/clients/page.tsx",
+      "report": "audits/src/app/dashboard/clients/page.tsx.md",
+      "summary": {
+        "relPath": "src/app/dashboard/clients/page.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/app/dashboard/finances/finances-client-page.tsx",
+      "report": "audits/src/app/dashboard/finances/finances-client-page.tsx.md",
+      "summary": {
+        "relPath": "src/app/dashboard/finances/finances-client-page.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/app/dashboard/finances/page.tsx",
+      "report": "audits/src/app/dashboard/finances/page.tsx.md",
+      "summary": {
+        "relPath": "src/app/dashboard/finances/page.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/app/dashboard/layout.tsx",
+      "report": "audits/src/app/dashboard/layout.tsx.md",
+      "summary": {
+        "relPath": "src/app/dashboard/layout.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/app/dashboard/models/[id]/_components/CompCardPrintTemplate.tsx",
+      "report": "audits/src/app/dashboard/models/[id]/_components/CompCardPrintTemplate.tsx.md",
+      "summary": {
+        "relPath": "src/app/dashboard/models/[id]/_components/CompCardPrintTemplate.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/app/dashboard/models/[id]/page-client.tsx",
+      "report": "audits/src/app/dashboard/models/[id]/page-client.tsx.md",
+      "summary": {
+        "relPath": "src/app/dashboard/models/[id]/page-client.tsx",
+        "issueCount": 1,
+        "hasWarn": false,
+        "hasNote": true
+      }
+    },
+    {
+      "file": "src/app/dashboard/models/[id]/page.tsx",
+      "report": "audits/src/app/dashboard/models/[id]/page.tsx.md",
+      "summary": {
+        "relPath": "src/app/dashboard/models/[id]/page.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/app/dashboard/models/layout.tsx",
+      "report": "audits/src/app/dashboard/models/layout.tsx.md",
+      "summary": {
+        "relPath": "src/app/dashboard/models/layout.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/app/dashboard/models/models-client-page.tsx",
+      "report": "audits/src/app/dashboard/models/models-client-page.tsx.md",
+      "summary": {
+        "relPath": "src/app/dashboard/models/models-client-page.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/app/dashboard/models/new/page.tsx",
+      "report": "audits/src/app/dashboard/models/new/page.tsx.md",
+      "summary": {
+        "relPath": "src/app/dashboard/models/new/page.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/app/dashboard/models/page.tsx",
+      "report": "audits/src/app/dashboard/models/page.tsx.md",
+      "summary": {
+        "relPath": "src/app/dashboard/models/page.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/app/dashboard/page.tsx",
+      "report": "audits/src/app/dashboard/page.tsx.md",
+      "summary": {
+        "relPath": "src/app/dashboard/page.tsx",
+        "issueCount": 1,
+        "hasWarn": false,
+        "hasNote": true
+      }
+    },
+    {
+      "file": "src/app/dashboard/projects/[id]/page.tsx",
+      "report": "audits/src/app/dashboard/projects/[id]/page.tsx.md",
+      "summary": {
+        "relPath": "src/app/dashboard/projects/[id]/page.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/app/dashboard/projects/[id]/project-detail-client.tsx",
+      "report": "audits/src/app/dashboard/projects/[id]/project-detail-client.tsx.md",
+      "summary": {
+        "relPath": "src/app/dashboard/projects/[id]/project-detail-client.tsx",
+        "issueCount": 1,
+        "hasWarn": false,
+        "hasNote": true
+      }
+    },
+    {
+      "file": "src/app/dashboard/projects/layout.tsx",
+      "report": "audits/src/app/dashboard/projects/layout.tsx.md",
+      "summary": {
+        "relPath": "src/app/dashboard/projects/layout.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/app/dashboard/projects/new/page.tsx",
+      "report": "audits/src/app/dashboard/projects/new/page.tsx.md",
+      "summary": {
+        "relPath": "src/app/dashboard/projects/new/page.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/app/dashboard/projects/page.tsx",
+      "report": "audits/src/app/dashboard/projects/page.tsx.md",
+      "summary": {
+        "relPath": "src/app/dashboard/projects/page.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/app/dashboard/projects/projects-client-page.tsx",
+      "report": "audits/src/app/dashboard/projects/projects-client-page.tsx.md",
+      "summary": {
+        "relPath": "src/app/dashboard/projects/projects-client-page.tsx",
+        "issueCount": 1,
+        "hasWarn": false,
+        "hasNote": true
+      }
+    },
+    {
+      "file": "src/app/dashboard/settings/page.tsx",
+      "report": "audits/src/app/dashboard/settings/page.tsx.md",
+      "summary": {
+        "relPath": "src/app/dashboard/settings/page.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/app/dashboard/settings/settings-client-page.tsx",
+      "report": "audits/src/app/dashboard/settings/settings-client-page.tsx.md",
+      "summary": {
+        "relPath": "src/app/dashboard/settings/settings-client-page.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/app/globals.css",
+      "report": "audits/src/app/globals.css.md",
+      "summary": {
+        "relPath": "src/app/globals.css",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/app/layout.tsx",
+      "report": "audits/src/app/layout.tsx.md",
+      "summary": {
+        "relPath": "src/app/layout.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/app/login/page.tsx",
+      "report": "audits/src/app/login/page.tsx.md",
+      "summary": {
+        "relPath": "src/app/login/page.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/app/page.tsx",
+      "report": "audits/src/app/page.tsx.md",
+      "summary": {
+        "relPath": "src/app/page.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/atoms/ListItem.tsx",
+      "report": "audits/src/components/atoms/ListItem.tsx.md",
+      "summary": {
+        "relPath": "src/components/atoms/ListItem.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/atoms/SmartCroppedImage.tsx",
+      "report": "audits/src/components/atoms/SmartCroppedImage.tsx.md",
+      "summary": {
+        "relPath": "src/components/atoms/SmartCroppedImage.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/layouts/MasterDetailLayout.tsx",
+      "report": "audits/src/components/layouts/MasterDetailLayout.tsx.md",
+      "summary": {
+        "relPath": "src/components/layouts/MasterDetailLayout.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/LogoDark.jsx",
+      "report": "audits/src/components/LogoDark.jsx.md",
+      "summary": {
+        "relPath": "src/components/LogoDark.jsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/LogoIcon.jsx",
+      "report": "audits/src/components/LogoIcon.jsx.md",
+      "summary": {
+        "relPath": "src/components/LogoIcon.jsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/LogoLight.jsx",
+      "report": "audits/src/components/LogoLight.jsx.md",
+      "summary": {
+        "relPath": "src/components/LogoLight.jsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/models/index.ts",
+      "report": "audits/src/components/models/index.ts.md",
+      "summary": {
+        "relPath": "src/components/models/index.ts",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/models/ModelListItem.tsx",
+      "report": "audits/src/components/models/ModelListItem.tsx.md",
+      "summary": {
+        "relPath": "src/components/models/ModelListItem.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/models/ModelsPageContent.tsx",
+      "report": "audits/src/components/models/ModelsPageContent.tsx.md",
+      "summary": {
+        "relPath": "src/components/models/ModelsPageContent.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/molecules/DynamicBreadcrumb.tsx",
+      "report": "audits/src/components/molecules/DynamicBreadcrumb.tsx.md",
+      "summary": {
+        "relPath": "src/components/molecules/DynamicBreadcrumb.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/molecules/FormField.tsx",
+      "report": "audits/src/components/molecules/FormField.tsx.md",
+      "summary": {
+        "relPath": "src/components/molecules/FormField.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/molecules/HeaderActions.tsx",
+      "report": "audits/src/components/molecules/HeaderActions.tsx.md",
+      "summary": {
+        "relPath": "src/components/molecules/HeaderActions.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/molecules/InfoFooter.tsx",
+      "report": "audits/src/components/molecules/InfoFooter.tsx.md",
+      "summary": {
+        "relPath": "src/components/molecules/InfoFooter.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/molecules/KPICard.tsx",
+      "report": "audits/src/components/molecules/KPICard.tsx.md",
+      "summary": {
+        "relPath": "src/components/molecules/KPICard.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/molecules/NotificationButton.tsx",
+      "report": "audits/src/components/molecules/NotificationButton.tsx.md",
+      "summary": {
+        "relPath": "src/components/molecules/NotificationButton.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/molecules/ProjectStatusBadge.tsx",
+      "report": "audits/src/components/molecules/ProjectStatusBadge.tsx.md",
+      "summary": {
+        "relPath": "src/components/molecules/ProjectStatusBadge.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/molecules/ScheduleChips.tsx",
+      "report": "audits/src/components/molecules/ScheduleChips.tsx.md",
+      "summary": {
+        "relPath": "src/components/molecules/ScheduleChips.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/molecules/SearchBar.tsx",
+      "report": "audits/src/components/molecules/SearchBar.tsx.md",
+      "summary": {
+        "relPath": "src/components/molecules/SearchBar.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/molecules/SegmentedControl.tsx",
+      "report": "audits/src/components/molecules/SegmentedControl.tsx.md",
+      "summary": {
+        "relPath": "src/components/molecules/SegmentedControl.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/molecules/ThemeToggle.tsx",
+      "report": "audits/src/components/molecules/ThemeToggle.tsx.md",
+      "summary": {
+        "relPath": "src/components/molecules/ThemeToggle.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/nav-main.tsx",
+      "report": "audits/src/components/nav-main.tsx.md",
+      "summary": {
+        "relPath": "src/components/nav-main.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/nav-projects.tsx",
+      "report": "audits/src/components/nav-projects.tsx.md",
+      "summary": {
+        "relPath": "src/components/nav-projects.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/nav-secondary.tsx",
+      "report": "audits/src/components/nav-secondary.tsx.md",
+      "summary": {
+        "relPath": "src/components/nav-secondary.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/nav-user.tsx",
+      "report": "audits/src/components/nav-user.tsx.md",
+      "summary": {
+        "relPath": "src/components/nav-user.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/organisms/AppSidebar.tsx",
+      "report": "audits/src/components/organisms/AppSidebar.tsx.md",
+      "summary": {
+        "relPath": "src/components/organisms/AppSidebar.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/organisms/AssignmentGrid.tsx",
+      "report": "audits/src/components/organisms/AssignmentGrid.tsx.md",
+      "summary": {
+        "relPath": "src/components/organisms/AssignmentGrid.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/organisms/BirthdayPanel.tsx",
+      "report": "audits/src/components/organisms/BirthdayPanel.tsx.md",
+      "summary": {
+        "relPath": "src/components/organisms/BirthdayPanel.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/organisms/ClientForm.tsx",
+      "report": "audits/src/components/organisms/ClientForm.tsx.md",
+      "summary": {
+        "relPath": "src/components/organisms/ClientForm.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/organisms/CompCardManager.tsx",
+      "report": "audits/src/components/organisms/CompCardManager.tsx.md",
+      "summary": {
+        "relPath": "src/components/organisms/CompCardManager.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/organisms/DashboardNavLink.tsx",
+      "report": "audits/src/components/organisms/DashboardNavLink.tsx.md",
+      "summary": {
+        "relPath": "src/components/organisms/DashboardNavLink.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/organisms/DashboardQuickSearch.tsx",
+      "report": "audits/src/components/organisms/DashboardQuickSearch.tsx.md",
+      "summary": {
+        "relPath": "src/components/organisms/DashboardQuickSearch.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/organisms/DeleteModelDialog.tsx",
+      "report": "audits/src/components/organisms/DeleteModelDialog.tsx.md",
+      "summary": {
+        "relPath": "src/components/organisms/DeleteModelDialog.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/organisms/DeleteProjectDialog.tsx",
+      "report": "audits/src/components/organisms/DeleteProjectDialog.tsx.md",
+      "summary": {
+        "relPath": "src/components/organisms/DeleteProjectDialog.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/organisms/Footer.tsx",
+      "report": "audits/src/components/organisms/Footer.tsx.md",
+      "summary": {
+        "relPath": "src/components/organisms/Footer.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/organisms/Header.tsx",
+      "report": "audits/src/components/organisms/Header.tsx.md",
+      "summary": {
+        "relPath": "src/components/organisms/Header.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/organisms/Hero.tsx",
+      "report": "audits/src/components/organisms/Hero.tsx.md",
+      "summary": {
+        "relPath": "src/components/organisms/Hero.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/organisms/ImageCropDialog.tsx",
+      "report": "audits/src/components/organisms/ImageCropDialog.tsx.md",
+      "summary": {
+        "relPath": "src/components/organisms/ImageCropDialog.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/organisms/LoginForm.tsx",
+      "report": "audits/src/components/organisms/LoginForm.tsx.md",
+      "summary": {
+        "relPath": "src/components/organisms/LoginForm.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/organisms/ModelForm.tsx",
+      "report": "audits/src/components/organisms/ModelForm.tsx.md",
+      "summary": {
+        "relPath": "src/components/organisms/ModelForm.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/organisms/ModelsToolbar.tsx",
+      "report": "audits/src/components/organisms/ModelsToolbar.tsx.md",
+      "summary": {
+        "relPath": "src/components/organisms/ModelsToolbar.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/organisms/NavUser.tsx",
+      "report": "audits/src/components/organisms/NavUser.tsx.md",
+      "summary": {
+        "relPath": "src/components/organisms/NavUser.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/organisms/NotificationBell.tsx",
+      "report": "audits/src/components/organisms/NotificationBell.tsx.md",
+      "summary": {
+        "relPath": "src/components/organisms/NotificationBell.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/organisms/ProjectCalendarView.tsx",
+      "report": "audits/src/components/organisms/ProjectCalendarView.tsx.md",
+      "summary": {
+        "relPath": "src/components/organisms/ProjectCalendarView.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/organisms/ProjectForm.tsx",
+      "report": "audits/src/components/organisms/ProjectForm.tsx.md",
+      "summary": {
+        "relPath": "src/components/organisms/ProjectForm.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/organisms/ProjectStatusUpdater.tsx",
+      "report": "audits/src/components/organisms/ProjectStatusUpdater.tsx.md",
+      "summary": {
+        "relPath": "src/components/organisms/ProjectStatusUpdater.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/organisms/ProjectsToolbar.tsx",
+      "report": "audits/src/components/organisms/ProjectsToolbar.tsx.md",
+      "summary": {
+        "relPath": "src/components/organisms/ProjectsToolbar.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/organisms/ResponsiveTable.tsx",
+      "report": "audits/src/components/organisms/ResponsiveTable.tsx.md",
+      "summary": {
+        "relPath": "src/components/organisms/ResponsiveTable.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/organisms/ScheduleMigrationModal.tsx",
+      "report": "audits/src/components/organisms/ScheduleMigrationModal.tsx.md",
+      "summary": {
+        "relPath": "src/components/organisms/ScheduleMigrationModal.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/organisms/ShareProjectDialog.tsx",
+      "report": "audits/src/components/organisms/ShareProjectDialog.tsx.md",
+      "summary": {
+        "relPath": "src/components/organisms/ShareProjectDialog.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/organisms/Sidebar.tsx",
+      "report": "audits/src/components/organisms/Sidebar.tsx.md",
+      "summary": {
+        "relPath": "src/components/organisms/Sidebar.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/organisms/TalentAssignmentPanel.tsx",
+      "report": "audits/src/components/organisms/TalentAssignmentPanel.tsx.md",
+      "summary": {
+        "relPath": "src/components/organisms/TalentAssignmentPanel.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/providers/ThemeProvider.tsx",
+      "report": "audits/src/components/providers/ThemeProvider.tsx.md",
+      "summary": {
+        "relPath": "src/components/providers/ThemeProvider.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/ui/accordion.tsx",
+      "report": "audits/src/components/ui/accordion.tsx.md",
+      "summary": {
+        "relPath": "src/components/ui/accordion.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/ui/alert-dialog.tsx",
+      "report": "audits/src/components/ui/alert-dialog.tsx.md",
+      "summary": {
+        "relPath": "src/components/ui/alert-dialog.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/ui/avatar.tsx",
+      "report": "audits/src/components/ui/avatar.tsx.md",
+      "summary": {
+        "relPath": "src/components/ui/avatar.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/ui/badge.tsx",
+      "report": "audits/src/components/ui/badge.tsx.md",
+      "summary": {
+        "relPath": "src/components/ui/badge.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/ui/breadcrumb.tsx",
+      "report": "audits/src/components/ui/breadcrumb.tsx.md",
+      "summary": {
+        "relPath": "src/components/ui/breadcrumb.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/ui/button.tsx",
+      "report": "audits/src/components/ui/button.tsx.md",
+      "summary": {
+        "relPath": "src/components/ui/button.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/ui/calendar.tsx",
+      "report": "audits/src/components/ui/calendar.tsx.md",
+      "summary": {
+        "relPath": "src/components/ui/calendar.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/ui/card.tsx",
+      "report": "audits/src/components/ui/card.tsx.md",
+      "summary": {
+        "relPath": "src/components/ui/card.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/ui/checkbox.tsx",
+      "report": "audits/src/components/ui/checkbox.tsx.md",
+      "summary": {
+        "relPath": "src/components/ui/checkbox.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/ui/collapsible.tsx",
+      "report": "audits/src/components/ui/collapsible.tsx.md",
+      "summary": {
+        "relPath": "src/components/ui/collapsible.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/ui/combobox.tsx",
+      "report": "audits/src/components/ui/combobox.tsx.md",
+      "summary": {
+        "relPath": "src/components/ui/combobox.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/ui/command.tsx",
+      "report": "audits/src/components/ui/command.tsx.md",
+      "summary": {
+        "relPath": "src/components/ui/command.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/ui/date-picker.tsx",
+      "report": "audits/src/components/ui/date-picker.tsx.md",
+      "summary": {
+        "relPath": "src/components/ui/date-picker.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/ui/dialog.tsx",
+      "report": "audits/src/components/ui/dialog.tsx.md",
+      "summary": {
+        "relPath": "src/components/ui/dialog.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/ui/dropdown-menu.tsx",
+      "report": "audits/src/components/ui/dropdown-menu.tsx.md",
+      "summary": {
+        "relPath": "src/components/ui/dropdown-menu.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/ui/field.tsx",
+      "report": "audits/src/components/ui/field.tsx.md",
+      "summary": {
+        "relPath": "src/components/ui/field.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/ui/form.tsx",
+      "report": "audits/src/components/ui/form.tsx.md",
+      "summary": {
+        "relPath": "src/components/ui/form.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/ui/grid.tsx",
+      "report": "audits/src/components/ui/grid.tsx.md",
+      "summary": {
+        "relPath": "src/components/ui/grid.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/ui/input.tsx",
+      "report": "audits/src/components/ui/input.tsx.md",
+      "summary": {
+        "relPath": "src/components/ui/input.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/ui/label.tsx",
+      "report": "audits/src/components/ui/label.tsx.md",
+      "summary": {
+        "relPath": "src/components/ui/label.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/ui/pagination.tsx",
+      "report": "audits/src/components/ui/pagination.tsx.md",
+      "summary": {
+        "relPath": "src/components/ui/pagination.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/ui/phone-input.tsx",
+      "report": "audits/src/components/ui/phone-input.tsx.md",
+      "summary": {
+        "relPath": "src/components/ui/phone-input.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/ui/popover.tsx",
+      "report": "audits/src/components/ui/popover.tsx.md",
+      "summary": {
+        "relPath": "src/components/ui/popover.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/ui/progress.tsx",
+      "report": "audits/src/components/ui/progress.tsx.md",
+      "summary": {
+        "relPath": "src/components/ui/progress.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/ui/radio-group.tsx",
+      "report": "audits/src/components/ui/radio-group.tsx.md",
+      "summary": {
+        "relPath": "src/components/ui/radio-group.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/ui/scroll-area.tsx",
+      "report": "audits/src/components/ui/scroll-area.tsx.md",
+      "summary": {
+        "relPath": "src/components/ui/scroll-area.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/ui/select.tsx",
+      "report": "audits/src/components/ui/select.tsx.md",
+      "summary": {
+        "relPath": "src/components/ui/select.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/ui/separator.tsx",
+      "report": "audits/src/components/ui/separator.tsx.md",
+      "summary": {
+        "relPath": "src/components/ui/separator.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/ui/sheet.tsx",
+      "report": "audits/src/components/ui/sheet.tsx.md",
+      "summary": {
+        "relPath": "src/components/ui/sheet.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/ui/sidebar.tsx",
+      "report": "audits/src/components/ui/sidebar.tsx.md",
+      "summary": {
+        "relPath": "src/components/ui/sidebar.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/ui/skeleton.tsx",
+      "report": "audits/src/components/ui/skeleton.tsx.md",
+      "summary": {
+        "relPath": "src/components/ui/skeleton.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/ui/slider.tsx",
+      "report": "audits/src/components/ui/slider.tsx.md",
+      "summary": {
+        "relPath": "src/components/ui/slider.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/ui/sonner.tsx",
+      "report": "audits/src/components/ui/sonner.tsx.md",
+      "summary": {
+        "relPath": "src/components/ui/sonner.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/ui/spinner.tsx",
+      "report": "audits/src/components/ui/spinner.tsx.md",
+      "summary": {
+        "relPath": "src/components/ui/spinner.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/ui/switch.tsx",
+      "report": "audits/src/components/ui/switch.tsx.md",
+      "summary": {
+        "relPath": "src/components/ui/switch.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/ui/table.tsx",
+      "report": "audits/src/components/ui/table.tsx.md",
+      "summary": {
+        "relPath": "src/components/ui/table.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/ui/tabs.tsx",
+      "report": "audits/src/components/ui/tabs.tsx.md",
+      "summary": {
+        "relPath": "src/components/ui/tabs.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/ui/textarea.tsx",
+      "report": "audits/src/components/ui/textarea.tsx.md",
+      "summary": {
+        "relPath": "src/components/ui/textarea.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/ui/time-picker.tsx",
+      "report": "audits/src/components/ui/time-picker.tsx.md",
+      "summary": {
+        "relPath": "src/components/ui/time-picker.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/ui/toggle-group.tsx",
+      "report": "audits/src/components/ui/toggle-group.tsx.md",
+      "summary": {
+        "relPath": "src/components/ui/toggle-group.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/ui/toggle.tsx",
+      "report": "audits/src/components/ui/toggle.tsx.md",
+      "summary": {
+        "relPath": "src/components/ui/toggle.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/components/ui/tooltip.tsx",
+      "report": "audits/src/components/ui/tooltip.tsx.md",
+      "summary": {
+        "relPath": "src/components/ui/tooltip.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/hooks/use-mobile.tsx",
+      "report": "audits/src/hooks/use-mobile.tsx.md",
+      "summary": {
+        "relPath": "src/hooks/use-mobile.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/hooks/useAuth.tsx",
+      "report": "audits/src/hooks/useAuth.tsx.md",
+      "summary": {
+        "relPath": "src/hooks/useAuth.tsx",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/lib/__tests__/constants.test.ts",
+      "report": "audits/src/lib/__tests__/constants.test.ts.md",
+      "summary": {
+        "relPath": "src/lib/__tests__/constants.test.ts",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/lib/__tests__/models.actions.test.ts",
+      "report": "audits/src/lib/__tests__/models.actions.test.ts.md",
+      "summary": {
+        "relPath": "src/lib/__tests__/models.actions.test.ts",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/lib/__tests__/projects.actions.test.ts",
+      "report": "audits/src/lib/__tests__/projects.actions.test.ts.md",
+      "summary": {
+        "relPath": "src/lib/__tests__/projects.actions.test.ts",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/lib/actions/birthdays.ts",
+      "report": "audits/src/lib/actions/birthdays.ts.md",
+      "summary": {
+        "relPath": "src/lib/actions/birthdays.ts",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/lib/actions/client_actions.ts",
+      "report": "audits/src/lib/actions/client_actions.ts.md",
+      "summary": {
+        "relPath": "src/lib/actions/client_actions.ts",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/lib/actions/models.ts",
+      "report": "audits/src/lib/actions/models.ts.md",
+      "summary": {
+        "relPath": "src/lib/actions/models.ts",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/lib/actions/projects_models.ts",
+      "report": "audits/src/lib/actions/projects_models.ts.md",
+      "summary": {
+        "relPath": "src/lib/actions/projects_models.ts",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/lib/actions/projects.ts",
+      "report": "audits/src/lib/actions/projects.ts.md",
+      "summary": {
+        "relPath": "src/lib/actions/projects.ts",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/lib/actions/storage.ts",
+      "report": "audits/src/lib/actions/storage.ts.md",
+      "summary": {
+        "relPath": "src/lib/actions/storage.ts",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/lib/activity-logger.ts",
+      "report": "audits/src/lib/activity-logger.ts.md",
+      "summary": {
+        "relPath": "src/lib/activity-logger.ts",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/lib/activity-titles.ts",
+      "report": "audits/src/lib/activity-titles.ts.md",
+      "summary": {
+        "relPath": "src/lib/activity-titles.ts",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/lib/api/dashboard.ts",
+      "report": "audits/src/lib/api/dashboard.ts.md",
+      "summary": {
+        "relPath": "src/lib/api/dashboard.ts",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/lib/api/models.ts",
+      "report": "audits/src/lib/api/models.ts.md",
+      "summary": {
+        "relPath": "src/lib/api/models.ts",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/lib/api/projects.ts",
+      "report": "audits/src/lib/api/projects.ts.md",
+      "summary": {
+        "relPath": "src/lib/api/projects.ts",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/lib/constants.ts",
+      "report": "audits/src/lib/constants.ts.md",
+      "summary": {
+        "relPath": "src/lib/constants.ts",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/lib/countries.ts",
+      "report": "audits/src/lib/countries.ts.md",
+      "summary": {
+        "relPath": "src/lib/countries.ts",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/lib/database.types.ts",
+      "report": "audits/src/lib/database.types.ts.md",
+      "summary": {
+        "relPath": "src/lib/database.types.ts",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/lib/db-types.ts",
+      "report": "audits/src/lib/db-types.ts.md",
+      "summary": {
+        "relPath": "src/lib/db-types.ts",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/lib/options.ts",
+      "report": "audits/src/lib/options.ts.md",
+      "summary": {
+        "relPath": "src/lib/options.ts",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/lib/schemas.ts",
+      "report": "audits/src/lib/schemas.ts.md",
+      "summary": {
+        "relPath": "src/lib/schemas.ts",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/lib/schemas/projects.ts",
+      "report": "audits/src/lib/schemas/projects.ts.md",
+      "summary": {
+        "relPath": "src/lib/schemas/projects.ts",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/lib/supabase/admin.ts",
+      "report": "audits/src/lib/supabase/admin.ts.md",
+      "summary": {
+        "relPath": "src/lib/supabase/admin.ts",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/lib/supabase/client.ts",
+      "report": "audits/src/lib/supabase/client.ts.md",
+      "summary": {
+        "relPath": "src/lib/supabase/client.ts",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/lib/supabase/server.ts",
+      "report": "audits/src/lib/supabase/server.ts.md",
+      "summary": {
+        "relPath": "src/lib/supabase/server.ts",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/lib/types.ts",
+      "report": "audits/src/lib/types.ts.md",
+      "summary": {
+        "relPath": "src/lib/types.ts",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/lib/utils.ts",
+      "report": "audits/src/lib/utils.ts.md",
+      "summary": {
+        "relPath": "src/lib/utils.ts",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/lib/utils/errors.ts",
+      "report": "audits/src/lib/utils/errors.ts.md",
+      "summary": {
+        "relPath": "src/lib/utils/errors.ts",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/lib/utils/fetchSafe.ts",
+      "report": "audits/src/lib/utils/fetchSafe.ts.md",
+      "summary": {
+        "relPath": "src/lib/utils/fetchSafe.ts",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/lib/utils/zod.ts",
+      "report": "audits/src/lib/utils/zod.ts.md",
+      "summary": {
+        "relPath": "src/lib/utils/zod.ts",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    },
+    {
+      "file": "src/proxy.ts",
+      "report": "audits/src/proxy.ts.md",
+      "summary": {
+        "relPath": "src/proxy.ts",
+        "issueCount": 0,
+        "hasWarn": false,
+        "hasNote": false
+      }
+    }
+  ]
+}

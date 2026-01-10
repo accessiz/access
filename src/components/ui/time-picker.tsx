@@ -109,7 +109,7 @@ export function TimePickerSelect({ value, onChange, className }: TimePickerProps
     return (
         <div className={cn("flex items-center gap-1", className)}>
             <Select value={hour12.toString().padStart(2, "0")} onValueChange={handleHourChange}>
-                <SelectTrigger className="w-[70px] h-9">
+                <SelectTrigger className="w-[70px] h-12 md:h-10">
                     <SelectValue placeholder="HH" />
                 </SelectTrigger>
                 <SelectContent>
@@ -124,7 +124,7 @@ export function TimePickerSelect({ value, onChange, className }: TimePickerProps
             <span className="text-muted-foreground font-medium">:</span>
 
             <Select value={minute.toString().padStart(2, "0")} onValueChange={handleMinuteChange}>
-                <SelectTrigger className="w-[70px] h-9">
+                <SelectTrigger className="w-[70px] h-12 md:h-10">
                     <SelectValue placeholder="mm" />
                 </SelectTrigger>
                 <SelectContent>
@@ -137,7 +137,7 @@ export function TimePickerSelect({ value, onChange, className }: TimePickerProps
             </Select>
 
             <Select value={period} onValueChange={handlePeriodChange}>
-                <SelectTrigger className="w-[75px] h-9">
+                <SelectTrigger className="w-[75px] h-12 md:h-10">
                     <SelectValue placeholder="AM/PM" />
                 </SelectTrigger>
                 <SelectContent>

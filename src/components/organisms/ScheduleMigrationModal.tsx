@@ -130,8 +130,8 @@ export function ScheduleMigrationModal({
                 <DialogContent className="max-w-md">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-3">
-                            <div className="h-10 w-10 rounded-full bg-green-500/10 flex items-center justify-center">
-                                <Check className="h-5 w-5 text-green-500" />
+                            <div className="h-10 w-10 rounded-full bg-success/10 flex items-center justify-center">
+                                <Check className="h-5 w-5 text-success" />
                             </div>
                             Cambios listos para guardar
                         </DialogTitle>
@@ -171,8 +171,8 @@ export function ScheduleMigrationModal({
             <DialogContent className="max-w-xl">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-full bg-amber-500/10 flex items-center justify-center">
-                            <AlertCircle className="h-5 w-5 text-amber-500" />
+                        <div className="h-10 w-10 rounded-full bg-warning/10 flex items-center justify-center">
+                            <AlertCircle className="h-5 w-5 text-warning" />
                         </div>
                         Reasignar Modelos
                     </DialogTitle>
@@ -206,10 +206,10 @@ export function ScheduleMigrationModal({
 
                                         {/* Fecha antigua */}
                                         <div className="flex-shrink-0 min-w-[100px]">
-                                            <p className="text-sm font-medium line-through text-muted-foreground">
+                                            <p className="text-body font-medium line-through text-muted-foreground">
                                                 {formatDateShort(schedule.oldDate!)}
                                             </p>
-                                            <p className="text-xs text-muted-foreground uppercase tracking-wide mt-1">
+                                            <p className="text-label text-muted-foreground uppercase tracking-wide mt-1">
                                                 {schedule.assignmentCount} asignacion{schedule.assignmentCount !== 1 ? 'es' : ''}
                                             </p>
                                         </div>

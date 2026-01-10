@@ -73,17 +73,17 @@ export function ClientHeader({ project }: ClientHeaderProps) {
   return (
     <header className="px-0 text-left space-y-6">
       <div>
-        <p className="text-label-12 uppercase tracking-widest text-muted-foreground">
+        <p className="text-label uppercase tracking-widest text-muted-foreground">
           PROYECTO
         </p>
-        <h1 className="mt-1 text-heading-40 sm:text-heading-48 md:text-heading-72 uppercase">
+        <h1 className="mt-1 text-display sm:text-display md:text-display uppercase">
           {project.project_name || 'Selección de Talento'}
         </h1>
       </div>
 
       {scheduleElements && (
-        <div className="space-y-2 text-copy-14 text-foreground/80">
-          <h2 className="text-label-14 uppercase tracking-widest text-muted-foreground">Fechas del Casting</h2>
+        <div className="space-y-2 text-body text-foreground/80">
+          <h2 className="text-body uppercase tracking-widest text-muted-foreground">Fechas del Casting</h2>
           <div className="flex flex-col gap-1">{scheduleElements}</div>
         </div>
       )}

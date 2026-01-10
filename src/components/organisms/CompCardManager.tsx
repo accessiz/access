@@ -2,12 +2,12 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { UploadCloud, Trash2, Loader2 } from 'lucide-react';
 import { cn, mediaUrl } from '@/lib/utils';
 import { toast } from 'sonner';
-import Image from 'next/image';
+import { Label } from '@/components/ui/label';
 import { uploadModelImage, deleteModelImage } from '@/lib/actions/storage';
 import { ImageCropDialog } from './ImageCropDialog';
 import { Model } from '@/lib/types';
@@ -40,13 +40,15 @@ interface CompCardManagerProps {
     initialCoverPath?: string | null;
     initialPortfolioPath?: string | null;
     initialCompCardPaths?: (string | null)[];
+    initialGalleryUrls?: (string | null)[];
+    initialGalleryPaths?: (string | null)[];
 }
 
 // Interfaz para el estado del recorte
 interface CropState {
     imageSrc: string | null;
     aspect: number;
-    uploadType: 'cover' | 'comp-card' | 'portfolio';
+    uploadType: 'cover' | 'comp-card' | 'portfolio' | 'gallery';
     slotIndex?: number;
 }
 
@@ -104,7 +106,13 @@ const PhotoSlot = ({ className, imageUrl, onFileSelect, onDelete, label, isUploa
         >
             {imageUrl ? (
                 <>
-                    <Image src={imageUrl} alt={label} fill className="object-cover" />
+                    <img
+                        src={imageUrl}
+                        alt={label}
+                        className="absolute inset-0 h-full w-full object-cover"
+                        loading="lazy"
+                        decoding="async"
+                    />
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                         <Button variant="destructive" size="icon" onClick={onDelete} disabled={isUploading}>
                             <Trash2 />
@@ -120,7 +128,7 @@ const PhotoSlot = ({ className, imageUrl, onFileSelect, onDelete, label, isUploa
                             ? <Loader2 className="h-8 w-8 text-muted-foreground animate-spin mb-2" />
                             : <UploadCloud className="h-8 w-8 text-muted-foreground mb-2" />
                         }
-                        <span className="text-label-12 font-normal text-muted-foreground">
+                        <span className="text-label font-normal text-muted-foreground">
                             {isUploading ? 'Subiendo...' : (isDragging ? 'Suelta la imagen aquí' : label)}
                         </span>
                     </Button>
@@ -140,17 +148,21 @@ export function CompCardManager({
     initialCoverPath = null,
     initialPortfolioPath = null,
     initialCompCardPaths = [null, null, null, null],
+    initialGalleryUrls = [],
+    initialGalleryPaths = [],
 }: CompCardManagerProps) {
     const [coverUrl, setCoverUrl] = useState<string | null>(initialCoverUrl);
     const [compCardUrls, setCompCardUrls] = useState<(string | null)[]>(Array(4).fill(null).map((_, i) => initialCompCardUrls[i] || null));
     const [portfolioUrl, setPortfolioUrl] = useState<string | null>(initialPortfolioUrl);
+    const [galleryUrls, setGalleryUrls] = useState<(string | null)[]>(initialGalleryUrls);
 
     const [coverPath, setCoverPath] = useState<string | null>(initialCoverPath);
     const [compCardPaths, setCompCardPaths] = useState<(string | null)[]>(Array(4).fill(null).map((_, i) => initialCompCardPaths[i] || null));
     const [portfolioPath, setPortfolioPath] = useState<string | null>(initialPortfolioPath);
+    const [galleryPaths, setGalleryPaths] = useState<(string | null)[]>(initialGalleryPaths);
 
     // --- NUEVOS ESTADOS ---
-    const [uploadingState, setUploadingState] = useState({ cover: false, compCards: [false, false, false, false], portfolio: false });
+    const [uploadingState, setUploadingState] = useState({ cover: false, compCards: [false, false, false, false], portfolio: false, gallery: false });
     const [cropState, setCropState] = useState<CropState | null>(null);
 
     // --- ESTADOS DE DESCARGA ---
@@ -208,12 +220,13 @@ export function CompCardManager({
         });
     };
 
-    // --- SUBIDA DIRECTA (para Portfolio, sin recorte) ---
+    // --- SUBIDA DIRECTA (para Portfolio y Gallery, sin recorte) ---
     const handleDirectUpload = async (file: File, uploadType: CropState['uploadType'], slotIndex?: number) => {
-        const category = uploadType === 'comp-card' ? 'Contraportada' : (uploadType === 'cover' ? 'Portada' : 'Portfolio');
+        const category = uploadType === 'comp-card' ? 'Contraportada' : (uploadType === 'cover' ? 'Portada' : (uploadType === 'gallery' ? 'PortfolioGallery' : 'Portfolio'));
 
         if (uploadType === 'cover') setUploadingState(p => ({ ...p, cover: true }));
         else if (uploadType === 'portfolio') setUploadingState(p => ({ ...p, portfolio: true }));
+        else if (uploadType === 'gallery') setUploadingState(p => ({ ...p, gallery: true }));
         else if (slotIndex !== undefined) setUploadingState(p => {
             const newCompCards = [...p.compCards]; newCompCards[slotIndex] = true;
             return { ...p, compCards: newCompCards };
@@ -255,6 +268,12 @@ export function CompCardManager({
                 if (returnedPath) setCompCardPaths(prev => {
                     const copy = [...prev]; copy[slotIndex] = returnedPath; return copy;
                 });
+                if (returnedPath) setCompCardPaths(prev => {
+                    const copy = [...prev]; copy[slotIndex] = returnedPath; return copy;
+                });
+            } else if (category === 'PortfolioGallery') {
+                if (publicUrl) setGalleryUrls(prev => [...prev, publicUrl]);
+                if (returnedPath) setGalleryPaths(prev => [...prev, returnedPath]);
             }
 
         } catch (error: unknown) {
@@ -263,6 +282,7 @@ export function CompCardManager({
         } finally {
             if (uploadType === 'cover') setUploadingState(p => ({ ...p, cover: false }));
             else if (uploadType === 'portfolio') setUploadingState(p => ({ ...p, portfolio: false }));
+            else if (uploadType === 'gallery') setUploadingState(p => ({ ...p, gallery: false }));
             else if (slotIndex !== undefined) setUploadingState(p => {
                 const newCompCards = [...p.compCards]; newCompCards[slotIndex] = false;
                 return { ...p, compCards: newCompCards };
@@ -272,8 +292,8 @@ export function CompCardManager({
 
     // Abre el diálogo de recorte cuando se selecciona un archivo (excepto Portfolio)
     const handleFileSelect = (file: File, uploadType: CropState['uploadType'], aspect: number, slotIndex?: number) => {
-        // Portfolio: subir directamente sin recorte
-        if (uploadType === 'portfolio') {
+        // Portfolio y Gallery: subir directamente sin recorte
+        if (uploadType === 'portfolio' || uploadType === 'gallery') {
             handleDirectUpload(file, uploadType, slotIndex);
             return;
         }
@@ -361,9 +381,9 @@ export function CompCardManager({
         }
     };
 
-    const handleDelete = async (type: 'cover' | 'comp-card' | 'portfolio', slotIndex?: number) => {
+    const handleDelete = async (type: 'cover' | 'comp-card' | 'portfolio' | 'gallery', slotIndex?: number, path?: string) => {
         let filePathToDelete: string | null = null;
-        const category = type === 'comp-card' ? 'Contraportada' : (type === 'cover' ? 'Portada' : 'Portfolio');
+        const category = type === 'comp-card' ? 'Contraportada' : (type === 'cover' ? 'Portada' : (type === 'gallery' ? 'PortfolioGallery' : 'Portfolio'));
 
         if (category === 'Portada') {
             filePathToDelete = coverPath;
@@ -371,6 +391,10 @@ export function CompCardManager({
             filePathToDelete = portfolioPath;
         } else if (slotIndex !== undefined && slotIndex >= 0 && slotIndex < 4) {
             filePathToDelete = compCardPaths[slotIndex];
+        } else if (slotIndex !== undefined && slotIndex >= 0 && slotIndex < 4) {
+            filePathToDelete = compCardPaths[slotIndex];
+        } else if (category === 'PortfolioGallery' && path) {
+            filePathToDelete = path;
         }
 
         if (!filePathToDelete) {
@@ -391,7 +415,19 @@ export function CompCardManager({
                     setPortfolioUrl(null); setPortfolioPath(null);
                 } else if (category === 'Contraportada' && slotIndex !== undefined) {
                     setCompCardUrls(prev => { const copy = [...prev]; copy[slotIndex] = null; return copy; });
+                    setCompCardUrls(prev => { const copy = [...prev]; copy[slotIndex] = null; return copy; });
                     setCompCardPaths(prev => { const copy = [...prev]; copy[slotIndex] = null; return copy; });
+                } else if (category === 'PortfolioGallery') {
+                    setGalleryPaths(prev => prev.filter(p => p !== filePathToDelete));
+                    // Nota: No podemos filtrar URLs fácilmente porque no tenemos el mapping 1:1 aquí sin más lógica,
+                    // pero podemos asumir que si borramos el path, debemos refrescar o filtrar.
+                    // Para simplificar, recargaremos la página o filtraremos si la URL coincide (si tuvieramos mapping).
+                    // Como fallback, filtramos la URL si contiene el nombre del archivo borrado (parcialmente inseguro pero funciona visualmente).
+                    // MEJOR: Pasar el índice del array de galería para borrar por índice localmente.
+                    if (slotIndex !== undefined) {
+                        setGalleryUrls(prev => prev.filter((_, i) => i !== slotIndex));
+                        setGalleryPaths(prev => prev.filter((_, i) => i !== slotIndex));
+                    }
                 }
             }
         } catch (error: unknown) {
@@ -700,16 +736,15 @@ export function CompCardManager({
     return (
         <>
             <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-7">
+                <CardHeader className="flex flex-col items-start justify-between gap-4 pb-7 sm:flex-row sm:items-center sm:gap-0">
                     <div className="space-y-1.5">
                         <CardTitle>Imágenes del Talento</CardTitle>
-                        <CardDescription>Sube y administra las imágenes de portada, portafolio y contraportada.</CardDescription>
                     </div>
 
                     {/* BOTÓN DE DESCARGA DROPDOWN */}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="outline" className="flex items-center gap-2">
+                            <Button variant="outline" className="w-full sm:w-auto flex items-center justify-center gap-2">
                                 <Download className="h-4 w-4" />
                                 Descargar CompCard
                                 <ChevronDown className="h-3 w-3 opacity-50" />
@@ -717,10 +752,10 @@ export function CompCardManager({
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-72 p-3 space-y-4">
                             <div className="space-y-2">
-                                <label className="text-[11px] font-semibold text-muted-foreground uppercase flex items-center gap-1.5 ml-1">
+                                <Label className="text-label font-semibold text-muted-foreground uppercase flex items-center gap-1.5 ml-1">
                                     <Layers className="h-3 w-3" />
                                     Qué descargar
-                                </label>
+                                </Label>
                                 <Select
                                     value={downloadFormat}
                                     onValueChange={(v) => {
@@ -749,10 +784,10 @@ export function CompCardManager({
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-[11px] font-semibold text-muted-foreground uppercase flex items-center gap-1.5 ml-1">
+                                <Label className="text-label font-semibold text-muted-foreground uppercase flex items-center gap-1.5 ml-1">
                                     <FileType className="h-3 w-3" />
                                     Formato de archivo
-                                </label>
+                                </Label>
                                 <Select value={fileType} onValueChange={(v) => setFileType(v as typeof fileType)}>
                                     <SelectTrigger className="w-full bg-muted/50 border-none h-10">
                                         <SelectValue placeholder="Selecciona tipo" />
@@ -796,7 +831,7 @@ export function CompCardManager({
                     <div className="space-y-8">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                             <div>
-                                <span className="text-label-14 text-muted-foreground mb-2 block">Portada (Slider)</span>
+                                <span className="text-body text-muted-foreground mb-2 block">Portada (Slider)</span>
                                 <PhotoSlot
                                     className="aspect-[3/4]"
                                     imageUrl={coverUrl}
@@ -807,7 +842,7 @@ export function CompCardManager({
                                 />
                             </div>
                             <div>
-                                <span className="text-label-14 text-muted-foreground mb-2 block">Contraportada (4 Fotos)</span>
+                                <span className="text-body text-muted-foreground mb-2 block">Contraportada (4 Fotos)</span>
                                 <div className="grid grid-cols-2 gap-4">
                                     {Array.from({ length: 4 }).map((_, index) => {
                                         // Ratio calculado de CompCardPrintTemplate (735px / 1031px)
@@ -819,7 +854,7 @@ export function CompCardManager({
                                                     key={index}
                                                     className={`${aspectRatioClass} bg-muted/30 border-2 border-dashed border-border/50 rounded-lg flex items-center justify-center p-4 text-center`}
                                                 >
-                                                    <span className="text-muted-foreground/50 text-sm">
+                                                    <span className="text-muted-foreground/50 text-body">
                                                         Reservado para Información
                                                     </span>
                                                 </div>
@@ -842,7 +877,7 @@ export function CompCardManager({
                             </div>
                         </div>
                         <div>
-                            <span className="text-label-14 text-muted-foreground mb-2 block">Portafolio (Imagen Principal Horizontal)</span>
+                            <span className="text-body text-muted-foreground mb-2 block">Portafolio (Imagen Principal Horizontal)</span>
                             <PhotoSlot
                                 className="aspect-[11/8.5] max-h-64"
                                 imageUrl={portfolioUrl}
@@ -851,6 +886,34 @@ export function CompCardManager({
                                 label="Subir Imagen de Portafolio"
                                 isUploading={uploadingState.portfolio}
                             />
+                        </div>
+                        <div>
+                            <span className="text-body text-muted-foreground mb-2 block">Galería de Portafolio</span>
+                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                                {galleryUrls.map((url, i) => {
+                                    if (!url) return null;
+                                    return (
+                                        <PhotoSlot
+                                            key={i}
+                                            className="aspect-[3/4]"
+                                            imageUrl={url}
+                                            onFileSelect={() => { }} // No replacement for now
+                                            onDelete={() => handleDelete('gallery', i, galleryPaths[i] || undefined)}
+                                            label={`Foto ${i + 1}`}
+                                            isUploading={false}
+                                        />
+                                    );
+                                })}
+                                {/* Slot para agregar nueva foto */}
+                                <PhotoSlot
+                                    className="aspect-[3/4]"
+                                    imageUrl={null}
+                                    onFileSelect={(file) => handleFileSelect(file, 'gallery', 0)}
+                                    onDelete={() => { }}
+                                    label="Agregar Foto"
+                                    isUploading={uploadingState.gallery}
+                                />
+                            </div>
                         </div>
                     </div>
                 </CardContent>
@@ -881,7 +944,7 @@ export function CompCardManager({
                     zIndex: -9999
                 }}
             >
-                <div style={{ width: '3300px', height: '2550px', backgroundColor: '#ffffff' }}>
+                <div style={{ width: '3300px', height: '2550px', backgroundColor: 'rgb(var(--background) / 1)' }}>
                     <CompCardPrintTemplate
                         model={{
                             ...model,

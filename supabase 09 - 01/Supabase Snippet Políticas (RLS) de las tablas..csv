@@ -1,0 +1,40 @@
+esquema,tabla,nombre_politica,es_permisiva,roles_aplicados,operacion,definicion_filtro,definicion_check
+public,activity_logs,Staff read access,PERMISSIVE,{authenticated},SELECT,true,null
+public,brands,Users can delete their own brands,PERMISSIVE,{public},DELETE,(auth.uid() = user_id),null
+public,brands,Users can insert their own brands,PERMISSIVE,{public},INSERT,null,(auth.uid() = user_id)
+public,brands,Users can update their own brands,PERMISSIVE,{public},UPDATE,(auth.uid() = user_id),null
+public,brands,Users can view their own brands,PERMISSIVE,{public},SELECT,(auth.uid() = user_id),null
+public,clients,Users can delete their own clients,PERMISSIVE,{public},DELETE,(auth.uid() = user_id),null
+public,clients,Users can insert their own clients,PERMISSIVE,{public},INSERT,null,(auth.uid() = user_id)
+public,clients,Users can update their own clients,PERMISSIVE,{public},UPDATE,(auth.uid() = user_id),null
+public,clients,Users can view their own clients,PERMISSIVE,{public},SELECT,(auth.uid() = user_id),null
+public,model_assignments,Admin gestiona asignaciones,PERMISSIVE,{public},ALL,(auth.role() = 'authenticated'::text),null
+public,models,Allow admin delete on models,PERMISSIVE,{authenticated},DELETE,true,null
+public,models,Allow admin insert on models,PERMISSIVE,{authenticated},INSERT,null,(auth.uid() = user_id)
+public,models,Allow admin update on models,PERMISSIVE,{authenticated},UPDATE,true,true
+public,models,Allow public read-only access to models,PERMISSIVE,"{anon,authenticated}",SELECT,true,null
+public,models,Permitir actualización (UPDATE) a usuarios autenticados,PERMISSIVE,{authenticated},UPDATE,true,true
+public,models,Permitir borrado (DELETE) a usuarios autenticados,PERMISSIVE,{authenticated},DELETE,true,null
+public,models,Permitir creación (INSERT) a usuarios autenticados,PERMISSIVE,{authenticated},INSERT,null,(auth.uid() = user_id)
+public,payment_transactions,Users can delete their own payment transactions,PERMISSIVE,{public},DELETE,(auth.uid() = user_id),null
+public,payment_transactions,Users can insert their own payment transactions,PERMISSIVE,{public},INSERT,null,(auth.uid() = user_id)
+public,payment_transactions,Users can update their own payment transactions,PERMISSIVE,{public},UPDATE,(auth.uid() = user_id),null
+public,payment_transactions,Users can view their own payment transactions,PERMISSIVE,{public},SELECT,(auth.uid() = user_id),null
+public,profiles,Public profiles are viewable by everyone,PERMISSIVE,{public},SELECT,true,null
+public,profiles,Users can insert their own profile,PERMISSIVE,{public},INSERT,null,(auth.uid() = id)
+public,profiles,Users can update own profile,PERMISSIVE,{public},UPDATE,(auth.uid() = id),null
+public,project_schedule,Admin gestiona agenda,PERMISSIVE,{public},ALL,(auth.role() = 'authenticated'::text),null
+public,project_schedule,Lectura pública agenda,PERMISSIVE,{public},SELECT,true,null
+public,projects,Allow admin delete on projects,PERMISSIVE,{authenticated},DELETE,(auth.uid() = user_id),null
+public,projects,Allow admin insert on projects,PERMISSIVE,{authenticated},INSERT,null,(auth.uid() = user_id)
+public,projects,Allow admin update on projects,PERMISSIVE,{authenticated},UPDATE,(auth.uid() = user_id),(auth.uid() = user_id)
+public,projects,Allow anon to set project in-review,PERMISSIVE,{anon},UPDATE,(status = 'sent'::text),(status = 'in-review'::text)
+public,projects,Allow public read-only access to projects,PERMISSIVE,"{anon,authenticated}",SELECT,true,null
+public,projects_models,Allow admin to link models to projects,PERMISSIVE,{authenticated},INSERT,null,"(EXISTS ( SELECT 1
+   FROM projects
+  WHERE ((projects.id = projects_models.project_id) AND (projects.user_id = auth.uid()))))"
+public,projects_models,Allow admin to unlink models from projects,PERMISSIVE,{authenticated},DELETE,"(EXISTS ( SELECT 1
+   FROM projects
+  WHERE ((projects.id = projects_models.project_id) AND (projects.user_id = auth.uid()))))",null
+public,projects_models,Allow admin to update model selection,PERMISSIVE,"{anon,authenticated}",UPDATE,true,true
+public,projects_models,Allow public read-only access to project-models,PERMISSIVE,"{anon,authenticated}",SELECT,true,null

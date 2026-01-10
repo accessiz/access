@@ -105,6 +105,8 @@ export async function getModelById(id: string): Promise<(Model & {
   cover_path?: string | null;
   portfolio_path?: string | null;
   comp_card_paths?: (string | null)[];
+  galleryUrls?: (string | null)[];
+  galleryPaths?: string[] | null;
 }) | null> {
   noStore();
   const supabase = await createClient();
@@ -154,6 +156,8 @@ export async function getModelById(id: string): Promise<(Model & {
   const coverUrl = toPublicUrl(finalCoverPath);
   const portfolioUrl = toPublicUrl(finalPortfolioPath);
   const compCardUrls = (model.comp_card_paths || []).slice(0, 4).map(p => toPublicUrl(p));
+  const galleryPaths = model.gallery_paths || [];
+  const galleryUrls = galleryPaths.map(p => toPublicUrl(p));
 
   console.log('[getModelById] coverUrl final:', coverUrl);
 
@@ -164,6 +168,8 @@ export async function getModelById(id: string): Promise<(Model & {
     coverUrl,
     portfolioUrl,
     compCardUrls,
+    galleryUrls,
+    galleryPaths,
   };
 }
 

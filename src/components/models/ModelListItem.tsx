@@ -87,7 +87,7 @@ export function ModelListItem({
             {/* Avatar */}
             <Avatar className="h-10 w-10 flex-shrink-0">
                 <AvatarImage src={avatarUrl || undefined} alt={name} />
-                <AvatarFallback className="text-copy-12 bg-muted font-medium">
+                <AvatarFallback className="text-label bg-muted font-medium">
                     {initials}
                 </AvatarFallback>
             </Avatar>
@@ -95,11 +95,11 @@ export function ModelListItem({
             {/* Content */}
             <div className="flex-1 min-w-0">
                 {/* Name */}
-                <p className="font-medium text-copy-14 truncate">{name}</p>
+                <p className="font-medium text-body truncate">{name}</p>
 
                 {/* Subtitle: Country + Height */}
                 {subtitle && (
-                    <p className="text-copy-12 text-muted-foreground truncate">
+                    <p className="text-label text-muted-foreground truncate">
                         {subtitle}
                     </p>
                 )}
@@ -114,7 +114,7 @@ export function ModelListItem({
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive/75" />
                             <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-destructive" />
                         </span>
-                        <span className="text-label-11 text-destructive hidden sm:inline">
+                        <span className="text-label text-destructive hidden sm:inline">
                             Ocupado
                         </span>
                     </>
@@ -122,7 +122,7 @@ export function ModelListItem({
                     <>
                         {/* Green dot = Available */}
                         <span className="h-2 w-2 rounded-full bg-success" />
-                        <span className="text-label-11 text-muted-foreground hidden sm:inline">
+                        <span className="text-label text-muted-foreground hidden sm:inline">
                             Libre
                         </span>
                     </>

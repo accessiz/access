@@ -1,9 +1,7 @@
 "use client";
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Search } from 'lucide-react';
+import { SearchBar } from '@/components/molecules/SearchBar';
 
 export default function DashboardQuickSearch() {
   const [q, setQ] = useState('');
@@ -18,9 +16,12 @@ export default function DashboardQuickSearch() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex gap-2">
-      <Input placeholder="Buscar talento por alias o nombre" value={q} onChange={e => setQ(e.target.value)} />
-      <Button type="submit" variant="outline" size="icon"><Search className="h-4 w-4" /></Button>
-    </form>
+    <SearchBar
+      value={q}
+      onValueChange={setQ}
+      placeholder="Buscar talento por alias o nombre"
+      onSubmit={() => handleSubmit()}
+      className="w-full"
+    />
   );
 }

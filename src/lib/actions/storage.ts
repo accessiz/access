@@ -23,7 +23,7 @@ const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME!;
 const uploadSchema = z.object({
   file: z.instanceof(File),
   modelId: z.string().uuid(),
-  category: z.enum(['Portada', 'Portfolio', 'Contraportada']),
+  category: z.enum(['Portada', 'Portfolio', 'Contraportada', 'PortfolioGallery']),
   slotIndex: z.coerce.number().optional(),
 });
 
@@ -103,14 +103,17 @@ export async function uploadModelImage(formData: FormData) {
     const timestamp = Date.now();
     const baseFileName = file.name.replace(/[^a-zA-Z0-9.\\-_]/g, '').toLowerCase();
 
-    // 1. Limpiar archivo/s antiguo/s en R2 para esta categoría.
-    await deleteOldFileFromCategory(modelId, category, slotIndex);
+    // 1. Limpiar archivo/s antiguo/s en R2 para esta categoría (EXCEPTO PortfolioGallery que es múltiple).
+    if (category !== 'PortfolioGallery') {
+      await deleteOldFileFromCategory(modelId, category, slotIndex);
+    }
 
     // 2. Crear nombre de archivo único con timestamp.
     let fileName = `${timestamp}-${baseFileName}`;
     if (category === 'Portada') fileName = `${timestamp}-cover.webp`;
     else if (category === 'Portfolio') fileName = `${timestamp}-portfolio.webp`;
     else if (category === 'Contraportada' && slotIndex !== undefined) fileName = `${timestamp}-comp_${slotIndex}.webp`;
+    else if (category === 'PortfolioGallery') fileName = `${timestamp}-gallery.webp`;
 
     const fullPath = `${modelId}/${category}/${fileName}`;
     const buffer = Buffer.from(await file.arrayBuffer());
@@ -143,6 +146,15 @@ export async function uploadModelImage(formData: FormData) {
       currentPaths[slotIndex] = fullPath;
 
       const { error } = await supabaseAdmin.from('models').update({ comp_card_paths: currentPaths }).eq('id', modelId);
+      dbError = error;
+    } else if (category === 'PortfolioGallery') {
+      const { data: currentModel, error: fetchError } = await supabaseAdmin.from('models').select('gallery_paths').eq('id', modelId).single();
+      if (fetchError) throw new Error('No se pudo obtener la galería actual.');
+
+      const currentPaths = currentModel?.gallery_paths || [];
+      currentPaths.push(fullPath);
+
+      const { error } = await supabaseAdmin.from('models').update({ gallery_paths: currentPaths }).eq('id', modelId);
       dbError = error;
     }
 
@@ -211,7 +223,8 @@ export async function getFirstFileInFolder(modelId: string, category: 'Portada' 
   }
 }
 
-export async function deleteModelImage(modelId: string, filePath: string, category: 'Portada' | 'Portfolio' | 'Contraportada', slotIndex?: number) {
+
+export async function deleteModelImage(modelId: string, filePath: string, category: 'Portada' | 'Portfolio' | 'Contraportada' | 'PortfolioGallery', slotIndex?: number) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
@@ -251,6 +264,15 @@ export async function deleteModelImage(modelId: string, filePath: string, catego
       }
 
       const { error: updateError } = await supabaseAdmin.from('models').update({ comp_card_paths: currentPaths }).eq('id', modelId);
+      error = updateError;
+    } else if (category === 'PortfolioGallery') {
+      const { data: currentModel, error: fetchError } = await supabaseAdmin.from('models').select('gallery_paths').eq('id', modelId).single();
+      if (fetchError) throw new Error('No se pudo obtener la galería actual.');
+
+      let currentPaths: string[] = currentModel?.gallery_paths || [];
+      currentPaths = currentPaths.filter(p => p !== filePath);
+
+      const { error: updateError } = await supabaseAdmin.from('models').update({ gallery_paths: currentPaths }).eq('id', modelId);
       error = updateError;
     }
 

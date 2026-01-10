@@ -14,12 +14,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Checkbox } from '@/components/ui/checkbox'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
+import { ProjectStatusBadge } from '@/components/molecules/ProjectStatusBadge'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
 import { SUPABASE_PUBLIC_URL } from '@/lib/constants'
 import { cn } from '@/lib/utils'
+import { SearchBar } from '@/components/molecules/SearchBar'
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -499,10 +500,10 @@ export function TalentAssignmentPanel({
             <Card className="border-dashed">
                 <CardContent className="py-12 text-center">
                     <Users className="h-12 w-12 mx-auto text-muted-foreground mb-3 opacity-50" />
-                    <p className="text-lg font-medium text-muted-foreground">
+                    <p className="text-title font-medium text-muted-foreground">
                         No hay talentos en este proyecto
                     </p>
-                    <p className="text-sm text-muted-foreground mt-1">
+                    <p className="text-body text-muted-foreground mt-1">
                         Agrega talentos desde la búsqueda de la izquierda
                     </p>
                 </CardContent>
@@ -516,7 +517,7 @@ export function TalentAssignmentPanel({
                 <div className="flex flex-col gap-3">
                     <div className="flex items-center justify-between">
                         <div>
-                            <CardTitle className="text-lg flex items-center gap-2">
+                            <CardTitle className="flex items-center gap-2">
                                 <Users className="h-5 w-5" />
                                 Talentos en el Proyecto
                             </CardTitle>
@@ -545,7 +546,7 @@ export function TalentAssignmentPanel({
                                 </Button>
                             )}
                             {!hasPendingChanges && !isSaving && pendingChanges.some(c => c.status === 'saved') && (
-                                <Badge variant="outline" className="border-green-500 text-green-600">
+                                <Badge variant="outline" className="border-success/20 text-success bg-success/10">
                                     <CheckCircle2 className="h-3 w-3 mr-1" />
                                     Guardado
                                 </Badge>
@@ -556,24 +557,15 @@ export function TalentAssignmentPanel({
                     {/* Barra de búsqueda y filtros */}
                     <div className="flex flex-wrap items-center gap-2">
                         {/* Búsqueda */}
-                        <div className="relative flex-1 min-w-48">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                placeholder="Buscar por nombre..."
+                        <div className="flex-1 min-w-48">
+                            <SearchBar
                                 value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="pl-9 h-9"
+                                onValueChange={setSearchQuery}
+                                onClear={() => setSearchQuery('')}
+                                placeholder="Buscar por nombre..."
+                                ariaLabel="Buscar por nombre"
+                                inputClassName="h-9"
                             />
-                            {searchQuery && (
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
-                                    onClick={() => setSearchQuery('')}
-                                >
-                                    <X className="h-3 w-3" />
-                                </Button>
-                            )}
                         </div>
 
                         {/* Filtro de Género */}
@@ -583,7 +575,7 @@ export function TalentAssignmentPanel({
                                     <Filter className="h-3.5 w-3.5 mr-1.5" />
                                     Género
                                     {genderFilter !== 'all' && (
-                                        <Badge variant="secondary" className="ml-1.5 h-5 px-1.5">
+                                        <Badge variant="secondary" size="small" className="ml-1.5">
                                             {genderFilter === 'male' ? 'H' : 'M'}
                                         </Badge>
                                     )}
@@ -612,7 +604,7 @@ export function TalentAssignmentPanel({
                                         <Calendar className="h-3.5 w-3.5 mr-1.5" />
                                         Fechas
                                         {(availabilityFilter !== 'all' || selectedDateFilter) && (
-                                            <Badge variant="secondary" className="ml-1.5 h-5 px-1.5">1</Badge>
+                                            <Badge variant="secondary" size="small" className="ml-1.5">1</Badge>
                                         )}
                                     </Button>
                                 </DropdownMenuTrigger>
@@ -676,7 +668,7 @@ export function TalentAssignmentPanel({
                                     <Check className="h-3.5 w-3.5 mr-1.5" />
                                     Estado
                                     {statusFilter !== 'all' && (
-                                        <Badge variant="secondary" className="ml-1.5 h-5 px-1.5">1</Badge>
+                                        <Badge variant="secondary" size="small" className="ml-1.5">1</Badge>
                                     )}
                                 </Button>
                             </DropdownMenuTrigger>
@@ -687,13 +679,13 @@ export function TalentAssignmentPanel({
                                     Todos ({models.length})
                                 </DropdownMenuCheckboxItem>
                                 <DropdownMenuCheckboxItem checked={statusFilter === 'approved'} onCheckedChange={() => setStatusFilter('approved')}>
-                                    <span className="text-green-600">Aprobados ({filterStats.approved})</span>
+                                    <span className="text-success">Aprobados ({filterStats.approved})</span>
                                 </DropdownMenuCheckboxItem>
                                 <DropdownMenuCheckboxItem checked={statusFilter === 'pending'} onCheckedChange={() => setStatusFilter('pending')}>
                                     Pendientes ({filterStats.pending})
                                 </DropdownMenuCheckboxItem>
                                 <DropdownMenuCheckboxItem checked={statusFilter === 'rejected'} onCheckedChange={() => setStatusFilter('rejected')}>
-                                    <span className="text-red-600">Rechazados ({filterStats.rejected})</span>
+                                    <span className="text-destructive">Rechazados ({filterStats.rejected})</span>
                                 </DropdownMenuCheckboxItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
@@ -710,256 +702,437 @@ export function TalentAssignmentPanel({
             </CardHeader>
 
             <CardContent className="p-0">
-                <ScrollArea className="w-full">
-                    <div className="min-w-max">
-                        {/* Cabecera con fechas */}
-                        <div className="flex border-b bg-muted/50 sticky top-0 z-10">
-                            {/* Columna fija de modelos */}
-                            <div className="w-72 min-w-72 px-4 py-3 font-medium text-sm border-r bg-muted/80 sticky left-0 z-20">
-                                Talento
-                            </div>
-
-                            {/* Columnas de fechas */}
-                            {sortedSchedule.map((item) => {
-                                const { dayName, dayNumber, month, fullDate } = formatScheduleDate(item.date)
-                                const hasMultipleSlots = datesWithMultipleSlots.has(item.date)
-                                // Formatear hora sin AM/PM para ahorrar espacio
-                                const shortTime = item.startTime?.replace(' AM', 'am').replace(' PM', 'pm') || ''
+                {/* Mobile/tablet: stacked cards (no horizontal swipe) */}
+                <div className="lg:hidden p-4">
+                    {filteredModels.length === 0 ? (
+                        <div className="py-12 text-center">
+                            <Search className="h-8 w-8 mx-auto text-muted-foreground mb-2 opacity-50" />
+                            <p className="text-muted-foreground">No se encontraron talentos con estos filtros</p>
+                            <Button variant="link" onClick={clearAllFilters} className="mt-2">
+                                Limpiar filtros
+                            </Button>
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                            {filteredModels.map((model) => {
+                                const modelAssignments = localAssignments[model.id] || new Set()
+                                const isRemoving = removingModelId === model.id
 
                                 return (
                                     <div
-                                        key={item.id}
-                                        className="flex-1 min-w-28 px-3 py-3 text-center border-r last:border-r-0"
+                                        key={`mobile-${model.id}`}
+                                        className={cn(
+                                            "rounded-lg border p-3 space-y-3",
+                                            isRemoving && "opacity-50"
+                                        )}
                                     >
-                                        <TooltipProvider>
-                                            <Tooltip>
-                                                <TooltipTrigger asChild>
-                                                    <div className="cursor-help">
-                                                        <p className="text-xs text-muted-foreground capitalize">
-                                                            {dayName}
-                                                        </p>
-                                                        <p className="text-lg font-bold">{dayNumber}</p>
-                                                        <p className="text-xs text-muted-foreground capitalize">
-                                                            {month}
-                                                        </p>
-                                                        {hasMultipleSlots && (
-                                                            <p className="text-[10px] text-foreground/60 font-medium mt-0.5">
-                                                                {shortTime}
-                                                            </p>
-                                                        )}
-                                                    </div>
-                                                </TooltipTrigger>
-                                                <TooltipContent>
-                                                    <p className="font-medium capitalize">{fullDate}</p>
-                                                    <p className="text-xs text-muted-foreground">{item.startTime} - {item.endTime}</p>
-                                                </TooltipContent>
-                                            </Tooltip>
-                                        </TooltipProvider>
+                                        <div className="flex items-start gap-3">
+                                            <Avatar className="h-10 w-10 border shrink-0">
+                                                <AvatarImage
+                                                    src={model.coverUrl || `${SUPABASE_PUBLIC_URL}${model.id}/Portada/cover.jpg`}
+                                                />
+                                                <AvatarFallback className="text-label">
+                                                    {model.alias?.substring(0, 2) || 'M'}
+                                                </AvatarFallback>
+                                            </Avatar>
+
+                                            <div className="min-w-0 flex-1">
+                                                <p className="text-body font-medium break-words">
+                                                    {model.alias}
+                                                </p>
+                                                <div className="flex flex-wrap items-center gap-2 text-label text-muted-foreground">
+                                                    <span className={cn(
+                                                        model.gender?.toLowerCase() === 'male' ? 'text-info' : 'text-primary'
+                                                    )}>
+                                                        {model.gender?.toLowerCase() === 'male' ? 'H' : 'M'}
+                                                    </span>
+                                                    <span>•</span>
+                                                    <ProjectStatusBadge status={(localSelections[model.id] || model.client_selection) || 'pending'} size="small" />
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center gap-1 shrink-0">
+                                                {updatingSelection === model.id ? (
+                                                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                                                ) : (
+                                                    <>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className={cn(
+                                                                "h-8 w-8 transition-all",
+                                                                (localSelections[model.id] || model.client_selection) === 'approved'
+                                                                    ? "bg-success/10 text-success hover:bg-success/20"
+                                                                    : "text-muted-foreground hover:text-success hover:bg-success/10"
+                                                            )}
+                                                            onClick={() => handleQuickSelection(model.id, 'approved')}
+                                                            disabled={isSaving || isRemoving}
+                                                        >
+                                                            <ThumbsUp className="h-4 w-4" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className={cn(
+                                                                "h-8 w-8 transition-all",
+                                                                (localSelections[model.id] || model.client_selection) === 'rejected'
+                                                                    ? "bg-destructive/10 text-destructive hover:bg-destructive/20"
+                                                                    : "text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                                                            )}
+                                                            onClick={() => handleQuickSelection(model.id, 'rejected')}
+                                                            disabled={isSaving || isRemoving}
+                                                        >
+                                                            <ThumbsDown className="h-4 w-4" />
+                                                        </Button>
+                                                    </>
+                                                )}
+
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                                    onClick={() => handleRemoveModel(model.id)}
+                                                    disabled={isRemoving}
+                                                >
+                                                    {isRemoving ? (
+                                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                                    ) : (
+                                                        <X className="h-4 w-4" />
+                                                    )}
+                                                </Button>
+                                            </div>
+                                        </div>
+
+                                        {sortedSchedule.length > 1 && (
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="w-full"
+                                                onClick={() => handleToggleAllDates(model.id)}
+                                                disabled={isSaving || isRemoving}
+                                            >
+                                                <CheckCheck className="h-4 w-4 mr-2" />
+                                                {sortedSchedule.every(s => modelAssignments.has(s.id!))
+                                                    ? 'Desmarcar todas las fechas'
+                                                    : 'Marcar todas las fechas'}
+                                            </Button>
+                                        )}
+
+                                        {sortedSchedule.length === 0 ? (
+                                            <div className="text-body text-muted-foreground">Sin fechas asignables.</div>
+                                        ) : (
+                                            <div className="space-y-2">
+                                                {sortedSchedule.map((scheduleItem) => {
+                                                    const isAssigned = modelAssignments.has(scheduleItem.id!)
+                                                    const pendingChange = pendingChanges.find(
+                                                        c => c.modelId === model.id && c.scheduleId === scheduleItem.id
+                                                    )
+                                                    const isPendingSave = pendingChange?.status === 'pending'
+                                                    const isSavingThis = pendingChange?.status === 'saving'
+                                                    const savedThis = pendingChange?.status === 'saved'
+                                                    const errorThis = pendingChange?.status === 'error'
+
+                                                    const { dayName, dayNumber, month } = formatScheduleDate(scheduleItem.date)
+                                                    const hasMultipleSlots = datesWithMultipleSlots.has(scheduleItem.date)
+                                                    const shortTime = scheduleItem.startTime?.replace(' AM', 'am').replace(' PM', 'pm') || ''
+
+                                                    return (
+                                                        <div
+                                                            key={`mobile-slot-${model.id}-${scheduleItem.id}`}
+                                                            className={cn(
+                                                                "flex items-center justify-between gap-3 rounded-md border px-3 py-2",
+                                                                isPendingSave && 'bg-warning/10',
+                                                                savedThis && 'bg-success/10',
+                                                                errorThis && 'bg-destructive/10'
+                                                            )}
+                                                        >
+                                                            <div className="min-w-0">
+                                                                <div className="text-body font-medium">
+                                                                    {dayName} {dayNumber} {month}
+                                                                </div>
+                                                                {hasMultipleSlots && shortTime && (
+                                                                    <div className="text-label text-muted-foreground">{shortTime}</div>
+                                                                )}
+                                                            </div>
+
+                                                            {isSavingThis ? (
+                                                                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                                                            ) : (
+                                                                <Checkbox
+                                                                    checked={isAssigned}
+                                                                    onCheckedChange={() => handleToggle(model.id, scheduleItem.id!)}
+                                                                    disabled={isSaving || isRemoving}
+                                                                    className={cn(
+                                                                        'h-5 w-5 transition-all shrink-0',
+                                                                        isAssigned && 'data-[state=checked]:bg-primary'
+                                                                    )}
+                                                                />
+                                                            )}
+                                                        </div>
+                                                    )
+                                                })}
+                                            </div>
+                                        )}
                                     </div>
                                 )
                             })}
-
-                            {/* Columna de acciones */}
-                            <div className="w-16 min-w-16" />
                         </div>
+                    )}
+                </div>
 
-                        {/* Filas de modelos */}
-                        <ScrollArea className="h-[400px]">
-                            {filteredModels.length === 0 ? (
-                                <div className="py-12 text-center">
-                                    <Search className="h-8 w-8 mx-auto text-muted-foreground mb-2 opacity-50" />
-                                    <p className="text-muted-foreground">No se encontraron talentos con estos filtros</p>
-                                    <Button variant="link" onClick={clearAllFilters} className="mt-2">
-                                        Limpiar filtros
-                                    </Button>
+                {/* Desktop+: sticky-column assignment grid */}
+                <div className="hidden lg:block">
+                    <ScrollArea className="w-full">
+                        <div className="min-w-max">
+                            {/* Cabecera con fechas */}
+                            <div className="flex border-b bg-muted/50 sticky top-0 z-10">
+                                {/* Columna fija de modelos */}
+                                <div className="w-72 min-w-72 px-4 py-3 font-medium text-body border-r bg-muted/80 sticky left-0 z-20">
+                                    Talento
                                 </div>
-                            ) : (
-                                filteredModels.map((model) => {
-                                    const modelAssignments = localAssignments[model.id] || new Set()
-                                    const isRemoving = removingModelId === model.id
+
+                                {/* Columnas de fechas */}
+                                {sortedSchedule.map((item) => {
+                                    const { dayName, dayNumber, month, fullDate } = formatScheduleDate(item.date)
+                                    const hasMultipleSlots = datesWithMultipleSlots.has(item.date)
+                                    // Formatear hora sin AM/PM para ahorrar espacio
+                                    const shortTime = item.startTime?.replace(' AM', 'am').replace(' PM', 'pm') || ''
 
                                     return (
                                         <div
-                                            key={model.id}
-                                            className={cn(
-                                                "flex border-b last:border-b-0 hover:bg-muted/30 transition-colors",
-                                                isRemoving && "opacity-50"
-                                            )}
+                                            key={item.id}
+                                            className="flex-1 min-w-28 px-3 py-3 text-center border-r last:border-r-0"
                                         >
-                                            {/* Info del modelo */}
-                                            <div className="w-72 min-w-72 px-4 py-3 flex items-center gap-3 border-r bg-background sticky left-0 z-10">
-                                                <Avatar className="h-10 w-10 border">
-                                                    <AvatarImage
-                                                        src={model.coverUrl || `${SUPABASE_PUBLIC_URL}${model.id}/Portada/cover.jpg`}
-                                                    />
-                                                    <AvatarFallback className="text-xs">
-                                                        {model.alias?.substring(0, 2) || 'M'}
-                                                    </AvatarFallback>
-                                                </Avatar>
-                                                <div className="min-w-0 flex-1">
-                                                    <p className="text-sm font-medium truncate">
-                                                        {model.alias}
-                                                    </p>
-                                                    <div className="flex items-center gap-1.5 text-xs">
-                                                        <span className={cn(
-                                                            model.gender?.toLowerCase() === 'male' ? 'text-blue-500' : 'text-pink-500'
-                                                        )}>
-                                                            {model.gender?.toLowerCase() === 'male' ? 'H' : 'M'}
-                                                        </span>
-                                                    </div>
-                                                </div>
+                                            <TooltipProvider>
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <div className="cursor-help">
+                                                            <p className="text-label text-muted-foreground capitalize">
+                                                                {dayName}
+                                                            </p>
+                                                            <p className="text-title font-bold">{dayNumber}</p>
+                                                            <p className="text-label text-muted-foreground capitalize">
+                                                                {month}
+                                                            </p>
+                                                            {hasMultipleSlots && (
+                                                                <p className="text-label text-foreground/60 font-medium mt-0.5">
+                                                                    {shortTime}
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>
+                                                        <p className="font-medium capitalize">{fullDate}</p>
+                                                        <p className="text-label text-muted-foreground">{item.startTime} - {item.endTime}</p>
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                            </TooltipProvider>
+                                        </div>
+                                    )
+                                })}
 
-                                                {/* Botones de aprobación rápida ✓/✗ */}
-                                                <div className="flex items-center gap-1">
-                                                    {updatingSelection === model.id ? (
-                                                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                                                    ) : (
-                                                        <>
-                                                            <TooltipProvider>
-                                                                <Tooltip>
-                                                                    <TooltipTrigger asChild>
-                                                                        <Button
-                                                                            variant="ghost"
-                                                                            size="icon"
-                                                                            className={cn(
-                                                                                "h-7 w-7 transition-all",
-                                                                                (localSelections[model.id] || model.client_selection) === 'approved'
-                                                                                    ? "bg-green-100 text-green-600 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400"
-                                                                                    : "text-muted-foreground hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20"
-                                                                            )}
-                                                                            onClick={() => handleQuickSelection(model.id, 'approved')}
-                                                                            disabled={isSaving || isRemoving}
-                                                                        >
-                                                                            <ThumbsUp className="h-4 w-4" />
-                                                                        </Button>
-                                                                    </TooltipTrigger>
-                                                                    <TooltipContent>Aprobar</TooltipContent>
-                                                                </Tooltip>
-                                                            </TooltipProvider>
-                                                            <TooltipProvider>
-                                                                <Tooltip>
-                                                                    <TooltipTrigger asChild>
-                                                                        <Button
-                                                                            variant="ghost"
-                                                                            size="icon"
-                                                                            className={cn(
-                                                                                "h-7 w-7 transition-all",
-                                                                                (localSelections[model.id] || model.client_selection) === 'rejected'
-                                                                                    ? "bg-red-100 text-red-600 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400"
-                                                                                    : "text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                                                                            )}
-                                                                            onClick={() => handleQuickSelection(model.id, 'rejected')}
-                                                                            disabled={isSaving || isRemoving}
-                                                                        >
-                                                                            <ThumbsDown className="h-4 w-4" />
-                                                                        </Button>
-                                                                    </TooltipTrigger>
-                                                                    <TooltipContent>Rechazar</TooltipContent>
-                                                                </Tooltip>
-                                                            </TooltipProvider>
-                                                        </>
+                                {/* Columna de acciones */}
+                                <div className="w-16 min-w-16" />
+                            </div>
+
+                            {/* Filas de modelos */}
+                            <ScrollArea className="h-[400px]">
+                                {filteredModels.length === 0 ? (
+                                    <div className="py-12 text-center">
+                                        <Search className="h-8 w-8 mx-auto text-muted-foreground mb-2 opacity-50" />
+                                        <p className="text-muted-foreground">No se encontraron talentos con estos filtros</p>
+                                        <Button variant="link" onClick={clearAllFilters} className="mt-2">
+                                            Limpiar filtros
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    filteredModels.map((model) => {
+                                        const modelAssignments = localAssignments[model.id] || new Set()
+                                        const isRemoving = removingModelId === model.id
+
+                                        return (
+                                            <div
+                                                key={model.id}
+                                                className={cn(
+                                                    "flex border-b last:border-b-0 hover:bg-muted/30 transition-colors",
+                                                    isRemoving && "opacity-50"
+                                                )}
+                                            >
+                                                {/* Info del modelo */}
+                                                <div className="w-72 min-w-72 px-4 py-3 flex items-center gap-3 border-r bg-background sticky left-0 z-10">
+                                                    <Avatar className="h-10 w-10 border">
+                                                        <AvatarImage
+                                                            src={model.coverUrl || `${SUPABASE_PUBLIC_URL}${model.id}/Portada/cover.jpg`}
+                                                        />
+                                                        <AvatarFallback className="text-label">
+                                                            {model.alias?.substring(0, 2) || 'M'}
+                                                        </AvatarFallback>
+                                                    </Avatar>
+                                                    <div className="min-w-0 flex-1">
+                                                        <p className="text-body font-medium truncate">
+                                                            {model.alias}
+                                                        </p>
+                                                        <div className="flex items-center gap-1.5 text-label">
+                                                            <span className={cn(
+                                                                model.gender?.toLowerCase() === 'male' ? 'text-info' : 'text-primary'
+                                                            )}>
+                                                                {model.gender?.toLowerCase() === 'male' ? 'H' : 'M'}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Botones de aprobación rápida ✓/✗ */}
+                                                    <div className="flex items-center gap-1">
+                                                        {updatingSelection === model.id ? (
+                                                            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                                                        ) : (
+                                                            <>
+                                                                <TooltipProvider>
+                                                                    <Tooltip>
+                                                                        <TooltipTrigger asChild>
+                                                                            <Button
+                                                                                variant="ghost"
+                                                                                size="icon"
+                                                                                className={cn(
+                                                                                    "h-7 w-7 transition-all",
+                                                                                    (localSelections[model.id] || model.client_selection) === 'approved'
+                                                                                        ? "bg-success/10 text-success hover:bg-success/20"
+                                                                                        : "text-muted-foreground hover:text-success hover:bg-success/10"
+                                                                                )}
+                                                                                onClick={() => handleQuickSelection(model.id, 'approved')}
+                                                                                disabled={isSaving || isRemoving}
+                                                                            >
+                                                                                <ThumbsUp className="h-4 w-4" />
+                                                                            </Button>
+                                                                        </TooltipTrigger>
+                                                                        <TooltipContent>Aprobar</TooltipContent>
+                                                                    </Tooltip>
+                                                                </TooltipProvider>
+                                                                <TooltipProvider>
+                                                                    <Tooltip>
+                                                                        <TooltipTrigger asChild>
+                                                                            <Button
+                                                                                variant="ghost"
+                                                                                size="icon"
+                                                                                className={cn(
+                                                                                    "h-7 w-7 transition-all",
+                                                                                    (localSelections[model.id] || model.client_selection) === 'rejected'
+                                                                                        ? "bg-destructive/10 text-destructive hover:bg-destructive/20"
+                                                                                        : "text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                                                                                )}
+                                                                                onClick={() => handleQuickSelection(model.id, 'rejected')}
+                                                                                disabled={isSaving || isRemoving}
+                                                                            >
+                                                                                <ThumbsDown className="h-4 w-4" />
+                                                                            </Button>
+                                                                        </TooltipTrigger>
+                                                                        <TooltipContent>Rechazar</TooltipContent>
+                                                                    </Tooltip>
+                                                                </TooltipProvider>
+                                                            </>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Botón marcar todas las fechas (solo si hay 2+ fechas) */}
+                                                    {sortedSchedule.length > 1 && (
+                                                        <TooltipProvider>
+                                                            <Tooltip>
+                                                                <TooltipTrigger asChild>
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        className={cn(
+                                                                            "h-7 w-7 shrink-0",
+                                                                            sortedSchedule.every(s => modelAssignments.has(s.id!))
+                                                                                ? "text-primary"
+                                                                                : "text-muted-foreground"
+                                                                        )}
+                                                                        onClick={() => handleToggleAllDates(model.id)}
+                                                                        disabled={isSaving || isRemoving}
+                                                                    >
+                                                                        <CheckCheck className="h-4 w-4" />
+                                                                    </Button>
+                                                                </TooltipTrigger>
+                                                                <TooltipContent>
+                                                                    {sortedSchedule.every(s => modelAssignments.has(s.id!))
+                                                                        ? "Desmarcar todas las fechas"
+                                                                        : "Marcar todas las fechas"}
+                                                                </TooltipContent>
+                                                            </Tooltip>
+                                                        </TooltipProvider>
                                                     )}
                                                 </div>
 
-                                                {/* Botón marcar todas las fechas (solo si hay 2+ fechas) */}
-                                                {sortedSchedule.length > 1 && (
+                                                {/* Checkboxes de asignación */}
+                                                {sortedSchedule.map((scheduleItem) => {
+                                                    const isAssigned = modelAssignments.has(scheduleItem.id!)
+                                                    const pendingChange = pendingChanges.find(
+                                                        c => c.modelId === model.id && c.scheduleId === scheduleItem.id
+                                                    )
+                                                    const isPendingSave = pendingChange?.status === 'pending'
+                                                    const isSavingThis = pendingChange?.status === 'saving'
+                                                    const savedThis = pendingChange?.status === 'saved'
+                                                    const errorThis = pendingChange?.status === 'error'
+
+                                                    return (
+                                                        <div
+                                                            key={scheduleItem.id}
+                                                            className={cn(
+                                                                'flex-1 min-w-28 flex items-center justify-center border-r last:border-r-0 py-3',
+                                                                isPendingSave && 'bg-warning/10',
+                                                                savedThis && 'bg-success/10',
+                                                                errorThis && 'bg-destructive/10'
+                                                            )}
+                                                        >
+                                                            {isSavingThis ? (
+                                                                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                                                            ) : (
+                                                                <Checkbox
+                                                                    checked={isAssigned}
+                                                                    onCheckedChange={() => handleToggle(model.id, scheduleItem.id!)}
+                                                                    disabled={isSaving || isRemoving}
+                                                                    className={cn(
+                                                                        'h-5 w-5 transition-all',
+                                                                        isAssigned && 'data-[state=checked]:bg-primary'
+                                                                    )}
+                                                                />
+                                                            )}
+                                                        </div>
+                                                    )
+                                                })}
+
+                                                {/* Botón eliminar */}
+                                                <div className="w-16 min-w-16 flex items-center justify-center">
                                                     <TooltipProvider>
                                                         <Tooltip>
                                                             <TooltipTrigger asChild>
                                                                 <Button
                                                                     variant="ghost"
                                                                     size="icon"
-                                                                    className={cn(
-                                                                        "h-7 w-7 shrink-0",
-                                                                        sortedSchedule.every(s => modelAssignments.has(s.id!))
-                                                                            ? "text-primary"
-                                                                            : "text-muted-foreground"
-                                                                    )}
-                                                                    onClick={() => handleToggleAllDates(model.id)}
-                                                                    disabled={isSaving || isRemoving}
+                                                                    className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                                                                    onClick={() => handleRemoveModel(model.id)}
+                                                                    disabled={isRemoving}
                                                                 >
-                                                                    <CheckCheck className="h-4 w-4" />
+                                                                    {isRemoving ? (
+                                                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                                                    ) : (
+                                                                        <X className="h-4 w-4" />
+                                                                    )}
                                                                 </Button>
                                                             </TooltipTrigger>
-                                                            <TooltipContent>
-                                                                {sortedSchedule.every(s => modelAssignments.has(s.id!))
-                                                                    ? "Desmarcar todas las fechas"
-                                                                    : "Marcar todas las fechas"}
-                                                            </TooltipContent>
+                                                            <TooltipContent>Quitar del proyecto</TooltipContent>
                                                         </Tooltip>
                                                     </TooltipProvider>
-                                                )}
+                                                </div>
                                             </div>
-
-                                            {/* Checkboxes de asignación */}
-                                            {sortedSchedule.map((scheduleItem) => {
-                                                const isAssigned = modelAssignments.has(scheduleItem.id!)
-                                                const pendingChange = pendingChanges.find(
-                                                    c => c.modelId === model.id && c.scheduleId === scheduleItem.id
-                                                )
-                                                const isPendingSave = pendingChange?.status === 'pending'
-                                                const isSavingThis = pendingChange?.status === 'saving'
-                                                const savedThis = pendingChange?.status === 'saved'
-                                                const errorThis = pendingChange?.status === 'error'
-
-                                                return (
-                                                    <div
-                                                        key={scheduleItem.id}
-                                                        className={cn(
-                                                            'flex-1 min-w-28 flex items-center justify-center border-r last:border-r-0 py-3',
-                                                            isPendingSave && 'bg-amber-50 dark:bg-amber-950/20',
-                                                            savedThis && 'bg-green-50 dark:bg-green-950/20',
-                                                            errorThis && 'bg-red-50 dark:bg-red-950/20'
-                                                        )}
-                                                    >
-                                                        {isSavingThis ? (
-                                                            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                                                        ) : (
-                                                            <Checkbox
-                                                                checked={isAssigned}
-                                                                onCheckedChange={() => handleToggle(model.id, scheduleItem.id!)}
-                                                                disabled={isSaving || isRemoving}
-                                                                className={cn(
-                                                                    'h-5 w-5 transition-all',
-                                                                    isAssigned && 'data-[state=checked]:bg-primary'
-                                                                )}
-                                                            />
-                                                        )}
-                                                    </div>
-                                                )
-                                            })}
-
-                                            {/* Botón eliminar */}
-                                            <div className="w-16 min-w-16 flex items-center justify-center">
-                                                <TooltipProvider>
-                                                    <Tooltip>
-                                                        <TooltipTrigger asChild>
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                                                                onClick={() => handleRemoveModel(model.id)}
-                                                                disabled={isRemoving}
-                                                            >
-                                                                {isRemoving ? (
-                                                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                                                ) : (
-                                                                    <X className="h-4 w-4" />
-                                                                )}
-                                                            </Button>
-                                                        </TooltipTrigger>
-                                                        <TooltipContent>Quitar del proyecto</TooltipContent>
-                                                    </Tooltip>
-                                                </TooltipProvider>
-                                            </div>
-                                        </div>
-                                    )
-                                })
-                            )}
-                        </ScrollArea>
-                    </div>
-                    <ScrollBar orientation="horizontal" />
-                </ScrollArea>
+                                        )
+                                    })
+                                )}
+                            </ScrollArea>
+                        </div>
+                        <ScrollBar orientation="horizontal" />
+                    </ScrollArea>
+                </div>
             </CardContent >
         </Card >
     )

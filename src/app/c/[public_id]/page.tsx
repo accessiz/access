@@ -19,8 +19,8 @@ export default async function ClientViewPage({ params }: PageProps) {
     return (
       <div className="flex h-screen w-full items-center justify-center text-center p-4 bg-background text-foreground">
         <div>
-          <h1 className="text-heading-40 mb-2">Proyecto no encontrado</h1>
-          <p className="text-copy-14 text-muted-foreground">
+          <h1 className="text-display mb-2">Proyecto no encontrado</h1>
+          <p className="text-body text-muted-foreground">
             El enlace puede ser incorrecto o el proyecto ha sido eliminado.
           </p>
         </div>

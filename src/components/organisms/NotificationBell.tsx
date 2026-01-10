@@ -4,24 +4,24 @@ import { Bell, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
-type Activity = { id: string; type: string; title: string; when: string; meta?: string };
+type Notification = { id: string; type: string; title: string; when: string; meta?: string };
 
 export default function NotificationBell({ showDotOnly = true }: { showDotOnly?: boolean }) {
-  const [activity, setActivity] = useState<Activity[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unseen, setUnseen] = useState<number>(0);
-  // 'open' y 'setOpen' se eliminaron porque no se usaban.
 
   useEffect(() => {
     let mounted = true;
-    fetch('/api/dashboard/activity')
+    // Solo traer notificaciones urgentes (acciones del cliente)
+    fetch('/api/notifications')
       .then(r => r.json())
       .then(res => {
         if (!mounted) return;
         if (res.success && Array.isArray(res.data)) {
-          setActivity(res.data);
-          const seenKey = 'dashboard_seen_ts';
+          setNotifications(res.data);
+          const seenKey = 'notifications_seen_ts';
           const seenTs = Number(localStorage.getItem(seenKey) || 0);
-          const unseenCount = res.data.filter((a: Activity) => new Date(a.when).getTime() > seenTs).length;
+          const unseenCount = res.data.filter((a: Notification) => new Date(a.when).getTime() > seenTs).length;
           setUnseen(unseenCount);
         }
       })
@@ -30,42 +30,40 @@ export default function NotificationBell({ showDotOnly = true }: { showDotOnly?:
   }, []);
 
   const markAllSeen = () => {
-    localStorage.setItem('dashboard_seen_ts', String(Date.now()));
+    localStorage.setItem('notifications_seen_ts', String(Date.now()));
     setUnseen(0);
   };
 
-  // mark seen when popover opens
-  // CORRECCIÓN: La función ahora solo recibe 'isOpen'
   const handleOpenChange = (isOpen: boolean) => {
     if (isOpen) {
-      // mark seen automatically when opening
       markAllSeen();
     }
   };
 
   return (
-    // CORRECCIÓN: Se añade 'onOpenChange' para ejecutar la lógica al abrir.
     <Popover onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <Button variant="ghost" size="icon">
           <Bell />
           {unseen > 0 && showDotOnly && <span className="absolute -top-0.5 -right-0.5 inline-block h-2 w-2 rounded-full bg-destructive animate-pulse" />}
-          {unseen > 0 && !showDotOnly && <span className="absolute -top-0.5 -right-0.5 inline-flex items-center justify-center rounded-full bg-destructive text-label-12 text-white px-1">{unseen}</span>}
+          {unseen > 0 && !showDotOnly && <span className="absolute -top-0.5 -right-0.5 inline-flex items-center justify-center rounded-full bg-destructive text-label text-white px-1">{unseen}</span>}
         </Button>
       </PopoverTrigger>
-      <PopoverContent side="bottom" align="end" className="w-80" onOpenAutoFocus={() => {}}>
+      <PopoverContent side="bottom" align="end" className="w-80" onOpenAutoFocus={() => { }}>
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-label-14">Actividad</h3>
-          <Button variant="ghost" size="sm" onClick={markAllSeen}><Check className="mr-2"/>Marcar como vistas</Button>
+          <h3 className="text-body font-medium">Notificaciones</h3>
+          {notifications.length > 0 && (
+            <Button variant="ghost" size="sm" onClick={markAllSeen}><Check className="mr-2 h-3 w-3" />Marcar vistas</Button>
+          )}
         </div>
         <ul className="space-y-2 max-h-64 overflow-auto">
-          {activity.slice(0, 20).map(a => (
-            <li key={a.id} className="text-copy-14">
-              <div className="font-medium">{a.title}</div>
-              <div className="text-muted-foreground text-label-12">{new Date(a.when).toLocaleString()}</div>
+          {notifications.slice(0, 20).map(n => (
+            <li key={n.id} className="text-body py-2 border-b last:border-0">
+              <div className="font-medium">{n.title}</div>
+              <div className="text-muted-foreground text-label">{new Date(n.when).toLocaleString()}</div>
             </li>
           ))}
-          {activity.length === 0 && <li className="text-copy-14 text-muted-foreground">No hay actividad reciente</li>}
+          {notifications.length === 0 && <li className="text-body text-muted-foreground py-4 text-center">Sin notificaciones del cliente</li>}
         </ul>
       </PopoverContent>
     </Popover>

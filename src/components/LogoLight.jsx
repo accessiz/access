@@ -13,10 +13,10 @@ const LogoLight = (props) => (
       <style dangerouslySetInnerHTML={{
         __html: `
           .st0 {
-            fill: #0c0c0c; /* Texto oscuro */
+            fill: rgb(var(--foreground) / 1); /* Texto */
           }
           .st1 {
-            fill: #9a6eea; /* Icono morado */
+            fill: rgb(var(--primary) / 1); /* Icono */
           }
         `
       }} />

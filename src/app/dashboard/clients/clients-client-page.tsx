@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
     Plus,
-    Search,
     Building2,
     Tag,
     MoreHorizontal,
@@ -19,8 +18,9 @@ import {
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { SearchBar } from '@/components/molecules/SearchBar';
 import { Badge } from '@/components/ui/badge';
+import { ProjectStatusBadge } from '@/components/molecules/ProjectStatusBadge';
 import {
     Card,
     CardContent,
@@ -149,57 +149,55 @@ export default function ClientsClientPage({ initialData }: ClientsClientPageProp
     };
 
     return (
-        <div className="flex flex-col gap-6 p-6 md:p-8">
-            {/* DS §0: Simplified header */}
-            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-6">
+            <header className="flex flex-col gap-x-4 gap-y-4 pb-4 border-b sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <h1 className="text-heading-24 font-semibold">Clientes</h1>
-                    <p className="text-copy-12 text-muted-foreground">{clients.length} clientes</p>
+                    <h1 className="text-display font-semibold">Clientes</h1>
+                    <p className="text-label text-muted-foreground">{clients.length} clientes</p>
                 </div>
 
-                <Dialog open={isFormOpen} onOpenChange={(open) => {
-                    if (!open) closeForm();
-                    else setIsFormOpen(true);
-                }}>
-                    <DialogTrigger asChild>
-                        <Button className="gap-2">
-                            <Plus className="h-4 w-4" />
-                            Nuevo Cliente
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                        <DialogHeader>
-                            <DialogTitle>
-                                {editingClient ? 'Editar Cliente' : 'Nuevo Cliente'}
-                            </DialogTitle>
-                            <DialogDescription>
-                                {editingClient
-                                    ? 'Modifica la información del cliente y sus marcas.'
-                                    : 'Agrega un nuevo cliente y las marcas que representa.'}
-                            </DialogDescription>
-                        </DialogHeader>
-                        <ClientForm
-                            client={editingClient}
-                            onSave={handleClientSaved}
-                            onCancel={closeForm}
-                        />
-                    </DialogContent>
-                </Dialog>
-            </div>
+                <div className="flex items-center gap-x-3 gap-y-3">
+                    <Dialog open={isFormOpen} onOpenChange={(open) => {
+                        if (!open) closeForm();
+                        else setIsFormOpen(true);
+                    }}>
+                        <DialogTrigger asChild>
+                            <Button className="gap-x-2 gap-y-2">
+                                <Plus className="h-4 w-4" />
+                                Nuevo Cliente
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                            <DialogHeader>
+                                <DialogTitle>
+                                    {editingClient ? 'Editar Cliente' : 'Nuevo Cliente'}
+                                </DialogTitle>
+                                <DialogDescription>
+                                    {editingClient
+                                        ? 'Modifica la información del cliente y sus marcas.'
+                                        : 'Agrega un nuevo cliente y las marcas que representa.'}
+                                </DialogDescription>
+                            </DialogHeader>
+                            <ClientForm
+                                client={editingClient}
+                                onSave={handleClientSaved}
+                                onCancel={closeForm}
+                            />
+                        </DialogContent>
+                    </Dialog>
+                </div>
+            </header>
 
             {/* Search Bar */}
-            <div className="relative max-w-md">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                    placeholder="Buscar clientes o marcas..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
-                />
-            </div>
+            <SearchBar
+                className="max-w-md"
+                placeholder="Buscar clientes o marcas..."
+                value={searchQuery}
+                onValueChange={setSearchQuery}
+            />
 
             {/* Stats */}
-            <div className="flex gap-4 text-copy-14 text-muted-foreground">
+            <div className="flex gap-x-4 gap-y-4 text-body text-muted-foreground">
                 <span>{filteredClients.length} clientes</span>
                 <Separator orientation="vertical" className="h-5" />
                 <span>
@@ -211,8 +209,8 @@ export default function ClientsClientPage({ initialData }: ClientsClientPageProp
             {filteredClients.length === 0 ? (
                 <Card className="flex flex-col items-center justify-center py-16">
                     <Building2 className="h-12 w-12 text-muted-foreground/50 mb-4" />
-                    <h3 className="text-heading-20 font-medium mb-2">No hay clientes</h3>
-                    <p className="text-copy-14 text-muted-foreground text-center max-w-sm">
+                    <h3 className="text-title font-medium mb-2">No hay clientes</h3>
+                    <p className="text-body text-muted-foreground text-center max-w-sm">
                         {searchQuery
                             ? 'No se encontraron clientes con ese criterio de búsqueda.'
                             : 'Comienza agregando tu primer cliente para gestionar sus marcas y proyectos.'}
@@ -257,8 +255,8 @@ function ClientCard({
     // DS: Use semantic badge variants (§2.B.4a)
     const statusBadge = {
         active: null,
-        inactive: <Badge variant="warning" size="small">Inactivo</Badge>,
-        archived: <Badge variant="neutral" size="small">Archivado</Badge>,
+        inactive: <ProjectStatusBadge status="inactive" size="small" />,
+        archived: <ProjectStatusBadge status="archived" size="small" />,
     };
 
     return (
@@ -266,7 +264,7 @@ function ClientCard({
             <Card className="group relative transition-all hover:shadow-md hover:border-primary/20 cursor-pointer">
                 <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-x-3 gap-y-3">
                             <Avatar className="h-10 w-10">
                                 <AvatarImage src={client.avatar_url || undefined} alt={client.name} />
                                 <AvatarFallback className="bg-primary/10 text-primary">
@@ -274,12 +272,12 @@ function ClientCard({
                                 </AvatarFallback>
                             </Avatar>
                             <div className="flex-1 min-w-0">
-                                <CardTitle className="text-copy-14 font-medium truncate flex items-center gap-2">
+                                <CardTitle className="text-body font-medium truncate flex items-center gap-x-2 gap-y-2">
                                     {client.name}
                                     {client.status && statusBadge[client.status as keyof typeof statusBadge]}
                                 </CardTitle>
                                 {client.company && (
-                                    <CardDescription className="text-copy-12 truncate">
+                                    <CardDescription className="text-label truncate">
                                         {client.company}
                                     </CardDescription>
                                 )}
@@ -322,11 +320,11 @@ function ClientCard({
 
                 <CardContent className="space-y-4">
                     {/* Contact Info */}
-                    <div className="flex flex-wrap gap-3 text-copy-12 text-muted-foreground">
+                    <div className="flex flex-wrap gap-x-3 gap-y-3 text-label text-muted-foreground">
                         {client.email && (
                             <a
                                 href={`mailto:${client.email}`}
-                                className="flex items-center gap-1 hover:text-foreground transition-colors"
+                                className="flex items-center gap-x-1 gap-y-1 hover:text-foreground transition-colors"
                             >
                                 <Mail className="h-3 w-3" />
                                 <span className="truncate max-w-[150px]">{client.email}</span>
@@ -335,7 +333,7 @@ function ClientCard({
                         {client.phone && (
                             <a
                                 href={`tel:${client.phone}`}
-                                className="flex items-center gap-1 hover:text-foreground transition-colors"
+                                className="flex items-center gap-x-1 gap-y-1 hover:text-foreground transition-colors"
                             >
                                 <Phone className="h-3 w-3" />
                                 <span>{client.phone}</span>
@@ -346,22 +344,22 @@ function ClientCard({
                     {/* Brands */}
                     {client.brands && client.brands.length > 0 && (
                         <div className="space-y-2">
-                            <div className="flex items-center gap-1 text-copy-12 text-muted-foreground">
+                            <div className="flex items-center gap-x-1 gap-y-1 text-label text-muted-foreground">
                                 <Tag className="h-3 w-3" />
                                 <span>Marcas ({client.brands.length})</span>
                             </div>
-                            <div className="flex flex-wrap gap-1.5">
+                            <div className="flex flex-wrap gap-x-1.5 gap-y-1.5">
                                 {client.brands.slice(0, 4).map((brand) => (
                                     <Badge
                                         key={brand.id}
                                         variant="secondary"
-                                        className="text-copy-12 font-normal"
+                                        className="text-label font-normal"
                                     >
                                         {brand.name}
                                     </Badge>
                                 ))}
                                 {client.brands.length > 4 && (
-                                    <Badge variant="outline" className="text-copy-12 font-normal">
+                                    <Badge variant="outline" className="text-label font-normal">
                                         +{client.brands.length - 4}
                                     </Badge>
                                 )}
@@ -371,7 +369,7 @@ function ClientCard({
 
                     {/* Project Count */}
                     {client.projectCount > 0 && (
-                        <div className="flex items-center gap-1 text-copy-12 text-muted-foreground pt-2 border-t border-border">
+                        <div className="flex items-center gap-x-1 gap-y-1 text-label text-muted-foreground pt-2 border-t border-border">
                             <ExternalLink className="h-3 w-3" />
                             <span>{client.projectCount} proyecto{client.projectCount !== 1 ? 's' : ''}</span>
                         </div>

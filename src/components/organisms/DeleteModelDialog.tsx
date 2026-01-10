@@ -63,7 +63,7 @@ export const DeleteModelDialog = ({ modelId, modelAlias, children }: DeleteModel
         </AlertDialogHeader>
         {/* Confirmación extra: pedir al usuario escribir el alias para confirmar */}
         <div className="mt-4">
-          <p className="text-copy-14 text-muted-foreground mb-2">Para confirmar, escribe el alias del modelo exactamente:</p>
+          <p className="text-body text-muted-foreground mb-2">Para confirmar, escribe el alias del modelo exactamente:</p>
           <Input
             value={confirmText}
             onChange={(e) => setConfirmText(e.target.value)}
@@ -71,7 +71,7 @@ export const DeleteModelDialog = ({ modelId, modelAlias, children }: DeleteModel
             aria-label="Confirmar alias para eliminar"
           />
           {confirmText && confirmText.trim() !== String(modelAlias).trim() && (
-            <p className="text-label-12 text-destructive mt-1">El texto no coincide con el alias. Escribe exactamente: <span className="font-mono">{modelAlias}</span></p>
+            <p className="text-label text-destructive mt-1">El texto no coincide con el alias. Escribe exactamente: <span className="font-mono">{modelAlias}</span></p>
           )}
         </div>
         <AlertDialogFooter>

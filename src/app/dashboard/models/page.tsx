@@ -2,6 +2,9 @@ import { getModelsEnriched, getBusyModelsToday, getModelById, getModelWorkHistor
 import { ModelsPageContent } from '@/components/models';
 import { Model } from '@/lib/types';
 import ModelProfilePageClient from './[id]/page-client';
+import Link from 'next/link';
+import { Plus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 // Tipo para las props de la página
 type PageProps = {
@@ -55,18 +58,36 @@ export default async function ModelsPage({ searchParams }: PageProps) {
   }
 
   return (
-    <ModelsPageContent
-      initialModels={models}
-      busyModelIds={busyModelIds}
-    >
-      {/* Right column: Full profile of selected model */}
-      {selectedModel && (
-        <ModelProfilePageClient
-          key={selectedModel.id}
-          initialModel={selectedModel}
-          workHistory={workHistory}
-        />
-      )}
-    </ModelsPageContent>
+    <div className="flex flex-1 min-h-0 flex-col gap-6">
+      <header className="flex flex-col gap-x-4 gap-y-4 pb-4 border-b sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-display font-semibold">Talento</h1>
+          <p className="text-label text-muted-foreground">{models.length} talentos</p>
+        </div>
+
+        <div className="flex items-center gap-x-3 gap-y-3">
+          <Button asChild className="gap-x-2 gap-y-2">
+            <Link href="/dashboard/models/new">
+              <Plus className="h-4 w-4" />
+              Añadir Talento
+            </Link>
+          </Button>
+        </div>
+      </header>
+
+      <ModelsPageContent
+        initialModels={models}
+        busyModelIds={busyModelIds}
+      >
+        {/* Right column: Full profile of selected model */}
+        {selectedModel && (
+          <ModelProfilePageClient
+            key={selectedModel.id}
+            initialModel={selectedModel}
+            workHistory={workHistory}
+          />
+        )}
+      </ModelsPageContent>
+    </div>
   );
 }

@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { Project } from '@/lib/types'
 
@@ -116,13 +115,13 @@ export function ProjectCalendarView({ projects }: ProjectCalendarViewProps) {
     return (
         <div className="space-y-4">
             {/* Navigation */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-2">
                     <Button variant="outline" size="icon" onClick={goToPrevWeek}>
                         <ChevronLeft className="h-4 w-4" />
                     </Button>
-                    <div className="min-w-[200px] text-center">
-                        <span className="text-base font-medium">Semana del {weekLabel}</span>
+                    <div className="min-w-0 flex-1 text-center">
+                        <span className="text-body font-medium">Semana del {weekLabel}</span>
                     </div>
                     <Button variant="outline" size="icon" onClick={goToNextWeek}>
                         <ChevronRight className="h-4 w-4" />
@@ -136,8 +135,67 @@ export function ProjectCalendarView({ projects }: ProjectCalendarViewProps) {
                 )}
             </div>
 
-            {/* Calendar Grid */}
-            <div className="grid grid-cols-7 gap-2">
+            {/* Mobile: Day-by-day list */}
+            <div className="space-y-2 sm:hidden">
+                {weekDays.map((day, i) => {
+                    const dateKey = formatDateKey(day)
+                    const dayProjects = projectsByDay.get(dateKey) || []
+                    const isToday = dateKey === todayKey
+
+                    return (
+                        <Card
+                            key={`mobile-day-${i}`}
+                            className={cn("p-3", isToday && "ring-1 ring-primary/50")}
+                        >
+                            <div className="flex items-center justify-between border-b pb-2 mb-2">
+                                <div className={cn(
+                                    "text-label font-medium",
+                                    isToday ? "text-primary" : "text-muted-foreground"
+                                )}>
+                                    {DAYS[i]}
+                                </div>
+                                <div className={cn(
+                                    "text-body font-semibold",
+                                    isToday ? "text-primary" : "text-foreground"
+                                )}>
+                                    {day.getDate()} {MONTHS[day.getMonth()]}
+                                </div>
+                            </div>
+
+                            {dayProjects.length === 0 ? (
+                                <div className="py-2 text-center text-body text-muted-foreground">—</div>
+                            ) : (
+                                <div className="space-y-2">
+                                    {dayProjects.map(({ project, startTime }) => (
+                                        <button
+                                            key={project.id}
+                                            onClick={() => router.push(`/dashboard/projects/${project.id}`)}
+                                            className="w-full text-left p-2 rounded-md bg-primary/10 hover:bg-primary/20 transition-colors border border-primary/20"
+                                        >
+                                            {startTime && (
+                                                <div className="text-label text-primary font-medium">
+                                                    {startTime}
+                                                </div>
+                                            )}
+                                            <div className="text-body font-medium text-foreground wrap-break-word">
+                                                {project.project_name}
+                                            </div>
+                                            {project.client_name && (
+                                                <div className="text-label text-muted-foreground wrap-break-word">
+                                                    {project.client_name}
+                                                </div>
+                                            )}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </Card>
+                    )
+                })}
+            </div>
+
+            {/* Desktop+: Calendar Grid */}
+            <div className="hidden sm:grid grid-cols-7 gap-2">
                 {/* Day Headers */}
                 {weekDays.map((day, i) => {
                     const dateKey = formatDateKey(day)
@@ -154,13 +212,13 @@ export function ProjectCalendarView({ projects }: ProjectCalendarViewProps) {
                             )}
                         >
                             <div className={cn(
-                                "text-xs font-medium",
+                                "text-label font-medium",
                                 isToday ? "text-primary" : "text-muted-foreground"
                             )}>
                                 {DAYS[i]}
                             </div>
                             <div className={cn(
-                                "text-2xl font-bold",
+                                "text-display font-bold",
                                 isToday ? "text-primary" : "text-foreground"
                             )}>
                                 {day.getDate()}
@@ -179,12 +237,12 @@ export function ProjectCalendarView({ projects }: ProjectCalendarViewProps) {
                         <Card
                             key={`cell-${i}`}
                             className={cn(
-                                "min-h-[140px] p-2 space-y-2",
+                                "min-h-35 p-2 space-y-2",
                                 isToday && "ring-1 ring-primary/50"
                             )}
                         >
                             {dayProjects.length === 0 ? (
-                                <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
+                                <div className="h-full flex items-center justify-center text-muted-foreground text-body">
                                     —
                                 </div>
                             ) : (
@@ -195,15 +253,15 @@ export function ProjectCalendarView({ projects }: ProjectCalendarViewProps) {
                                         className="w-full text-left p-2 rounded-md bg-primary/10 hover:bg-primary/20 transition-colors border border-primary/20"
                                     >
                                         {startTime && (
-                                            <div className="text-xs text-primary font-medium">
+                                            <div className="text-label text-primary font-medium">
                                                 {startTime}
                                             </div>
                                         )}
-                                        <div className="text-sm font-medium text-foreground truncate">
+                                        <div className="text-body font-medium text-foreground truncate">
                                             {project.project_name}
                                         </div>
                                         {project.client_name && (
-                                            <div className="text-xs text-muted-foreground truncate">
+                                            <div className="text-label text-muted-foreground truncate">
                                                 {project.client_name}
                                             </div>
                                         )}

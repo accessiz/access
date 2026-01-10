@@ -99,7 +99,7 @@ export function ListItem({
             {(avatarSrc !== undefined || avatarFallback) && (
                 <Avatar className="h-10 w-10 flex-shrink-0">
                     <AvatarImage src={avatarSrc || undefined} alt={title} />
-                    <AvatarFallback className="text-copy-12 bg-muted">
+                    <AvatarFallback className="text-label bg-muted">
                         {initials}
                     </AvatarFallback>
                 </Avatar>
@@ -108,7 +108,7 @@ export function ListItem({
             {/* Content */}
             <div className="flex-1 min-w-0 space-y-0.5">
                 <div className="flex items-center gap-2">
-                    <span className="font-medium text-copy-14 truncate">
+                    <span className="font-medium text-body truncate">
                         {title}
                     </span>
                     {badge && (
@@ -118,7 +118,7 @@ export function ListItem({
                     )}
                 </div>
                 {description && (
-                    <p className="text-copy-12 text-muted-foreground truncate">
+                    <p className="text-label text-muted-foreground truncate">
                         {description}
                     </p>
                 )}
@@ -126,7 +126,7 @@ export function ListItem({
 
             {/* Meta */}
             {meta && (
-                <div className="flex-shrink-0 text-copy-12 text-muted-foreground">
+                <div className="flex-shrink-0 text-label text-muted-foreground">
                     {meta}
                 </div>
             )}

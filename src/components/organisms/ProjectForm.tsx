@@ -21,7 +21,6 @@ import {
   Building2,
   Tag,
   Layers,
-  Check,
   FileText,
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -39,14 +38,25 @@ import { format } from 'date-fns';
 import { DatePicker } from '@/components/ui/date-picker';
 import { TimePicker } from '@/components/ui/time-picker';
 import { createClient } from '@/lib/supabase/client';
-import { cn } from '@/lib/utils';
+import { cn, toTitleCase } from '@/lib/utils';
+
+type ProjectWithBilling = Project & {
+  revenue?: number | null;
+  tax_percentage?: number | null;
+  client_payment_status?: string | null;
+  invoice_number?: string | null;
+  invoice_date?: string | null;
+};
 
 interface ProjectFormProps {
-  initialData?: Project;
+  initialData?: ProjectWithBilling;
   onCancel?: () => void;
 }
 
 type ClientWithBrands = Client & { brands: Brand[] };
+
+const EMPTY_PROJECT_TYPES: ProjectType[] = [];
+
 function generateProjectName(
   types: ProjectType[],
   clientName: string | null | undefined,
@@ -61,16 +71,16 @@ function generateProjectName(
     parts.push(firstType);
   }
 
-  // 2. Marca o Cliente
+  // 2. Marca o Cliente (aplicar Title Case para normalizar)
   if (brandName) {
-    parts.push(brandName);
+    parts.push(toTitleCase(brandName));
   } else if (clientName) {
-    parts.push(clientName);
+    parts.push(toTitleCase(clientName));
   }
 
-  // 3. Nombre personalizado (opcional)
+  // 3. Nombre personalizado (opcional, también con Title Case)
   if (customName && customName.trim()) {
-    parts.push(customName.trim());
+    parts.push(toTitleCase(customName.trim()));
   }
 
   return parts.join(' - ') || 'Nuevo Proyecto';
@@ -176,6 +186,13 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
     loadClients();
   }, [supabase, initialData]);
 
+  const normalizedClientPaymentStatus: ProjectFormData['client_payment_status'] =
+    initialData?.client_payment_status === 'pending' ||
+      initialData?.client_payment_status === 'invoiced' ||
+      initialData?.client_payment_status === 'paid'
+      ? initialData.client_payment_status
+      : 'pending';
+
   const form = useForm<ProjectFormData>({
     resolver: zodResolver(projectFormSchema),
     defaultValues: {
@@ -196,11 +213,11 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
       default_fee_type: (initialData?.default_fee_type as 'per_day' | 'per_hour' | 'fixed') ?? 'per_day',
       currency: (initialData?.currency as 'GTQ' | 'USD' | 'EUR' | 'MXN' | 'COP' | 'PEN' | 'ARS' | 'CLP' | 'BRL') ?? 'GTQ',
       // Campos de facturación al cliente
-      revenue: (initialData as any)?.revenue ?? null,
-      tax_percentage: (initialData as any)?.tax_percentage ?? 12,
-      client_payment_status: ((initialData as any)?.client_payment_status as 'pending' | 'invoiced' | 'paid') ?? 'pending',
-      invoice_number: (initialData as any)?.invoice_number ?? '',
-      invoice_date: (initialData as any)?.invoice_date ?? '',
+      revenue: initialData?.revenue ?? null,
+      tax_percentage: initialData?.tax_percentage ?? 12,
+      client_payment_status: normalizedClientPaymentStatus,
+      invoice_number: initialData?.invoice_number ?? '',
+      invoice_date: initialData?.invoice_date ?? '',
     },
   });
 
@@ -212,7 +229,7 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
   // Observar campos para generar nombre automático
   const selectedClientId = form.watch('client_id');
   const selectedBrandId = form.watch('brand_id');
-  const selectedProjectTypes = form.watch('project_types') || [];
+  const selectedProjectTypes = form.watch('project_types') ?? EMPTY_PROJECT_TYPES;
   const watchedClientName = form.watch('client_name'); // <-- Watch client_name directly
 
   const selectedClient = useMemo(() =>
@@ -286,13 +303,8 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
     if (current.includes(type)) {
       form.setValue('project_types', current.filter(t => t !== type));
     } else if (current.length < 2) {
-      // Ordenar por jerarquía al agregar
-      const newTypes = [...current, type].sort((a, b) => {
-        const orderA = PROJECT_TYPES.findIndex(pt => pt.value === a);
-        const orderB = PROJECT_TYPES.findIndex(pt => pt.value === b);
-        return orderA - orderB;
-      });
-      form.setValue('project_types', newTypes);
+      // Mantener orden de selección del usuario (el primero seleccionado define el nombre)
+      form.setValue('project_types', [...current, type]);
     } else {
       toast.info('Máximo 2 tipos por proyecto', {
         description: 'Deselecciona uno para agregar otro.',
@@ -322,7 +334,7 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
       });
       pendingFormDataRef.current = null;
       pendingNewScheduleRef.current = [];
-    } catch (_err) {
+    } catch {
       toast.error('Error inesperado');
       setIsProcessingMigration(false);
     }
@@ -447,11 +459,11 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
         <header className="sticky top-0 z-20 flex flex-col items-start gap-4 pb-4 pt-2 border-b bg-background sm:flex-row sm:items-center sm:justify-between -mx-6 px-6">
           <div className="space-y-0.5">
             {/* El nombre del proyecto es el protagonista */}
-            <h1 className="text-heading-32 leading-tight transition-all duration-200">
+            <h1 className="text-display leading-tight transition-all duration-200">
               {generatedProjectName}
             </h1>
             {/* Subtexto de contexto */}
-            <p className="text-copy-14 text-muted-foreground flex items-center gap-1.5">
+            <p className="text-body text-muted-foreground flex items-center gap-1.5">
               {isEditing ? (
                 <><FileText className="h-3.5 w-3.5" /> Editando proyecto</>
               ) : (
@@ -476,8 +488,8 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
         <div className="space-y-4">
           <div className="flex items-center gap-2">
             <Layers className="h-5 w-5 text-primary" />
-            <h2 className="text-heading-20">Tipo de Proyecto</h2>
-            <span className="text-copy-12 text-muted-foreground">(máx. 2)</span>
+            <h2 className="text-title">Tipo de Proyecto</h2>
+            <span className="text-label text-muted-foreground">(máx. 2)</span>
           </div>
           <div className="border bg-card rounded-lg p-6">
             <div className="flex flex-wrap gap-2">
@@ -500,7 +512,7 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
                     {type.label}
                     {isSelected && (
                       <span className={cn(
-                        "ml-2 flex items-center justify-center size-5 rounded-full text-[10px] font-bold",
+                        "ml-2 flex items-center justify-center size-5 rounded-full text-label font-bold",
                         isPrimary
                           ? "bg-white text-primary"
                           : "bg-primary-foreground/20 text-primary-foreground"
@@ -513,7 +525,7 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
               })}
             </div>
             {form.formState.errors.project_types && (
-              <p className="text-label-12 text-destructive mt-3">{form.formState.errors.project_types.message}</p>
+              <p className="text-label text-destructive mt-3">{form.formState.errors.project_types.message}</p>
             )}
             {/* Hidden inputs para tipos */}
             {selectedProjectTypes.map((type, index) => (
@@ -526,8 +538,8 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
         <div className="space-y-4">
           <div className="flex items-center gap-2">
             <Building2 className="h-5 w-5 text-primary" />
-            <h2 className="text-heading-20">Cliente</h2>
-            <span className="text-copy-12 text-muted-foreground">(recomendado)</span>
+            <h2 className="text-title">Cliente</h2>
+            <span className="text-label text-muted-foreground">(recomendado)</span>
           </div>
           <div className="border bg-card rounded-lg p-6 space-y-4">
             <div className="grid md:grid-cols-2 gap-6">
@@ -555,7 +567,7 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
                     type="button"
                     variant="ghost"
                     size="sm"
-                    className="h-6 px-2 text-copy-12 text-muted-foreground"
+                    className="h-6 px-2 text-label text-muted-foreground"
                     onClick={() => {
                       form.setValue('client_id', null);
                       form.setValue('brand_id', null);
@@ -607,7 +619,7 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
                     </>
                   )}
                 />
-                <p className="text-copy-12 text-muted-foreground">
+                <p className="text-label text-muted-foreground">
                   {selectedClient?.name} tiene {availableBrands.length} marca{availableBrands.length !== 1 ? 's' : ''}.
                 </p>
               </div>
@@ -619,8 +631,8 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
         <div className="space-y-4">
           <div className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-primary" />
-            <h2 className="text-heading-20">Palabra adicional</h2>
-            <span className="text-copy-12 text-muted-foreground">(opcional)</span>
+            <h2 className="text-title">Palabra adicional</h2>
+            <span className="text-label text-muted-foreground">(opcional)</span>
           </div>
           <div className="border bg-card rounded-lg p-6">
             <Input
@@ -633,7 +645,7 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
 
         {/* ========== PASO 4: FECHAS Y HORARIOS ========== */}
         <div className="space-y-4">
-          <h2 className="text-heading-20">Fechas y Horarios</h2>
+          <h2 className="text-title">Fechas y Horarios</h2>
           <div className="border bg-card rounded-lg p-6 space-y-4">
             {fields.map((item, index) => (
               <div key={item.id} className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto_auto] items-end gap-4 p-4 rounded-md border bg-muted/30">
@@ -695,7 +707,7 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
                 </Button>
               </div>
             ))}
-            {form.formState.errors.schedule?.root && <p className="text-label-12 text-destructive">{form.formState.errors.schedule.root.message}</p>}
+            {form.formState.errors.schedule?.root && <p className="text-label text-destructive">{form.formState.errors.schedule.root.message}</p>}
             <Button type="button" variant="outline" onClick={() => append({ date: format(new Date(), 'yyyy-MM-dd'), startTime: '09:00 AM', endTime: '05:00 PM' })}>
               <Plus className="mr-2 h-4 w-4" /> Añadir fecha
             </Button>
@@ -706,7 +718,7 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
         <div className="space-y-4">
           <div className="flex items-center gap-2">
             <DollarSign className="h-5 w-5 text-primary" />
-            <h2 className="text-heading-20">Presupuesto y Tarifas</h2>
+            <h2 className="text-title">Presupuesto y Tarifas</h2>
           </div>
           <div className="border bg-card rounded-lg p-6 grid md:grid-cols-3 gap-6">
             <div className="space-y-2">
@@ -725,7 +737,7 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
                       </button>
                     </TooltipTrigger>
                     <TooltipContent side="right" className="max-w-xs p-3">
-                      <ul className="space-y-1 text-xs">
+                      <ul className="space-y-1 text-label">
                         <li><strong>Por día:</strong> Tarifa diaria.</li>
                         <li><strong>Por hora:</strong> Tarifa por hora trabajada.</li>
                         <li><strong>Tarifa fija:</strong> Monto único por proyecto.</li>
@@ -785,16 +797,16 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
         {/* ========== PASO 6: FACTURACIÓN AL CLIENTE ========== */}
         <div className="space-y-4">
           <div className="flex items-center gap-2">
-            <DollarSign className="h-5 w-5 text-green-600" />
-            <h2 className="text-heading-20">Facturación al Cliente</h2>
-            <span className="text-copy-12 text-muted-foreground">(opcional)</span>
+            <DollarSign className="h-5 w-5 text-success" />
+            <h2 className="text-title">Facturación al Cliente</h2>
+            <span className="text-label text-muted-foreground">(opcional)</span>
           </div>
           <div className="border bg-card rounded-lg p-6">
             <div className="grid md:grid-cols-3 gap-6">
               <div className="space-y-2">
                 <Label>Subtotal a cobrar</Label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-body">
                     {form.watch('currency') || 'GTQ'}
                   </span>
                   <Input
@@ -844,14 +856,14 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
 
               <div className="space-y-2">
                 <Label>Total con impuesto</Label>
-                <div className="h-10 px-3 py-2 bg-muted rounded-md flex items-center font-medium text-lg">
+                <div className="h-10 px-3 py-2 bg-muted rounded-md flex items-center font-medium text-title">
                   {form.watch('currency') || 'GTQ'}{' '}
                   {((
                     (Number(form.watch('revenue')) || 0) *
                     (1 + (Number(form.watch('tax_percentage')) || 12) / 100)
                   ).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}
                 </div>
-                <p className="text-copy-12 text-muted-foreground">Calculado automáticamente</p>
+                <p className="text-label text-muted-foreground">Calculado automáticamente</p>
               </div>
             </div>
           </div>
@@ -859,7 +871,7 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
 
         {/* ========== PASO 7: SEGURIDAD ========== */}
         <div className="space-y-4">
-          <h2 className="text-heading-20">Seguridad</h2>
+          <h2 className="text-title">Seguridad</h2>
           <div className="border bg-card rounded-lg p-6">
             <div className="space-y-2 max-w-sm">
               <Label>Contraseña de acceso</Label>

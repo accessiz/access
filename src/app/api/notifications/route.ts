@@ -1,0 +1,42 @@
+import { NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
+import { logError } from '@/lib/utils/errors';
+
+export async function GET() {
+    try {
+        const supabase = await createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (!user) {
+            return NextResponse.json({ success: false, error: 'Not authenticated' }, { status: 401 });
+        }
+
+        // Solo obtener notificaciones urgentes (acciones del cliente)
+        const { data, error } = await supabase
+            .from('activity_logs')
+            .select('id, category, title, message, created_at, metadata, is_urgent')
+            .eq('user_id', user.id)
+            .eq('is_urgent', true)
+            .order('created_at', { ascending: false })
+            .limit(20);
+
+        if (error) {
+            logError(error, { route: '/api/notifications' });
+            return NextResponse.json({ success: false, error: 'Could not fetch notifications' }, { status: 500 });
+        }
+
+        return NextResponse.json({
+            success: true,
+            data: data?.map(log => ({
+                id: log.id,
+                type: log.category,
+                title: log.title,
+                when: log.created_at,
+                meta: log.message || undefined,
+            })) || []
+        });
+    } catch (err) {
+        logError(err, { route: '/api/notifications' });
+        return NextResponse.json({ success: false, error: 'Could not fetch notifications' }, { status: 500 });
+    }
+}

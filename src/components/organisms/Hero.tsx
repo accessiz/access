@@ -1,6 +1,5 @@
 "use client";
 import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
-import Image from 'next/image';
 import { gsap } from 'gsap';
 import Header from '@/components/organisms/Header';
 import InfoFooter from '@/components/molecules/InfoFooter';
@@ -62,20 +61,18 @@ const Hero: React.FC<HeroProps> = ({ onAnimationComplete }) => {
       style={{ visibility: isReady ? 'visible' : 'hidden' }}
     >
         <div className="absolute inset-0 z-[1]">
-            <Image
-              src="/images/hero-photo-cover.jpg"
-              alt="Modelo albina con fondo oscuro"
-              fill
-              priority
-              className="w-full h-full object-cover object-center will-change-transform opacity-50 imageMask"
-            />
+			<img
+				src="/images/hero-photo-cover.jpg"
+				alt="Modelo albina con fondo oscuro"
+				className="w-full h-full object-cover object-center will-change-transform opacity-50 imageMask"
+			/>
         </div>
         
         <div className="absolute inset-0 z-10 grid grid-rows-[auto_1fr_auto] p-8 lg:p-12 uppercase">
             <div className="header-anim"><Header /></div>
             
             <div className="grid place-items-center">
-                <h1 className="text-[clamp(3rem,12vw,3.5625rem)] font-normal tracking-tighter whitespace-nowrap leading-none text-on-background z-[12] mix-blend-difference centerText">
+              <h1 className="text-display font-normal tracking-tighter whitespace-nowrap leading-none text-on-background z-[12] mix-blend-difference centerText">
                     IZ ACCESS
                 </h1>
             </div>

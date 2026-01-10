@@ -100,8 +100,8 @@ export function ResponsiveTable<T extends Record<string, unknown>>({
     // Default empty state
     const defaultEmptyState = (
         <div className="flex flex-col items-center justify-center py-12 text-center">
-            <p className="text-heading-20 font-medium text-foreground mb-2">No hay datos</p>
-            <p className="text-copy-14 text-muted-foreground">
+            <p className="text-title font-medium text-foreground mb-2">No hay datos</p>
+            <p className="text-body text-muted-foreground">
                 No se encontraron registros para mostrar.
             </p>
         </div>
@@ -239,19 +239,19 @@ export function ResponsiveTable<T extends Record<string, unknown>>({
                             {/* High priority items at top */}
                             <div className="space-y-1 mb-3">
                                 {highPriorityColumns.slice(0, 2).map((col, i) => (
-                                    <div key={i} className={i === 0 ? 'font-medium text-copy-14' : 'text-copy-12 text-muted-foreground'}>
+                                    <div key={i} className={i === 0 ? 'font-medium text-body' : 'text-label text-muted-foreground'}>
                                         {renderCell(col, row)}
                                     </div>
                                 ))}
                             </div>
 
                             {/* Other columns as key-value pairs */}
-                            <div className="grid grid-cols-2 gap-2 text-copy-12">
+                            <div className="grid grid-cols-2 gap-2 text-label">
                                 {mobileColumns
                                     .filter(col => col.priority !== 'low' && !highPriorityColumns.slice(0, 2).includes(col))
                                     .map((col, i) => (
                                         <div key={i} className="flex flex-col">
-                                            <span className="text-muted-foreground text-label-11">{col.label}</span>
+                                            <span className="text-muted-foreground text-label">{col.label}</span>
                                             <span>{renderCell(col, row)}</span>
                                         </div>
                                     ))}

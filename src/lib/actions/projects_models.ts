@@ -10,6 +10,8 @@ import { revalidatePath } from "next/cache"
 import { z } from 'zod';
 import { logError } from '@/lib/utils/errors';
 import { PostgrestError } from '@supabase/supabase-js';
+import { logActivity } from '@/lib/activity-logger';
+import { ActivityTitles } from '@/lib/activity-titles';
 
 // --- Tus helpers de errores (Estos están perfectos) ---
 const isPostgrestError = (error: unknown): error is PostgrestError => {
@@ -61,11 +63,17 @@ export async function addModelToProject(projectId: string, modelId: string) {
   }
 
   try {
-    // 4. Obtener valores por defecto del proyecto
+    // 4. Obtener valores por defecto del proyecto y nombres para el log
     const { data: project } = await supabase
       .from('projects')
-      .select('default_model_fee, default_fee_type, currency')
+      .select('default_model_fee, default_fee_type, currency, project_name')
       .eq('id', projectId)
+      .single();
+
+    const { data: model } = await supabase
+      .from('models')
+      .select('alias')
+      .eq('id', modelId)
       .single();
 
     const insertData = {
@@ -86,6 +94,17 @@ export async function addModelToProject(projectId: string, modelId: string) {
     }
 
     revalidatePath(`/dashboard/projects/${projectId}`);
+
+    // Log activity
+    await logActivity({
+      category: 'model',
+      title: ActivityTitles.modelAddedToProject(
+        model?.alias || 'Talento',
+        project?.project_name || 'Proyecto'
+      ),
+      metadata: { entity_id: modelId, entity_type: 'model', action: 'added_to_project', project_id: projectId },
+    });
+
     return { success: true };
 
   } catch (err) {
@@ -108,6 +127,19 @@ export async function removeModelFromProject(projectId: string, modelId: string)
   }
 
   try {
+    // Get names for the log
+    const { data: project } = await supabase
+      .from('projects')
+      .select('project_name')
+      .eq('id', projectId)
+      .single();
+
+    const { data: model } = await supabase
+      .from('models')
+      .select('alias')
+      .eq('id', modelId)
+      .single();
+
     const { error } = await supabase.from('projects_models').delete().eq('project_id', projectId).eq('model_id', modelId);
 
     if (error) {
@@ -117,6 +149,17 @@ export async function removeModelFromProject(projectId: string, modelId: string)
     }
 
     revalidatePath(`/dashboard/projects/${projectId}`);
+
+    // Log activity
+    await logActivity({
+      category: 'model',
+      title: ActivityTitles.modelRemovedFromProject(
+        model?.alias || 'Talento',
+        project?.project_name || 'Proyecto'
+      ),
+      metadata: { entity_id: modelId, entity_type: 'model', action: 'removed_from_project', project_id: projectId },
+    });
+
     return { success: true };
 
   } catch (err) {

@@ -213,7 +213,7 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
           {/* HEADER Y BOTÓN SUPERIOR */}
           <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
             <div className="space-y-4 max-w-2xl">
-              <p className="text-sm text-muted-foreground sm:text-base">
+              <p className="text-body text-muted-foreground sm:text-body">
                 Selecciona y aprueba el talento que te interesa.
               </p>
             </div>
@@ -233,16 +233,16 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
 
           {/* BARRA DE PROGRESO */}
           <div className="bg-muted/50 rounded-lg p-4 space-y-3">
-            <div className="flex items-center justify-between text-sm">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between text-body">
               <span className="font-medium">
                 Progreso: {progressStats.reviewed}/{progressStats.total} calificados
               </span>
-              <div className="flex items-center gap-4">
-                <span className="flex items-center gap-1.5 text-green-600">
+              <div className="grid grid-cols-1 gap-2 sm:flex sm:items-center sm:gap-4">
+                <span className="flex items-center gap-1.5 text-success">
                   <CheckCircle2 className="size-4" />
                   {progressStats.approved} aprobados
                 </span>
-                <span className="flex items-center gap-1.5 text-red-600">
+                <span className="flex items-center gap-1.5 text-destructive">
                   <XCircle className="size-4" />
                   {progressStats.rejected} rechazados
                 </span>
@@ -272,7 +272,7 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
             {/* SECCIÓN HOMBRES */}
             {menModels.length > 0 && (
               <section>
-                <h2 className="text-heading-32 mb-8 border-b pb-4 uppercase tracking-tight">Hombres</h2>
+                <h2 className="text-display mb-8 border-b pb-4 uppercase tracking-tight">Hombres</h2>
                 {viewMode === 'grid' ? (
                   <ClientGrid
                     models={menModels}
@@ -289,7 +289,7 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
             {/* SECCIÓN MUJERES */}
             {womenModels.length > 0 && (
               <section>
-                <h2 className="text-heading-32 mb-8 border-b pb-4 uppercase tracking-tight">Mujeres</h2>
+                <h2 className="text-display mb-8 border-b pb-4 uppercase tracking-tight">Mujeres</h2>
                 {viewMode === 'grid' ? (
                   <ClientGrid
                     models={womenModels}
@@ -306,7 +306,7 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
             {/* SECCIÓN OTROS */}
             {otherModels.length > 0 && (
               <section>
-                <h2 className="text-heading-32 mb-8 border-b pb-4 uppercase tracking-tight">Otros</h2>
+                <h2 className="text-display mb-8 border-b pb-4 uppercase tracking-tight">Otros</h2>
                 {viewMode === 'grid' ? (
                   <ClientGrid
                     models={otherModels}
@@ -323,7 +323,7 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
             {/* MENSAJE DE VACÍO GLOBAL */}
             {filteredModels.length === 0 && (
               <div className="flex h-64 items-center justify-center rounded-lg border border-dashed">
-                <p className="text-copy-14 text-muted-foreground">No se encontraron talentos con estos filtros.</p>
+                <p className="text-body text-muted-foreground">No se encontraron talentos con estos filtros.</p>
               </div>
             )}
 

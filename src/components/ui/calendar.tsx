@@ -54,21 +54,21 @@ function Calendar({
                 dropdowns: "flex items-center justify-center gap-2 col-start-2",
 
                 months_dropdown:
-                    "bg-transparent p-1 outline-none text-sm font-medium",
+                    "bg-transparent p-1 outline-none text-body font-medium",
                 years_dropdown:
-                    "bg-transparent p-1 outline-none text-sm font-medium",
+                    "bg-transparent p-1 outline-none text-body font-medium",
 
                 /* ================= TABLE ================= */
                 month_grid: "w-full border-collapse",
                 weekdays: "flex",
                 weekday:
-                    "w-9 text-center text-[0.75rem] font-normal text-muted-foreground",
+                    "w-9 text-center text-label font-normal text-muted-foreground",
                 weeks: "space-y-1",
                 week: "flex w-full",
 
                 /* ================= DAYS ================= */
                 day: cn(
-                    "relative h-9 w-9 p-0 text-center text-sm focus-within:z-20",
+                    "relative h-9 w-9 p-0 text-center text-body focus-within:z-20",
                     "[&:has([aria-selected].day-range-start)]:rounded-l-md",
                     "[&:has([aria-selected].day-range-end)]:rounded-r-md",
                     "[&:has([aria-selected])]:bg-accent",

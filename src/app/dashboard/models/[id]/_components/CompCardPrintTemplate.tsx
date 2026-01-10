@@ -43,11 +43,11 @@ export function CompCardPrintTemplate({ model, containerId }: Props) {
                 width: PAGE_WIDTH,
                 height: PAGE_HEIGHT,
                 gap: 0,
-                backgroundColor: '#ffffff',
+                backgroundColor: 'rgb(var(--background) / 1)',
                 display: 'flex',
                 flexDirection: 'row',
                 boxSizing: 'border-box',
-                color: '#000000',
+                color: 'rgb(var(--foreground) / 1)',
                 fontFamily: 'Inter, sans-serif', // Usar Inter como fuente principal
                 visibility: 'visible',
             }}
@@ -56,11 +56,11 @@ export function CompCardPrintTemplate({ model, containerId }: Props) {
             {/* --- COLUMNA 1 (IZQUIERDA - PORTADA) --- */}
             <div
                 id={`${containerId}-front`}
-                style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: GAP_SIZE, height: '100%', backgroundColor: '#ffffff', visibility: 'visible', padding: PADDING_SIZE, boxSizing: 'border-box' }}
+                style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: GAP_SIZE, height: '100%', backgroundColor: 'rgb(var(--background) / 1)', visibility: 'visible', padding: PADDING_SIZE, boxSizing: 'border-box' }}
             >
 
                 {/* Foto Principal */}
-                <div style={{ flex: 1, width: '100%', position: 'relative', backgroundColor: '#e5e7eb', overflow: 'hidden' }}>
+                <div style={{ flex: 1, width: '100%', position: 'relative', backgroundColor: 'rgb(var(--muted) / 1)', overflow: 'hidden' }}>
                     {coverUrl && (
                         <SmartCroppedImage
                             src={coverUrl}
@@ -97,7 +97,7 @@ export function CompCardPrintTemplate({ model, containerId }: Props) {
             {/* --- COLUMNA 2 (DERECHA - CONTRAPORTADA) --- */}
             <div
                 id={`${containerId}-back`}
-                style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: GAP_SIZE, height: '100%', backgroundColor: '#ffffff', visibility: 'visible', padding: PADDING_SIZE, boxSizing: 'border-box' }}
+                style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: GAP_SIZE, height: '100%', backgroundColor: 'rgb(var(--background) / 1)', visibility: 'visible', padding: PADDING_SIZE, boxSizing: 'border-box' }}
             >
 
                 {/* Grid Area */}
@@ -111,7 +111,7 @@ export function CompCardPrintTemplate({ model, containerId }: Props) {
                     {/* ----------------------------------------------------------- */}
 
                     {/* NUEVO ITEM 1: FOTO 1 (Antes estaba en la posición 2) */}
-                    <div style={{ backgroundColor: '#e5e7eb', width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
+                    <div style={{ backgroundColor: 'rgb(var(--muted) / 1)', width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
                         {backPhotos[0] && <SmartCroppedImage src={backPhotos[0]} alt="P1" className="w-full h-full object-cover" />}
                     </div>
 
@@ -144,12 +144,12 @@ export function CompCardPrintTemplate({ model, containerId }: Props) {
                     </div>
 
                     {/* ITEM 3: FOTO 2 (Abajo Izquierda) */}
-                    <div style={{ backgroundColor: '#e5e7eb', width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
+                    <div style={{ backgroundColor: 'rgb(var(--muted) / 1)', width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
                         {backPhotos[2] && <SmartCroppedImage src={backPhotos[2]} alt="P2" className="w-full h-full object-cover" />}
                     </div>
 
                     {/* ITEM 4: FOTO 3 (Abajo Derecha) */}
-                    <div style={{ backgroundColor: '#e5e7eb', width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
+                    <div style={{ backgroundColor: 'rgb(var(--muted) / 1)', width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
                         {backPhotos[3] && <SmartCroppedImage src={backPhotos[3]} alt="P3" className="w-full h-full object-cover" />}
                     </div>
 

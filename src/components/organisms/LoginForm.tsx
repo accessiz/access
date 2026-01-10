@@ -66,7 +66,7 @@ export function LoginForm() {
               required
             />
           </div>
-          {error && <p className="text-label-12 text-destructive">{error}</p>}
+          {error && <p className="text-label text-destructive">{error}</p>}
           <Button type="submit" disabled={loading} className="w-full">
             {loading ? 'Ingresando...' : 'Iniciar Sesión'}
           </Button>

@@ -12,10 +12,10 @@ const Logo = (props) => (
       <style dangerouslySetInnerHTML={{
         __html: `
           .st0 {
-            fill: #fff;
+            fill: rgb(var(--foreground) / 1);
           }
           .st1 {
-            fill: #9a6eea;
+            fill: rgb(var(--primary) / 1);
           }
         `
       }} />

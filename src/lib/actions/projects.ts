@@ -7,6 +7,8 @@ import { createServerClient } from '@supabase/ssr'
 import { logError } from '@/lib/utils/errors'
 import type { ProjectStatus } from '@/lib/types'
 import { projectFormSchema } from '@/lib/schemas/projects'
+import { logActivity } from '@/lib/activity-logger'
+import { ActivityTitles } from '@/lib/activity-titles'
 
 type ActionState = { success: boolean; error?: string; errors?: Record<string, string>; projectId?: string; };
 
@@ -371,6 +373,14 @@ export async function createProject(
     }
 
     revalidatePath('/dashboard/projects');
+
+    // Log activity
+    await logActivity({
+      category: 'project',
+      title: ActivityTitles.projectCreated(parsed.data.project_name || 'Nuevo Proyecto'),
+      metadata: { entity_id: newProject.id, entity_type: 'project', action: 'created' },
+    });
+
     return { success: true, projectId: newProject.id };
 
   } catch (err) {
@@ -708,6 +718,14 @@ export async function updateProject(
 
     revalidatePath('/dashboard/projects');
     revalidatePath(`/dashboard/projects/${projectId}`);
+
+    // Log activity
+    await logActivity({
+      category: 'project',
+      title: ActivityTitles.projectUpdated(parsed.data.project_name || 'Proyecto'),
+      metadata: { entity_id: projectId, entity_type: 'project', action: 'updated' },
+    });
+
     return { success: true, projectId };
 
   } catch (err) {
@@ -730,7 +748,7 @@ export async function deleteProject(id: string) {
 
     const { data: project, error: projectError } = await supabase
       .from('projects')
-      .select('user_id')
+      .select('user_id, project_name')
       .eq('id', id)
       .single();
 
@@ -798,6 +816,14 @@ export async function deleteProject(id: string) {
     }
 
     revalidatePath('/dashboard/projects')
+
+    // Log activity
+    await logActivity({
+      category: 'project',
+      title: ActivityTitles.projectDeleted(project.project_name || 'Proyecto'),
+      metadata: { entity_id: id, entity_type: 'project', action: 'deleted' },
+    });
+
     return { success: true }
   } catch (err: unknown) {
     console.error('[deleteProject] Error completo:', JSON.stringify(err, null, 2));

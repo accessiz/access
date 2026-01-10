@@ -110,7 +110,7 @@ export default function ModelsClientPage({ initialData }: { initialData: Initial
 
   const SortableHeader = ({ tkey, label }: { tkey: keyof Model; label: string; }) => (
     <TableHead onClick={() => handleSort(tkey)} className="cursor-pointer hover:text-foreground transition-colors">
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-x-2 gap-y-2">
         {label}
         {sortConfig.key === tkey && (
           sortConfig.direction === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
@@ -123,27 +123,27 @@ export default function ModelsClientPage({ initialData }: { initialData: Initial
     if (models.length === 0) {
       return (
         <div className="flex flex-col items-center justify-center text-center h-full py-20 rounded-lg border border-dashed">
-          <p className="text-heading-20">No se encontraron modelos</p>
-          <p className="text-muted-foreground">Intenta ajustar los filtros o la búsqueda.</p>
+          <p className="text-title">No se encontraron modelos</p>
+          <p className="text-body text-muted-foreground">Intenta ajustar los filtros o la búsqueda.</p>
         </div>
       );
     }
 
     if (view === 'grid') {
       return (
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-x-4 gap-y-4">
           {models.map((model) => (
             <Card key={model.id} onClick={() => handleRowClick(model.id)} className="cursor-pointer hover:border-primary transition-colors group overflow-hidden">
-              <div className="aspect-[3/4] relative bg-muted">
+              <div className="aspect-3/4 relative bg-muted">
                 <Avatar className="h-full w-full rounded-none">
                   {/* CORRECCIÓN: Usar la constante R2_PUBLIC_URL para el fallback */}
                   <AvatarImage src={model.coverUrl || `${R2_PUBLIC_URL}/${model.id}/Portada/cover.webp`} className="object-cover group-hover:scale-105 transition-transform duration-300" />
-                  <AvatarFallback className="rounded-none text-heading-24 bg-transparent">{model.alias?.substring(0, 2) || 'IZ'}</AvatarFallback>
+                  <AvatarFallback className="rounded-none text-display bg-transparent">{model.alias?.substring(0, 2) || 'IZ'}</AvatarFallback>
                 </Avatar>
               </div>
               <div className="p-3">
-                <p className="font-semibold truncate">{model.alias}</p>
-                <p className="text-copy-14 text-muted-foreground">{model.country}</p>
+                <p className="text-body font-semibold truncate">{model.alias}</p>
+                <p className="text-body text-muted-foreground">{model.country}</p>
               </div>
             </Card>
           ))}
@@ -156,7 +156,7 @@ export default function ModelsClientPage({ initialData }: { initialData: Initial
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[80px]"></TableHead>
+              <TableHead className="w-20"></TableHead>
               <SortableHeader tkey="alias" label="Alias" />
               <SortableHeader tkey="country" label="País" />
               <SortableHeader tkey="height_cm" label="Estatura" />
@@ -174,12 +174,12 @@ export default function ModelsClientPage({ initialData }: { initialData: Initial
                 <TableCell className="font-medium">{model.alias}</TableCell>
                 <TableCell>{model.country}</TableCell>
                 <TableCell>{model.height_cm ? `${model.height_cm} cm` : '-'}</TableCell>
-                <TableCell>{model.instagram ? <Link href={`https://instagram.com/${model.instagram}`} target="_blank" onClick={(e) => e.stopPropagation()} className="flex items-center gap-1.5 hover:underline text-muted-foreground hover:text-foreground">@{model.instagram} <ExternalLink className="h-3.5 w-3.5" /></Link> : '-'}</TableCell>
-                <TableCell>{model.tiktok ? <Link href={`https://tiktok.com/@${model.tiktok}`} target="_blank" onClick={(e) => e.stopPropagation()} className="flex items-center gap-1.5 hover:underline text-muted-foreground hover:text-foreground">@{model.tiktok} <ExternalLink className="h-3.5 w-3.5" /></Link> : '-'}</TableCell>
+                <TableCell>{model.instagram ? <Link href={`https://instagram.com/${model.instagram}`} target="_blank" onClick={(e) => e.stopPropagation()} className="flex items-center gap-x-1.5 gap-y-1.5 hover:underline text-muted-foreground hover:text-foreground">@{model.instagram} <ExternalLink className="h-3.5 w-3.5" /></Link> : '-'}</TableCell>
+                <TableCell>{model.tiktok ? <Link href={`https://tiktok.com/@${model.tiktok}`} target="_blank" onClick={(e) => e.stopPropagation()} className="flex items-center gap-x-1.5 gap-y-1.5 hover:underline text-muted-foreground hover:text-foreground">@{model.tiktok} <ExternalLink className="h-3.5 w-3.5" /></Link> : '-'}</TableCell>
                 <TableCell>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-x-2 gap-y-2">
                     <Progress value={model.profile_completeness || 0} className="w-20 h-1.5" />
-                    <span className="text-xs text-muted-foreground">{`${Math.round(model.profile_completeness || 0)}%`}</span>
+                    <span className="text-label text-muted-foreground">{`${Math.round(model.profile_completeness || 0)}%`}</span>
                   </div>
                 </TableCell>
                 <TableCell className="text-right">
@@ -199,12 +199,12 @@ export default function ModelsClientPage({ initialData }: { initialData: Initial
     <div className="space-y-6">
       <ModelsToolbar countries={countries} />
 
-      <div className="pb-6 min-h-[500px]">
+      <div className="pb-6 min-h-125">
         {renderContent()}
       </div>
 
       {totalPages > 1 && (
-        <footer className="flex flex-col items-center gap-4 pt-4 w-full sm:flex-row sm:justify-between">
+        <footer className="flex flex-col items-center gap-x-4 gap-y-4 pt-4 w-full sm:flex-row sm:justify-between">
           <div className="w-full sm:flex-1">
             <Pagination>
               <PaginationContent className="flex justify-center sm:justify-start w-full">
@@ -254,7 +254,7 @@ export default function ModelsClientPage({ initialData }: { initialData: Initial
             </Pagination>
           </div>
 
-          <div className="text-sm text-muted-foreground whitespace-nowrap sm:ml-4">
+          <div className="text-body text-muted-foreground whitespace-nowrap sm:ml-4">
             Página {currentPage} de {totalPages}
           </div>
         </footer>

@@ -64,29 +64,28 @@ export default function SettingsClientPage({
     const isDark = theme === 'dark';
 
     return (
-        <div className="p-6 md:p-8 max-w-2xl">
-            <div className="mb-8">
-                <h1 className="text-heading-28 font-semibold">Configuración</h1>
-                <p className="text-copy-14 text-muted-foreground">
-                    Personaliza tu experiencia en IZ ACCESS
-                </p>
-            </div>
+        <div className="flex flex-col gap-6 w-full max-w-2xl lg:max-w-none">
+            <header className="flex flex-col gap-x-4 gap-y-4 pb-4 border-b sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <h1 className="text-display font-semibold">Configuración</h1>
+                </div>
+            </header>
 
-            <div className="space-y-6">
+            <div className="grid gap-6">
                 {/* Tema */}
                 <Card>
                     <CardHeader>
-                        <CardTitle className="text-lg">Apariencia</CardTitle>
+                        <CardTitle>Apariencia</CardTitle>
                         <CardDescription>
                             Elige el tema de la interfaz
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
                         {mounted && (
-                            <div className="flex gap-3">
+                            <div className="flex gap-x-3 gap-y-3">
                                 <Button
                                     variant={isDark ? 'outline' : 'default'}
-                                    className="flex-1 gap-2"
+                                    className="flex-1 gap-x-2 gap-y-2"
                                     onClick={() => setTheme('light')}
                                 >
                                     <Sun className="h-4 w-4" />
@@ -95,7 +94,7 @@ export default function SettingsClientPage({
                                 </Button>
                                 <Button
                                     variant={isDark ? 'default' : 'outline'}
-                                    className="flex-1 gap-2"
+                                    className="flex-1 gap-x-2 gap-y-2"
                                     onClick={() => setTheme('dark')}
                                 >
                                     <Moon className="h-4 w-4" />
@@ -110,14 +109,14 @@ export default function SettingsClientPage({
                 {/* Contacto de la Agencia */}
                 <Card>
                     <CardHeader>
-                        <CardTitle className="text-lg">Contacto de la Agencia</CardTitle>
+                        <CardTitle>Contacto de la Agencia</CardTitle>
                         <CardDescription>
                             Información que aparecerá en el footer y comunicaciones
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="agency-email" className="flex items-center gap-2">
+                            <Label htmlFor="agency-email" className="flex items-center gap-x-2 gap-y-2">
                                 <Mail className="h-4 w-4" />
                                 Email
                             </Label>
@@ -131,7 +130,7 @@ export default function SettingsClientPage({
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="agency-phone" className="flex items-center gap-2">
+                            <Label htmlFor="agency-phone" className="flex items-center gap-x-2 gap-y-2">
                                 <Phone className="h-4 w-4" />
                                 Teléfono
                             </Label>
@@ -147,7 +146,7 @@ export default function SettingsClientPage({
                         <Button
                             onClick={handleSaveContact}
                             disabled={isSaving}
-                            className="w-full gap-2"
+                            className="w-full gap-x-2 gap-y-2"
                         >
                             <Save className="h-4 w-4" />
                             {isSaving ? 'Guardando...' : 'Guardar'}

@@ -21,11 +21,86 @@ type SearchParams = {
   query?: string;
   year?: string;
   month?: string;
+  status?: string;
   sortKey?: keyof Project;
   sortDir?: 'asc' | 'desc';
   currentPage?: number;
   limit?: number;
 };
+
+export async function getProjectYearsForUser(): Promise<number[]> {
+  noStore();
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    logError(new Error('No user logged in'), { action: 'getProjectYearsForUser', projectId: null });
+    return [];
+  }
+
+  const years = new Set<number>();
+  const pageSize = 1000;
+
+  // 1. Obtener años de las fechas de schedule (fecha del evento)
+  let from = 0;
+  while (true) {
+    const to = from + pageSize - 1;
+    const { data, error } = await supabase
+      .from('project_schedule')
+      .select('start_time, projects!inner(user_id)')
+      .eq('projects.user_id', user.id)
+      .order('start_time', { ascending: false })
+      .range(from, to);
+
+    if (error) {
+      logError(error, { action: 'getProjectYearsForUser.schedules', params: { from, to } });
+      break;
+    }
+
+    if (!data || data.length === 0) break;
+
+    for (const row of data as Array<{ start_time: string | null }>) {
+      if (!row.start_time) continue;
+      const date = new Date(row.start_time);
+      const year = date.getUTCFullYear();
+      if (Number.isFinite(year)) years.add(year);
+    }
+
+    if (data.length < pageSize) break;
+    from += pageSize;
+  }
+
+  // 2. También obtener años de created_at para proyectos antiguos sin schedule
+  from = 0;
+  while (true) {
+    const to = from + pageSize - 1;
+    const { data, error } = await supabase
+      .from('projects')
+      .select('created_at')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .range(from, to);
+
+    if (error) {
+      logError(error, { action: 'getProjectYearsForUser.created', params: { from, to } });
+      break;
+    }
+
+    if (!data || data.length === 0) break;
+
+    for (const row of data as Array<{ created_at: string | null }>) {
+      if (!row.created_at) continue;
+      const date = new Date(row.created_at);
+      const year = date.getUTCFullYear();
+      if (Number.isFinite(year)) years.add(year);
+    }
+
+    if (data.length < pageSize) break;
+    from += pageSize;
+  }
+
+  return Array.from(years).sort((a, b) => b - a);
+}
 
 // Función para obtener la lista de proyectos (con conteo de modelos asignados)
 export async function getProjectsForUser(searchParams: SearchParams = {}) {
@@ -61,17 +136,74 @@ export async function getProjectsForUser(searchParams: SearchParams = {}) {
     );
   }
 
-  if (searchParams.year && searchParams.month) {
+  // Filtrar por estado (status)
+  if (searchParams.status && searchParams.status !== 'all') {
+    queryBuilder = queryBuilder.eq('status', searchParams.status);
+  }
+
+  // Filtrar por fecha: combina proyectos con schedule en el período + proyectos creados en el período (fallback para antiguos)
+  const hasValidMonth = searchParams.month && searchParams.month !== 'all' && /^\d+$/.test(searchParams.month);
+  const hasValidYear = searchParams.year && searchParams.year !== 'all' && /^\d{4}$/.test(searchParams.year);
+
+  if (hasValidYear && hasValidMonth) {
     const year = parseInt(searchParams.year);
     const month = parseInt(searchParams.month);
     const startDate = new Date(year, month - 1, 1).toISOString();
     const endDate = new Date(year, month, 0, 23, 59, 59).toISOString();
-    queryBuilder = queryBuilder.gte('created_at', startDate).lte('created_at', endDate);
-  } else if (searchParams.year) {
+
+    // Obtener IDs de proyectos con schedules en el rango de fechas
+    const { data: scheduleData } = await supabase
+      .from('project_schedule')
+      .select('project_id')
+      .gte('start_time', startDate)
+      .lte('start_time', endDate);
+
+    // También obtener proyectos creados en ese rango (fallback para proyectos antiguos sin schedule)
+    const { data: createdData } = await supabase
+      .from('projects')
+      .select('id')
+      .eq('user_id', user.id)
+      .gte('created_at', startDate)
+      .lte('created_at', endDate);
+
+    const scheduleIds = scheduleData?.map(s => s.project_id) || [];
+    const createdIds = createdData?.map(p => p.id) || [];
+    const projectIds = [...new Set([...scheduleIds, ...createdIds])];
+
+    if (projectIds.length > 0) {
+      queryBuilder = queryBuilder.in('id', projectIds);
+    } else {
+      return { data: [], count: 0 };
+    }
+  } else if (hasValidYear) {
     const year = parseInt(searchParams.year);
     const startDate = new Date(year, 0, 1).toISOString();
     const endDate = new Date(year, 11, 31, 23, 59, 59).toISOString();
-    queryBuilder = queryBuilder.gte('created_at', startDate).lte('created_at', endDate);
+
+    // Obtener IDs de proyectos con schedules en el año
+    const { data: scheduleData } = await supabase
+      .from('project_schedule')
+      .select('project_id')
+      .gte('start_time', startDate)
+      .lte('start_time', endDate);
+
+    // También obtener proyectos creados en ese año (fallback para proyectos antiguos sin schedule)
+    const { data: createdData } = await supabase
+      .from('projects')
+      .select('id')
+      .eq('user_id', user.id)
+      .gte('created_at', startDate)
+      .lte('created_at', endDate);
+
+    const scheduleIds = scheduleData?.map(s => s.project_id) || [];
+    const createdIds = createdData?.map(p => p.id) || [];
+    const projectIds = [...new Set([...scheduleIds, ...createdIds])];
+
+    if (projectIds.length > 0) {
+      queryBuilder = queryBuilder.in('id', projectIds);
+    } else {
+      return { data: [], count: 0 };
+    }
   }
 
   const sortKey = searchParams.sortKey || 'created_at';

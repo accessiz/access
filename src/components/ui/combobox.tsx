@@ -44,7 +44,7 @@ export function Combobox({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="h-9 w-full justify-between font-normal text-copy-14"
+          className="h-12 md:h-10 w-full justify-between font-normal text-body"
         >
           {value
             ? options.find((option) => option.value === value)?.label

@@ -136,7 +136,7 @@ export function ShareProjectDialog({ project, children, onStatusChange }: ShareP
   return (
     <Dialog onOpenChange={(open) => !open && setCopied(false)}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="w-[calc(100vw-2rem)] max-w-[calc(100vw-2rem)] sm:w-full sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Compartir Proyecto</DialogTitle>
           <DialogDescription>
@@ -147,7 +147,7 @@ export function ShareProjectDialog({ project, children, onStatusChange }: ShareP
           <div className="space-y-2">
             <Label htmlFor="project-link">Enlace del Cliente</Label>
             <div className="flex items-center gap-2">
-              <Input id="project-link" value={projectUrl} readOnly />
+              <Input id="project-link" value={projectUrl} readOnly className="w-0 flex-1 min-w-0" />
               <Button size="icon" variant="outline" onClick={handleCopyLink}>
                 <Copy className="h-4 w-4" />
               </Button>
@@ -157,7 +157,7 @@ export function ShareProjectDialog({ project, children, onStatusChange }: ShareP
             <div className="space-y-2">
               <Label htmlFor="project-password">Contraseña</Label>
               <div className="flex items-center gap-2">
-                <Input id="project-password" value={project.password} readOnly />
+                <Input id="project-password" value={project.password} readOnly className="w-0 flex-1 min-w-0" />
                  <Button size="icon" variant="outline" onClick={handleCopyPassword}>
                     <Copy className="h-4 w-4" />
                 </Button>

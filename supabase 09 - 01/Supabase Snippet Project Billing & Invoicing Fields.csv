@@ -1,0 +1,152 @@
+table_name,ordinal_position,column_name,data_type
+activity_logs,1,id,uuid
+activity_logs,2,created_at,timestamp with time zone
+activity_logs,3,user_id,uuid
+activity_logs,4,category,text
+activity_logs,5,title,text
+activity_logs,6,message,text
+activity_logs,7,metadata,jsonb
+activity_logs,8,is_urgent,boolean
+brands,1,id,uuid
+brands,2,client_id,uuid
+brands,3,user_id,uuid
+brands,4,name,character varying
+brands,5,logo_url,character varying
+brands,6,created_at,timestamp with time zone
+brands,7,updated_at,timestamp with time zone
+brands,8,status,text
+brands,9,industry,text
+clients,1,id,uuid
+clients,2,user_id,uuid
+clients,3,name,character varying
+clients,4,email,character varying
+clients,5,phone,character varying
+clients,6,company,character varying
+clients,7,notes,text
+clients,8,created_at,timestamp with time zone
+clients,9,updated_at,timestamp with time zone
+clients,10,status,text
+clients,11,avatar_url,text
+finance_summary,1,id,uuid
+finance_summary,2,model_id,uuid
+finance_summary,3,model_name,text
+finance_summary,4,model_alias,text
+finance_summary,5,project_id,uuid
+finance_summary,6,project_name,text
+finance_summary,7,client_name,text
+finance_summary,8,registered_client_name,character varying
+finance_summary,9,brand_name,character varying
+finance_summary,10,days_worked,bigint
+finance_summary,11,daily_fee,numeric
+finance_summary,12,total_amount,numeric
+finance_summary,13,first_work_date,timestamp with time zone
+finance_summary,14,last_work_date,timestamp with time zone
+finance_summary,15,currency,text
+finance_summary,16,payment_status,text
+finance_summary,17,payment_date,timestamp with time zone
+finance_summary,18,total_paid,numeric
+finance_summary,19,pending_amount,numeric
+finance_summary,20,user_id,uuid
+model_assignments,1,id,uuid
+model_assignments,2,schedule_id,uuid
+model_assignments,3,model_id,uuid
+model_assignments,4,is_confirmed,boolean
+model_assignments,5,created_at,timestamp with time zone
+model_assignments,6,daily_fee,numeric
+model_assignments,7,hours_worked,numeric
+model_assignments,8,adjustment_amount,numeric
+model_assignments,9,adjustment_reason,text
+model_assignments,10,payment_status,text
+model_assignments,11,payment_date,timestamp with time zone
+model_assignments,12,notes,text
+model_assignments,13,project_id,uuid
+models,1,id,uuid
+models,2,created_at,timestamp with time zone
+models,3,alias,text
+models,4,full_name,text
+models,5,birth_date,date
+models,6,national_id,character varying
+models,7,phone_e164,character varying
+models,8,email,text
+models,9,gender,text
+models,10,country,text
+models,11,eye_color,text
+models,12,hair_color,text
+models,13,height_cm,integer
+models,14,shoulders_cm,integer
+models,15,chest_cm,integer
+models,16,bust_cm,integer
+models,17,waist_cm,integer
+models,18,hips_cm,integer
+models,19,top_size,text
+models,20,pants_size,integer
+models,21,shoe_size_us,numeric
+models,22,instagram,text
+models,23,tiktok,text
+models,24,status,text
+models,25,date_joined_agency,date
+models,26,user_id,uuid
+models,27,profile_completeness,integer
+models,28,cover_path,text
+models,29,portfolio_path,text
+models,30,comp_card_paths,ARRAY
+models,31,fts_search_vector,tsvector
+models,32,gallery_paths,ARRAY
+models,33,passport_number,text
+payment_transactions,1,id,uuid
+payment_transactions,2,user_id,uuid
+payment_transactions,3,model_assignment_id,uuid
+payment_transactions,4,amount,numeric
+payment_transactions,5,currency,text
+payment_transactions,6,payment_method,text
+payment_transactions,7,reference_number,text
+payment_transactions,8,notes,text
+payment_transactions,9,receipt_url,text
+payment_transactions,10,paid_at,timestamp with time zone
+payment_transactions,11,created_at,timestamp with time zone
+payment_transactions,12,updated_at,timestamp with time zone
+profiles,1,id,uuid
+profiles,2,full_name,text
+profiles,3,role,text
+profiles,4,created_at,timestamp with time zone
+project_schedule,1,id,uuid
+project_schedule,2,project_id,uuid
+project_schedule,3,title,text
+project_schedule,4,start_time,timestamp with time zone
+project_schedule,5,end_time,timestamp with time zone
+project_schedule,6,location,text
+project_schedule,7,is_call_time,boolean
+project_schedule,8,created_at,timestamp with time zone
+projects,1,id,uuid
+projects,2,user_id,uuid
+projects,3,created_at,timestamp with time zone
+projects,4,project_name,text
+projects,5,client_name,text
+projects,6,start_date,date
+projects,7,end_date,date
+projects,8,status,text
+projects,9,public_id,text
+projects,10,password,text
+projects,11,revenue,numeric
+projects,12,default_model_fee,numeric
+projects,13,default_fee_type,text
+projects,14,application_deadline,timestamp with time zone
+projects,15,schedule,jsonb
+projects,16,currency,text
+projects,17,client_id,uuid
+projects,18,brand_id,uuid
+projects,19,project_types,ARRAY
+projects,20,tax_percentage,numeric
+projects,21,client_payment_status,text
+projects,22,client_payment_date,timestamp with time zone
+projects,23,invoice_number,text
+projects,24,invoice_date,date
+projects_models,1,project_id,uuid
+projects_models,2,model_id,uuid
+projects_models,3,client_selection,text
+projects_models,4,client_selection_date,timestamp with time zone
+projects_models,5,internal_status,text
+projects_models,6,agreed_fee,numeric
+projects_models,7,fee_type,text
+projects_models,8,currency,text
+projects_models,9,notes,text
