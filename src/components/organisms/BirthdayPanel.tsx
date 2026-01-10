@@ -159,7 +159,7 @@ export function BirthdayPanel() {
 
                 {/* Cumpleañeros de hoy */}
                 {todayBirthdays.length > 0 && (
-                    <div className="mb-4 p-4 rounded-lg bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20">
+                    <div className="mb-4 p-4 rounded-lg bg-linear-to-r from-primary/10 to-primary/5 border border-primary/20">
                         <div className="flex items-center gap-2 mb-3">
                             <PartyPopper className="h-4 w-4 text-primary" />
                             <span className="text-body font-semibold text-primary">¡Hoy cumplen años!</span>
@@ -187,7 +187,7 @@ export function BirthdayPanel() {
                 </div>
 
                 {/* Lista de cumpleaños del mes */}
-                <ScrollArea className="h-[300px] pr-4">
+                <ScrollArea className="h-75 pr-4">
                     {loading ? (
                         <div className="flex items-center justify-center h-full">
                             <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" />

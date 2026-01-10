@@ -24,13 +24,13 @@ export default async function DashboardLayout({
   }
 
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={false}>
       {/* Pasamos el usuario real al componente Sidebar */}
       <AppSidebar user={user} />
 
-      <SidebarInset className="bg-sidebar">
+      <SidebarInset className="bg-sidebar h-svh overflow-hidden">
         {/* Header superior flotante */}
-        <header className="flex h-16 shrink-0 items-center justify-between gap-x-2 gap-y-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 px-4 bg-sidebar text-sidebar-foreground">
+        <header className="flex h-16 shrink-0 items-center justify-between gap-x-2 gap-y-2 transition-[width,height] ease-linear px-4 bg-sidebar text-sidebar-foreground">
           <div className="flex items-center gap-x-2 gap-y-2">
             <SidebarTrigger className="-ml-1" />
             <Separator orientation="vertical" className="mr-2 h-4" />
@@ -42,7 +42,7 @@ export default async function DashboardLayout({
         </header>
 
         {/* Aquí se renderiza tu página (Dashboard, Tabla de modelos, etc) */}
-        <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6 bg-background rounded-xl overflow-x-hidden">
+        <div className="flex flex-1 min-h-0 flex-col gap-6 p-4 sm:p-6 bg-background rounded-xl overflow-y-auto overflow-x-hidden">
           {children}
         </div>
       </SidebarInset>

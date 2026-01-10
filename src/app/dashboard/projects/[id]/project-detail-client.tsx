@@ -24,7 +24,7 @@ import { DeleteProjectDialog } from '@/components/organisms/DeleteProjectDialog'
 import { ProjectStatusUpdater } from '@/components/organisms/ProjectStatusUpdater';
 import {
     PlusCircle, XCircle, Loader2, Share2, Eye,
-    CheckCircle2, Pencil,
+    Pencil,
     CalendarCheck2, Banknote, Save, Calculator, Info, Copy, ChevronDown
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';

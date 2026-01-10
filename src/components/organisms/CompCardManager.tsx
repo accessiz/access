@@ -21,7 +21,7 @@ import {
 import { toJpeg, toPng } from 'html-to-image';
 import { jsPDF } from 'jspdf';
 import JSZip from 'jszip';
-import { ChevronDown, Download, FileType, Layers } from 'lucide-react';
+import { AlertCircle, ChevronDown, Download, ExternalLink, FileType, Layers } from 'lucide-react';
 import {
     Select,
     SelectContent,
@@ -50,6 +50,15 @@ interface CropState {
     aspect: number;
     uploadType: 'cover' | 'comp-card' | 'portfolio' | 'gallery';
     slotIndex?: number;
+}
+
+// Interfaz para los items de carga de galería
+interface GalleryUploadItem {
+    id: string;
+    file: File;
+    progress: number; // 0-100
+    status: 'pending' | 'uploading' | 'completed' | 'error';
+    error?: string;
 }
 
 // Componente reutilizable para cada slot de foto
@@ -164,6 +173,11 @@ export function CompCardManager({
     // --- NUEVOS ESTADOS ---
     const [uploadingState, setUploadingState] = useState({ cover: false, compCards: [false, false, false, false], portfolio: false, gallery: false });
     const [cropState, setCropState] = useState<CropState | null>(null);
+
+    // --- ESTADOS DE GALERÍA CON MULTI-UPLOAD ---
+    const [galleryUploadQueue, setGalleryUploadQueue] = useState<GalleryUploadItem[]>([]);
+    const [isDraggingGallery, setIsDraggingGallery] = useState(false);
+    const galleryInputRef = useRef<HTMLInputElement>(null);
 
     // --- ESTADOS DE DESCARGA ---
     const [isDownloading, setIsDownloading] = useState(false);
@@ -434,6 +448,118 @@ export function CompCardManager({
             const message = error instanceof Error ? error.message : 'Ocurrió un error.';
             toast.error('Error al eliminar la imagen', { description: message });
         }
+    };
+
+    // --- MANEJADOR DE CARGA MÚLTIPLE PARA GALERÍA ---
+    const handleGalleryMultiUpload = async (files: File[]) => {
+        if (files.length === 0) return;
+
+        // Filtrar solo imágenes válidas
+        const validFiles = files.filter(file => file.type.startsWith('image/'));
+        if (validFiles.length === 0) {
+            toast.error('No se encontraron archivos de imagen válidos');
+            return;
+        }
+
+        // Crear items de cola
+        const queueItems: GalleryUploadItem[] = validFiles.map((file, index) => ({
+            id: `${Date.now()}-${index}`,
+            file,
+            progress: 0,
+            status: 'pending' as const,
+        }));
+
+        setGalleryUploadQueue(queueItems);
+
+        // Procesar archivos uno por uno
+        for (let i = 0; i < queueItems.length; i++) {
+            const item = queueItems[i];
+
+            // Marcar como subiendo
+            setGalleryUploadQueue(prev =>
+                prev.map(q => q.id === item.id ? { ...q, status: 'uploading', progress: 10 } : q)
+            );
+
+            try {
+                // Comprimir imagen
+                setGalleryUploadQueue(prev =>
+                    prev.map(q => q.id === item.id ? { ...q, progress: 30 } : q)
+                );
+                const compressedFile = await compressImage(item.file);
+
+                // Preparar FormData
+                setGalleryUploadQueue(prev =>
+                    prev.map(q => q.id === item.id ? { ...q, progress: 50 } : q)
+                );
+                const formData = new FormData();
+                formData.append('file', compressedFile);
+                formData.append('modelId', modelId);
+                formData.append('category', 'PortfolioGallery');
+
+                // Subir
+                setGalleryUploadQueue(prev =>
+                    prev.map(q => q.id === item.id ? { ...q, progress: 70 } : q)
+                );
+                const result = await uploadModelImage(formData);
+
+                if (!result || !result.success) {
+                    throw new Error(result.error || 'La subida falló.');
+                }
+
+                // Actualizar estado de galería
+                const { path: returnedPath, publicUrl } = result;
+                if (publicUrl) setGalleryUrls(prev => [...prev, publicUrl]);
+                if (returnedPath) setGalleryPaths(prev => [...prev, returnedPath]);
+
+                // Marcar como completado
+                setGalleryUploadQueue(prev =>
+                    prev.map(q => q.id === item.id ? { ...q, status: 'completed', progress: 100 } : q)
+                );
+
+            } catch (error: unknown) {
+                const message = error instanceof Error ? error.message : 'Error desconocido';
+                setGalleryUploadQueue(prev =>
+                    prev.map(q => q.id === item.id ? { ...q, status: 'error', error: message, progress: 0 } : q)
+                );
+            }
+        }
+
+        // Mostrar resultado
+        const completed = queueItems.filter((_, i) => i < queueItems.length).length;
+        toast.success(`${completed} imagen(es) subida(s) correctamente`);
+
+        // Limpiar cola después de 2 segundos
+        setTimeout(() => {
+            setGalleryUploadQueue([]);
+        }, 2000);
+    };
+
+    // Manejadores de drag and drop para galería
+    const handleGalleryDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDraggingGallery(true);
+    };
+
+    const handleGalleryDragLeave = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDraggingGallery(false);
+    };
+
+    const handleGalleryDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDraggingGallery(false);
+
+        const files = Array.from(e.dataTransfer.files);
+        handleGalleryMultiUpload(files);
+    };
+
+    const handleGalleryFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files || []);
+        handleGalleryMultiUpload(files);
+        if (e.target) e.target.value = '';
     };
 
     // --- LÓGICA DE DESCARGA ROBUSTA ---
@@ -833,7 +959,7 @@ export function CompCardManager({
                             <div>
                                 <span className="text-body text-muted-foreground mb-2 block">Portada (Slider)</span>
                                 <PhotoSlot
-                                    className="aspect-[3/4]"
+                                    className="aspect-3/4"
                                     imageUrl={coverUrl}
                                     onFileSelect={(file) => handleFileSelect(file, 'cover', 3 / 4)}
                                     onDelete={() => handleDelete('cover')}
@@ -887,34 +1013,138 @@ export function CompCardManager({
                                 isUploading={uploadingState.portfolio}
                             />
                         </div>
-                        <div>
-                            <span className="text-body text-muted-foreground mb-2 block">Galería de Portafolio</span>
-                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+
+                    </div>
+                </CardContent>
+            </Card>
+
+            {/* Tarjeta de Galería de Portafolio - Separada */}
+            <Card className="mt-6">
+                <CardHeader>
+                    <CardTitle>Galería de Portafolio</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="space-y-6">
+                        {/* 1. ZONA DE DRAG & DROP SUPERIOR (Full Width) */}
+                        <div
+                            className={cn(
+                                "relative border-2 border-dashed rounded-xl p-10 transition-all text-center cursor-pointer group",
+                                isDraggingGallery
+                                    ? "border-primary bg-primary/5 ring-4 ring-primary/10"
+                                    : "border-border hover:border-primary/50 hover:bg-muted/30",
+                                (galleryUrls.length === 0 && galleryUploadQueue.length === 0) ? "py-20" : "py-8"
+                            )}
+                            onDragOver={handleGalleryDragOver}
+                            onDragLeave={handleGalleryDragLeave}
+                            onDrop={handleGalleryDrop}
+                            onClick={() => galleryInputRef.current?.click()}
+                        >
+                            <input
+                                ref={galleryInputRef}
+                                type="file"
+                                multiple
+                                accept="image/jpeg,image/png,image/webp"
+                                onChange={handleGalleryFileInputChange}
+                                className="hidden"
+                            />
+
+                            <div className="flex flex-col items-center justify-center pointer-events-none">
+                                <div className={cn(
+                                    "p-4 rounded-full bg-muted transition-transform duration-300 group-hover:scale-110 mb-4",
+                                    isDraggingGallery && "bg-primary/10"
+                                )}>
+                                    <UploadCloud className={cn(
+                                        "h-8 w-8 text-muted-foreground transition-colors",
+                                        isDraggingGallery && "text-primary"
+                                    )} />
+                                </div>
+                                <h3 className="text-body font-medium text-foreground">
+                                    {isDraggingGallery ? 'Suelta las imágenes aquí' : 'Sube fotos a la galería'}
+                                </h3>
+                                <p className="text-label text-muted-foreground mt-1 max-w-xs mx-auto">
+                                    Arrastra y suelta múltiples archivos o haz clic para explorar.
+                                    Soporta JPG, PNG, WEBP.
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* 2. MASONRY GRID (Pinterest Style) - Vertical Columns */}
+                        {(galleryUrls.length > 0 || galleryUploadQueue.length > 0) && (
+                            <div className="columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4">
+                                {/* Items de la cola de subida (aparecen primero visualmente si queremos, o mezclados) */}
+                                {galleryUploadQueue.map((item) => (
+                                    <div
+                                        key={item.id}
+                                        className="break-inside-avoid mb-4 relative rounded-lg overflow-hidden bg-muted/30 border border-border group"
+                                    >
+                                        <div className="aspect-3/4 w-full flex flex-col items-center justify-center p-4">
+                                            {item.status === 'uploading' ? (
+                                                <>
+                                                    <Loader2 className="h-8 w-8 animate-spin text-primary mb-3" />
+                                                    <div className="w-full max-w-[80%] h-1.5 bg-muted rounded-full overflow-hidden">
+                                                        <div
+                                                            className="h-full bg-primary transition-all duration-300"
+                                                            style={{ width: `${item.progress}%` }}
+                                                        />
+                                                    </div>
+                                                    <span className="text-label text-muted-foreground mt-2">{item.progress}%</span>
+                                                </>
+                                            ) : item.status === 'error' ? (
+                                                <div className="text-destructive flex flex-col items-center">
+                                                    <AlertCircle className="h-8 w-8 mb-2" />
+                                                    <span className="text-label text-center px-2">Error al subir</span>
+                                                </div>
+                                            ) : (
+                                                <Loader2 className="h-6 w-6 text-muted-foreground/30 animate-pulse" />
+                                            )}
+                                        </div>
+
+                                        {/* Preview si está disponible (podríamos leerlo del file si quisiéramos ser más fancy, pero por ahora mostramos placeholder) */}
+                                        <div className="absolute inset-0 bg-linear-to-t from-black/20 to-transparent pointer-events-none" />
+                                    </div>
+                                ))}
+
+                                {/* Imágenes Existentes */}
                                 {galleryUrls.map((url, i) => {
                                     if (!url) return null;
                                     return (
-                                        <PhotoSlot
-                                            key={i}
-                                            className="aspect-[3/4]"
-                                            imageUrl={url}
-                                            onFileSelect={() => { }} // No replacement for now
-                                            onDelete={() => handleDelete('gallery', i, galleryPaths[i] || undefined)}
-                                            label={`Foto ${i + 1}`}
-                                            isUploading={false}
-                                        />
+                                        <div
+                                            key={`gallery-img-${i}`}
+                                            className="break-inside-avoid mb-4 relative group rounded-lg overflow-hidden bg-muted"
+                                        >
+                                            <img
+                                                src={url}
+                                                alt={`Galería ${i + 1}`}
+                                                className="w-full h-auto block transform transition-transform duration-500 group-hover:scale-105"
+                                                loading="lazy"
+                                            />
+
+                                            {/* Overlay con acciones */}
+                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-2">
+                                                <Button
+                                                    variant="secondary"
+                                                    size="icon"
+                                                    className="h-9 w-9 bg-white/90 hover:bg-white text-destructive shadow-sm backdrop-blur-sm"
+                                                    onClick={() => handleDelete('gallery', i, galleryPaths[i] || undefined)}
+                                                    title="Eliminar foto"
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                                <a
+                                                    href={url}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    className="inline-flex items-center justify-center h-9 w-9 rounded-md bg-white/90 hover:bg-white text-foreground shadow-sm backdrop-blur-sm"
+                                                    title="Ver original"
+                                                >
+                                                    <ExternalLink className="h-4 w-4" />
+                                                </a>
+                                            </div>
+                                        </div>
                                     );
                                 })}
-                                {/* Slot para agregar nueva foto */}
-                                <PhotoSlot
-                                    className="aspect-[3/4]"
-                                    imageUrl={null}
-                                    onFileSelect={(file) => handleFileSelect(file, 'gallery', 0)}
-                                    onDelete={() => { }}
-                                    label="Agregar Foto"
-                                    isUploading={uploadingState.gallery}
-                                />
                             </div>
-                        </div>
+                        )}
                     </div>
                 </CardContent>
             </Card>

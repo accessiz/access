@@ -103,16 +103,23 @@ export function AppSidebar({ user, ...props }: React.ComponentProps<typeof Sideb
   return (
     // Agregamos variant="inset" para lograr el efecto redondeado estilo Sidebar-08
     <Sidebar collapsible="icon" variant="inset" {...props}>
-      <SidebarHeader>
+      <SidebarHeader className="h-16 px-2 py-2 justify-center group-data-[collapsible=icon]:px-1!">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild tooltip="ACCESS">
-              <Link href="/dashboard" className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-start'}`}>
+              <Link
+                href="/dashboard"
+                className={`flex items-center gap-2 ${isCollapsed ? 'justify-center' : 'justify-start'}`}
+              >
                 {/* Logo con transición suave */}
-                <div className="relative flex items-center justify-center overflow-hidden">
+                {!isCollapsed && (
+                  <span aria-hidden className="h-4 w-4 shrink-0" />
+                )}
+
+                <div className="relative flex items-center overflow-hidden">
                   {/* Logo pequeño - visible cuando colapsado */}
                   <LogoIcon
-                    className={`h-6 w-auto sidebar-transition ${isCollapsed
+                    className={`h-5 w-5 sidebar-transition ${isCollapsed
                       ? 'opacity-100 scale-100'
                       : 'opacity-0 scale-75 absolute'
                       }`}
@@ -131,7 +138,7 @@ export function AppSidebar({ user, ...props }: React.ComponentProps<typeof Sideb
         </SidebarMenu>
       </SidebarHeader>
 
-      <SidebarContent className="overflow-visible px-2">
+      <SidebarContent className="overflow-visible px-2 pt-5">
         <SidebarMenu className="overflow-visible">
           {navMain.map((item) => {
             // Lógica para determinar si el item está activo

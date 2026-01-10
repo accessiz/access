@@ -112,8 +112,8 @@ Prohibido:
 │            │                    MAIN CONTENT AREA                    │
 │  SIDEBAR   │  ┌──────────────────────────────────────────────────┐   │
 │            │  │ HEADER (Título + Acciones)          h: 64px      │   │
-│  w: 288px  │  ├──────────────────────────────────────────────────┤   │
-│  (18rem)   │  │                                                  │   │
+│  w: 240px  │  ├──────────────────────────────────────────────────┤   │
+│  (15rem)   │  │                                                  │   │
 │            │  │ PAGE CONTENT                                     │   │
 │ collapsed: │  │ padding: 24px (p-6)                              │   │
 │  56px      │  │ gap entre secciones: 24px                        │   │
@@ -410,7 +410,7 @@ Los contenidos se agrupan en bloques con diferentes niveles de énfasis visual s
 #### 11. Navigation Drawer (Sidebar)
 *   **Archivo:** `sidebar.tsx`
 *   **M3 Guideline:** Navegación principal para escritorio.
-*   **Regla:** Elemento activo con `active-nav-glow`. Iconos filled para estado activo, outlined para inactivo. Ancho: 288px.
+*   **Regla:** Elemento activo con `active-nav-glow`. Iconos filled para estado activo, outlined para inactivo. Ancho: 240px.
 
 #### 12. Tabs
 *   **Archivo:** `tabs.tsx`

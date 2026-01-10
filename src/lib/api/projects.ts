@@ -146,8 +146,8 @@ export async function getProjectsForUser(searchParams: SearchParams = {}) {
   const hasValidYear = searchParams.year && searchParams.year !== 'all' && /^\d{4}$/.test(searchParams.year);
 
   if (hasValidYear && hasValidMonth) {
-    const year = parseInt(searchParams.year);
-    const month = parseInt(searchParams.month);
+    const year = parseInt(searchParams.year!);
+    const month = parseInt(searchParams.month!);
     const startDate = new Date(year, month - 1, 1).toISOString();
     const endDate = new Date(year, month, 0, 23, 59, 59).toISOString();
 
@@ -176,7 +176,7 @@ export async function getProjectsForUser(searchParams: SearchParams = {}) {
       return { data: [], count: 0 };
     }
   } else if (hasValidYear) {
-    const year = parseInt(searchParams.year);
+    const year = parseInt(searchParams.year!);
     const startDate = new Date(year, 0, 1).toISOString();
     const endDate = new Date(year, 11, 31, 23, 59, 59).toISOString();
 
