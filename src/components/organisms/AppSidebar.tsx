@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
@@ -78,14 +78,25 @@ const navMain = [
 
 export function AppSidebar({ user, ...props }: React.ComponentProps<typeof Sidebar> & { user: User }) {
   const pathname = usePathname()
-  const { state, isMobile, setOpenMobile } = useSidebar()
+  const { state, isMobile, setOpenMobile, openMobile } = useSidebar()
   const isCollapsed = state === "collapsed"
   const [hasTodayBirthdays, setHasTodayBirthdays] = useState(false)
 
-  // Handler para cerrar el sidebar en mobile al hacer clic en un link
+  // Ref para rastrear si hay una navegación pendiente en mobile
+  const pendingNavigationRef = useRef(false)
+
+  // Cerrar el sidebar móvil cuando el pathname cambie (página cargada)
+  useEffect(() => {
+    if (isMobile && pendingNavigationRef.current && openMobile) {
+      setOpenMobile(false)
+      pendingNavigationRef.current = false
+    }
+  }, [pathname, isMobile, openMobile, setOpenMobile])
+
+  // Handler para marcar que hay una navegación pendiente en mobile
   const handleNavClick = () => {
     if (isMobile) {
-      setOpenMobile(false)
+      pendingNavigationRef.current = true
     }
   }
 

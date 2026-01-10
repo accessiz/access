@@ -160,16 +160,18 @@ export default function ProjectsClientPage({ initialProjects, initialCount, avai
                                     </DeleteProjectDialog>
                                 </div>
 
-                                <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
-                                    <ProjectStatusBadge status={project.status} />
+                                <div className="mt-3 flex flex-col gap-2">
+                                    <div className="flex items-center justify-between gap-x-3 gap-y-2">
+                                        <ProjectStatusBadge status={project.status} />
 
-                                    <div className="flex items-center gap-x-2 gap-y-2 text-label text-muted-foreground">
-                                        <CalendarDays className="h-3.5 w-3.5" />
-                                        <span>{scheduleLabel}</span>
+                                        <div className="flex items-center gap-x-2 gap-y-2 text-label text-muted-foreground">
+                                            <CalendarDays className="h-3.5 w-3.5" />
+                                            <span>{scheduleLabel}</span>
+                                        </div>
                                     </div>
 
                                     <div className="text-label text-muted-foreground">
-                                        Talento: <span className="font-medium text-foreground">{project.approved_models?.length || 0}</span>
+                                        Talento aprobado: <span className="font-medium text-foreground">{project.approved_models?.length || 0}</span>
                                     </div>
                                 </div>
                             </div>
@@ -208,32 +210,7 @@ export default function ProjectsClientPage({ initialProjects, initialCount, avai
                                             <TableCell>{project.client_name || '-'}</TableCell>
                                             <TableCell><ProjectStatusBadge status={project.status} /></TableCell>
                                             <TableCell>
-                                                {project.approved_models && project.approved_models.length > 0 ? (
-                                                    <div className="flex items-center gap-x-1 gap-y-1">
-                                                        <div className="flex -space-x-2">
-                                                            {project.approved_models.slice(0, 4).map((model) => (
-                                                                <div
-                                                                    key={model.id}
-                                                                    className="h-6 w-6 rounded-full border-2 border-background overflow-hidden bg-muted"
-                                                                    title={model.alias}
-                                                                >
-                                                                    {model.coverUrl ? (
-                                                                        <img src={model.coverUrl} alt={model.alias} className="h-full w-full object-cover" />
-                                                                    ) : (
-                                                                        <div className="h-full w-full flex items-center justify-center text-label text-muted-foreground">
-                                                                            {model.alias.charAt(0).toUpperCase()}
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                        {project.approved_models.length > 4 && (
-                                                            <span className="text-label text-muted-foreground">+{project.approved_models.length - 4}</span>
-                                                        )}
-                                                    </div>
-                                                ) : (
-                                                    <span className="text-muted-foreground text-label">—</span>
-                                                )}
+                                                <span className="font-medium">{project.approved_models?.length || 0}</span>
                                             </TableCell>
                                             <TableCell>
                                                 {project.schedule && project.schedule.length > 0 ? (

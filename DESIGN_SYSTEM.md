@@ -2,7 +2,7 @@
 
 **Estándar:** Material Design 3 (2025 Expressive)
 **Estado:** 🟢 Sincronizado con Codebase & M3 Guidelines
-**Tema:** Sky Blue (Seed: `#AECBFA`)
+**Tema:** Purple (Primary: `#87189D`)
 
 ---
 
@@ -46,40 +46,84 @@ Basado en **Steve Jobs**, **Des Traynor (Intercom)**, y **Don Norman**:
 ## 1. 🏗️ Fundamentos del Sistema (Core)
 
 #### 1.1 Sistema de Color (roles M3)
-*Fuente de Verdad: `material-theme.json`*
 
-El sistema utiliza roles semánticos. No uses hex codes duros, usa las variables CSS `--[role]`.
+El sistema utiliza **roles semánticos**. No uses hex codes duros; usa variables CSS `--*` (y en Tailwind, las clases semánticas como `bg-background`, `text-foreground`, `bg-card`, etc.).
 
-#### A. Colores Clave (Key Colors)
-| Rol | Token Variable | Light | Dark | Uso (Prominencia) |
+**Fuente de verdad:** `src/app/globals.css` (tokens en `:root` y `.dark`). `tailwind.config.ts` define cómo se consumen (ej. `rgb(var(--primary) / <alpha-value>)`).
+
+> Nota: algunos tokens del sidebar están en HSL (`--sidebar-*`) y se consumen con `hsl(var(--sidebar-*) / <alpha-value>)`.
+
+#### A. Colores de Énfasis (Brand / Accentos)
+
+| Rol | Token | Light (raw) | Dark (raw) | Valor aproximado |
 | :--- | :--- | :--- | :--- | :--- |
-| **Primary** | `--primary` | `#435F89` | `#D9E6FF` | **Alta.** FABs, botones rellenos, estados activos. |
-| **On Primary** | `--primary-foreground` | `#FFFFFF` | `#0F3157` | Texto e iconos sobre color Primary. |
-| **Primary Container** | `--primary-container` | `#AECBFA` | `#AECBFA` | **Media.** Botones tonales, selección de items. |
-| **Secondary** | `--secondary` | `#555F71` | `#BCC7DB` | **Media-Baja.** Elementos de soporte, filtros. |
-| **Secondary Container** | `--secondary-container` | `#D8E3F8` | `#3D4758` | Fondos de tarjetas secundarias o listas. |
-| **Tertiary** | `--tertiary` | `#78517B` | `#FFDAFE` | **Acento.** Romper la monotonía (ej. gráficas). |
-| **Tertiary Container** | `--tertiary-container` | `#EABAEB` | `#EABAEB` | Variantes de acento menos agresivas. |
+| **Primary** | `--primary` | `135 24 157` | `135 24 157` | `#87189D` |
+| **On Primary** | `--primary-foreground` | `250 250 250` | `250 250 250` | `#FAFAFA` |
+| **Secondary** | `--secondary` | `242 242 242` | `30 30 30` | `#F2F2F2` / `#1E1E1E` |
+| **On Secondary** | `--secondary-foreground` | `28 26 29` | `230 230 230` | `#1C1A1D` / `#E6E6E6` |
+| **Tertiary** | `--tertiary` | `120 81 123` | `255 218 254` | `#78517B` / `#FFDAFE` |
+| **On Tertiary** | `--tertiary-foreground` | `255 255 255` | `70 35 74` | `#FFFFFF` / `#46234A` |
+| **Tertiary Container** | `--tertiary-container` | `234 186 235` | `234 186 235` | `#EABAEB` |
+| **On Tertiary Container** | `--tertiary-container-foreground` | `109 71 113` | `109 71 113` | `#6D4771` |
 
-#### B. Superficies (The "Paper" System)
-M3 no usa sombras para profundidad, usa **tonos de superficie**.
+#### B. Superficies (Fondo / Tarjetas / Overlays)
 
-| Nivel | Rol | Token | Light | Dark | Aplicación |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Base** | Surface | `--background` | `#FAF9FD` | `#121316` | Fondo general de la aplicación. |
-| **Lv 1** | Surface Low | `--surface-container-low` | `#F4F3F7` | `#1A1C1E` | Sidebar, Tarjetas simples. |
-| **Lv 2** | Surface | `--surface-container` | `#EEEDF1` | `#1E2022` | Navegación, Inputs, Listas. |
-| **Lv 3** | Surface High | `--surface-container-high` | `#E9E8EB` | `#292A2D` | Diálogos, Popovers, Menús. |
-| **Lv 4** | Surface Highest| `--surface-container-highest`| `#E3E2E6` | `#343538` | Elementos flotantes muy altos. |
+| Superficie | Token | Light (raw) | Dark (raw) | Uso |
+| :--- | :--- | :--- | :--- | :--- |
+| **App Background** | `--background` | `249 249 249` | `1 1 1` | Fondo general (`bg-background`). |
+| **On Background** | `--foreground` | `20 20 20` | `230 230 230` | Texto principal (`text-foreground`). |
+| **Nav Background** | `--nav-background` | `255 255 255` | `1 1 1` | Top nav / contenedores superiores. |
+| **Nav Foreground** | `--nav-foreground` | `20 20 20` | `230 230 230` | Texto/iconos en nav. |
+| **Card** | `--card` | `255 255 255` | `4 4 4` | Tarjetas y paneles (`bg-card`). |
+| **On Card** | `--card-foreground` | `20 20 20` | `230 230 230` | Texto en tarjetas. |
+| **Popover** | `--popover` | `255 255 255` | `20 20 20` | Menús, popovers, overlays. |
+| **On Popover** | `--popover-foreground` | `20 20 20` | `230 230 230` | Texto en popovers. |
 
-#### C. Utilidad y Contenido
-| Rol | Token | Uso |
+#### C. Utilidad (Bordes / Inputs / Muted)
+
+| Rol | Token | Light (raw) | Dark (raw) | Uso |
+| :--- | :--- | :--- | :--- | :--- |
+| **Border / Outline** | `--border` | `230 230 230` | `28 28 28` | Bordes generales (`border-border`). |
+| **Input Border** | `--input` | `230 230 230` | `28 28 28` | Inputs (si se diferencia del borde). |
+| **Ring** | `--ring` | `135 24 157` | `135 24 157` | Focus ring (acento). |
+| **Muted Surface** | `--muted` | `242 242 242` | `30 30 30` | Fondos sutiles, tablas, chips. |
+| **Muted Foreground** | `--muted-foreground` | `120 120 120` | `140 140 140` | Texto secundario (`text-muted-foreground`). |
+| **Accent Surface** | `--accent` | `242 242 242` | `30 30 30` | Hover/selected backgrounds. |
+| **On Accent** | `--accent-foreground` | `28 26 29` | `230 230 230` | Texto sobre acento. |
+
+#### D. Estados Semánticos (Feedback)
+
+| Estado | Token | Light (raw) | Dark (raw) | Uso |
+| :--- | :--- | :--- | :--- | :--- |
+| **Destructive / Error** | `--destructive` | `220 38 38` | `255 30 30` | Errores, eliminar, acciones críticas. |
+| **On Destructive** | `--destructive-foreground` | `250 250 250` | `230 230 230` | Texto/iconos sobre destructive. |
+| **Success** | `--success` | `34 139 34` | `74 222 128` | Confirmación, estados OK. |
+| **On Success** | `--success-foreground` | `255 255 255` | `28 26 29` | Texto/iconos sobre success. |
+| **Warning** | `--warning` | `234 179 8` | `250 204 21` | Advertencias, validaciones. |
+| **On Warning** | `--warning-foreground` | `28 26 29` | `28 26 29` | Texto/iconos sobre warning. |
+| **Info** | `--info` | `59 130 246` | `96 165 250` | Mensajes informativos. |
+| **On Info** | `--info-foreground` | `255 255 255` | `28 26 29` | Texto/iconos sobre info. |
+
+#### E. Reglas de Uso (importante)
+
+1. **Nunca** uses hex hardcode en componentes. Consume tokens (`bg-*`, `text-*`, `border-*`).
+2. Para overlays usa `popover`/`card`, no colores nuevos.
+3. Para texto secundario usa `text-muted-foreground` (no grises arbitrarios).
+4. Para focus usa `ring` (no `outline` custom).
+
+#### F. Mapeo M3 → Tokens Actuales (guía práctica)
+
+Usamos lenguaje M3 como guía, pero **en código** se consume este mapeo:
+
+| Rol M3 (conceptual) | En nuestra app (Tailwind / tokens) | Nota |
 | :--- | :--- | :--- |
-| **Outline** | `--border-outline` | Bordes importantes (Inputs, botones outlined). |
-| **Outline Variant** | `--border-outline-variant` | Divisores decorativos, bordes de tablas. |
-| **Error** | `--destructive` | Estados de error crítico (`#BA1A1A`). |
-| **On Surface** | `--foreground` | Texto principal (Negro/Blanco). |
-| **On Surface Variant** | `--muted-foreground` | Texto secundario (Gris). |
+| `surface` | `bg-background` (base) o `bg-card` (contenedores) | Evitar inventar “levels” si no existen como tokens. |
+| `on-surface` | `text-foreground` | Texto principal. |
+| `surface-variant` | `bg-muted` | Fondos sutiles (chips/rows). |
+| `on-surface-variant` | `text-muted-foreground` | Texto secundario / desactivado visualmente. |
+| `outline` / `outline-variant` | `border-border` / `bg-border` | Dividers y bordes. |
+| `inverse-surface` | `bg-foreground` | Para snackbars/elementos invertidos. |
+| `inverse-on-surface` | `text-background` | Texto sobre superficie invertida. |
 
 #### 1.2 Tipografía (SOLO 4 tamaños)
 *Fuente de Verdad: `tailwind.config.ts` (`theme.extend.fontSize`)*
@@ -181,7 +225,7 @@ Todas las páginas deben seguir este patrón exacto:
 | Subtítulo | `text-label`, `text-muted-foreground` |
 | Gap título-subtítulo | 4px (implícito en div) |
 | Padding bottom header | 16px (`pb-4`) |
-| Border bottom | `border-b` (1px, outline-variant) |
+| Border bottom | `border-b border-border` (1px) |
 | Gap header-content | 16px (`space-y-4` en parent) |
 
 #### E. Breakpoints Responsivos
@@ -292,7 +336,7 @@ Aplicar en **botones**, **inputs/search**, y **segmented**.
 #### 6. Snackbars
 *   **Archivo:** `sonner.tsx`
 *   **M3 Guideline:** Mensajes temporales breves al pie de pantalla.
-*   **Regla:** Fondo inverso (`bg-inverse-surface`). Texto `on-inverse-surface`. Duración 4-6s. Botón de acción opcional ("Deshacer").
+*   **Regla:** Fondo inverso con tokens existentes: `bg-foreground text-background`. Duración 4-6s. Botón de acción opcional ("Deshacer").
 
 ---
 
@@ -309,9 +353,9 @@ Las cards muestran contenido y acciones sobre un tema único. Deben ser fáciles
 ##### Tipos de Cards
 | Tipo | Estilo App | Descripción |
 | :--- | :--- | :--- |
-| **Elevated** | `bg-surface-container-low` + `shadow-sm` | Sombra para mayor separación del fondo. Para contenido movible. |
-| **Filled** | `bg-surface-container-highest` + `border-none` | Separación sutil del fondo. Menor énfasis que Elevated u Outlined. |
-| **Outlined** | `bg-surface` + `border-outline-variant` + `shadow-none` | Borde visual alrededor del contenedor. Mayor énfasis. **(Default)** |
+| **Elevated** | `bg-card` + `shadow-sm` | Sombra para mayor separación del fondo. Para contenido movible. |
+| **Filled** | `bg-muted` + `border-none` | Separación sutil del fondo. Menor énfasis que Elevated u Outlined. |
+| **Outlined** | `bg-card` + `border border-border` + `shadow-none` | Borde visual alrededor del contenedor. Mayor énfasis. **(Default)** |
 
 ##### Anatomía
 | # | Elemento | Descripción |
@@ -390,13 +434,13 @@ Los contenidos se agrupan en bloques con diferentes niveles de énfasis visual s
 
 #### 8. Dialogs (Modals)
 *   **Archivo:** `alert-dialog.tsx` / `dialog.tsx`
-*   **Estilo:** `bg-surface-container-high` (`Lv 3`).
+*   **Estilo:** `bg-popover` (overlay) o `bg-card` (panel), según el componente.
 *   **M3 Guideline:** Interrumpen al usuario para confirmar o informar. 
 *   **Regla:** Título (24px), Cuerpo (14px). Botones alineados a la derecha (`flex-end`). Scrim (fondo oscuro) al 32%.
 
 #### 9. Dividers
 *   **Archivo:** `separator.tsx`
-*   **Regla:** Usar `border-outline-variant`. Espesor 1px. Usar para separar grupos lógicos (fechas, secciones).
+*   **Regla:** Usar `border-border` (1px) / `bg-border` en separators. Separar grupos lógicos (fechas, secciones).
 
 #### 10. Bottom Sheets
 *   **Archivo:** `sheet.tsx`
@@ -430,12 +474,12 @@ Los contenidos se agrupan en bloques con diferentes niveles de énfasis visual s
 ##### Primary Tabs Color Roles (Light/Dark)
 | # | Elemento | Rol de Color |
 | :--- | :--- | :--- |
-| 0 | Container | `surface` |
+| 0 | Container | `background` o `card` |
 | 1 | Active indicator | `primary` |
 | 2 | Active icon | `primary` |
-| 3 | Active label | `on-surface-variant` |
-| 4 | Inactive icon/label | `on-surface-variant` |
-| 5 | Divider | `outline-variant` |
+| 3 | Active label | `foreground` |
+| 4 | Inactive icon/label | `muted-foreground` |
+| 5 | Divider | `border` |
 | 6 | Focus/Hover state | `primary` |
 
 ##### Estados de Primary Tabs
@@ -465,10 +509,10 @@ Los contenidos se agrupan en bloques con diferentes niveles de énfasis visual s
 ##### Secondary Tabs Color Roles (Light/Dark)
 | # | Elemento | Rol de Color |
 | :--- | :--- | :--- |
-| 0 | Container | `surface` |
-| 1 | Active label | `on-surface` |
-| 2 | Inactive label | `on-surface-variant` |
-| 3 | Divider | `outline-variant` |
+| 0 | Container | `background` o `card` |
+| 1 | Active label | `foreground` |
+| 2 | Inactive label | `muted-foreground` |
+| 3 | Divider | `border` |
 | 4 | Active indicator | `primary` |
 
 ##### Estados de Secondary Tabs
@@ -514,7 +558,7 @@ Los contenidos se agrupan en bloques con diferentes niveles de énfasis visual s
 
 #### 14. Checkbox
 *   **Archivo:** `checkbox.tsx`
-*   **Regla:** Selección múltiple. Color `primary` al estar marcado. Borde `on-surface-variant` al estar desmarcado.
+*   **Regla:** Selección múltiple. Color `primary` al estar marcado. Borde `border` / `muted-foreground` al estar desmarcado.
 
 #### 15. Chips
 *   **Archivo:** `badge.tsx` (Simulado) / `button.tsx` (Simulado)
@@ -551,7 +595,7 @@ Los contenidos se agrupan en bloques con diferentes niveles de énfasis visual s
 *   **M3 Standard:** Altura 56dp. Label corta la línea.
 *   **App Reality:** Altura **48px mobile** (`h-12`) y **40px md+** (`md:h-10`) como estándar.
 *   **Anatomía:**
-    1.  **Container:** Borde `outline` (gris) -> `primary` (foco) -> `destructive` (error).
+    1.  **Container:** Borde `border` (gris) -> `ring`/`primary` (foco) -> `destructive` (error).
     2.  **Label:** Arriba del input (no flota dentro).
     3.  **Supporting Text:** Debajo del input. **Regla de Error:** El texto de error *reemplaza* al texto de ayuda, no se suma (evita saltos de layout).
     4.  **Slots:** Leading Icon (Search), Trailing Icon (Clear/Eye/Error), Prefix/Suffix ($/kg).
@@ -563,7 +607,7 @@ Los contenidos se agrupan en bloques con diferentes niveles de énfasis visual s
 
 #### 20b. Text Fields (Filled)
 *   **Estado:** ❌ No implementado.
-*   **M3 Standard:** Fondo `surface-container-highest` con línea inferior `primary`.
+*   **M3 Standard (mapeado a tokens actuales):** Fondo `muted` (o `card`) con línea inferior `primary`.
 *   **Uso:** M3 prefiere Filled para énfasis visual, pero la App estandariza en **Outlined** para limpieza.
 
 ---
@@ -653,11 +697,11 @@ Los contenidos se agrupan en bloques con diferentes niveles de énfasis visual s
 
 | Estado | Visual |
 |--------|--------|
-| **Default** | Borde `outline-variant` (gris) |
+| **Default** | Borde `border` (gris) |
 | **Focused** | Borde `primary` (2px), ring `primary/20` |
 | **Error** | Borde `destructive`, texto helper rojo |
 | **Disabled** | Opacity 50%, cursor not-allowed |
-| **Read-only** | Fondo `surface-container-low`, sin borde activo |
+| **Read-only** | Fondo `muted`, sin borde activo |
 
 ### E. Reglas
 
@@ -873,7 +917,7 @@ Las listas son arreglos verticales de elementos optimizados para escaneo rápido
 ## 8. ✅ Checklist de Calidad
 
 ### Componentes
-- [ ] ¿Usa tokens `surface` en lugar de `white`?
+- [ ] ¿Usa tokens `background/card` en lugar de `white`?
 - [ ] ¿Tiene estados `hover`, `focus`, `pressed` definidos?
 - [ ] ¿El texto cumple con la escala tipográfica?
 - [ ] ¿Es accesible por teclado (`Tab`, `Enter`)?
