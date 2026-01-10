@@ -1070,12 +1070,12 @@ export function CompCardManager({
 
                         {/* 2. MASONRY GRID (Pinterest Style) - Vertical Columns */}
                         {(galleryUrls.length > 0 || galleryUploadQueue.length > 0) && (
-                            <div className="columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4">
+                            <div className="columns-2 md:columns-3 lg:columns-4 gap-1">
                                 {/* Items de la cola de subida (aparecen primero visualmente si queremos, o mezclados) */}
                                 {galleryUploadQueue.map((item) => (
                                     <div
                                         key={item.id}
-                                        className="break-inside-avoid mb-4 relative rounded-lg overflow-hidden bg-muted/30 border border-border group"
+                                        className="break-inside-avoid mb-1 relative overflow-hidden bg-muted/30 border border-border group"
                                     >
                                         <div className="aspect-3/4 w-full flex flex-col items-center justify-center p-4">
                                             {item.status === 'uploading' ? (
@@ -1110,7 +1110,7 @@ export function CompCardManager({
                                     return (
                                         <div
                                             key={`gallery-img-${i}`}
-                                            className="break-inside-avoid mb-4 relative group rounded-lg overflow-hidden bg-muted"
+                                            className="break-inside-avoid mb-1 relative group overflow-hidden bg-muted"
                                         >
                                             <img
                                                 src={url}
