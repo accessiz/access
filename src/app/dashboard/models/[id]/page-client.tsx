@@ -281,9 +281,6 @@ export default function ModelProfilePageClient({ initialModel, workHistory = [] 
           </TabsTrigger>
           <TabsTrigger value="work" className="gap-x-2 gap-y-2 h-10 justify-start px-3 whitespace-normal leading-tight sm:h-full sm:justify-center sm:px-4 sm:whitespace-nowrap">
             <Briefcase className="h-4 w-4" /> Trabajos
-            {completedWork.length > 0 && (
-              <Badge variant="secondary" size="small" className="ml-1">{completedWork.length}</Badge>
-            )}
           </TabsTrigger>
           <TabsTrigger value="applications" className="gap-x-2 gap-y-2 h-10 justify-start px-3 whitespace-normal leading-tight sm:h-full sm:justify-center sm:px-4 sm:whitespace-nowrap">
             <Send className="h-4 w-4" /> Postulaciones

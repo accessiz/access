@@ -1124,7 +1124,7 @@ export function CompCardManager({
                                                 <Button
                                                     variant="secondary"
                                                     size="icon"
-                                                    className="h-9 w-9 bg-white/90 hover:bg-white text-destructive shadow-sm backdrop-blur-sm"
+                                                    className="h-9 w-9 bg-background/90 hover:bg-background text-destructive shadow-sm backdrop-blur-sm"
                                                     onClick={() => handleDelete('gallery', i, galleryPaths[i] || undefined)}
                                                     title="Eliminar foto"
                                                 >
@@ -1134,7 +1134,7 @@ export function CompCardManager({
                                                     href={url}
                                                     target="_blank"
                                                     rel="noreferrer"
-                                                    className="inline-flex items-center justify-center h-9 w-9 rounded-md bg-white/90 hover:bg-white text-foreground shadow-sm backdrop-blur-sm"
+                                                    className="inline-flex items-center justify-center h-9 w-9 rounded-md bg-background/90 hover:bg-background text-foreground shadow-sm backdrop-blur-sm transition-colors"
                                                     title="Ver original"
                                                 >
                                                     <ExternalLink className="h-4 w-4" />

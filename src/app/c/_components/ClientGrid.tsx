@@ -1,12 +1,12 @@
 'use client'
 
 import { useState } from 'react';
-import Link from 'next/link';
 import { Model } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { CheckCircle2, XCircle, Clock, Loader2 } from 'lucide-react';
+import { CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import { updateClientModelSelection } from '@/lib/actions/client_actions';
 import { toast } from 'sonner';
+import { ClientTalentCard } from './ClientTalentCard';
 
 // Define el tipo GridModel extendiendo Model
 type GridModel = Model & {
@@ -19,30 +19,6 @@ interface ClientGridProps {
   projectId: string; // Necesita el public_id para construir los links
   realProjectId: string; // UUID real del proyecto para server actions
   onSelectionChange?: (modelId: string, selection: GridModel['selection']) => void;
-}
-
-// Componente para el indicador de estado (Helper interno)
-function StatusIndicator({ status }: { status: GridModel['selection'] }) {
-  if (status === 'approved') {
-    return (
-      <div className="absolute top-2 right-2 flex size-6 items-center justify-center rounded-full bg-success text-success-foreground shadow-md">
-        <CheckCircle2 className="size-4" />
-      </div>
-    );
-  }
-  if (status === 'rejected') {
-    return (
-      <div className="absolute top-2 right-2 flex size-6 items-center justify-center rounded-full bg-destructive text-destructive-foreground shadow-md">
-        <XCircle className="size-4" />
-      </div>
-    );
-  }
-  // Pendiente o null
-  return (
-    <div className="absolute top-2 right-2 flex size-6 items-center justify-center rounded-full bg-muted/80 text-muted-foreground backdrop-blur-sm shadow-md ring-1 ring-border">
-      <Clock className="size-4" />
-    </div>
-  );
 }
 
 // Componente de botones de aprobación rápida
@@ -59,18 +35,26 @@ function QuickApprovalButtons({
 }) {
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const handleClick = async (e: React.MouseEvent, newSelection: 'approved' | 'rejected') => {
+  const handleClick = async (
+    e: React.MouseEvent,
+    next: 'approved' | 'rejected'
+  ) => {
     e.preventDefault();
     e.stopPropagation();
 
-    // Toggle: si ya está en ese estado, volver a pending
-    const finalSelection: GridModel['selection'] = localSelection === newSelection ? 'pending' : newSelection;
+    if (localSelection === next) return;
+
+    const finalSelection: GridModel['selection'] = next;
 
     // Optimistic update
     onSelectionChange?.(model.id, finalSelection);
     setIsUpdating(true);
 
-    const result = await updateClientModelSelection(realProjectId, model.id, finalSelection || 'pending');
+    const result = await updateClientModelSelection(
+      realProjectId,
+      model.id,
+      finalSelection || 'pending'
+    );
 
     if (!result.success) {
       // Revertir si falla
@@ -90,14 +74,15 @@ function QuickApprovalButtons({
   }
 
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex w-full items-center justify-between">
       <button
         onClick={(e) => handleClick(e, 'approved')}
         className={cn(
-          "flex items-center justify-center size-7 rounded-full transition-all",
+          'inline-flex items-center justify-center rounded-full transition-colors',
+          'size-10 md:size-9',
           localSelection === 'approved'
-            ? "text-success"
-            : "text-muted-foreground hover:text-success"
+            ? 'bg-success text-success-foreground'
+            : 'bg-muted text-muted-foreground hover:bg-success hover:text-success-foreground'
         )}
         aria-label="Aprobar"
       >
@@ -106,10 +91,11 @@ function QuickApprovalButtons({
       <button
         onClick={(e) => handleClick(e, 'rejected')}
         className={cn(
-          "flex items-center justify-center size-7 rounded-full transition-all",
+          'inline-flex items-center justify-center rounded-full transition-colors',
+          'size-10 md:size-9',
           localSelection === 'rejected'
-            ? "text-destructive"
-            : "text-muted-foreground hover:text-destructive"
+            ? 'bg-destructive text-destructive-foreground'
+            : 'bg-muted text-muted-foreground hover:bg-destructive hover:text-destructive-foreground'
         )}
         aria-label="Rechazar"
       >
@@ -156,52 +142,25 @@ export function ClientGrid({ models, projectId, realProjectId, onSelectionChange
         const currentSelection = localSelections[model.id] || model.selection || 'pending';
 
         return (
-          <div
+          <ClientTalentCard
             key={model.id}
+            title={model.alias || 'Sin Alias'}
+            coverUrl={model.coverUrl}
+            imageHref={`/c/${projectId}/${model.id}`}
+            onImageClick={saveScrollPosition}
+            showMobilePeekIcon
             className={cn(
-              "group relative transition-all duration-300",
-              currentSelection === 'approved' && 'ring-2 ring-success ring-offset-2 rounded-sm',
+              'transition-all duration-300',
               currentSelection === 'rejected' && 'opacity-50'
             )}
           >
-            {/* Link a la página de detalle del modelo */}
-            <Link
-              href={`/c/${projectId}/${model.id}`}
-              className="block"
-              onClick={saveScrollPosition}
-            >
-              {/* Contenedor de la Imagen */}
-              <div className="relative aspect-[3/4] bg-muted overflow-hidden">
-                {model.coverUrl ? (
-                  <img
-                    src={model.coverUrl}
-                    alt={model.alias || 'Modelo'}
-                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center">
-                    <span className="text-body text-muted-foreground">Sin foto</span>
-                  </div>
-                )}
-
-                {/* Indicador de estado */}
-                <StatusIndicator status={currentSelection} />
-              </div>
-            </Link>
-
-            {/* Nombre del modelo y botones de aprobación */}
-            <div className="mt-2 flex items-center justify-between gap-2">
-              <h3 className="text-body text-foreground truncate flex-1">{model.alias || 'Sin Alias'}</h3>
-              <QuickApprovalButtons
-                model={model}
-                realProjectId={realProjectId}
-                onSelectionChange={handleLocalSelectionChange}
-                localSelection={currentSelection}
-              />
-            </div>
-          </div>
+            <QuickApprovalButtons
+              model={model}
+              realProjectId={realProjectId}
+              onSelectionChange={handleLocalSelectionChange}
+              localSelection={currentSelection}
+            />
+          </ClientTalentCard>
         );
       })}
     </div>

@@ -19,6 +19,7 @@ export const ActivityTitles = {
     // Selección de cliente
     clientApprovedModel: (modelName: string, projectName: string) => `Cliente aprobó a ${modelName} en "${projectName}"`,
     clientRejectedModel: (modelName: string, projectName: string) => `Cliente rechazó a ${modelName} en "${projectName}"`,
+    clientReopenedProject: (projectName: string) => `Cliente reabrió el proyecto "${projectName}"`,
 
     // Clientes y marcas
     clientCreated: (name: string) => `Creaste cliente: ${name}`,

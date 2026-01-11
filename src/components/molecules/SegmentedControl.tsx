@@ -91,15 +91,15 @@ export function SegmentedControl<T extends string>({
                 "inline-flex items-center",
                 isIconOnly ? "justify-center" : "justify-start sm:justify-center",
                 isIconOnly ? "gap-0" : "gap-2",
-                "h-10",
+                "h-12 md:h-10",
                 "rounded-md",
-                isIconOnly ? "w-10 px-0" : "px-3",
+                isIconOnly ? "w-12 md:w-10 px-0" : "px-3",
                 "text-body",
                 "transition-colors",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                 "disabled:pointer-events-none disabled:opacity-50",
                 isActive
-                  ? "bg-tertiary-container text-tertiary-container-foreground shadow-sm"
+                  ? "bg-tertiary-container text-tertiary-container-foreground"
                   : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
               )}
             >

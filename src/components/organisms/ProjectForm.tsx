@@ -720,10 +720,22 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
             <DollarSign className="h-5 w-5 text-primary" />
             <h2 className="text-title">Presupuesto y Tarifas</h2>
           </div>
-          <div className="border bg-card rounded-lg p-6 grid md:grid-cols-3 gap-6">
+          <div className="border bg-card rounded-lg p-6 grid md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label>Tarifa por Modelo</Label>
-              <Input type="number" step="0.01" min="0" placeholder="0.00" {...form.register('default_model_fee')} />
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-body">
+                  GTQ
+                </span>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="0.00"
+                  className="pl-14"
+                  {...form.register('default_model_fee')}
+                />
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -758,33 +770,6 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
                         <SelectItem value="per_day">Por día</SelectItem>
                         <SelectItem value="per_hour">Por hora</SelectItem>
                         <SelectItem value="fixed">Tarifa fija</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </>
-                )}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Moneda</Label>
-              <Controller
-                control={form.control}
-                name="currency"
-                render={({ field }) => (
-                  <>
-                    <input type="hidden" name="currency" value={field.value || ''} />
-                    <Select value={field.value || 'GTQ'} onValueChange={field.onChange}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="GTQ">GTQ</SelectItem>
-                        <SelectItem value="USD">USD</SelectItem>
-                        <SelectItem value="EUR">EUR</SelectItem>
-                        <SelectItem value="MXN">MXN</SelectItem>
-                        <SelectItem value="COP">COP</SelectItem>
-                        <SelectItem value="PEN">PEN</SelectItem>
-                        <SelectItem value="ARS">ARS</SelectItem>
-                        <SelectItem value="CLP">CLP</SelectItem>
-                        <SelectItem value="BRL">BRL</SelectItem>
                       </SelectContent>
                     </Select>
                   </>

@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState, useTransition, useMemo } from 'react';
+import { useEffect, useState, useTransition, useMemo, useRef } from 'react';
+import { gsap } from 'gsap';
 import { Project, Model } from '@/lib/types';
 import { finalizeProjectReview } from '@/lib/actions/client_actions';
 import { updateProjectStatus } from '@/lib/actions/projects';
@@ -13,9 +14,11 @@ import { ClientListView } from './ClientListView';
 import { ClientToolbar } from './ClientToolbar';
 import { ClientFooter } from '../../_components/ClientFooter';
 import { Button } from '@/components/ui/button';
-import { Send, Loader2, CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { Send, Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { Progress } from '@/components/ui/progress';
+import { useClientAnimation } from './ClientAnimationContext';
 
 type GridModel = Model & {
   selection?: 'pending' | 'approved' | 'rejected' | null
@@ -38,14 +41,21 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
     }))
   );
 
+  // Animation Context
+  const { animationState, startExitAnimation } = useClientAnimation();
+
+  // Refs for animated elements (Phase 7)
+  const navbarRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
+  const progressRef = useRef<HTMLDivElement>(null);
+  const footerRef = useRef<HTMLDivElement>(null);
+  const submitRef = useRef<HTMLDivElement>(null);
+
   // 2. ESTADOS DE FILTROS Y VISTA
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   const [filters, setFilters] = useState({
     query: '',
-    country: null as string | null,
-    minHeight: null as number | null,
-    maxHeight: null as number | null,
   });
 
   // 3. OTROS ESTADOS
@@ -57,6 +67,9 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
   // --- EFECTO DE MONTAJE: RECUPERAR ESTADO Y ACTUALIZAR ESTADO DEL PROYECTO ---
   useEffect(() => {
     setIsMounted(true);
+    // Trigger Exit Animation (Show Content)
+    startExitAnimation();
+
     const savedView = sessionStorage.getItem(getStorageKey(project.public_id, 'view'));
     if (savedView === 'list' || savedView === 'grid') setViewMode(savedView);
 
@@ -65,10 +78,7 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
       try {
         const parsed = JSON.parse(savedFilters);
         setFilters({
-          query: parsed.query || '',
-          country: parsed.country || null,
-          minHeight: parsed.minHeight || null,
-          maxHeight: parsed.maxHeight || null
+          query: parsed.query || ''
         });
       } catch (e) { console.error("Error parsing filters", e); }
     }
@@ -93,7 +103,32 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
       });
     }
 
-  }, [project.public_id, project.id, project.status, isUpdatingStatus, user, authLoading]);
+  }, [project.public_id, project.id, project.status, isUpdatingStatus, user, authLoading, startExitAnimation]);
+
+  // --- PHASE 7: ANIMATE CONTENT ELEMENTS (Navbar, Header, Progress, Footer, Submit) ---
+  useEffect(() => {
+    if (animationState === 'finished' && isMounted) {
+      const elements = [
+        navbarRef.current,
+        headerRef.current,
+        progressRef.current,
+        footerRef.current,
+        submitRef.current
+      ].filter(Boolean);
+
+      // Set initial state
+      gsap.set(elements, { opacity: 0, y: 20 });
+
+      // Staggered reveal
+      gsap.to(elements, {
+        opacity: 1,
+        y: 0,
+        duration: 0.6,
+        stagger: 0.1,
+        ease: 'power2.out'
+      });
+    }
+  }, [animationState, isMounted]);
 
   // --- EFECTO: PERSISTENCIA DE ESTADO ---
   useEffect(() => {
@@ -112,17 +147,6 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
         const matchAlias = model.alias?.toLowerCase().includes(q);
         if (!matchName && !matchAlias) return false;
       }
-      // 2. Filtro de País
-      if (filters.country && model.country !== filters.country) {
-        return false;
-      }
-      // 3. Filtro de Estatura
-      if (model.height_cm) {
-        if (filters.minHeight && model.height_cm < filters.minHeight) return false;
-        if (filters.maxHeight && model.height_cm > filters.maxHeight) return false;
-      } else {
-        if (filters.minHeight || filters.maxHeight) return false;
-      }
       return true;
     });
   }, [models, filters]);
@@ -132,20 +156,11 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
   const menModels = useMemo(() => filteredModels.filter(m => m.gender === 'Male'), [filteredModels]);
   const otherModels = useMemo(() => filteredModels.filter(m => m.gender !== 'Female' && m.gender !== 'Male'), [filteredModels]);
 
-  // Obtener lista única de países para el filtro
-  const availableCountries = useMemo(() => {
-    const countries = new Set(models.map(m => m.country).filter(Boolean) as string[]);
-    return Array.from(countries).sort();
-  }, [models]);
-
   // --- HANDLERS ---
   const handleFilterChange = (newFilter: { key: string; value: string | null }) => {
     setFilters(prev => {
       const updated = { ...prev };
       if (newFilter.key === 'query') updated.query = newFilter.value || '';
-      else if (newFilter.key === 'country') updated.country = newFilter.value;
-      else if (newFilter.key === 'minHeight') updated.minHeight = newFilter.value ? Number(newFilter.value) : null;
-      else if (newFilter.key === 'maxHeight') updated.maxHeight = newFilter.value ? Number(newFilter.value) : null;
       return updated;
     });
   };
@@ -201,63 +216,52 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-background text-foreground">
-      <div className="w-full max-w-[1340px] mx-auto px-6 md:px-0">
-        <ClientNavbar clientName={project.client_name} />
-
-        <div className="py-24 sm:py-56">
-          <ClientHeader project={project} />
+      <div className="w-full max-w-335 mx-auto px-6 md:px-0">
+        <div ref={navbarRef}>
+          <ClientNavbar schedule={project.schedule} />
         </div>
 
-        <main className="w-full flex-1 space-y-8">
-
-          {/* HEADER Y BOTÓN SUPERIOR */}
-          <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-            <div className="space-y-4 max-w-2xl">
-              <p className="text-body text-muted-foreground sm:text-body">
-                Selecciona y aprueba el talento que te interesa.
-              </p>
-            </div>
-
-            <div className="flex-shrink-0">
-              <Button
-                size="lg"
-                onClick={handleFinalize}
-                disabled={isFinalizing}
-                className="w-full md:w-auto text-white"
-              >
-                {isFinalizing ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Send className="mr-2 size-4" />}
-                {isFinalizing ? 'Enviando...' : 'Finalizar Revisión'}
-              </Button>
-            </div>
+        <section className="py-12 sm:py-20 space-y-6">
+          <div ref={headerRef}>
+            <ClientHeader project={project} clientName={project.client_name} />
           </div>
 
-          {/* BARRA DE PROGRESO */}
-          <div className="bg-muted/50 rounded-lg p-4 space-y-3">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between text-body">
-              <span className="font-medium">
-                Progreso: {progressStats.reviewed}/{progressStats.total} calificados
-              </span>
-              <div className="grid grid-cols-1 gap-2 sm:flex sm:items-center sm:gap-4">
-                <span className="flex items-center gap-1.5 text-success">
-                  <CheckCircle2 className="size-4" />
-                  {progressStats.approved} aprobados
-                </span>
-                <span className="flex items-center gap-1.5 text-destructive">
-                  <XCircle className="size-4" />
-                  {progressStats.rejected} rechazados
-                </span>
-                <span className="flex items-center gap-1.5 text-muted-foreground">
-                  <Clock className="size-4" />
-                  {progressStats.pending} pendientes
+          {/* BARRA DE PROGRESO (junto al bloque de proyecto/fechas) */}
+          <div ref={progressRef} className="client-wow-progress p-4">
+            <div className="relative z-10 flex flex-col gap-3">
+              <div className="flex flex-wrap items-center justify-between gap-2 sm:flex-nowrap sm:gap-3">
+                <div className="min-w-0">
+                  <p className="text-body font-medium text-muted-foreground dark:text-primary-foreground leading-snug sm:truncate">
+                    Selección de talento
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 sm:shrink-0">
+                  <Badge variant="success" size="small" className="gap-1.5">
+                    <CheckCircle2 className="size-4" />
+                    <span className="sr-only">Aprobados:</span>
+                    {progressStats.approved}
+                  </Badge>
+                  <Badge variant="danger" size="small" className="gap-1.5">
+                    <XCircle className="size-4" />
+                    <span className="sr-only">Rechazados:</span>
+                    {progressStats.rejected}
+                  </Badge>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <Progress value={progressStats.percentage} className="h-2 flex-1" />
+                <span className="text-label text-muted-foreground dark:text-primary-foreground tabular-nums">
+                  {Math.round(progressStats.percentage)}%
                 </span>
               </div>
             </div>
-            <Progress value={progressStats.percentage} className="h-2" />
           </div>
+        </section>
 
+        <main className="w-full flex-1 space-y-8">
           {/* TOOLBAR: Eliminada propiedad gender: null */}
           <ClientToolbar
-            countries={availableCountries}
             onFilterChange={handleFilterChange}
             onViewChange={handleViewChange}
             currentFilters={{
@@ -267,12 +271,12 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
           />
 
           {/* CONTENIDO (SECCIONES DIVIDIDAS) */}
-          <div className="min-h-[400px] space-y-16">
+          <div className="min-h-100 space-y-16">
 
             {/* SECCIÓN HOMBRES */}
             {menModels.length > 0 && (
               <section>
-                <h2 className="text-display mb-8 border-b pb-4 uppercase tracking-tight">Hombres</h2>
+                <h2 className="text-title mb-8 border-b pb-4 uppercase tracking-tight">Hombres</h2>
                 {viewMode === 'grid' ? (
                   <ClientGrid
                     models={menModels}
@@ -281,7 +285,12 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
                     onSelectionChange={handleSelectionChange}
                   />
                 ) : (
-                  <ClientListView models={menModels} projectId={project.public_id} />
+                  <ClientListView
+                    models={menModels}
+                    projectId={project.public_id}
+                    realProjectId={project.id}
+                    onSelectionChange={handleSelectionChange}
+                  />
                 )}
               </section>
             )}
@@ -289,7 +298,7 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
             {/* SECCIÓN MUJERES */}
             {womenModels.length > 0 && (
               <section>
-                <h2 className="text-display mb-8 border-b pb-4 uppercase tracking-tight">Mujeres</h2>
+                <h2 className="text-title mb-8 border-b pb-4 uppercase tracking-tight">Mujeres</h2>
                 {viewMode === 'grid' ? (
                   <ClientGrid
                     models={womenModels}
@@ -298,7 +307,12 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
                     onSelectionChange={handleSelectionChange}
                   />
                 ) : (
-                  <ClientListView models={womenModels} projectId={project.public_id} />
+                  <ClientListView
+                    models={womenModels}
+                    projectId={project.public_id}
+                    realProjectId={project.id}
+                    onSelectionChange={handleSelectionChange}
+                  />
                 )}
               </section>
             )}
@@ -306,7 +320,7 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
             {/* SECCIÓN OTROS */}
             {otherModels.length > 0 && (
               <section>
-                <h2 className="text-display mb-8 border-b pb-4 uppercase tracking-tight">Otros</h2>
+                <h2 className="text-title mb-8 border-b pb-4 uppercase tracking-tight">Otros</h2>
                 {viewMode === 'grid' ? (
                   <ClientGrid
                     models={otherModels}
@@ -315,7 +329,12 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
                     onSelectionChange={handleSelectionChange}
                   />
                 ) : (
-                  <ClientListView models={otherModels} projectId={project.public_id} />
+                  <ClientListView
+                    models={otherModels}
+                    projectId={project.public_id}
+                    realProjectId={project.id}
+                    onSelectionChange={handleSelectionChange}
+                  />
                 )}
               </section>
             )}
@@ -330,12 +349,12 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
           </div>
 
           {/* BOTÓN INFERIOR */}
-          <div className="flex justify-end pt-4 pb-16 md:pb-24">
+          <div ref={submitRef} className="flex justify-center pt-4 pb-16 sm:justify-end md:pb-24">
             <Button
               size="lg"
               onClick={handleFinalize}
               disabled={isFinalizing}
-              className="text-white"
+              className="w-full text-white sm:w-auto"
             >
               {isFinalizing ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Send className="mr-2 size-4" />}
               {isFinalizing ? 'Enviando...' : 'Finalizar Revisión'}
@@ -344,7 +363,9 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
 
         </main>
 
-        <ClientFooter />
+        <div ref={footerRef}>
+          <ClientFooter />
+        </div>
       </div>
     </div>
   );

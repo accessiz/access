@@ -7,11 +7,10 @@ import { Project } from '@/lib/types';
 
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { PlusCircle, Trash2, ArrowDown, ArrowUp, List, CalendarDays } from 'lucide-react';
+import { PlusCircle, ArrowDown, ArrowUp, List, CalendarDays } from 'lucide-react';
 import { ProjectCalendarView } from '@/components/organisms/ProjectCalendarView';
 import { ProjectsToolbar } from '@/components/organisms/ProjectsToolbar';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from "@/components/ui/pagination";
-import { DeleteProjectDialog } from '@/components/organisms/DeleteProjectDialog';
 import { ProjectStatusBadge } from '@/components/molecules/ProjectStatusBadge';
 import { SegmentedControl } from '@/components/molecules/SegmentedControl';
 import { cn } from '@/lib/utils';
@@ -71,11 +70,6 @@ export default function ProjectsClientPage({ initialProjects, initialCount, avai
         params.set('dir', direction);
         params.set('page', '1');
         router.replace(`${pathname}?${params.toString()}`);
-    };
-
-    const handleProjectDeleted = (deletedProjectId: string) => {
-        setProjects(current => current.filter(p => p.id !== deletedProjectId));
-        setCount(current => current - 1);
     };
 
     const createPageURL = (pageNumber: number | string) => {
@@ -148,16 +142,6 @@ export default function ProjectsClientPage({ initialProjects, initialCount, avai
                                         </div>
                                         <p className="text-body text-muted-foreground truncate">{project.client_name || '—'}</p>
                                     </div>
-
-                                    <DeleteProjectDialog
-                                        projectId={project.id}
-                                        projectName={project.project_name || ''}
-                                        onProjectDeleted={() => handleProjectDeleted(project.id)}
-                                    >
-                                        <Button variant="ghost" size="icon" className="shrink-0">
-                                            <Trash2 className="h-4 w-4 text-destructive" />
-                                        </Button>
-                                    </DeleteProjectDialog>
                                 </div>
 
                                 <div className="mt-3 flex flex-col gap-2">
@@ -191,7 +175,6 @@ export default function ProjectsClientPage({ initialProjects, initialCount, avai
                                     <SortableHeader tkey="status" label="Estado" />
                                     <TableHead>Talento Aprobado</TableHead>
                                     <SortableHeader tkey="created_at" label="Fecha" />
-                                    <TableHead className="text-right">Acciones</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -219,11 +202,6 @@ export default function ProjectsClientPage({ initialProjects, initialCount, avai
                                                         : `${formatDate(project.schedule[0].date)} - ${formatDate(project.schedule[project.schedule.length - 1].date)}`
                                                 ) : '-'}
                                             </TableCell>
-                                            <TableCell className="text-right">
-                                                <DeleteProjectDialog projectId={project.id} projectName={project.project_name || ''} onProjectDeleted={() => handleProjectDeleted(project.id)}>
-                                                    <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                                                </DeleteProjectDialog>
-                                            </TableCell>
                                         </TableRow>
                                     );
                                 })}
@@ -241,17 +219,61 @@ export default function ProjectsClientPage({ initialProjects, initialCount, avai
             <header className="flex flex-col gap-x-4 gap-y-4 pb-4 border-b sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-x-4 gap-y-4">
                     <div>
-                        <h1 className="text-display font-semibold">Proyectos</h1>
-                        <p className="text-label text-muted-foreground">{count} proyectos</p>
+                        <div className="flex items-center gap-3">
+                            <h1 className="text-display font-semibold">Proyectos</h1>
+                            <span aria-hidden className="h-5 w-px bg-border" />
+                            <p className="text-label text-muted-foreground whitespace-nowrap">{count} proyectos</p>
+                        </div>
                     </div>
                 </div>
-                <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
-                    <div className="order-1 w-full sm:order-2 sm:w-auto">
-                        <ProjectsToolbar availableYears={availableYears} />
+                <div className="w-full sm:w-auto">
+                    {/* Mobile layout */}
+                    <div className="space-y-3 sm:hidden">
+                        {/* Row 1: search + new */}
+                        <div className="flex items-center gap-3">
+                            <div className="min-w-0 flex-1">
+                                <ProjectsToolbar availableYears={availableYears} mode="search" />
+                            </div>
+                            <Button asChild className="shrink-0 whitespace-nowrap">
+                                <Link href="/dashboard/projects/new"><PlusCircle className="mr-2 h-4 w-4" />Nuevo</Link>
+                            </Button>
+                        </div>
+
+                        {/* Row 2: status full-width */}
+                        <ProjectsToolbar availableYears={availableYears} mode="status" className="w-full" />
+
+                        {/* Row 3: year+month + view toggle */}
+                        <div className="flex items-center gap-3">
+                            <ProjectsToolbar availableYears={availableYears} mode="date" className="flex-1" />
+                            <SegmentedControl
+                                value={viewMode}
+                                onValueChange={setViewMode}
+                                ariaLabel="Cambiar vista"
+                                options={[
+                                    {
+                                        value: 'list',
+                                        label: 'Lista',
+                                        icon: <List className="h-4 w-4" />,
+                                        iconOnly: true,
+                                    },
+                                    {
+                                        value: 'calendar',
+                                        label: 'Calendario',
+                                        icon: <CalendarDays className="h-4 w-4" />,
+                                        iconOnly: true,
+                                    },
+                                ]}
+                                className="w-fit shrink-0"
+                            />
+                        </div>
                     </div>
 
-                    <div className="order-2 flex items-center justify-between gap-3 w-full sm:order-1 sm:w-auto sm:justify-start">
-                        {/* View Toggle */}
+                    {/* Desktop layout (single row) */}
+                    <div className="hidden sm:flex sm:flex-row sm:items-center sm:gap-2 sm:flex-nowrap">
+                        <div className="min-w-0 sm:w-64">
+                            <ProjectsToolbar availableYears={availableYears} mode="search" />
+                        </div>
+                        <ProjectsToolbar availableYears={availableYears} mode="filters" className="sm:w-auto" />
                         <SegmentedControl
                             value={viewMode}
                             onValueChange={setViewMode}
@@ -270,10 +292,9 @@ export default function ProjectsClientPage({ initialProjects, initialCount, avai
                                     iconOnly: true,
                                 },
                             ]}
-                            className="w-fit"
+                            className="shrink-0"
                         />
-
-                        <Button asChild className="shrink-0">
+                        <Button asChild className="shrink-0 whitespace-nowrap">
                             <Link href="/dashboard/projects/new"><PlusCircle className="mr-2 h-4 w-4" />Nuevo</Link>
                         </Button>
                     </div>

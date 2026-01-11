@@ -450,7 +450,8 @@ export async function getModelForProject(projectId: string, modelId: string): Pr
       models (
         *,
         cover_path,
-        portfolio_path
+        portfolio_path,
+        gallery_paths
       )
     `)
     .eq('project_id', projectId)
@@ -470,20 +471,23 @@ export async function getModelForProject(projectId: string, modelId: string): Pr
     return null;
   }
 
-  const modelWithPaths = modelData as unknown as (Model & { cover_path?: string; portfolio_path?: string });
+  const modelWithPaths = modelData as unknown as (Model & { cover_path?: string; portfolio_path?: string; gallery_paths?: string[] | null });
 
-  // --- INICIO DE LA CORRECCIÓN ---
-  // Se elimina la lógica de `createSignedUrls` y `signedUrlMap`.
   // Se construyen las URLs públicas de R2 directamente.
   const validatedSelection = isValidClientSelection(data.client_selection)
     ? data.client_selection
     : null;
+
+  // Convertir gallery_paths a URLs públicas
+  const galleryUrls = (modelWithPaths.gallery_paths || [])
+    .map(path => toPublicUrl(path))
+    .filter((url): url is string => url !== null);
 
   return {
     ...modelWithPaths,
     client_selection: validatedSelection,
     coverUrl: toPublicUrl(modelWithPaths.cover_path),
     portfolioUrl: toPublicUrl(modelWithPaths.portfolio_path),
+    galleryUrls,
   };
-  // --- FIN DE LA CORRECCIÓN ---
 }

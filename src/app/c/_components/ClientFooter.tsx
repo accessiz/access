@@ -11,9 +11,14 @@ export function ClientFooter() {
       </span>
 
       {/* Lado Derecho */}
-      <span className="font-mono">
+      <a
+        href="https://wa.me/50249644467"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="font-mono hover:text-foreground transition-colors cursor-pointer"
+      >
         &lt;DEV&gt; SKOPOS WEB &lt;/DEV&gt;
-      </span>
+      </a>
     </footer>
   );
 }

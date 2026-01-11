@@ -17,26 +17,45 @@ async function logClientActivity(params: {
   metadata?: Record<string, unknown>;
 }) {
   try {
+    console.log('[logClientActivity] Starting with projectId:', params.projectId);
+
     // Obtener el user_id del proyecto
-    const { data: project } = await supabaseAdmin
+    const { data: project, error: projectError } = await supabaseAdmin
       .from('projects')
       .select('user_id')
       .eq('id', params.projectId)
       .single();
 
-    if (!project?.user_id) return;
+    if (projectError) {
+      console.error('[logClientActivity] Error fetching project:', projectError);
+      return;
+    }
+
+    if (!project?.user_id) {
+      console.warn('[logClientActivity] No user_id found for project:', params.projectId);
+      return;
+    }
+
+    console.log('[logClientActivity] Found user_id:', project.user_id, 'Inserting log...');
 
     // Insertar en activity_logs con is_urgent=true (para campanita)
-    await supabaseAdmin.from('activity_logs').insert({
+    // Usamos category='project' porque 'client' no está permitido por el CHECK constraint
+    const { error: insertError } = await supabaseAdmin.from('activity_logs').insert({
       user_id: project.user_id,
-      category: 'client',
+      category: 'project', // Cambiado de 'client' a 'project' por constraint de DB
       title: params.title,
       message: params.message || null,
       metadata: params.metadata || null,
       is_urgent: true, // Esto hace que aparezca en la campanita
     });
+
+    if (insertError) {
+      console.error('[logClientActivity] Error inserting log:', insertError);
+    } else {
+      console.log('[logClientActivity] Successfully inserted notification:', params.title);
+    }
   } catch (error) {
-    console.error('[logClientActivity] Error:', error);
+    console.error('[logClientActivity] Unexpected error:', error);
   }
 }
 
@@ -104,7 +123,7 @@ export async function finalizeProjectReview(projectId: string, rejectPending: bo
     // Revalidar
     const { data: project } = await supabaseAdmin
       .from('projects')
-      .select('public_id')
+      .select('public_id, project_name')
       .eq('id', projectId)
       .single();
 
@@ -113,7 +132,7 @@ export async function finalizeProjectReview(projectId: string, rejectPending: bo
     // Log activity for notification bell
     await logClientActivity({
       projectId,
-      title: `Cliente finalizó el proyecto "${project?.public_id || 'proyecto'}"`,
+      title: `Cliente finalizó el proyecto "${project?.project_name || 'proyecto'}"`,
       metadata: { entity_id: projectId, entity_type: 'project', action: 'finalized' },
     });
 
@@ -147,11 +166,18 @@ export async function reopenProject(projectId: string) {
 
     const { data: project } = await supabaseAdmin
       .from('projects')
-      .select('public_id')
+      .select('public_id, project_name')
       .eq('id', projectId)
       .single();
 
     if (project?.public_id) revalidatePath(`/c/${project.public_id}`);
+
+    // Log activity for notification bell
+    await logClientActivity({
+      projectId,
+      title: ActivityTitles.clientReopenedProject(project?.project_name || 'proyecto'),
+      metadata: { entity_id: projectId, entity_type: 'project', action: 'reopened' },
+    });
 
     return { success: true };
 
@@ -206,17 +232,16 @@ export async function updateClientModelSelection(
       .eq('id', modelId)
       .single();
 
-    // Log activity for notification bell (only approved/rejected, not pending)
-    if (selection !== 'pending') {
+    // Log activity for notification bell (ONLY for approvals per design decision)
+    // Rejections are NOT logged individually (too noisy when project is finalized)
+    if (selection === 'approved') {
       await logClientActivity({
         projectId,
-        title: selection === 'approved'
-          ? ActivityTitles.clientApprovedModel(model?.alias || 'Talento', project?.project_name || 'Proyecto')
-          : ActivityTitles.clientRejectedModel(model?.alias || 'Talento', project?.project_name || 'Proyecto'),
+        title: ActivityTitles.clientApprovedModel(model?.alias || 'Talento', project?.project_name || 'Proyecto'),
         metadata: {
           entity_id: modelId,
           entity_type: 'model',
-          action: selection === 'approved' ? 'client_approved' : 'client_rejected',
+          action: 'client_approved',
           project_id: projectId
         },
       });

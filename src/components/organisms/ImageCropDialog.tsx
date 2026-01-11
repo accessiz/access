@@ -141,6 +141,8 @@ export function ImageCropDialog({
               onCropChange={setCrop}
               onZoomChange={setZoom}
               onCropComplete={handleCropComplete}
+              objectFit="contain"
+              showGrid={true}
             />
           )}
         </div>

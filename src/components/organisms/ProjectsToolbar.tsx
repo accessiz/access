@@ -15,6 +15,8 @@ import { useDebouncedCallback } from 'use-debounce';
 
 type ProjectsToolbarProps = {
     availableYears: number[];
+    mode?: 'all' | 'search' | 'filters' | 'status' | 'date';
+    className?: string;
 };
 const statusOptions = [
     { label: 'Todos', value: 'all' },
@@ -25,7 +27,7 @@ const statusOptions = [
     { label: 'Archivado', value: 'archived' },
 ];
 
-export function ProjectsToolbar({ availableYears }: ProjectsToolbarProps) {
+export function ProjectsToolbar({ availableYears, mode = 'all', className }: ProjectsToolbarProps) {
     const searchParams = useSearchParams();
     const pathname = usePathname();
     const router = useRouter();
@@ -75,36 +77,70 @@ export function ProjectsToolbar({ availableYears }: ProjectsToolbarProps) {
         router.replace(`${pathname}?${params.toString()}`);
     }
 
-    return (
-        <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
-            <SearchBar
-                className="w-full sm:w-64"
-                placeholder="Buscar por proyecto o cliente..."
-                defaultValue={searchParams.get('q')?.toString()}
-                onValueChange={handleSearch}
+    const searchEl = (
+        <SearchBar
+            className="w-full"
+            placeholder="Buscar por proyecto o cliente..."
+            defaultValue={searchParams.get('q')?.toString()}
+            onValueChange={handleSearch}
+        />
+    );
+
+    const statusEl = (
+        <Select
+            onValueChange={(value) => handleFilterChange('status', value)}
+            defaultValue={searchParams.get('status') || 'all'}
+        >
+            <SelectTrigger className="w-full sm:w-auto min-w-35"><SelectValue placeholder="Estado" /></SelectTrigger>
+            <SelectContent>
+                {statusOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}
+            </SelectContent>
+        </Select>
+    );
+
+    const dateEl = (
+        <>
+            <YearSelect
+                years={availableYears}
+                onValueChange={(value) => handleFilterChange('year', value)}
+                defaultValue={yearDefaultValue}
+                triggerClassName="w-full sm:w-auto"
             />
-            <div className="flex items-stretch gap-2">
-                <Select
-                    onValueChange={(value) => handleFilterChange('status', value)}
-                    defaultValue={searchParams.get('status') || 'all'}
-                >
-                    <SelectTrigger className="w-full sm:w-auto min-w-35"><SelectValue placeholder="Estado" /></SelectTrigger>
-                    <SelectContent>
-                        {statusOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}
-                    </SelectContent>
-                </Select>
-                <YearSelect
-                    years={availableYears}
-                    onValueChange={(value) => handleFilterChange('year', value)}
-                    defaultValue={yearDefaultValue}
-                    triggerClassName="w-full sm:w-auto"
-                />
-                <MonthSelect
-                    onValueChange={(value) => handleFilterChange('month', value)}
-                    defaultValue={monthDefaultValue}
-                    triggerClassName="w-full sm:w-auto"
-                />
-            </div>
+            <MonthSelect
+                onValueChange={(value) => handleFilterChange('month', value)}
+                defaultValue={monthDefaultValue}
+                triggerClassName="w-full sm:w-auto"
+            />
+        </>
+    );
+
+    const filtersEl = (
+        <div className="flex items-stretch gap-2">
+            {statusEl}
+            {dateEl}
+        </div>
+    );
+
+    if (mode === 'search') {
+        return <div className={className}>{searchEl}</div>;
+    }
+
+    if (mode === 'filters') {
+        return <div className={className}>{filtersEl}</div>;
+    }
+
+    if (mode === 'status') {
+        return <div className={className}>{statusEl}</div>;
+    }
+
+    if (mode === 'date') {
+        return <div className={className}><div className="flex items-stretch gap-2">{dateEl}</div></div>;
+    }
+
+    return (
+        <div className={className ?? "flex flex-col items-stretch gap-2 sm:flex-row sm:items-center"}>
+            <div className="w-full sm:w-64">{searchEl}</div>
+            {filtersEl}
         </div>
     );
 }

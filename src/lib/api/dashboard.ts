@@ -51,6 +51,12 @@ export type ActivityItem = {
   title: string;
   when: string; // ISO
   meta?: string;
+  metadata?: {
+    entity_id?: string;
+    entity_type?: string;
+    project_id?: string;
+    action?: string;
+  };
 };
 
 export async function getRecentActivity(limit = 10): Promise<ActivityItem[]> {
@@ -74,13 +80,17 @@ export async function getRecentActivity(limit = 10): Promise<ActivityItem[]> {
 
   if (!data) return [];
 
-  return data.map(log => ({
-    id: log.id,
-    type: (log.category === 'project' ? 'project' : 'model') as 'model' | 'project',
-    title: log.title,
-    when: log.created_at,
-    meta: log.message || undefined,
-  }));
+  return data.map(log => {
+    const metadata = log.metadata as ActivityItem['metadata'] | null;
+    return {
+      id: log.id,
+      type: (log.category === 'project' ? 'project' : 'model') as 'model' | 'project',
+      title: log.title,
+      when: log.created_at,
+      meta: log.message || undefined,
+      metadata: metadata || undefined,
+    };
+  });
 }
 
 export async function getLowCompletenessModels(limit = 5) {

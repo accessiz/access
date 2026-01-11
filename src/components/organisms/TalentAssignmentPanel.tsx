@@ -737,7 +737,7 @@ export function TalentAssignmentPanel({
                                             </Avatar>
 
                                             <div className="min-w-0 flex-1">
-                                                <p className="text-body font-medium break-words">
+                                                <p className="text-body font-medium wrap-break-word">
                                                     {model.alias}
                                                 </p>
                                                 <div className="flex flex-wrap items-center gap-2 text-label text-muted-foreground">
@@ -936,7 +936,7 @@ export function TalentAssignmentPanel({
                             </div>
 
                             {/* Filas de modelos */}
-                            <ScrollArea className="h-[400px]">
+                            <ScrollArea className="h-100">
                                 {filteredModels.length === 0 ? (
                                     <div className="py-12 text-center">
                                         <Search className="h-8 w-8 mx-auto text-muted-foreground mb-2 opacity-50" />

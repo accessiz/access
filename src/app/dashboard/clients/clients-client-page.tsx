@@ -152,8 +152,11 @@ export default function ClientsClientPage({ initialData }: ClientsClientPageProp
         <div className="flex flex-col gap-6">
             <header className="flex flex-col gap-x-4 gap-y-4 pb-4 border-b sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <h1 className="text-display font-semibold">Clientes</h1>
-                    <p className="text-label text-muted-foreground">{clients.length} clientes</p>
+                    <div className="flex items-center gap-3">
+                        <h1 className="text-display font-semibold">Clientes</h1>
+                        <span aria-hidden className="h-5 w-px bg-border" />
+                        <p className="text-label text-muted-foreground whitespace-nowrap">{clients.length} clientes</p>
+                    </div>
                 </div>
 
                 <div className="flex items-center gap-x-3 gap-y-3">
@@ -327,7 +330,7 @@ function ClientCard({
                                 className="flex items-center gap-x-1 gap-y-1 hover:text-foreground transition-colors"
                             >
                                 <Mail className="h-3 w-3" />
-                                <span className="truncate max-w-[150px]">{client.email}</span>
+                                <span className="truncate max-w-37.5">{client.email}</span>
                             </a>
                         )}
                         {client.phone && (

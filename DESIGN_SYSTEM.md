@@ -111,7 +111,67 @@ El sistema utiliza **roles semánticos**. No uses hex codes duros; usa variables
 3. Para texto secundario usa `text-muted-foreground` (no grises arbitrarios).
 4. Para focus usa `ring` (no `outline` custom).
 
-#### F. Mapeo M3 → Tokens Actuales (guía práctica)
+#### F. Tokens Especiales (Elemento Único)
+
+> **Elemento único y especial:** *WOW Progress Strip* en la **vista pública del cliente**.
+
+Este elemento requiere un gradiente específico (no “token estándar”) para lograr el look premium sin “blancos” en modo oscuro.
+
+**Fuente de verdad (código):** `src/app/globals.css`
+
+**Tokens (raw RGB):**
+
+| Uso | Token | Light (raw RGB) | Dark (raw RGB) | Hex aproximado |
+| :--- | :--- | :--- | :--- |
+| **Edge** | `--wow-progress-bg-edge` | `255 255 255` | `13 2 15` | `#FFFFFF` / `#0D020F` |
+| **Mid** | `--wow-progress-bg-mid` | `243 231 245` | `27 4 31` | `#F3E7F5` / `#1B041F` |
+
+**Gradiente requerido (stops):**
+- 20% → `--wow-progress-bg-edge`
+- 50% → `--wow-progress-bg-mid`
+- 80% → `--wow-progress-bg-edge`
+
+**Modo claro (Light):**
+- La superficie del WOW progress strip es **sólida** `rgb(var(--card))` (sin gradientes).
+- El borde animado se mantiene; el gradiente especial aplica solo en modo oscuro.
+
+**Reglas:**
+1. ✅ Permitido **solo** para `.client-wow-progress`.
+2. ❌ No reutilizar estos tokens en otros componentes (no forman parte del set semántico M3).
+3. En componentes/TSX, nunca usar hex; siempre consumir vía `rgb(var(--wow-progress-*) / <alpha>)`.
+
+---
+
+> **Elemento único:** *Calendar Dropdown* en la **vista pública del cliente** (Navbar).
+
+Este dropdown utiliza **glassmorphism** para lograr un efecto premium semi-transparente.
+
+**Ubicación:** `src/app/c/_components/ClientNavbar.tsx` → `PopoverContent`
+
+**Clases Tailwind aplicadas:**
+```
+bg-white/30 dark:bg-black/40 backdrop-blur-xl backdrop-saturate-150 border border-black/5 dark:border-white/15 shadow-2xl
+```
+
+**Descripción de propiedades:**
+| Propiedad | Valor | Efecto |
+| :--- | :--- | :--- |
+| `bg-white/30` | Blanco 30% | Transparencia alta para notar fondo |
+| `bg-black/40` | Negro 40% | Transparencia oscura |
+| `backdrop-blur-xl` | Desenfoque alto | Definición "hielo" |
+| `backdrop-saturate-150` | Saturación 150% | Realza colores traseros |
+| `border-black/5` | Borde oscuro mínimo | Limita en light mode |
+| `border-white/15` | Borde claro suave | Limita en dark mode |
+| `shadow-2xl` | Sombra extra grande | Profundidad máxima |
+
+**Nota de Implementación:**
+El *overlay* global (`fixed inset-0`) es `bg-black/20` **SIN blur** para maximizar el contraste del glassmorphism local.
+
+**Reglas:**
+1. ✅ Permitido **solo** para el dropdown de calendario en `ClientNavbar`.
+2. ❌ No aplicar glassmorphism a otros popovers sin aprobación de diseño.
+
+#### G. Mapeo M3 → Tokens Actuales (guía práctica)
 
 Usamos lenguaje M3 como guía, pero **en código** se consume este mapeo:
 
@@ -274,7 +334,7 @@ M3 usa movimiento expresivo. Las transiciones no deben ser instantáneas ni line
 
 ### A. Acciones (Actions)
 
-Material 3 define 9 tipos de botones. Aquí su mapeo en nuestra App:
+Material 3 define varios tipos de botones. Aquí su mapeo en nuestra App:
 
 **Altura Estándar de Controles (Responsive):**
 - **Mobile:** 48px (`h-12`)
@@ -293,8 +353,6 @@ Aplicar en **botones**, **inputs/search**, y **segmented**.
 | **4. Extended FAB** | `button.tsx` (Custom) | ✅ **Simulado.** Botón con Icono + Texto. <br> Altura 56px (`h-14`). Radio `rounded-2xl`. |
 | **5. Segmented Buttons** | `toggle-group.tsx` | ✅ **Implementado.** Usar para selectores tipo on/off múltiples. |
 | **6. Split Button** | `button.tsx` + `dropdown` | ⚠️ **Manual.** Unir un botón y un trigger de dropdown con `gap-px`. |
-| **7. Button Groups** | --- | ❌ **No existe.** Evitar agrupar botones pegados. Usar spacing `gap-2`. |
-| **8. FAB Menu** | --- | ❌ **No existe.** Evitar complejidad. Usar Dropdown Menu estándar. |
 
 **Regla de Estándar (Segmented):**
 - **O icono, o texto. Nunca ambos en el mismo item.**
@@ -324,14 +382,13 @@ Aplicar en **botones**, **inputs/search**, y **segmented**.
 *   **Variantes:**
     1.  **Small (🔴 Unread):** Círculo simple `6dp` (h-1.5). Indica "Novedad sin leer".
     2.  **Large (🔢 Count):** Contenedor numérico (min-height `16dp`). Indica "Cantidad" (ej: `9+`).
-*   **Specs:** Color `error` (`#BA1A1A`) sobre icono. Border radius completo.
+*   **Specs:** Usar token semántico (`bg-destructive text-destructive-foreground`) sobre icono. Border radius completo.
 
 
 #### 5. Progress Indicators (Loading)
 *   **Archivo:** `skeleton.tsx`
 *   **Estado:** ✅ Skeletons implementados.
-*   **Faltante:** ❌ Circular Progress (Spinners).
-*   **Regla:** Preferir **Skeletons** (`animate-pulse`) para carga de contenedores. Usar Spinners solo para acciones de botón (Guardando...).
+*   **Regla:** Preferir **Skeletons** (`animate-pulse`) para carga de contenedores. Para acciones de botón, usar loader inline del propio botón (sin componente spinner global).
 
 #### 6. Snackbars
 *   **Archivo:** `sonner.tsx`
@@ -402,7 +459,6 @@ Los contenidos se agrupan en bloques con diferentes niveles de énfasis visual s
 | :--- | :--- |
 | **Grid** | Cards en cuadrícula. Puede ser staggered o mosaic. |
 | **Vertical List** | Cards en lista vertical. |
-| **Carousel** | Cards en fila horizontal, scrollable. |
 
 *   Las cards en colección son **coplanares** (misma elevación) hasta que se levantan o arrastran.
 *   Los filtros/ordenamiento se colocan **fuera** de la colección de cards.
@@ -571,7 +627,7 @@ Los contenidos se agrupan en bloques con diferentes niveles de énfasis visual s
 *   **Regla de Construcción:** padding horizontal `16dp` (sin icono) o `8dp` (con icono). Gap `8dp`.
 
 #### 16. Date & Time Pickers
-*   **Archivo:** `calendar.tsx`
+*   **Archivo:** `date-picker.tsx` (usa `calendar.tsx` internamente)
 *   **M3 Guideline:** Diálogo modal o input de texto.
 *   **App:** Usa **Date Input** (Popover).
 *   **Regla:** Permitir escritura manual (keyboard entry) además del selector visual.
@@ -604,12 +660,6 @@ Los contenidos se agrupan en bloques con diferentes niveles de énfasis visual s
     *   *Text Area:* Altura fija, scroll vertical. Usar para descripciones largas.
     *   *Read-Only:* Estilo estándar pero no editable.
 
-
-#### 20b. Text Fields (Filled)
-*   **Estado:** ❌ No implementado.
-*   **M3 Standard (mapeado a tokens actuales):** Fondo `muted` (o `card`) con línea inferior `primary`.
-*   **Uso:** M3 prefiere Filled para énfasis visual, pero la App estandariza en **Outlined** para limpieza.
-
 ---
 
 ### F. Varios (Misc)
@@ -639,15 +689,6 @@ Los contenidos se agrupan en bloques con diferentes niveles de énfasis visual s
 #### 23. Tooltips
 *   **Archivo:** `tooltip.tsx`
 *   **Regla:** Texto plano. Solo para elementos icono sin etiqueta ("Guardar", "Editar"). Fondo oscuro.
-
-#### 24. Search
-*   **Archivo:** `command.tsx`
-*   **Estilo:** "Search Bar" expandible o Modal (`Ctrl+K`).
-*   **Regla:** Borde redondeado `rounded-full` (si es barra) o `rounded-xl` (si es modal).
-
-#### 25. Carousel
-*   **Estado:** ❌ No existe.
-*   **Regla:** Evitar. M3 recomienda "Hero Images" o "Masonry Grids" para galerías.
 
 ---
 
@@ -798,7 +839,7 @@ Los contenidos se agrupan en bloques con diferentes niveles de énfasis visual s
 
 ## 6. 📅 Calendar / Date Picker
 
-**Archivo:** `calendar.tsx`, `date-picker.tsx`
+**Archivo:** `date-picker.tsx` (usa `calendar.tsx` internamente)
 
 ### A. Anatomía del Calendario
 
@@ -942,3 +983,26 @@ Las listas son arreglos verticales de elementos optimizados para escaneo rápido
 - [ ] ¿Texto truncado si excede límite?
 - [ ] ¿Gaps en vez de dividers para listas contenidas?
 
+
+---
+
+## 7. 🎨 Estilos Específicos por Vista
+
+### A. Client Grid Portfolio (`/c/[public_id]/[model_id]`)
+
+Esta vista tiene requerimientos de diseño únicos para impresionar al cliente final.
+
+#### 1. Botones Glassmorphism (Unique)
+*   **Contexto:** Footer de acciones (Aprobar/Rechazar) y acciones dentro del Lightbox.
+*   **Estilo:** Efecto vidrio con blur y transparencia, diferenciado del resto de la app.
+*   **Clases Base:** `backdrop-blur-md shadow-lg transition-all duration-300 border`
+*   **Estados:**
+    *   *Default (Inactive):* `bg-background/60 text-[color] border-[color]/30 hover:bg-[color]/20`
+    *   *Active/Selected:* `bg-[color]/90 text-white border-[color] shadow-[color]/20`
+
+#### 2. Lightbox Experience
+*   **Comportamiento:**
+    *   Navegación con flechas (Desktop) y Swipe (Mobile).
+    *   Contador de fotos simple.
+    *   Botones de acción (Aprobar/Rechazar) **persistentes** dentro del lightbox.
+*   **Overlay:** `bg-background/95 backdrop-blur-sm` (Alta cobertura para enfoque total).

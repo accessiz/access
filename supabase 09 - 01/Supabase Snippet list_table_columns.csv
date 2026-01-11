@@ -93,6 +93,7 @@ models,30,comp_card_paths,ARRAY
 models,31,fts_search_vector,tsvector
 models,32,gallery_paths,ARRAY
 models,33,passport_number,text
+models,34,is_public,boolean
 payment_transactions,1,id,uuid
 payment_transactions,2,user_id,uuid
 payment_transactions,3,model_assignment_id,uuid

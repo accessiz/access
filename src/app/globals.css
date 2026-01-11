@@ -10,6 +10,97 @@
   }
 
   /* ============================================
+   * CLIENT VIEW (WOW) – Glassmorphism + animated border
+   * Token-only (no hex). Respects reduced motion.
+   * ============================================ */
+
+  @property --nyxa-angle {
+    syntax: "<angle>";
+    inherits: false;
+    initial-value: 0deg;
+  }
+
+  .client-wow-progress {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    border-radius: var(--radius);
+
+    /* Light mode: solid surface (no gradients). */
+    background: rgb(var(--card));
+
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+
+    box-shadow:
+      0 0 0 1px rgb(var(--border) / 0.45),
+      0 14px 44px rgb(var(--primary) / 0.18);
+  }
+
+  /* Dark mode: special gradient (unique element).
+     Stops: 20% #0D020F, 50% #36093E, 80% #0D020F */
+  .dark .client-wow-progress {
+    background-color: rgb(var(--wow-progress-bg-edge));
+    background-image:
+      radial-gradient(900px circle at 50% 5%, rgb(var(--wow-progress-bg-mid) / 0.22), transparent 62%),
+      radial-gradient(760px circle at 85% 120%, rgb(var(--primary) / 0.10), transparent 58%),
+      linear-gradient(
+        90deg,
+        rgb(var(--wow-progress-bg-edge) / 1) 0%,
+        rgb(var(--wow-progress-bg-edge) / 1) 20%,
+        rgb(var(--wow-progress-bg-mid) / 1) 50%,
+        rgb(var(--wow-progress-bg-edge) / 1) 80%,
+        rgb(var(--wow-progress-bg-edge) / 1) 100%
+      );
+  }
+
+  .client-wow-progress::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    border-radius: inherit;
+    pointer-events: none;
+
+    /* Animated “ray of light” border (masked so it becomes a 1px stroke) */
+    background: conic-gradient(
+      from var(--nyxa-angle),
+      rgb(var(--primary) / 0) 0deg,
+      rgb(var(--primary) / 0.55) 70deg,
+      rgb(var(--tertiary) / 0.55) 140deg,
+      rgb(var(--primary) / 0.55) 210deg,
+      rgb(var(--primary) / 0) 360deg
+    );
+
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+
+    opacity: 0.95;
+    animation: nyxa-rotate-border 3.25s linear infinite;
+  }
+
+  @keyframes nyxa-rotate-border {
+    from {
+      --nyxa-angle: 0deg;
+    }
+    to {
+      --nyxa-angle: 360deg;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .client-wow-progress::before {
+      animation: none;
+    }
+  }
+
+  /* ============================================
    * CSS GRID LAYOUT SYSTEM
    * Symmetric layouts with consistent spacing
    * ============================================ */
@@ -215,6 +306,15 @@
     /* Design System aliases */
     /* Token solicitado: el negro más oscuro del sistema */
     --ds-background-200: 1 1 1;
+
+    /* ==========================================
+     * SPECIAL TOKENS (UNIQUE ELEMENT)
+     * Public Client View WOW progress strip gradient.
+     * Do not reuse elsewhere.
+     * ========================================== */
+    /* Light mode stops: 20% #FFFFFF, 50% #F3E7F5, 80% #FFFFFF */
+    --wow-progress-bg-edge: 255 255 255; /* ~ #FFFFFF */
+    --wow-progress-bg-mid: 243 231 245; /* ~ #F3E7F5 */
     --sidebar-primary: 240 5.9% 10%;
     --sidebar-primary-foreground: 0 0% 98%;
     --sidebar-accent: 240 4.8% 95.9%;
@@ -270,6 +370,10 @@
 
     /* Mantener el alias en oscuro igual de negro */
     --ds-background-200: 11 11 11;
+
+    /* Special tokens (unique element) */
+    --wow-progress-bg-edge: 13 2 15; /* ~ #0D020F */
+    --wow-progress-bg-mid: 27 4 31; /* ~ #1B041F */
     --sidebar-primary: 224.3 76.3% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 240 3.7% 15.9%;
@@ -306,30 +410,25 @@
   }
 }
 
-/* Scrollbar */
+/* Scrollbar Invisible Global */
+html,
+body,
+:root,
 * {
-  scrollbar-width: thin;
-  scrollbar-color: rgb(var(--muted-foreground) / 0.5) transparent;
+  scrollbar-width: none !important;
+  /* Firefox */
+  -ms-overflow-style: none !important;
+  /* IE and Edge */
 }
 
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background-color: rgb(var(--muted-foreground) / 0.5);
-  border-radius: var(--radius);
-  border: 2px solid transparent;
-  background-clip: content-box;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background-color: rgb(var(--primary));
+/* Chrome, Safari, Edge, Opera */
+::-webkit-scrollbar,
+*::-webkit-scrollbar {
+  display: none !important;
+  width: 0px !important;
+  height: 0px !important;
+  background: transparent !important;
+  -webkit-appearance: none !important;
 }
 
 /* Inputs WebKit */
@@ -358,10 +457,11 @@
     pointer-events: auto !important;
   }
 
-  /* --- GRID RESPONSIVO PARA CLIENTES (GAP 5rem) --- */
+  /* --- GRID RESPONSIVO PARA CLIENTES (GAP más compacto) --- */
   .client-grid {
-    @apply grid gap-20;
-    /* gap-20 = 5rem / 80px */
+    /* Menos espacio horizontal para fotos más grandes */
+    @apply grid gap-x-2 gap-y-4;
+    /* gap-x-2 = 0.5rem / 8px, gap-y-4 = 1rem / 16px */
     grid-template-columns: repeat(2, minmax(0, 1fr));
     /* Mobile Portrait (2) */
   }

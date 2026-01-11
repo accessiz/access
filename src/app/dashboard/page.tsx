@@ -86,14 +86,37 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent>
             <ul className="space-y-4">
-              {activity.map(a => (
-                <li key={a.id} className="text-body flex flex-col gap-x-1 gap-y-1 border-b pb-2 last:border-0 last:pb-0">
-                  <span className="font-medium">
-                    {a.type === 'model' ? `Talento: ${a.title}` : `Proyecto: ${a.title}`}
-                  </span>
-                  <span className="text-label text-muted-foreground">{new Date(a.when).toLocaleString()}</span>
-                </li>
-              ))}
+              {activity.map(a => {
+                // Determinar la URL basándose en metadata
+                const href = a.metadata?.project_id
+                  ? `/dashboard/projects/${a.metadata.project_id}`
+                  : a.metadata?.entity_id && a.metadata?.entity_type === 'project'
+                    ? `/dashboard/projects/${a.metadata.entity_id}`
+                    : a.metadata?.entity_id && a.metadata?.entity_type === 'model'
+                      ? `/dashboard/models/${a.metadata.entity_id}`
+                      : null;
+
+                const content = (
+                  <>
+                    <span className="font-medium">
+                      {a.type === 'model' ? `Talento: ${a.title}` : `Proyecto: ${a.title}`}
+                    </span>
+                    <span className="text-label text-muted-foreground">{new Date(a.when).toLocaleString()}</span>
+                  </>
+                );
+
+                return (
+                  <li key={a.id} className="text-body flex flex-col gap-x-1 gap-y-1 border-b pb-2 last:border-0 last:pb-0">
+                    {href ? (
+                      <Link href={href} className="hover:bg-muted/50 -mx-2 px-2 py-1 rounded transition-colors flex flex-col gap-y-1">
+                        {content}
+                      </Link>
+                    ) : (
+                      content
+                    )}
+                  </li>
+                );
+              })}
               {activity.length === 0 && <li className="text-body text-muted-foreground">Sin actividad.</li>}
             </ul>
           </CardContent>

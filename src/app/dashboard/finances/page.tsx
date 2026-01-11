@@ -209,9 +209,11 @@ export default async function FinancesPage() {
         new Date(i.payment_date) >= startOfMonth
     );
 
-    // Margen bruto (cobros - pagos)
-    const totalClientRevenue = clientBilling.reduce((acc, i) => acc + i.subtotal, 0);
-    const totalModelCosts = modelPayments.reduce((acc, i) => acc + i.total_amount, 0);
+    // Margen bruto (solo cobros RECIBIDOS - pagos REALIZADOS)
+    const paidClientItems = clientBilling.filter(i => i.payment_status === 'paid');
+    const paidModelItems = modelPayments.filter(i => i.payment_status === 'paid');
+    const totalClientRevenue = paidClientItems.reduce((acc, i) => acc + i.subtotal, 0);
+    const totalModelCosts = paidModelItems.reduce((acc, i) => acc + i.total_amount, 0);
 
     const kpis: FinanceKPIs = {
         // Pagos a Modelos

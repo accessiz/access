@@ -87,10 +87,13 @@ export default function WebVisibilityClientPage() {
         <div className="grid gap-6">
             <header className="flex flex-col gap-x-4 gap-y-4 pb-4 border-b sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <h1 className="text-display font-semibold">Visibilidad Web</h1>
-                    <p className="text-label text-muted-foreground">
-                        {publicCount} de {models.length} talentos visibles
-                    </p>
+                    <div className="flex items-center gap-3">
+                        <h1 className="text-display font-semibold">Visibilidad Web</h1>
+                        <span aria-hidden className="h-5 w-px bg-border" />
+                        <p className="text-label text-muted-foreground whitespace-nowrap">
+                            {publicCount} de {models.length} talentos visibles
+                        </p>
+                    </div>
                 </div>
             </header>
 

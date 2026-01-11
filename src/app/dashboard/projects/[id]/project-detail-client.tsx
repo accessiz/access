@@ -648,7 +648,7 @@ export default function ProjectDetailClient({ project: initialProject, initialSe
             <header className="flex flex-col gap-x-4 gap-y-4 pb-4 border-b sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-3">
                     <BackButton href="/dashboard/projects" label="Volver a Proyectos" />
-                    <h1 className="text-display font-semibold">Proyecto</h1>
+                    <h1 className="text-display font-semibold">{project.project_name}</h1>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-2 shrink-0 w-full sm:w-auto">

@@ -8,7 +8,7 @@ export default function ModelPortfolioLoading() {
       <div className="w-full max-w-[1340px] mx-auto px-6 md:px-0 flex flex-col flex-1">
 
         {/* Usamos un ClientNavbar estático para el esqueleto */}
-        <ClientNavbar clientName={null} />
+        <ClientNavbar />
 
         <header className="py-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
           {/* Botón de Regresar */}

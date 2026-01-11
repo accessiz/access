@@ -1,16 +1,17 @@
 'use client'
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-// CORRECCIÓN: Se usa la ruta relativa para evitar errores de alias
+import { gsap } from 'gsap';
 import { verifyProjectPassword } from '../../../../lib/actions/projects';
+import { useClientAnimation } from './ClientAnimationContext';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Lock } from 'lucide-react';
+import { CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Lock, Loader2 } from 'lucide-react';
 
 interface PasswordProtectProps {
   projectId: string;
@@ -20,7 +21,36 @@ interface PasswordProtectProps {
 export default function PasswordProtect({ projectId, projectName }: PasswordProtectProps) {
   const [password, setPassword] = useState('');
   const [isPending, startTransition] = useTransition();
+  const [showCard, setShowCard] = useState(false);
   const router = useRouter();
+
+  const cardRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  // Use Context hook
+  const { animationState, setAnimationState, startExitAnimation } = useClientAnimation();
+
+  // Wait for logo to reach navbar before showing login card
+  useEffect(() => {
+    if (animationState === 'logo-to-nav') {
+      // Small delay, then show card and set state to login
+      const timer = setTimeout(() => {
+        setShowCard(true);
+        setAnimationState('login');
+      }, 200);
+      return () => clearTimeout(timer);
+    }
+  }, [animationState, setAnimationState]);
+
+  // Animate card entrance when it becomes visible
+  useEffect(() => {
+    if (showCard && cardRef.current) {
+      gsap.fromTo(cardRef.current,
+        { opacity: 0, y: 30, scale: 0.95 },
+        { opacity: 1, y: 0, scale: 1, duration: 0.6, ease: 'power2.out' }
+      );
+    }
+  }, [showCard]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,9 +58,32 @@ export default function PasswordProtect({ projectId, projectName }: PasswordProt
       const result = await verifyProjectPassword(projectId, password);
       if (result.success) {
         toast.success('Acceso concedido. ¡Bienvenido!');
-        
-        // CORRECCIÓN: Se usa router.push() a la misma ruta para forzar
-        // la revalidación de la página y la lectura de la nueva cookie.
+
+        // Phase 5: Button glow animation
+        if (buttonRef.current) {
+          await new Promise<void>((resolve) => {
+            gsap.to(buttonRef.current, {
+              boxShadow: '0 0 20px rgba(139, 92, 246, 0.8), 0 0 40px rgba(139, 92, 246, 0.5), 0 0 60px rgba(139, 92, 246, 0.3)',
+              scale: 1.02,
+              duration: 0.4,
+              ease: 'power2.out',
+              onComplete: () => {
+                gsap.to(buttonRef.current, {
+                  boxShadow: '0 0 0px rgba(139, 92, 246, 0)',
+                  scale: 1,
+                  duration: 0.3,
+                  ease: 'power2.in',
+                  onComplete: resolve
+                });
+              }
+            });
+          });
+        }
+
+        // Phase 6: Trigger Exit Animation
+        await startExitAnimation();
+
+        // Force revalidation/redirect
         router.push(window.location.pathname);
 
       } else {
@@ -39,16 +92,25 @@ export default function PasswordProtect({ projectId, projectName }: PasswordProt
     });
   };
 
+  // Don't render until logo animation reaches the navbar
+  if (!showCard && animationState !== 'finished') {
+    return null;
+  }
+
   return (
-    <div className="flex min-h-screen w-full items-center justify-center bg-muted/40 p-4">
-      <Card className="w-full max-w-sm">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div
+        ref={cardRef}
+        className="client-wow-progress w-full max-w-sm p-6"
+        style={{ opacity: 0 }}
+      >
         <CardHeader className="text-center">
-            <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-                <Lock className="size-6" />
-            </div>
-          <CardTitle>Proyecto Protegido</CardTitle>
-          <CardDescription>
-            Ingresa la contraseña para acceder a la selección del proyecto &quot;{projectName}&quot;.
+          <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <Lock className="size-6" />
+          </div>
+          <CardTitle className="text-title">Proyecto Protegido</CardTitle>
+          <CardDescription className="text-body">
+            Ingresa la contraseña para acceder a: &quot;{projectName}&quot;.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -62,14 +124,27 @@ export default function PasswordProtect({ projectId, projectName }: PasswordProt
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 disabled={isPending}
+                autoFocus
               />
             </div>
-            <Button type="submit" className="w-full" disabled={isPending}>
-              {isPending ? 'Verificando...' : 'Acceder'}
+            <Button
+              ref={buttonRef}
+              type="submit"
+              className="w-full transition-all duration-300"
+              disabled={isPending}
+            >
+              {isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Verificando...
+                </>
+              ) : (
+                'Acceder'
+              )}
             </Button>
           </form>
         </CardContent>
-      </Card>
+      </div>
     </div>
   );
 }

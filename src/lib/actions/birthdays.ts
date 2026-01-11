@@ -64,10 +64,17 @@ export async function getBirthdaysByMonth(month: number): Promise<{ success: boo
 export async function getTodayBirthdays(): Promise<{ success: boolean; data?: BirthdayModel[]; error?: string }> {
     const supabase = await createClient()
 
-    // Obtener fecha actual LOCAL
+    // Obtener fecha actual en Guatemala (GMT-6)
     const today = new Date()
-    const currentMonth = today.getMonth() + 1
-    const currentDay = today.getDate()
+    const formatter = new Intl.DateTimeFormat('es-GT', {
+        timeZone: 'America/Guatemala',
+        year: 'numeric',
+        month: 'numeric',
+        day: 'numeric'
+    })
+    const parts = formatter.formatToParts(today)
+    const currentDay = parseInt(parts.find(p => p.type === 'day')?.value || '0')
+    const currentMonth = parseInt(parts.find(p => p.type === 'month')?.value || '0')
 
     console.log(`[Birthdays] Buscando cumpleaños de hoy: mes=${currentMonth}, día=${currentDay}`)
 

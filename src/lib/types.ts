@@ -66,6 +66,7 @@ export interface Model extends DbModel {
   portfolioUrl?: string | null;
   compCardUrls?: (string | null)[];
   galleryPaths?: string[] | null;
+  galleryUrls?: string[];
 
 
   // Campos de la relación projects_models

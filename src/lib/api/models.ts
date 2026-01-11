@@ -157,7 +157,7 @@ export async function getModelById(id: string): Promise<(Model & {
   const portfolioUrl = toPublicUrl(finalPortfolioPath);
   const compCardUrls = (model.comp_card_paths || []).slice(0, 4).map(p => toPublicUrl(p));
   const galleryPaths = model.gallery_paths || [];
-  const galleryUrls = galleryPaths.map(p => toPublicUrl(p));
+  const galleryUrls = galleryPaths.map(p => toPublicUrl(p)).filter((url): url is string => url !== null);
 
   console.log('[getModelById] coverUrl final:', coverUrl);
 

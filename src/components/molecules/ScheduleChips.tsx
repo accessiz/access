@@ -63,9 +63,8 @@ export function ScheduleChips({ schedule, className, includeYear }: Props) {
             key={dateStr}
             className={cn(
               "rounded-lg border bg-background",
-              "p-3",
-              "sm:flex sm:items-start sm:justify-between",
-              "gap-3"
+              "p-3 w-fit",
+              "flex flex-col gap-2"
             )}
           >
             <div className="flex items-center gap-2 min-w-0">
@@ -75,7 +74,7 @@ export function ScheduleChips({ schedule, className, includeYear }: Props) {
               </span>
             </div>
 
-            <div className="mt-2 sm:mt-0 flex flex-wrap gap-2 justify-start sm:justify-end">
+            <div className="flex flex-wrap gap-2">
               {slots.map((slot, idx) => (
                 <div
                   key={`${dateStr}-${idx}`}

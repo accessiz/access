@@ -182,8 +182,7 @@ function getCurrentYearInGuatemala(): number {
 export default function FinancesClientPage({ initialData }: FinancesClientPageProps) {
     const router = useRouter();
     const [modelPayments, setModelPayments] = useState<FinanceSummaryItem[]>(initialData.modelPayments);
-    const [clientBilling] = useState<ClientBillingItem[]>(initialData.clientBilling);
-    const [kpis] = useState<FinanceKPIs>(initialData.kpis);
+    const [clientBilling, setClientBilling] = useState<ClientBillingItem[]>(initialData.clientBilling);
     const [searchQuery, setSearchQuery] = useState('');
     const [mainTab, setMainTab] = useState('models'); // 'models' | 'clients'
     const [modelStatusTab, setModelStatusTab] = useState('pending');
@@ -194,6 +193,45 @@ export default function FinancesClientPage({ initialData }: FinancesClientPagePr
     const [selectedMonth, setSelectedMonth] = useState<MonthValue>(() => String(getCurrentMonthInGuatemala()) as MonthValue);
     const [selectedYear, setSelectedYear] = useState<YearValue>(() => String(getCurrentYearInGuatemala()) as YearValue);
     const [periodFilter, setPeriodFilter] = useState<'all' | 'q1' | 'q2'>('all'); // q1=1-15, q2=16-fin
+
+    // KPIs calculados dinámicamente para feedback inmediato
+    const kpis = useMemo<FinanceKPIs>(() => {
+        const now = new Date();
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+        // KPIs de Pagos a Modelos
+        const pendingModelItems = modelPayments.filter(i => i.payment_status === 'pending' || i.payment_status === 'partial');
+        const paidModelsThisMonth = modelPayments.filter(i =>
+            i.payment_status === 'paid' &&
+            i.payment_date &&
+            new Date(i.payment_date) >= startOfMonth
+        );
+
+        // KPIs de Cobros a Clientes
+        const pendingClientItems = clientBilling.filter(i => i.payment_status === 'pending' || i.payment_status === 'invoiced');
+        const receivedThisMonth = clientBilling.filter(i =>
+            i.payment_status === 'paid' &&
+            i.payment_date &&
+            new Date(i.payment_date) >= startOfMonth
+        );
+
+        // Margen bruto (solo cobros RECIBIDOS - pagos REALIZADOS)
+        const paidClientItems = clientBilling.filter(i => i.payment_status === 'paid');
+        const paidModelItems = modelPayments.filter(i => i.payment_status === 'paid');
+        const totalClientRevenue = paidClientItems.reduce((acc, i) => acc + i.subtotal, 0);
+        const totalModelCosts = paidModelItems.reduce((acc, i) => acc + i.total_amount, 0);
+
+        return {
+            totalPendingModels: pendingModelItems.reduce((acc, i) => acc + (i.pending_amount || 0), 0),
+            totalPaidModelsThisMonth: paidModelsThisMonth.reduce((acc, i) => acc + (i.total_paid || 0), 0),
+            pendingModelPayments: pendingModelItems.length,
+            modelsWithPendingPayments: new Set(pendingModelItems.map(i => i.model_id)).size,
+            totalPendingClients: pendingClientItems.reduce((acc, i) => acc + i.total_with_tax, 0),
+            totalReceivedThisMonth: receivedThisMonth.reduce((acc, i) => acc + i.total_with_tax, 0),
+            pendingClientPayments: pendingClientItems.length,
+            grossMargin: totalClientRevenue - totalModelCosts,
+        };
+    }, [modelPayments, clientBilling]);
 
     const availableYears = useMemo(() => {
         const years = new Set<number>();
@@ -531,6 +569,42 @@ export default function FinancesClientPage({ initialData }: FinancesClientPagePr
         toast.success(`Descargando ${monthLabel}${periodLabel} ${yearLabel}...`);
     };
 
+    // Actualizar estado de pago del cliente
+    const handleUpdateClientPaymentStatus = async (item: ClientBillingItem, newStatus: ClientPaymentStatus) => {
+        const supabase = createClient();
+
+        const updateData: Partial<{ client_payment_status: string; client_payment_date: string | null }> = {
+            client_payment_status: newStatus,
+        };
+
+        // Si se marca como pagado, guardar la fecha
+        if (newStatus === 'paid') {
+            updateData.client_payment_date = new Date().toISOString();
+        }
+
+        const { error } = await supabase
+            .from('projects')
+            .update(updateData)
+            .eq('id', item.project_id);
+
+        if (error) {
+            console.error('[handleUpdateClientPaymentStatus] Error:', error);
+            toast.error('Error al actualizar estado');
+            return;
+        }
+
+        // Actualizar estado local
+        setClientBilling(prev => prev.map(i =>
+            i.project_id === item.project_id
+                ? { ...i, payment_status: newStatus, payment_date: newStatus === 'paid' ? new Date().toISOString() : i.payment_date }
+                : i
+        ));
+
+        const statusLabels: Record<string, string> = { pending: 'Pendiente', invoiced: 'Facturado', paid: 'Cobrado' };
+        toast.success(`Estado actualizado a: ${statusLabels[newStatus]}`);
+        router.refresh();
+    };
+
     return (
         <div className="flex flex-col gap-6">
             <header className="flex flex-col gap-x-4 gap-y-4 pb-4 border-b sm:flex-row sm:items-center sm:justify-between">
@@ -784,6 +858,7 @@ export default function FinancesClientPage({ initialData }: FinancesClientPagePr
                                 <ClientBillingCard
                                     key={item.project_id}
                                     item={item}
+                                    onUpdateStatus={(newStatus) => handleUpdateClientPaymentStatus(item, newStatus)}
                                 />
                             ))
                         )}
@@ -1044,7 +1119,7 @@ function ProjectGroupCard({
                                             {(status === 'pending' || status === 'partial') && (
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
-                                                            <Button variant="ghost" size="icon">
+                                                        <Button variant="ghost" size="icon">
                                                             <MoreHorizontal className="h-4 w-4" />
                                                         </Button>
                                                     </DropdownMenuTrigger>
@@ -1077,7 +1152,13 @@ function ProjectGroupCard({
 }
 
 // Componente para mostrar cobros a clientes
-function ClientBillingCard({ item }: { item: ClientBillingItem }) {
+function ClientBillingCard({
+    item,
+    onUpdateStatus,
+}: {
+    item: ClientBillingItem;
+    onUpdateStatus: (newStatus: ClientPaymentStatus) => void;
+}) {
     const statusConfig = CLIENT_PAYMENT_STATUS_CONFIG[item.payment_status];
     const StatusIcon = statusConfig.icon;
 
@@ -1136,7 +1217,7 @@ function ClientBillingCard({ item }: { item: ClientBillingItem }) {
                             </div>
                         </div>
 
-                        {/* Status badge */}
+                        {/* Status badge y acciones */}
                         <div className="flex items-center gap-x-2 gap-y-2">
                             <Badge variant={statusConfig.badgeVariant} className="gap-x-1 gap-y-1">
                                 <StatusIcon className={`h-3 w-3 ${statusConfig.className}`} />
@@ -1147,6 +1228,35 @@ function ClientBillingCard({ item }: { item: ClientBillingItem }) {
                                     {format(parseISO(item.payment_date), "d MMM yyyy", { locale: es })}
                                 </span>
                             )}
+
+                            {/* Dropdown para cambiar estado */}
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                                        <MoreHorizontal className="h-4 w-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    {item.payment_status !== 'pending' && (
+                                        <DropdownMenuItem onClick={() => onUpdateStatus('pending')}>
+                                            <Clock className="mr-2 h-4 w-4 text-warning" />
+                                            Marcar Pendiente
+                                        </DropdownMenuItem>
+                                    )}
+                                    {item.payment_status !== 'invoiced' && (
+                                        <DropdownMenuItem onClick={() => onUpdateStatus('invoiced')}>
+                                            <Receipt className="mr-2 h-4 w-4 text-info" />
+                                            Marcar Facturado
+                                        </DropdownMenuItem>
+                                    )}
+                                    {item.payment_status !== 'paid' && (
+                                        <DropdownMenuItem onClick={() => onUpdateStatus('paid')}>
+                                            <CheckCircle2 className="mr-2 h-4 w-4 text-success" />
+                                            Marcar Cobrado
+                                        </DropdownMenuItem>
+                                    )}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                         </div>
                     </div>
                 </div>
