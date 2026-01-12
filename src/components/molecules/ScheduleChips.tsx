@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { CalendarDays, Clock } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Project } from "@/lib/types";
@@ -27,9 +26,11 @@ type Props = {
   className?: string;
   /** When true, include year in date label. */
   includeYear?: boolean;
+  /** When true, each day card stretches to available width. */
+  fullWidth?: boolean;
 };
 
-export function ScheduleChips({ schedule, className, includeYear }: Props) {
+export function ScheduleChips({ schedule, className, includeYear, fullWidth = false }: Props) {
   if (!schedule || !Array.isArray(schedule) || schedule.length === 0) return null;
 
   const groupedByDate: Record<string, { startTime: string; endTime: string }[]> = {};
@@ -63,12 +64,12 @@ export function ScheduleChips({ schedule, className, includeYear }: Props) {
             key={dateStr}
             className={cn(
               "rounded-lg border bg-background",
-              "p-3 w-fit",
+              "p-3",
+              fullWidth ? "w-full" : "w-fit",
               "flex flex-col gap-2"
             )}
           >
-            <div className="flex items-center gap-2 min-w-0">
-              <CalendarDays className="h-4 w-4 text-muted-foreground shrink-0" />
+            <div className="min-w-0">
               <span className="text-body font-medium capitalize truncate">
                 {formattedDate}
               </span>
@@ -79,14 +80,13 @@ export function ScheduleChips({ schedule, className, includeYear }: Props) {
                 <div
                   key={`${dateStr}-${idx}`}
                   className={cn(
-                    "inline-flex items-center gap-1.5",
+                    "inline-flex items-center",
                     "rounded-lg border",
                     "bg-muted/30",
                     "px-2 py-1",
                     "text-label"
                   )}
                 >
-                  <Clock className="h-3.5 w-3.5 text-muted-foreground" />
                   <span className="font-mono text-foreground/90 whitespace-nowrap">
                     {slot.startTime} - {slot.endTime}
                   </span>

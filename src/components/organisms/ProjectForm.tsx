@@ -101,20 +101,20 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
     if (!fullName) return '';
 
     // Obtener las partes que NO son la palabra adicional
+    // IMPORTANTE: Debe coincidir EXACTAMENTE con la lógica de generateProjectName
     const prefixParts: string[] = [];
 
-    // 1. Tipos de proyecto
+    // 1. Tipos de proyecto (solo el PRIMERO, igual que generateProjectName)
     if (types && types.length > 0) {
-      const typeLabels = types
-        .map(t => PROJECT_TYPES.find(pt => pt.value === t)?.label || t);
-      prefixParts.push(...typeLabels);
+      const firstType = PROJECT_TYPES.find(pt => pt.value === types[0])?.label || types[0];
+      prefixParts.push(firstType);
     }
 
-    // 2. Marca o Cliente
+    // 2. Marca o Cliente (aplicar Title Case igual que generateProjectName)
     if (brandName) {
-      prefixParts.push(brandName);
+      prefixParts.push(toTitleCase(brandName));
     } else if (clientName) {
-      prefixParts.push(clientName);
+      prefixParts.push(toTitleCase(clientName));
     }
 
     // Construir el prefijo esperado
@@ -648,7 +648,10 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
           <h2 className="text-title">Fechas y Horarios</h2>
           <div className="border bg-card rounded-lg p-6 space-y-4">
             {fields.map((item, index) => (
-              <div key={item.id} className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto_auto] items-end gap-4 p-4 rounded-md border bg-muted/30">
+              <div
+                key={item.id}
+                className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] items-end gap-4 p-4 rounded-md border bg-muted/30"
+              >
                 <div className="flex flex-col gap-2">
                   <Label>Fecha</Label>
                   <Controller

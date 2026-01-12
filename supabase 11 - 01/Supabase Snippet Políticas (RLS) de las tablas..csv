@@ -1,6 +1,7 @@
 esquema,tabla,nombre_politica,es_permisiva,roles_aplicados,operacion,definicion_filtro,definicion_check
 public,activity_logs,Staff read access,PERMISSIVE,{authenticated},SELECT,true,null
 public,activity_logs,Users can insert their own activity logs,PERMISSIVE,{authenticated},INSERT,null,(auth.uid() = user_id)
+public,activity_logs,Users can update their own activity logs,PERMISSIVE,{authenticated},UPDATE,(auth.uid() = user_id),(auth.uid() = user_id)
 public,brands,Users can delete their own brands,PERMISSIVE,{public},DELETE,(auth.uid() = user_id),null
 public,brands,Users can insert their own brands,PERMISSIVE,{public},INSERT,null,(auth.uid() = user_id)
 public,brands,Users can update their own brands,PERMISSIVE,{public},UPDATE,(auth.uid() = user_id),null

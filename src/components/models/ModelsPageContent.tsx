@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { MapPin, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SearchBar } from '@/components/molecules/SearchBar';
+import { SegmentedControl } from '@/components/molecules/SegmentedControl';
 
 /**
  * ModelsPageContent
@@ -33,20 +34,46 @@ export function ModelsPageContent({
     const searchParams = useSearchParams();
     const [searchQuery, setSearchQuery] = React.useState('');
 
+    type GenderFilter = 'all' | 'male' | 'female';
+    type BusyFilter = 'all' | 'busy';
+
+    const [genderFilter, setGenderFilter] = React.useState<GenderFilter>('all');
+    const [busyFilter, setBusyFilter] = React.useState<BusyFilter>('all');
+
     // Get selected model from URL (desktop mode)
     const selectedModelId = searchParams.get('selected');
 
     // Filter models based on search query
     const filteredModels = React.useMemo(() => {
-        if (!searchQuery.trim()) return initialModels;
+        const query = searchQuery.trim().toLowerCase();
 
-        const query = searchQuery.toLowerCase();
-        return initialModels.filter(model =>
-            model.alias?.toLowerCase().includes(query) ||
-            model.country?.toLowerCase().includes(query) ||
-            model.instagram?.toLowerCase().includes(query)
-        );
-    }, [initialModels, searchQuery]);
+        return initialModels.filter((model) => {
+            if (query) {
+                const matchesQuery =
+                    model.alias?.toLowerCase().includes(query) ||
+                    model.country?.toLowerCase().includes(query) ||
+                    model.instagram?.toLowerCase().includes(query);
+
+                if (!matchesQuery) return false;
+            }
+
+            if (genderFilter !== 'all') {
+                const rawGender = (model.gender ?? '').trim().toLowerCase();
+                const normalizedGender: GenderFilter | 'all' =
+                    rawGender === 'male' || rawGender === 'm'
+                        ? 'male'
+                        : rawGender === 'female' || rawGender === 'f'
+                            ? 'female'
+                            : 'all';
+
+                if (normalizedGender !== genderFilter) return false;
+            }
+
+            if (busyFilter === 'busy' && !busyModelIds.has(model.id)) return false;
+
+            return true;
+        });
+    }, [initialModels, searchQuery, genderFilter, busyFilter, busyModelIds]);
 
     // Handle model click - different behavior for mobile vs desktop
     const handleModelClick = React.useCallback((modelId: string) => {
@@ -83,10 +110,10 @@ export function ModelsPageContent({
                 // Mobile: full width
                 'w-full',
                 // Desktop (md+): fixed width side panel (más angosto)
-                'md:w-[280px] md:min-w-[260px] md:max-w-[300px]'
+                'md:w-70 md:min-w-65 md:max-w-75'
             )}>
                 {/* Search Header - DS: p-6 for containers */}
-                <div className="sticky top-0 z-10 bg-background border-b border-border p-6 space-y-4">
+                <div className="sticky top-0 z-10 bg-background border-b border-border p-4 sm:p-6 space-y-4">
                     <SearchBar
                         value={searchQuery}
                         onValueChange={setSearchQuery}
@@ -94,7 +121,33 @@ export function ModelsPageContent({
                         placeholder="Buscar modelo..."
                         ariaLabel="Buscar modelo"
                         inputClassName="h-10"
+                        className="w-full"
                     />
+
+                    <div className="space-y-2">
+                        <SegmentedControl
+                            ariaLabel="Género"
+                            value={genderFilter}
+                            onValueChange={setGenderFilter}
+                            mobileColumns={3}
+                            options={[
+                                { value: 'all', label: 'Todos' },
+                                { value: 'male', label: 'Hombres' },
+                                { value: 'female', label: 'Mujeres' },
+                            ]}
+                        />
+
+                        <SegmentedControl
+                            ariaLabel="Ocupación"
+                            value={busyFilter}
+                            onValueChange={setBusyFilter}
+                            mobileColumns={2}
+                            options={[
+                                { value: 'all', label: 'Todos' },
+                                { value: 'busy', label: 'Ocupados' },
+                            ]}
+                        />
+                    </div>
 
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3 text-label text-muted-foreground">
@@ -140,7 +193,7 @@ export function ModelsPageContent({
                                             isSelected && 'md:bg-accent md:border-l-2 md:border-l-primary'
                                         )}
                                     >
-                                        <Avatar className="h-10 w-10 flex-shrink-0">
+                                        <Avatar className="h-10 w-10 shrink-0">
                                             <AvatarImage src={model.coverUrl || undefined} alt={model.alias || ''} />
                                             <AvatarFallback className="text-label bg-muted">{initials}</AvatarFallback>
                                         </Avatar>
@@ -156,7 +209,7 @@ export function ModelsPageContent({
                                         </div>
 
                                         {/* Status indicator */}
-                                        <div className="flex items-center gap-2 flex-shrink-0">
+                                        <div className="flex items-center gap-2 shrink-0">
                                             {isBusy ? (
                                                 <span className="relative flex h-2.5 w-2.5">
                                                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive/75" />

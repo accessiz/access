@@ -98,8 +98,8 @@ export default function WebVisibilityClientPage() {
             </header>
 
             {/* Filtros */}
-            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-                <div className="relative w-full sm:w-64">
+            <div className="flex w-full flex-nowrap items-center gap-4 overflow-x-auto sm:overflow-visible">
+                <div className="relative w-72 max-w-full shrink-0 sm:w-64">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                         placeholder="Buscar talento..."
@@ -112,7 +112,7 @@ export default function WebVisibilityClientPage() {
                     ariaLabel="Filtrar por género"
                     value={genderFilter}
                     onValueChange={setGenderFilter}
-                    className="w-fit"
+                    className="w-fit shrink-0"
                     options={[
                         {
                             value: 'all',
@@ -138,7 +138,7 @@ export default function WebVisibilityClientPage() {
                     ariaLabel="Filtrar por visibilidad"
                     value={visibilityFilter}
                     onValueChange={setVisibilityFilter}
-                    className="w-fit"
+                    className="w-fit shrink-0"
                     options={[
                         {
                             value: 'all',

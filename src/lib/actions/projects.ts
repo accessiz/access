@@ -1079,8 +1079,9 @@ export async function autoCloseExpiredProject(projectId: string): Promise<{ clos
     const dates = schedule.map(s => new Date(s.date + 'T23:59:59'));
     const lastDate = new Date(Math.max(...dates.map(d => d.getTime())));
 
-    // 3. Verificar si ya pasó la fecha
-    const now = new Date();
+    // 3. Verificar si ya pasó la fecha (en timezone Guatemala)
+    const { getGuatemalaToday } = await import('@/lib/constants/finance');
+    const now = getGuatemalaToday();
     if (now <= lastDate) {
       return { closed: false }; // Aún no ha pasado
     }

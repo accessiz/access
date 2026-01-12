@@ -659,57 +659,63 @@ export default function FinancesClientPage({ initialData }: FinancesClientPagePr
                         </TabsTrigger>
                     </TabsList>
 
-                    <div className="flex items-center gap-x-2 gap-y-2 flex-wrap">
+                    <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center sm:gap-x-2 sm:gap-y-2">
                         {/* Month / Year */}
-                        <div className="flex items-center gap-x-2 gap-y-2">
+                        <div className="col-span-2 grid w-full grid-cols-2 gap-2 sm:w-auto sm:flex sm:items-center sm:gap-x-2 sm:gap-y-2">
                             <YearSelect
                                 years={availableYears}
                                 includeAll
                                 value={selectedYear}
                                 onValueChange={setSelectedYear}
                                 placeholder="Año"
-                                triggerClassName="w-24"
+                                triggerClassName="w-full sm:w-24"
                             />
                             <MonthSelect
                                 includeAll
                                 value={selectedMonth}
                                 onValueChange={setSelectedMonth}
                                 placeholder="Mes"
-                                triggerClassName="w-32"
+                                triggerClassName="w-full sm:w-32"
                             />
                         </div>
 
                         {/* Period Toggle (Quincenas) */}
-                        <SegmentedControl
-                            ariaLabel="Periodo"
-                            value={periodFilter}
-                            onValueChange={setPeriodFilter}
-                            mobileColumns={3}
-                            options={[
-                                { value: 'all', label: 'Mes' },
-                                { value: 'q1', label: '1-15' },
-                                { value: 'q2', label: '16-fin' },
-                            ]}
-                        />
+                        <div className="col-span-2 w-full sm:w-auto">
+                            <SegmentedControl
+                                ariaLabel="Periodo"
+                                value={periodFilter}
+                                onValueChange={setPeriodFilter}
+                                mobileColumns={3}
+                                options={[
+                                    { value: 'all', label: 'Mes' },
+                                    { value: 'q1', label: '1-15' },
+                                    { value: 'q2', label: '16-fin' },
+                                ]}
+                            />
+                        </div>
 
                         {/* Search */}
-                        <SearchBar
-                            placeholder="Buscar..."
-                            value={searchQuery}
-                            onValueChange={setSearchQuery}
-                            className="w-37.5 sm:w-45"
-                        />
+                        <div className="col-span-2 w-full sm:w-auto">
+                            <SearchBar
+                                placeholder="Buscar..."
+                                value={searchQuery}
+                                onValueChange={setSearchQuery}
+                                className="w-full sm:w-45"
+                            />
+                        </div>
 
                         {/* Export Button */}
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleExport(mainTab === 'models' ? 'models' : 'clients')}
-                            className="gap-x-2 gap-y-2"
-                        >
-                            <Download className="h-4 w-4" />
-                            <span className="hidden sm:inline">Excel</span>
-                        </Button>
+                        <div className="col-span-2 w-full sm:w-auto">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleExport(mainTab === 'models' ? 'models' : 'clients')}
+                                className="w-full gap-x-2 gap-y-2 sm:w-auto"
+                            >
+                                <Download className="h-4 w-4" />
+                                <span className="hidden sm:inline">Excel</span>
+                            </Button>
+                        </div>
                     </div>
                 </div>
 

@@ -89,6 +89,7 @@ export default async function FinancesPage() {
     }
 
     // 2. Obtener cobros a clientes (proyectos con datos de facturación)
+    // Incluimos schedule y projects_models para validar condiciones
     const { data: projectsData, error: projectsError } = await supabase
         .from('projects')
         .select(`
@@ -103,8 +104,11 @@ export default async function FinancesPage() {
             invoice_date,
             currency,
             created_at,
+            status,
+            schedule,
             client:clients(name),
-            brand:brands(name)
+            brand:brands(name),
+            projects_models!projects_models_project_id_fkey(client_selection)
         `)
         .eq('user_id', user.id)
         .neq('status', 'draft')
@@ -122,8 +126,11 @@ export default async function FinancesPage() {
         invoice_date: string | null;
         currency: string | null;
         created_at: string;
+        status: string;
+        schedule: { date: string }[] | null;
         client: { name: string } | null;
         brand: { name: string } | null;
+        projects_models: { client_selection: string }[] | null;
     };
 
     if (projectsError) {
@@ -161,9 +168,36 @@ export default async function FinancesPage() {
             currency: item.currency || 'GTQ',
         }));
 
+    // Obtener fecha actual en Guatemala para comparar
+    const { getGuatemalaTodayString } = await import('@/lib/constants/finance');
+    const todayStr = getGuatemalaTodayString();
+
     // Mapear cobros a clientes
+    // Condiciones para "Por Cobrar":
+    // 1. revenue > 0 (hay monto definido)
+    // 2. status = 'completed' (proyecto terminado)
+    // 3. Tiene al menos 1 modelo aprobado
+    // 4. La última fecha del proyecto ya pasó
     const clientBilling: ClientBillingItem[] = ((projectsData || []) as ProjectBillingRow[])
-        .filter(p => p.revenue && p.revenue > 0)
+        .filter(p => {
+            // Condición 1: Tiene revenue
+            if (!p.revenue || p.revenue <= 0) return false;
+
+            // Condición 2: Status completado
+            if (p.status !== 'completed') return false;
+
+            // Condición 3: Tiene al menos un modelo aprobado
+            const hasApprovedModel = p.projects_models?.some(pm => pm.client_selection === 'approved');
+            if (!hasApprovedModel) return false;
+
+            // Condición 4: La última fecha del proyecto ya pasó
+            if (p.schedule && p.schedule.length > 0) {
+                const lastDate = p.schedule.reduce((max, s) => s.date > max ? s.date : max, p.schedule[0].date);
+                if (lastDate >= todayStr) return false; // Aún no termina
+            }
+
+            return true;
+        })
         .map(p => {
             const subtotal = Number(p.revenue) || 0;
             const taxPercent = Number(p.tax_percentage) || 12;

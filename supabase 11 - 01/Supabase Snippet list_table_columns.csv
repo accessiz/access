@@ -7,6 +7,7 @@ activity_logs,5,title,text
 activity_logs,6,message,text
 activity_logs,7,metadata,jsonb
 activity_logs,8,is_urgent,boolean
+activity_logs,9,is_read,boolean
 brands,1,id,uuid
 brands,2,client_id,uuid
 brands,3,user_id,uuid

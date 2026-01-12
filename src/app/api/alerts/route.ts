@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { logError } from '@/lib/utils/errors';
+import { getGuatemalaToday } from '@/lib/constants/finance';
 
 export type SmartAlert = {
     id: string;
-    type: 'payment_due' | 'invoice_reminder';
+    type: 'payment_due' | 'invoice_reminder' | 'attention_needed';
     title: string;
     subtitle?: string;
     priority: 'high' | 'medium';
@@ -26,8 +27,8 @@ export async function GET() {
         }
 
         const alerts: SmartAlert[] = [];
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        // Fecha de hoy en timezone Guatemala (GMT-6)
+        const today = getGuatemalaToday();
 
         // 1. ALERTAS DE PAGO A TALENTOS
         // Buscar model_assignments donde:
@@ -114,6 +115,42 @@ export async function GET() {
                             },
                         });
                     }
+                }
+            }
+        }
+
+        // 3. ALERTAS DE ATENCIÓN: Proyectos completados sin modelos aprobados
+        // Esto ayuda a identificar proyectos que necesitan revisión manual
+        const { data: noApprovedProjects, error: noApprovedError } = await supabase
+            .from('projects')
+            .select(`
+                id,
+                project_name,
+                projects_models!projects_models_project_id_fkey(client_selection)
+            `)
+            .eq('user_id', user.id)
+            .eq('status', 'completed');
+
+        if (noApprovedError) {
+            logError(noApprovedError, { route: '/api/alerts', phase: 'no_approved_projects' });
+        } else if (noApprovedProjects) {
+            for (const project of noApprovedProjects) {
+                const models = project.projects_models as { client_selection: string }[] | null;
+                const hasApproved = models?.some(m => m.client_selection === 'approved');
+
+                // Si no tiene modelos aprobados, agregar alerta
+                if (!hasApproved && models && models.length > 0) {
+                    alerts.push({
+                        id: `attention_${project.id}`,
+                        type: 'attention_needed',
+                        title: `Proyecto sin talentos aprobados`,
+                        subtitle: project.project_name,
+                        priority: 'high',
+                        href: `/dashboard/projects/${project.id}`,
+                        metadata: {
+                            project_id: project.id,
+                        },
+                    });
                 }
             }
         }

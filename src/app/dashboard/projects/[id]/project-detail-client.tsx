@@ -25,7 +25,7 @@ import { ProjectStatusUpdater } from '@/components/organisms/ProjectStatusUpdate
 import {
     PlusCircle, XCircle, Loader2, Share2, Eye,
     Pencil,
-    CalendarCheck2, Banknote, Save, Calculator, Info, Copy, ChevronDown
+    CalendarCheck2, Banknote, Save, Info, Copy, ChevronDown
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ProjectForm } from '@/components/organisms/ProjectForm';
@@ -56,25 +56,17 @@ const BudgetSummaryCard = ({ project, selectedModels }: { project: Project, sele
         return sum + (fee * daysWorked);
     }, 0);
 
-    // Calcular estimado pendiente (si todos los pendientes fueran aprobados)
-    const estimatedPending = pendingModels.reduce((sum, model) => {
-        const fee = model.agreed_fee || project.default_model_fee || 0;
-        const daysWorked = model.assignments?.length || 1;
-        return sum + (fee * daysWorked);
-    }, 0);
-
     const currency = project.currency || 'GTQ';
     const feeType = project.default_fee_type === 'per_hour' ? '/hora' : project.default_fee_type === 'fixed' ? 'fijo' : '/día';
 
     return (
         <Card className="bg-muted/30 border">
             <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-x-2 gap-y-2 text-primary">
-                    <Calculator className="h-5 w-5" />
-                    Resumen de Presupuesto
+                <CardTitle className="text-primary">
+                    Presupuesto
                 </CardTitle>
                 <CardDescription>
-                    Tarifa base: <span className="font-bold text-foreground">{currency} {(project.default_model_fee || 0).toLocaleString()}</span> {feeType} por modelo
+                    <span className="font-bold text-foreground">{currency} {(project.default_model_fee || 0).toLocaleString()}</span> {feeType} por modelo
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -102,14 +94,6 @@ const BudgetSummaryCard = ({ project, selectedModels }: { project: Project, sele
                             {currency} {totalApproved.toLocaleString()}
                         </span>
                     </div>
-                    {estimatedPending > 0 && (
-                        <div className="flex justify-between items-center opacity-70">
-                            <span className="text-body text-muted-foreground italic">Estimado pendiente:</span>
-                            <span className="text-body font-semibold text-warning">
-                                + {currency} {estimatedPending.toLocaleString()}
-                            </span>
-                        </div>
-                    )}
                 </div>
 
                 {approvedModels.length > 0 && (
@@ -511,6 +495,7 @@ export default function ProjectDetailClient({ project: initialProject, initialSe
     const [searchQuery, setSearchQuery] = useState('');
     const [isPending, startTransition] = useTransition();
     const [isEditing, setIsEditing] = useState(false);
+    const [scheduleOpen, setScheduleOpen] = useState(false);
 
     // Sincronizar estado cuando los props cambian (después de router.refresh())
     useEffect(() => {
@@ -648,7 +633,15 @@ export default function ProjectDetailClient({ project: initialProject, initialSe
             <header className="flex flex-col gap-x-4 gap-y-4 pb-4 border-b sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-3">
                     <BackButton href="/dashboard/projects" label="Volver a Proyectos" />
-                    <h1 className="text-display font-semibold">{project.project_name}</h1>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3">
+                        <h1 className="text-display font-semibold">{project.project_name}</h1>
+                        {project.client_name && (
+                            <>
+                                <span className="hidden sm:inline text-muted-foreground">|</span>
+                                <span className="text-body text-muted-foreground">{project.client_name}</span>
+                            </>
+                        )}
+                    </div>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-2 shrink-0 w-full sm:w-auto">
@@ -665,15 +658,31 @@ export default function ProjectDetailClient({ project: initialProject, initialSe
             </header>
 
             <Card>
-                <CardHeader className="space-y-1">
-                    <CardTitle className="text-title font-semibold">{project.project_name}</CardTitle>
-                    <CardDescription className="text-body">Cliente: {project.client_name || 'No especificado'}</CardDescription>
-                </CardHeader>
-                {hasSchedule && (
-                    <CardContent>
-                        <ScheduleChips schedule={project.schedule} />
-                    </CardContent>
-                )}
+                <Collapsible open={scheduleOpen} onOpenChange={setScheduleOpen}>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                        <CardTitle className="text-title font-semibold">Horarios</CardTitle>
+
+                        <CollapsibleTrigger asChild>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-9 w-9"
+                                aria-label={scheduleOpen ? 'Contraer horarios' : 'Expandir horarios'}
+                            >
+                                <ChevronDown className={`h-4 w-4 transition-transform ${scheduleOpen ? 'rotate-180' : ''}`} />
+                            </Button>
+                        </CollapsibleTrigger>
+                    </CardHeader>
+
+                    {hasSchedule && (
+                        <CollapsibleContent asChild>
+                            <CardContent>
+                                <ScheduleChips schedule={project.schedule} fullWidth />
+                            </CardContent>
+                        </CollapsibleContent>
+                    )}
+                </Collapsible>
             </Card>
 
 

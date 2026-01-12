@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { unstable_noStore as noStore } from 'next/cache';
 import { Model } from "@/lib/types";
 import { logError } from '@/lib/utils/errors';
+import { getGuatemalaTodayString } from '@/lib/constants/finance';
 
 // const BUCKET_NAME = 'Book_Completo_iZ_Management'; // Ya no se usa para generar URLs
 const ITEMS_PER_PAGE = 24;
@@ -361,11 +362,12 @@ export async function getModelWorkHistory(modelId: string) {
 }
 
 /**
- * Get the IDs of models that have assignments for TODAY
+ * Get the IDs of models that are "busy" TODAY
  * 
- * Simple availability check:
- * - Returns Set of model IDs that are "busy" today
- * - A model is busy if they have any assignment for today's date
+ * A model is considered busy if:
+ * 1. Has an assignment for today's date (Guatemala timezone)
+ * 2. Was approved by the client (client_selection = 'approved')
+ * 3. Project is active (not 'completed' or 'archived')
  * 
  * @returns Set<string> of busy model IDs
  */
@@ -373,30 +375,73 @@ export async function getBusyModelsToday(): Promise<Set<string>> {
   noStore();
   const supabase = await createClient();
 
-  // Get today's date in ISO format (YYYY-MM-DD)
-  const today = new Date().toISOString().split('T')[0];
+  // Get today's date in Guatemala timezone (YYYY-MM-DD)
+  const today = getGuatemalaTodayString();
 
-  // Query: Get all model_assignments where the related schedule's start_time is today
-  // Using start_time since 'date' column doesn't exist
-  const { data, error } = await supabase
+  // Step 1: Get all model_assignments for today with schedule info
+  const { data: assignments, error: assignmentsError } = await supabase
     .from('model_assignments')
     .select(`
       model_id,
-      project_schedule!inner(start_time)
+      project_schedule!inner(project_id, start_time)
     `)
     .gte('project_schedule.start_time', `${today}T00:00:00`)
     .lt('project_schedule.start_time', `${today}T23:59:59`);
 
-  if (error) {
-    logError(error, { action: 'getBusyModelsToday', today });
+  if (assignmentsError || !assignments || assignments.length === 0) {
+    if (assignmentsError) {
+      logError(assignmentsError, { action: 'getBusyModelsToday.assignments', today });
+    }
     return new Set();
   }
 
-  // Extract unique model IDs
+  // Extract unique project IDs and model IDs
+  type AssignmentRow = { model_id: string; project_schedule: { project_id: string; start_time: string } };
+  const typedAssignments = assignments as unknown as AssignmentRow[];
+  const projectIds = [...new Set(typedAssignments.map(a => a.project_schedule.project_id))];
+  const modelIds = [...new Set(typedAssignments.map(a => a.model_id))];
+
+  // Step 2: Get projects that are active (not completed/archived)
+  const { data: activeProjects, error: projectsError } = await supabase
+    .from('projects')
+    .select('id')
+    .in('id', projectIds)
+    .not('status', 'in', '("completed","archived")');
+
+  if (projectsError) {
+    logError(projectsError, { action: 'getBusyModelsToday.projects', today });
+    return new Set();
+  }
+
+  const activeProjectIds = new Set((activeProjects || []).map(p => p.id));
+
+  // Step 3: Get approved models in these projects
+  const { data: approvedModels, error: approvedError } = await supabase
+    .from('projects_models')
+    .select('model_id, project_id')
+    .in('model_id', modelIds)
+    .in('project_id', projectIds)
+    .eq('client_selection', 'approved');
+
+  if (approvedError) {
+    logError(approvedError, { action: 'getBusyModelsToday.approved', today });
+    return new Set();
+  }
+
+  // Create a set of "model_id:project_id" combinations that are approved
+  const approvedCombos = new Set(
+    (approvedModels || []).map(pm => `${pm.model_id}:${pm.project_id}`)
+  );
+
+  // Step 4: Filter assignments to only include approved models in active projects
   const busyModelIds = new Set<string>();
-  for (const row of data || []) {
-    if (row.model_id) {
-      busyModelIds.add(row.model_id);
+  for (const assignment of typedAssignments) {
+    const projectId = assignment.project_schedule.project_id;
+    const modelId = assignment.model_id;
+
+    // Check if project is active AND model is approved for this project
+    if (activeProjectIds.has(projectId) && approvedCombos.has(`${modelId}:${projectId}`)) {
+      busyModelIds.add(modelId);
     }
   }
 

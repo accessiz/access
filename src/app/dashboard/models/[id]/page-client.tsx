@@ -153,11 +153,20 @@ export default function ModelProfilePageClient({ initialModel, workHistory = [] 
   const [appSearchQuery, setAppSearchQuery] = useState('');
   const [appStatusFilter, setAppStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
 
+  // Helper para obtener la fecha de hoy en Guatemala (GMT-6)
+  const getGuatemalaToday = (): Date => {
+    const now = new Date();
+    const guatemalaTime = new Date(now.toLocaleString('en-US', {
+      timeZone: 'America/Guatemala'
+    }));
+    guatemalaTime.setHours(0, 0, 0, 0);
+    return guatemalaTime;
+  };
+
   // Separar trabajos completados de postulaciones
   // Trabajos: Solo aprobados + fecha de producción pasada (al menos 1 día después)
   const completedWork = useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = getGuatemalaToday();
 
     return workHistory.filter(item => {
       // Requisito 1: Debe estar aprobado por el cliente
@@ -176,7 +185,10 @@ export default function ModelProfilePageClient({ initialModel, workHistory = [] 
 
   // Cálculos para la pestaña de Trabajos (solo trabajos completados)
   const workStats = useMemo(() => {
-    const totalEarned = completedWork.reduce((acc, job) => acc + (job.totalAmount || job.agreedFee * (job.daysWorked || 1)), 0);
+    // Total Generado: solo incluye trabajos ya pagados (cumple 3 condiciones: aprobado + fecha pasada + pago confirmado)
+    const totalEarned = completedWork
+      .filter((job) => job.paymentStatus === 'paid')
+      .reduce((acc, job) => acc + (job.totalAmount || job.agreedFee * (job.daysWorked || 1)), 0);
     const totalPending = completedWork
       .filter((job) => job.paymentStatus !== 'paid')
       .reduce((acc, job) => acc + (job.totalAmount || job.agreedFee * (job.daysWorked || 1)), 0);

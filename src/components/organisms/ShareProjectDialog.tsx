@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Copy, Check } from 'lucide-react';
+import { Copy, Check, X } from 'lucide-react';
 
 interface ShareProjectDialogProps {
   project: Project;
@@ -136,9 +136,17 @@ export function ShareProjectDialog({ project, children, onStatusChange }: ShareP
   return (
     <Dialog onOpenChange={(open) => !open && setCopied(false)}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="w-[calc(100vw-2rem)] max-w-[calc(100vw-2rem)] sm:w-full sm:max-w-lg">
+      <DialogContent showClose={false} className="w-[calc(100vw-2rem)] max-w-[calc(100vw-2rem)] sm:w-full sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Compartir Proyecto</DialogTitle>
+          <div className="flex items-start justify-between gap-4">
+            <DialogTitle>Compartir Proyecto</DialogTitle>
+            <DialogClose asChild>
+              <Button type="button" variant="ghost" size="icon" className="shrink-0">
+                <X className="h-4 w-4" />
+                <span className="sr-only">Cerrar</span>
+              </Button>
+            </DialogClose>
+          </div>
           <DialogDescription>
             Copia el enlace y la contraseña para enviárselo a tu cliente.
           </DialogDescription>

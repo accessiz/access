@@ -73,7 +73,7 @@ export function ModelsToolbar({ countries }: { countries: string[] }) {
         />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="icon" className="flex-shrink-0">
+            <Button variant="outline" size="icon" className="shrink-0">
               <ListFilter className="h-4 w-4" />
               <span className="sr-only">{currentCountry || 'País'}</span>
             </Button>
@@ -87,7 +87,7 @@ export function ModelsToolbar({ countries }: { countries: string[] }) {
         </DropdownMenu>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="icon" className="flex-shrink-0">
+            <Button variant="outline" size="icon" className="shrink-0">
               <Ruler className="h-4 w-4" />
               <span className="sr-only">{currentHeightLabel}</span>
             </Button>

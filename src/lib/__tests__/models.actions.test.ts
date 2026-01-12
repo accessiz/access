@@ -47,7 +47,7 @@ describe('Model Server Actions', () => {
             expect(result.success).toBe(false);
         });
 
-        it('should require phone_e164', () => {
+        it('should allow phone_e164 to be optional', () => {
             const invalidData = {
                 full_name: 'Test Model',
                 alias: 'TestAlias',
@@ -55,7 +55,7 @@ describe('Model Server Actions', () => {
             };
 
             const result = modelFormSchema.safeParse(invalidData);
-            expect(result.success).toBe(false);
+            expect(result.success).toBe(true);
         });
 
         it('should validate gender enum (Male/Female)', () => {

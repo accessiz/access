@@ -181,7 +181,7 @@ export function ScheduleMigrationModal({
                     </DialogDescription>
                 </DialogHeader>
 
-                <ScrollArea className="max-h-[400px] pr-4">
+                <ScrollArea className="max-h-100 pr-4">
                     <div className="space-y-4 py-3">
                         {schedulesWithAssignments.map((schedule) => {
                             const isSelected = mapping[schedule.oldScheduleId!] && mapping[schedule.oldScheduleId!] !== ''
@@ -196,17 +196,17 @@ export function ScheduleMigrationModal({
                                             : "border-border"
                                     )}
                                 >
-                                    <div className="flex items-center gap-5">
+                                    <div className="flex flex-wrap items-center gap-4 sm:flex-nowrap sm:gap-5">
                                         {/* Icono de papelera */}
-                                        <div className="flex-shrink-0">
+                                        <div className="shrink-0">
                                             <div className="h-11 w-11 rounded-lg bg-muted flex items-center justify-center">
                                                 <Trash2 className="h-5 w-5 text-muted-foreground" />
                                             </div>
                                         </div>
 
                                         {/* Fecha antigua */}
-                                        <div className="flex-shrink-0 min-w-[100px]">
-                                            <p className="text-body font-medium line-through text-muted-foreground">
+                                        <div className="min-w-0 flex-1 sm:shrink-0 sm:flex-none sm:min-w-25">
+                                            <p className="text-body font-medium line-through text-muted-foreground whitespace-nowrap truncate">
                                                 {formatDateShort(schedule.oldDate!)}
                                             </p>
                                             <p className="text-label text-muted-foreground uppercase tracking-wide mt-1">
@@ -215,10 +215,10 @@ export function ScheduleMigrationModal({
                                         </div>
 
                                         {/* Flecha */}
-                                        <ArrowRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                                        <ArrowRight className="hidden h-5 w-5 text-muted-foreground shrink-0 sm:block" />
 
                                         {/* Selector de destino */}
-                                        <div className="flex-1 min-w-[180px]">
+                                        <div className="w-full min-w-0 sm:w-auto sm:flex-1 sm:min-w-45">
                                             <Select
                                                 value={mapping[schedule.oldScheduleId!] || ''}
                                                 onValueChange={(value) => handleMappingChange(schedule.oldScheduleId!, value)}
