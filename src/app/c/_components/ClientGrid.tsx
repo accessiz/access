@@ -42,9 +42,8 @@ function QuickApprovalButtons({
     e.preventDefault();
     e.stopPropagation();
 
-    if (localSelection === next) return;
-
-    const finalSelection: GridModel['selection'] = next;
+    // Toggle logic: If same selection, set to 'pending' (deselect)
+    const finalSelection: GridModel['selection'] = localSelection === next ? 'pending' : next;
 
     // Optimistic update
     onSelectionChange?.(model.id, finalSelection);
@@ -68,38 +67,40 @@ function QuickApprovalButtons({
   if (isUpdating) {
     return (
       <div className="flex items-center gap-2">
-        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+        <div className="flex size-10 items-center justify-center rounded-full bg-white/5 backdrop-blur-md">
+          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex w-full items-center justify-between">
+    <div className="flex w-full items-center justify-between gap-3">
       <button
         onClick={(e) => handleClick(e, 'approved')}
         className={cn(
-          'inline-flex items-center justify-center rounded-full transition-colors',
-          'size-10 md:size-9',
+          'group inline-flex items-center justify-center rounded-full transition-all duration-300',
+          'size-10 md:size-9 border',
           localSelection === 'approved'
-            ? 'bg-success text-success-foreground'
-            : 'bg-muted text-muted-foreground hover:bg-success hover:text-success-foreground'
+            ? 'bg-success/20 border-success text-success'
+            : 'bg-white/5 border-white/10 text-muted-foreground backdrop-blur-md hover:bg-success/20 hover:border-success/50 hover:text-success'
         )}
         aria-label="Aprobar"
       >
-        <CheckCircle2 className="size-5" />
+        <CheckCircle2 className="size-5 transition-transform duration-300" />
       </button>
       <button
         onClick={(e) => handleClick(e, 'rejected')}
         className={cn(
-          'inline-flex items-center justify-center rounded-full transition-colors',
-          'size-10 md:size-9',
+          'group inline-flex items-center justify-center rounded-full transition-all duration-300',
+          'size-10 md:size-9 border',
           localSelection === 'rejected'
-            ? 'bg-destructive text-destructive-foreground'
-            : 'bg-muted text-muted-foreground hover:bg-destructive hover:text-destructive-foreground'
+            ? 'bg-destructive/20 border-destructive text-destructive'
+            : 'bg-white/5 border-white/10 text-muted-foreground backdrop-blur-md hover:bg-destructive/20 hover:border-destructive/50 hover:text-destructive'
         )}
         aria-label="Rechazar"
       >
-        <XCircle className="size-5" />
+        <XCircle className="size-5 transition-transform duration-300" />
       </button>
     </div>
   );

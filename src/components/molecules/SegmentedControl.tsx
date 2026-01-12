@@ -68,7 +68,7 @@ export function SegmentedControl<T extends string>({
           "sm:flex sm:items-center",
           "gap-1",
           "w-full sm:w-fit",
-          "rounded-lg bg-background p-1 ring-1 ring-border ring-inset",
+          "rounded-lg bg-transparent p-1 ring-1 ring-separator ring-inset",
           className
         )}
       >
@@ -99,8 +99,8 @@ export function SegmentedControl<T extends string>({
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                 "disabled:pointer-events-none disabled:opacity-50",
                 isActive
-                  ? "bg-tertiary-container text-tertiary-container-foreground"
-                  : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                  ? "bg-[rgb(var(--light-purple))] text-primary"
+                  : "text-muted-foreground hover:bg-hover-overlay hover:text-foreground"
               )}
             >
               {opt.icon ? <span className="shrink-0">{opt.icon}</span> : null}

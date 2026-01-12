@@ -39,7 +39,7 @@ export interface ListItemProps {
     meta?: string | React.ReactNode;
     /** Badge configuration */
     badge?: {
-        variant: 'success' | 'warning' | 'info' | 'danger' | 'neutral' | 'accent' | 'default' | 'secondary' | 'destructive' | 'outline';
+        variant: 'default' | 'secondary' | 'destructive' | 'outline' | 'success' | 'warning' | 'info' | 'danger' | 'neutral' | 'purple' | 'cyan' | 'indigo' | 'orange';
         label: string;
     };
     /** Whether the item is currently active/selected */

@@ -45,6 +45,8 @@ const ClientStatusBadge = ({ status }: { status: Model['client_selection'] }) =>
 
 // Componente de Resumen de Presupuesto
 const BudgetSummaryCard = ({ project, selectedModels }: { project: Project, selectedModels: Model[] }) => {
+    const [breakdownOpen, setBreakdownOpen] = useState(false);
+
     // Calcular estadísticas
     const approvedModels = selectedModels.filter(m => m.client_selection === 'approved');
     const pendingModels = selectedModels.filter(m => m.client_selection === 'pending');
@@ -60,7 +62,7 @@ const BudgetSummaryCard = ({ project, selectedModels }: { project: Project, sele
     const feeType = project.default_fee_type === 'per_hour' ? '/hora' : project.default_fee_type === 'fixed' ? 'fijo' : '/día';
 
     return (
-        <Card className="bg-muted/30 border">
+        <Card className="bg-sys-bg-secondary border">
             <CardHeader className="pb-3">
                 <CardTitle className="text-primary">
                     Presupuesto
@@ -71,15 +73,15 @@ const BudgetSummaryCard = ({ project, selectedModels }: { project: Project, sele
             </CardHeader>
             <CardContent className="space-y-4">
                 <div className="grid grid-cols-3 gap-x-4 gap-y-4">
-                    <div className="text-center p-3 bg-white/60 dark:bg-black/20 rounded-lg">
+                    <div className="text-center p-3 bg-sys-bg-tertiary rounded-lg">
                         <p className="text-display font-black text-success">{approvedModels.length}</p>
                         <p className="text-label text-muted-foreground uppercase font-bold tracking-wider">Aprobados</p>
                     </div>
-                    <div className="text-center p-3 bg-white/60 dark:bg-black/20 rounded-lg">
+                    <div className="text-center p-3 bg-sys-bg-tertiary rounded-lg">
                         <p className="text-display font-black text-warning">{pendingModels.length}</p>
                         <p className="text-label text-muted-foreground uppercase font-bold tracking-wider">Pendientes</p>
                     </div>
-                    <div className="text-center p-3 bg-white/60 dark:bg-black/20 rounded-lg">
+                    <div className="text-center p-3 bg-sys-bg-tertiary rounded-lg">
                         <p className="text-display font-black">{selectedModels.length}</p>
                         <p className="text-label text-muted-foreground uppercase font-bold tracking-wider">Total</p>
                     </div>
@@ -87,33 +89,46 @@ const BudgetSummaryCard = ({ project, selectedModels }: { project: Project, sele
 
                 <Separator />
 
-                <div className="space-y-2">
+                <Collapsible open={breakdownOpen} onOpenChange={setBreakdownOpen}>
                     <div className="flex justify-between items-center">
                         <span className="text-body text-muted-foreground">Total Confirmado (aprobados):</span>
-                        <span className="text-title font-black text-success">
-                            {currency} {totalApproved.toLocaleString()}
-                        </span>
-                    </div>
-                </div>
-
-                {approvedModels.length > 0 && (
-                    <>
-                        <Separator />
-                        <div className="text-label text-muted-foreground">
-                            <p className="font-semibold mb-1">Desglose de modelos aprobados:</p>
-                            {approvedModels.map(model => {
-                                const fee = model.agreed_fee || project.default_model_fee || 0;
-                                const days = model.assignments?.length || 1;
-                                return (
-                                    <div key={model.id} className="flex justify-between py-0.5">
-                                        <span>{model.alias} ({days} día{days > 1 ? 's' : ''})</span>
-                                        <span className="font-mono">{currency} {(fee * days).toLocaleString()}</span>
-                                    </div>
-                                );
-                            })}
+                        <div className="flex items-center gap-2">
+                            <span className="text-title font-black text-success">
+                                {currency} {totalApproved.toLocaleString()}
+                            </span>
+                            {approvedModels.length > 0 && (
+                                <CollapsibleTrigger asChild>
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-7 w-7"
+                                        aria-label={breakdownOpen ? 'Contraer desglose' : 'Expandir desglose'}
+                                    >
+                                        <ChevronDown className={`h-4 w-4 transition-transform ${breakdownOpen ? 'rotate-180' : ''}`} />
+                                    </Button>
+                                </CollapsibleTrigger>
+                            )}
                         </div>
-                    </>
-                )}
+                    </div>
+
+                    {approvedModels.length > 0 && (
+                        <CollapsibleContent>
+                            <div className="mt-3 space-y-1 text-body text-muted-foreground">
+                                {approvedModels.map(model => {
+                                    const fee = model.agreed_fee || project.default_model_fee || 0;
+                                    const days = model.assignments?.length || 1;
+                                    return (
+                                        <div key={model.id} className="flex justify-between py-0.5">
+                                            <span>{model.alias} ({days} día{days > 1 ? 's' : ''})</span>
+                                            <span className="font-mono">{currency} {(fee * days).toLocaleString()}</span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </CollapsibleContent>
+                    )}
+                </Collapsible>
             </CardContent>
         </Card>
     );
@@ -296,7 +311,7 @@ const TalentRow = ({ model, project, onAction, isPending, actionType, onRefresh,
     };
 
     return (
-        <div className="flex flex-col gap-y-2 p-2 hover:bg-muted/50 rounded-md transition-colors">
+        <div className="flex flex-col gap-y-2 p-2 hover:bg-hover-overlay rounded-md transition-colors">
             <div className="flex items-center gap-x-3 gap-y-3">
                 <Avatar className="h-10 w-10 border border-border">
                     <AvatarImage src={model.coverUrl || `${SUPABASE_PUBLIC_URL}${model.id}/Portada/cover.jpg`} />
@@ -692,12 +707,12 @@ export default function ProjectDetailClient({ project: initialProject, initialSe
             <BudgetSummaryCard project={project} selectedModels={selectedModels} />
 
             <div className="grid md:grid-cols-[30%_1fr] gap-6 items-start">
-                <Card>
+                <Card className="flex flex-col h-full">
                     <CardHeader>
                         <CardTitle>Selección de Talentos</CardTitle>
                     </CardHeader>
 
-                    <CardContent className="space-y-4">
+                    <CardContent className="space-y-4 flex-1 flex flex-col min-h-0">
                         <SearchBar
                             value={searchQuery}
                             onValueChange={setSearchQuery}
@@ -707,7 +722,7 @@ export default function ProjectDetailClient({ project: initialProject, initialSe
                             inputClassName="h-9"
                         />
                         <Separator />
-                        <ScrollArea className="h-96">
+                        <ScrollArea className="h-[500px]">
                             <div className="space-y-2 pr-4">
                                 {availableModels.length > 0 ? availableModels.map(model => (
                                     <TalentRow

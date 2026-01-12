@@ -876,7 +876,7 @@ export function CompCardManager({
                                 <ChevronDown className="h-3 w-3 opacity-50" />
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-72 p-3 space-y-4">
+                        <DropdownMenuContent align="end" className="w-72 p-3 space-y-4 bg-sys-bg-secondary/90 backdrop-blur-md border border-white/10 shadow-2xl">
                             <div className="space-y-2">
                                 <Label className="text-label font-semibold text-muted-foreground uppercase flex items-center gap-1.5 ml-1">
                                     <Layers className="h-3 w-3" />
@@ -896,14 +896,14 @@ export function CompCardManager({
                                         }
                                     }}
                                 >
-                                    <SelectTrigger className="w-full bg-muted/50 border-none h-10">
+                                    <SelectTrigger className="w-full bg-white/5 border border-white/10 h-10 hover:bg-white/10 transition-colors focus:ring-0 text-body">
                                         <SelectValue placeholder="Selecciona formato" />
                                     </SelectTrigger>
-                                    <SelectContent>
+                                    <SelectContent className="bg-sys-bg-secondary/95 backdrop-blur-md border border-white/10">
                                         <SelectItem value="hoja_completa">Hoja completa</SelectItem>
                                         <SelectItem value="portada">Solo Portada</SelectItem>
                                         <SelectItem value="contraportada">Solo Contraportada</SelectItem>
-                                        <SelectSeparator />
+                                        <SelectSeparator className="bg-white/10" />
                                         <SelectItem value="todos" className="font-semibold text-primary">Todos los formatos</SelectItem>
                                     </SelectContent>
                                 </Select>
@@ -915,10 +915,10 @@ export function CompCardManager({
                                     Formato de archivo
                                 </Label>
                                 <Select value={fileType} onValueChange={(v) => setFileType(v as typeof fileType)}>
-                                    <SelectTrigger className="w-full bg-muted/50 border-none h-10">
+                                    <SelectTrigger className="w-full bg-white/5 border border-white/10 h-10 hover:bg-white/10 transition-colors focus:ring-0 text-body">
                                         <SelectValue placeholder="Selecciona tipo" />
                                     </SelectTrigger>
-                                    <SelectContent>
+                                    <SelectContent className="bg-sys-bg-secondary/95 backdrop-blur-md border border-white/10">
                                         {downloadFormat === 'todos' ? (
                                             <SelectItem value="zip">ZIP (Pack Completo)</SelectItem>
                                         ) : (
@@ -932,7 +932,7 @@ export function CompCardManager({
                                 </Select>
                             </div>
 
-                            <DropdownMenuSeparator className="-mx-3" />
+                            <DropdownMenuSeparator className="-mx-3 bg-white/10" />
 
                             <div className="pt-1">
                                 <Button
@@ -978,7 +978,7 @@ export function CompCardManager({
                                             return (
                                                 <div
                                                     key={index}
-                                                    className={`${aspectRatioClass} bg-muted/30 border-2 border-dashed border-border/50 rounded-lg flex items-center justify-center p-4 text-center`}
+                                                    className={`${aspectRatioClass} bg-quaternary border-2 border-dashed border-border/50 rounded-lg flex items-center justify-center p-4 text-center`}
                                                 >
                                                     <span className="text-muted-foreground/50 text-body">
                                                         Reservado para Información
@@ -1031,7 +1031,7 @@ export function CompCardManager({
                                 "relative border-2 border-dashed rounded-xl p-10 transition-all text-center cursor-pointer group",
                                 isDraggingGallery
                                     ? "border-primary bg-primary/5 ring-4 ring-primary/10"
-                                    : "border-border hover:border-primary/50 hover:bg-muted/30",
+                                    : "border-border hover:border-primary/50 hover:bg-hover-overlay",
                                 (galleryUrls.length === 0 && galleryUploadQueue.length === 0) ? "py-20" : "py-8"
                             )}
                             onDragOver={handleGalleryDragOver}
@@ -1075,7 +1075,7 @@ export function CompCardManager({
                                 {galleryUploadQueue.map((item) => (
                                     <div
                                         key={item.id}
-                                        className="break-inside-avoid mb-1 relative overflow-hidden bg-muted/30 border border-border group"
+                                        className="break-inside-avoid mb-1 relative overflow-hidden bg-quaternary border border-border group"
                                     >
                                         <div className="aspect-3/4 w-full flex flex-col items-center justify-center p-4">
                                             {item.status === 'uploading' ? (

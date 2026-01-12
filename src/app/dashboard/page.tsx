@@ -11,6 +11,7 @@ import DashboardQuickSearch from '@/components/organisms/DashboardQuickSearch';
 import { KPICard } from '@/components/molecules/KPICard';
 import { CheckCircle2, Eye, FileText, Send } from 'lucide-react';
 import Link from 'next/link';
+import { IncompleteProfilesList } from '@/components/molecules/IncompleteProfilesList';
 
 export default async function DashboardPage() {
   const counts = await getProjectStatusCounts();
@@ -49,6 +50,7 @@ export default async function DashboardPage() {
           description="Proyectos en revisión"
           icon={Eye}
           iconClassName="text-info"
+          className="bg-[rgb(var(--sys-bg-secondary))] hover:bg-[rgb(var(--sys-bg-secondary))]"
           href="/dashboard/projects?status=in-review"
         />
         <KPICard
@@ -57,6 +59,7 @@ export default async function DashboardPage() {
           description="Proyectos en borrador"
           icon={FileText}
           iconClassName="text-warning"
+          className="bg-[rgb(var(--sys-bg-secondary))] hover:bg-[rgb(var(--sys-bg-secondary))]"
           href="/dashboard/projects?status=draft"
         />
         <KPICard
@@ -65,6 +68,7 @@ export default async function DashboardPage() {
           description="Proyectos enviados"
           icon={Send}
           iconClassName="text-accent"
+          className="bg-[rgb(var(--sys-bg-secondary))] hover:bg-[rgb(var(--sys-bg-secondary))]"
           href="/dashboard/projects?status=sent"
         />
         <KPICard
@@ -73,16 +77,17 @@ export default async function DashboardPage() {
           description="Proyectos finalizados"
           icon={CheckCircle2}
           iconClassName="text-success"
+          className="bg-[rgb(var(--sys-bg-secondary))] hover:bg-[rgb(var(--sys-bg-secondary))]"
           href="/dashboard/projects?status=completed"
         />
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
         {/* Actividad Reciente */}
-        <Card>
+        <Card className="bg-[rgb(var(--sys-bg-secondary))]">
           <CardHeader>
             <CardTitle>Actividad Reciente</CardTitle>
-            <CardDescription>Últimos movimientos</CardDescription>
+            <CardDescription className="text-secondary">Últimos movimientos</CardDescription>
           </CardHeader>
           <CardContent>
             <ul className="space-y-4">
@@ -98,21 +103,26 @@ export default async function DashboardPage() {
 
                 const content = (
                   <>
-                    <span className="font-medium">
+                    <span className="font-medium text-secondary">
                       {a.type === 'model' ? `Talento: ${a.title}` : `Proyecto: ${a.title}`}
                     </span>
-                    <span className="text-label text-muted-foreground">{new Date(a.when).toLocaleString()}</span>
+                    <span className="text-label text-tertiary">{new Date(a.when).toLocaleString()}</span>
                   </>
                 );
 
                 return (
-                  <li key={a.id} className="text-body flex flex-col gap-x-1 gap-y-1 border-b pb-2 last:border-0 last:pb-0">
+                  <li key={a.id} className="text-body">
                     {href ? (
-                      <Link href={href} className="hover:bg-muted/50 -mx-2 px-2 py-1 rounded transition-colors flex flex-col gap-y-1">
+                      <Link
+                        href={href}
+                        className="bg-quaternary hover:bg-hover-overlay p-3 rounded-md transition-colors flex flex-col gap-y-1"
+                      >
                         {content}
                       </Link>
                     ) : (
-                      content
+                      <div className="bg-quaternary p-3 rounded-md flex flex-col gap-y-1">
+                        {content}
+                      </div>
                     )}
                   </li>
                 );
@@ -123,29 +133,12 @@ export default async function DashboardPage() {
         </Card>
 
         {/* Talentos que requieren atención */}
-        <Card>
+        <Card className="bg-[rgb(var(--sys-bg-secondary))]">
           <CardHeader>
-            <CardTitle>Perfiles incompletos</CardTitle>
-            <CardDescription>Atención requerida</CardDescription>
+            <CardTitle className="text-primary">Perfiles incompletos</CardTitle>
           </CardHeader>
           <CardContent>
-            <ul className="space-y-3">
-              {lowModels.map((m: { id: string; alias: string | null; profile_completeness: number | null }) => (
-                <li key={m.id} className="flex justify-between items-center text-body">
-                  <Link href={`/dashboard/models/${m.id}`} className="hover:underline font-medium">{m.alias || 'Sin alias'}</Link>
-                  <span
-                    className={
-                      `px-2 py-1 rounded-full text-label ` +
-                      ((m.profile_completeness || 0) < 50
-                        ? 'bg-destructive/10 text-destructive'
-                        : 'bg-warning/10 text-warning')
-                    }
-                  >
-                    {Math.round(m.profile_completeness || 0)}%
-                  </span>
-                </li>
-              ))}
-            </ul>
+            <IncompleteProfilesList models={lowModels} />
           </CardContent>
         </Card>
       </div>

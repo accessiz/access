@@ -70,7 +70,7 @@ function BirthdayCard({ model, isToday }: BirthdayCardProps) {
     return (
         <Link
             href={`/dashboard/models/${model.id}`}
-            className={`flex items-center gap-3 p-3 rounded-lg transition-colors hover:bg-muted/50 ${isToday ? 'bg-primary/10 border border-primary/20' : ''}`}
+            className={`flex items-center gap-3 p-3 rounded-lg transition-colors hover:bg-hover-overlay ${isToday ? 'bg-primary/10 border border-primary/20' : ''}`}
         >
             <Avatar className="h-10 w-10">
                 <AvatarImage src={mediaUrl(model.cover_path) || undefined} alt={name} />
@@ -80,7 +80,7 @@ function BirthdayCard({ model, isToday }: BirthdayCardProps) {
             </Avatar>
             <div className="flex-1 min-w-0">
                 <p className="text-body font-medium truncate">{name}</p>
-                <div className="flex items-center gap-2 text-label text-muted-foreground">
+                <div className="flex items-center gap-2 text-label text-tertiary">
                     {model.instagram && (
                         <span className="truncate">@{model.instagram.replace('@', '')}</span>
                     )}
@@ -203,7 +203,7 @@ export function BirthdayPanel() {
                             ))}
                         </div>
                     ) : (
-                        <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                        <div className="flex flex-col items-center justify-center h-full text-secondary">
                             <Cake className="h-8 w-8 mb-2 opacity-50" />
                             <p className="text-body">No hay cumpleaños en {MONTHS[currentMonth - 1]}</p>
                         </div>
@@ -212,7 +212,7 @@ export function BirthdayPanel() {
 
                 {/* Contador */}
                 {!loading && birthdays.length > 0 && (
-                    <p className="text-label text-center text-muted-foreground mt-2">
+                    <p className="text-label text-center text-secondary mt-2">
                         {birthdays.length} cumpleaños en {MONTHS[currentMonth - 1]}
                     </p>
                 )}

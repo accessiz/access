@@ -78,7 +78,13 @@ function isValidStatus(status: unknown): status is ModelStatus {
 
 export default function ModelProfilePageClient({ initialModel, workHistory = [] }: ModelProfileClientProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const [activeTab, setActiveTab] = useState('info');
   const [dangerOpen, setDangerOpen] = useState(false);
+
+  const handleEditClick = () => {
+    setActiveTab('info');
+    setIsEditing(true);
+  };
 
   const handleCopyId = () => {
     navigator.clipboard.writeText(initialModel.id);
@@ -263,7 +269,7 @@ export default function ModelProfilePageClient({ initialModel, workHistory = [] 
         </div>
         <div className="flex items-center gap-x-2 gap-y-2">
           {!isEditing ? (
-            <Button variant="secondary" size="icon" onClick={() => setIsEditing(true)} title="Editar Perfil">
+            <Button variant="outline" size="icon" onClick={handleEditClick} title="Editar Perfil" className="border-separator bg-transparent hover:bg-hover-overlay">
               <Pencil className="h-4 w-4" />
             </Button>
           ) : (
@@ -283,7 +289,7 @@ export default function ModelProfilePageClient({ initialModel, workHistory = [] 
         </div>
       </header>
 
-      <Tabs defaultValue="info" className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="mb-6 h-auto grid grid-cols-2 gap-2 sm:h-12 sm:flex sm:flex-nowrap sm:gap-0">
           <TabsTrigger value="info" className="gap-x-2 gap-y-2 h-10 justify-start px-3 whitespace-normal leading-tight sm:h-full sm:justify-center sm:px-4 sm:whitespace-nowrap">
             <User className="h-4 w-4" /> Información
@@ -521,7 +527,7 @@ export default function ModelProfilePageClient({ initialModel, workHistory = [] 
                 const totalAmount = job.totalAmount || (job.agreedFee * (job.daysWorked || 1));
 
                 return (
-                  <Card key={job.projectId} className="hover:bg-muted/30 transition-colors">
+                  <Card key={job.projectId} className="hover:bg-hover-overlay transition-colors">
                     <CardContent className="p-4">
                       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                         {/* Left: Info */}
@@ -610,7 +616,7 @@ export default function ModelProfilePageClient({ initialModel, workHistory = [] 
             {filteredApplications.length > 0 ? (
               filteredApplications.map((app) => {
                 return (
-                  <Card key={app.projectId} className="hover:bg-muted/30 transition-colors">
+                  <Card key={app.projectId} className="hover:bg-hover-overlay transition-colors">
                     <CardContent className="p-4">
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         {/* Left: Project info */}

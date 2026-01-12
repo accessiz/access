@@ -119,8 +119,7 @@ export function NotificationButton() {
                 <Button
                     variant="ghost"
                     size="icon"
-                    className="h-12 w-12 md:h-10 md:w-10 relative"
-                    title="Notificaciones"
+                    className="h-12 w-12 md:h-10 md:w-10 relative hover:bg-hover-overlay"
                 >
                     <Bell className="h-4 w-4" />
                     {totalCount > 0 && (
@@ -135,13 +134,15 @@ export function NotificationButton() {
                 </Button>
             </PopoverTrigger>
             <PopoverContent
-                align="end"
-                className="w-80 p-0"
+                align="center"
+                collisionPadding={16}
+                className="w-[calc(100vw-2rem)] sm:w-96 p-0 bg-background/80 backdrop-blur-md border-separator/50 shadow-2xl overflow-hidden z-[100]"
                 sideOffset={8}
+                onOpenAutoFocus={(e) => e.preventDefault()}
             >
                 {/* Header */}
-                <div className="flex items-center justify-between border-b px-4 py-3">
-                    <h4 className="text-body font-semibold">Notificaciones</h4>
+                <div className="flex items-center justify-between border-b border-separator px-4 py-3">
+                    <h4 className="text-body font-semibold text-primary">Notificaciones</h4>
                     {notifications.length > 0 && (
                         <Button
                             variant="ghost"
@@ -177,71 +178,64 @@ export function NotificationButton() {
                         <>
                             {/* Smart Alerts (persistentes) */}
                             {alerts.length > 0 && (
-                                <div className="border-b">
+                                <div className="border-b border-separator">
                                     <div className="px-4 py-2 bg-warning/10">
-                                        <span className="text-label font-medium text-warning flex items-center gap-1.5">
-                                            <AlertTriangle className="h-3.5 w-3.5" />
+                                        <span className="text-label font-medium text-primary flex items-center gap-1.5 opacity-80 uppercase tracking-wider">
+                                            <AlertTriangle className="h-3.5 w-3.5 text-warning" />
                                             Requiere acción
                                         </span>
                                     </div>
                                     <TooltipProvider delayDuration={200}>
-                                        <ul className="divide-y divide-border">
+                                        <ul className="divide-y divide-separator">
                                             {alerts.map((alert) => (
                                                 <li key={alert.id}>
-                                                    <Link
-                                                        href={alert.href}
-                                                        className={cn(
-                                                            "flex items-start gap-3 px-4 py-3 hover:bg-muted/50 transition-colors",
-                                                            "focus:outline-none focus:bg-muted/50"
-                                                        )}
-                                                        onClick={() => setIsOpen(false)}
-                                                    >
-                                                        <div className={cn(
-                                                            "h-8 w-8 rounded-full flex items-center justify-center shrink-0 mt-0.5",
-                                                            alert.type === 'payment_due' ? "bg-warning/20" :
-                                                                alert.type === 'attention_needed' ? "bg-info/20" : "bg-info/20"
-                                                        )}>
-                                                            {alert.type === 'payment_due' ? (
-                                                                <DollarSign className="h-4 w-4 text-warning" />
-                                                            ) : alert.type === 'attention_needed' ? (
-                                                                <FileText className="h-4 w-4 text-info" />
-                                                            ) : (
-                                                                <FileText className="h-4 w-4 text-info" />
-                                                            )}
-                                                        </div>
-                                                        <div className="flex-1 min-w-0">
-                                                            <div className="flex items-center gap-1.5">
-                                                                <p className="text-body text-foreground font-medium line-clamp-1">
+                                                    <div className="flex items-center gap-2 pr-4">
+                                                        <Link
+                                                            href={alert.href}
+                                                            className="flex-1 flex items-start gap-4 px-4 py-4 focus:outline-none"
+                                                            onClick={() => setIsOpen(false)}
+                                                        >
+                                                            {/* Column 1: Icon */}
+                                                            <div className={cn(
+                                                                "h-10 w-10 rounded-full flex items-center justify-center shrink-0",
+                                                                alert.type === 'payment_due' ? "bg-warning/20 text-warning" : "bg-info/20 text-info"
+                                                            )}>
+                                                                {alert.type === 'payment_due' ? <DollarSign className="h-5 w-5" /> : <FileText className="h-5 w-5" />}
+                                                            </div>
+                                                            {/* Column 2: Info */}
+                                                            <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+                                                                <p className="text-body text-primary font-semibold line-clamp-2 leading-snug">
                                                                     {alert.title}
                                                                 </p>
-                                                                {alert.type === 'attention_needed' && (
-                                                                    <Tooltip>
-                                                                        <TooltipTrigger asChild>
-                                                                            <span
-                                                                                className="shrink-0 cursor-help"
-                                                                                onClick={(e) => e.preventDefault()}
-                                                                            >
-                                                                                <Info className="h-3.5 w-3.5 text-info" />
-                                                                            </span>
-                                                                        </TooltipTrigger>
-                                                                        <TooltipContent
-                                                                            side="top"
-                                                                            className="max-w-[200px] text-center"
-                                                                        >
-                                                                            <p className="text-label">
-                                                                                Aprueba talentos para completar o elimina el proyecto
-                                                                            </p>
-                                                                        </TooltipContent>
-                                                                    </Tooltip>
+                                                                {alert.subtitle && (
+                                                                    <p className="text-label text-secondary line-clamp-1">
+                                                                        {alert.subtitle}
+                                                                    </p>
                                                                 )}
                                                             </div>
-                                                            {alert.subtitle && (
-                                                                <p className="text-label text-muted-foreground line-clamp-1">
-                                                                    {alert.subtitle}
-                                                                </p>
-                                                            )}
-                                                        </div>
-                                                    </Link>
+                                                        </Link>
+                                                        {/* Column 3: Action Icon (i) */}
+                                                        {alert.type === 'attention_needed' && (
+                                                            <Tooltip>
+                                                                <TooltipTrigger asChild>
+                                                                    <button
+                                                                        className="p-2 -mr-2 rounded-full shrink-0"
+                                                                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                                                                    >
+                                                                        <Info className="h-5 w-5 text-[rgb(var(--purple))]" />
+                                                                    </button>
+                                                                </TooltipTrigger>
+                                                                <TooltipContent
+                                                                    side="left"
+                                                                    className="max-w-[240px] bg-[rgb(var(--purple))] border-none text-white shadow-xl p-3 z-[100]"
+                                                                >
+                                                                    <p className="text-label leading-relaxed font-medium">
+                                                                        Aprueba talentos para completar o elimina el proyecto
+                                                                    </p>
+                                                                </TooltipContent>
+                                                            </Tooltip>
+                                                        )}
+                                                    </div>
                                                 </li>
                                             ))}
                                         </ul>
@@ -251,29 +245,51 @@ export function NotificationButton() {
 
                             {/* Regular Notifications */}
                             {notifications.length > 0 && (
-                                <ul className="divide-y divide-border">
+                                <ul className="divide-y divide-separator">
                                     {notifications.map((notification) => (
                                         <li key={notification.id}>
-                                            <Link
-                                                href="/dashboard/projects"
-                                                className={cn(
-                                                    "flex items-start gap-3 px-4 py-3 hover:bg-muted/50 transition-colors",
-                                                    "focus:outline-none focus:bg-muted/50"
-                                                )}
-                                                onClick={() => setIsOpen(false)}
-                                            >
-                                                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-                                                    <FolderKanban className="h-4 w-4 text-primary" />
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="text-body text-foreground line-clamp-2">
-                                                        {notification.title}
-                                                    </p>
-                                                    <p className="text-label text-muted-foreground mt-0.5">
-                                                        {timeAgo(notification.when)}
-                                                    </p>
-                                                </div>
-                                            </Link>
+                                            <div className="flex items-center gap-2 pr-4">
+                                                <Link
+                                                    href="/dashboard/projects"
+                                                    className="flex-1 flex items-start gap-4 px-4 py-4 focus:outline-none"
+                                                    onClick={() => setIsOpen(false)}
+                                                >
+                                                    {/* Column 1: Icon */}
+                                                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                                                        <FolderKanban className="h-5 w-5 text-primary" />
+                                                    </div>
+                                                    {/* Column 2: Info */}
+                                                    <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+                                                        <p className="text-body text-primary line-clamp-2 leading-snug">
+                                                            {notification.title}
+                                                        </p>
+                                                        <p className="text-label text-secondary mt-0.5">
+                                                            {timeAgo(notification.when)}
+                                                        </p>
+                                                    </div>
+                                                </Link>
+                                                {/* Column 3: Action Icon (i) */}
+                                                <TooltipProvider delayDuration={200}>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <button
+                                                                className="p-2 -mr-2 rounded-full shrink-0"
+                                                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                                                            >
+                                                                <Info className="h-5 w-5 text-[rgb(var(--purple))]" />
+                                                            </button>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent
+                                                            side="left"
+                                                            className="max-w-[240px] bg-[rgb(var(--purple))] border-none text-white shadow-xl p-3 z-[100]"
+                                                        >
+                                                            <p className="text-label leading-relaxed font-medium">
+                                                                Nueva actualización del proyecto. Haz clic para más detalles.
+                                                            </p>
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                </TooltipProvider>
+                                            </div>
                                         </li>
                                     ))}
                                 </ul>

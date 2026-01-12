@@ -191,8 +191,8 @@ export function ModelsPageContent({
                                         onClick={() => handleModelClick(model.id)}
                                         className={cn(
                                             'w-full flex items-center gap-3 px-4 py-3 text-left transition-colors',
-                                            'hover:bg-accent/50 focus:outline-none',
-                                            isSelected && 'md:bg-accent md:border-l-2 md:border-l-primary'
+                                            'hover:bg-hover-overlay focus:outline-none',
+                                            isSelected && 'md:bg-quaternary md:border-l-2 md:border-l-purple'
                                         )}
                                     >
                                         <Avatar className="h-10 w-10 shrink-0">
@@ -201,9 +201,9 @@ export function ModelsPageContent({
                                         </Avatar>
 
                                         <div className="flex-1 min-w-0">
-                                            <p className="font-medium text-body truncate">{model.alias || 'Sin nombre'}</p>
+                                            <p className="font-medium text-body text-primary truncate">{model.alias || 'Sin nombre'}</p>
                                             {model.country && (
-                                                <p className="text-label text-muted-foreground flex items-center gap-1">
+                                                <p className="text-label text-secondary flex items-center gap-1">
                                                     <MapPin className="h-3 w-3" />
                                                     {model.country}
                                                 </p>

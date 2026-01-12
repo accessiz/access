@@ -83,13 +83,13 @@ export function NavUser({ user }: { user: User }) {
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            
+
             {/* Botón de Logout real conectado a tu ruta de auth */}
             <form action="/auth/signout" method="post" className="w-full">
-                <button type="submit" className="relative flex w-full cursor-default select-none items-center rounded-sm px-2 py-1.5 text-body outline-none transition-colors hover:bg-accent hover:text-accent-foreground">
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Cerrar sesión
-                </button>
+              <button type="submit" className="relative flex w-full cursor-default select-none items-center rounded-sm px-2 py-1.5 text-body outline-none transition-colors hover:bg-hover-overlay hover:text-primary">
+                <LogOut className="mr-2 h-4 w-4" />
+                Cerrar sesión
+              </button>
             </form>
           </DropdownMenuContent>
         </DropdownMenu>

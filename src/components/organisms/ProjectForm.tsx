@@ -16,12 +16,7 @@ import {
   Plus,
   Save,
   X,
-  DollarSign,
   Info,
-  Building2,
-  Tag,
-  Layers,
-  FileText,
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
@@ -465,9 +460,9 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
             {/* Subtexto de contexto */}
             <p className="text-body text-muted-foreground flex items-center gap-1.5">
               {isEditing ? (
-                <><FileText className="h-3.5 w-3.5" /> Editando proyecto</>
+                <>Editando proyecto</>
               ) : (
-                <><Plus className="h-3.5 w-3.5" /> Nuevo proyecto</>
+                <>Nuevo proyecto</>
               )}
             </p>
           </div>
@@ -487,7 +482,6 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
         {/* ========== PASO 1: TIPO DE PROYECTO ========== */}
         <div className="space-y-4">
           <div className="flex items-center gap-2">
-            <Layers className="h-5 w-5 text-primary" />
             <h2 className="text-title">Tipo de Proyecto</h2>
             <span className="text-label text-muted-foreground">(máx. 2)</span>
           </div>
@@ -496,7 +490,7 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
               {PROJECT_TYPES.map((type) => {
                 const isSelected = selectedProjectTypes.includes(type.value);
                 const selectionIndex = selectedProjectTypes.indexOf(type.value);
-                const isPrimary = selectionIndex === 0; // El primero es el que aparece en el nombre
+                // El primero es el que aparece en el nombre
                 return (
                   <Button
                     key={type.value}
@@ -505,17 +499,17 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
                     size="sm"
                     className={cn(
                       "h-9 px-4 transition-all relative",
-                      isSelected && "bg-primary text-primary-foreground"
+                      isSelected && "bg-purple text-white hover:bg-purple"
                     )}
                     onClick={() => toggleProjectType(type.value)}
                   >
                     {type.label}
                     {isSelected && (
                       <span className={cn(
-                        "ml-2 flex items-center justify-center size-5 rounded-full text-label font-bold",
-                        isPrimary
-                          ? "bg-white text-primary"
-                          : "bg-primary-foreground/20 text-primary-foreground"
+                        "ml-2 flex items-center justify-center size-5 rounded-full text-label font-bold transition-all",
+                        selectionIndex === 0
+                          ? "bg-white text-purple"
+                          : "border border-white bg-transparent text-white"
                       )}>
                         {selectionIndex + 1}
                       </span>
@@ -537,7 +531,6 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
         {/* ========== PASO 2: CLIENTE ========== */}
         <div className="space-y-4">
           <div className="flex items-center gap-2">
-            <Building2 className="h-5 w-5 text-primary" />
             <h2 className="text-title">Cliente</h2>
             <span className="text-label text-muted-foreground">(recomendado)</span>
           </div>
@@ -599,7 +592,6 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
             {selectedClientId && availableBrands.length > 0 && (
               <div className="pt-4 border-t space-y-2">
                 <div className="flex items-center gap-2">
-                  <Tag className="h-4 w-4 text-muted-foreground" />
                   <Label>Marca del proyecto</Label>
                 </div>
                 <Controller
@@ -630,7 +622,6 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
         {/* ========== PASO 3: NOMBRE ADICIONAL ========== */}
         <div className="space-y-4">
           <div className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-primary" />
             <h2 className="text-title">Palabra adicional</h2>
             <span className="text-label text-muted-foreground">(opcional)</span>
           </div>
@@ -650,7 +641,7 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
             {fields.map((item, index) => (
               <div
                 key={item.id}
-                className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] items-end gap-4 p-4 rounded-md border bg-muted/30"
+                className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] items-end gap-4 p-4 rounded-md border bg-quaternary"
               >
                 <div className="flex flex-col gap-2">
                   <Label>Fecha</Label>
@@ -720,7 +711,6 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
         {/* ========== PASO 5: PRESUPUESTO ========== */}
         <div className="space-y-4">
           <div className="flex items-center gap-2">
-            <DollarSign className="h-5 w-5 text-primary" />
             <h2 className="text-title">Presupuesto y Tarifas</h2>
           </div>
           <div className="border bg-card rounded-lg p-6 grid md:grid-cols-2 gap-6">
@@ -785,7 +775,6 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
         {/* ========== PASO 6: FACTURACIÓN AL CLIENTE ========== */}
         <div className="space-y-4">
           <div className="flex items-center gap-2">
-            <DollarSign className="h-5 w-5 text-success" />
             <h2 className="text-title">Facturación al Cliente</h2>
             <span className="text-label text-muted-foreground">(opcional)</span>
           </div>
@@ -844,14 +833,13 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
 
               <div className="space-y-2">
                 <Label>Total con impuesto</Label>
-                <div className="h-10 px-3 py-2 bg-muted rounded-md flex items-center font-medium text-title">
+                <div className="h-10 px-3 py-2 bg-transparent border border-input rounded-md flex items-center font-medium text-body">
                   {form.watch('currency') || 'GTQ'}{' '}
                   {((
                     (Number(form.watch('revenue')) || 0) *
                     (1 + (Number(form.watch('tax_percentage')) || 12) / 100)
                   ).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}
                 </div>
-                <p className="text-label text-muted-foreground">Calculado automáticamente</p>
               </div>
             </div>
           </div>

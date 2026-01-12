@@ -20,20 +20,20 @@ const statusConfig: Record<ProjectStatus, { label: string; icon: React.ReactNode
   draft: {
     label: 'Borrador',
     icon: <ListChecks className="mr-2 h-4 w-4" />,
-    color: 'text-warning',
-    bgColor: 'bg-warning/10 border-warning/20'
+    color: 'text-info',
+    bgColor: 'bg-info/10 border-info/20'
   },
   sent: {
     label: 'Enviado',
     icon: <Send className="mr-2 h-4 w-4" />,
-    color: 'text-info',
-    bgColor: 'bg-info/10 border-info/20'
+    color: 'text-cyan',
+    bgColor: 'bg-cyan/10 border-cyan/20'
   },
   'in-review': {
     label: 'En Revisión',
     icon: <Clock className="mr-2 h-4 w-4" />,
-    color: 'text-primary',
-    bgColor: 'bg-primary/10 border-primary/20'
+    color: 'text-warning',
+    bgColor: 'bg-warning/10 border-warning/20'
   },
   completed: {
     label: 'Completado',

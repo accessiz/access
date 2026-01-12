@@ -181,7 +181,7 @@ export default function WebVisibilityClientPage() {
                     filteredModels.map(model => (
                         <div
                             key={model.id}
-                            className="flex items-center gap-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors"
+                            className="flex items-center gap-3 p-3 rounded-lg border-transparent bg-sys-bg-secondary hover:bg-hover-overlay transition-colors"
                         >
                             <Avatar className="h-10 w-10 shrink-0">
                                 <AvatarImage src={mediaUrl(model.cover_path) || undefined} />
@@ -196,6 +196,7 @@ export default function WebVisibilityClientPage() {
                                 checked={model.is_public}
                                 onCheckedChange={(checked) => handleToggle(model.id, checked)}
                                 disabled={updating === model.id}
+                                className="data-[state=unchecked]:bg-quaternary data-[state=checked]:bg-purple border-transparent [&>span]:data-[state=unchecked]:bg-tertiary [&>span]:data-[state=checked]:bg-white"
                             />
                         </div>
                     ))

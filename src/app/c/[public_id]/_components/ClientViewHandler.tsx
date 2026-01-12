@@ -231,7 +231,7 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
             <div className="relative z-10 flex flex-col gap-3">
               <div className="flex flex-wrap items-center justify-between gap-2 sm:flex-nowrap sm:gap-3">
                 <div className="min-w-0">
-                  <p className="text-body font-medium text-muted-foreground dark:text-primary-foreground leading-snug sm:truncate">
+                  <p className="text-body font-medium text-foreground leading-snug sm:truncate">
                     Selección de talento
                   </p>
                 </div>
@@ -251,7 +251,7 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
 
               <div className="flex items-center gap-3">
                 <Progress value={progressStats.percentage} className="h-2 flex-1" />
-                <span className="text-label text-muted-foreground dark:text-primary-foreground tabular-nums">
+                <span className="text-label text-foreground tabular-nums">
                   {Math.round(progressStats.percentage)}%
                 </span>
               </div>

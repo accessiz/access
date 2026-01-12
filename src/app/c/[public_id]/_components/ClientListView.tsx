@@ -44,13 +44,15 @@ function SelectionIconButtons({
     e.preventDefault();
     e.stopPropagation();
     if (isUpdating) return;
-    if (selection === next) return;
 
+    // Toggle logic: If same selection, set to 'pending' (deselect)
+    const nextSelection = selection === next ? 'pending' : next;
     const previous = selection;
-    onSelectionChange?.(modelId, next);
+
+    onSelectionChange?.(modelId, nextSelection);
     setIsUpdating(true);
 
-    const result = await updateClientModelSelection(realProjectId, modelId, next);
+    const result = await updateClientModelSelection(realProjectId, modelId, nextSelection);
 
     if (!result.success) {
       onSelectionChange?.(modelId, previous);
@@ -67,32 +69,32 @@ function SelectionIconButtons({
         disabled={isUpdating}
         onClick={(e) => setSelection(e, 'approved')}
         className={cn(
-          'inline-flex items-center justify-center rounded-full transition-colors',
-          'size-9',
+          'group inline-flex items-center justify-center rounded-full transition-all duration-300',
+          'size-9 border',
           selection === 'approved'
-            ? 'bg-success text-success-foreground'
-            : 'bg-muted text-muted-foreground hover:bg-success hover:text-success-foreground',
+            ? 'bg-success/20 border-success text-success'
+            : 'bg-white/5 border-white/10 text-muted-foreground backdrop-blur-md hover:bg-success/20 hover:border-success/50 hover:text-success',
           isUpdating && 'opacity-70'
         )}
         aria-label="Aprobar"
       >
-        {isUpdating ? <Loader2 className="size-4 animate-spin" /> : <CheckCircle2 className="size-5" />}
+        {isUpdating ? <Loader2 className="size-4 animate-spin" /> : <CheckCircle2 className="size-5 transition-transform duration-300" />}
       </button>
       <button
         type="button"
         disabled={isUpdating}
         onClick={(e) => setSelection(e, 'rejected')}
         className={cn(
-          'inline-flex items-center justify-center rounded-full transition-colors',
-          'size-9',
+          'group inline-flex items-center justify-center rounded-full transition-all duration-300',
+          'size-9 border',
           selection === 'rejected'
-            ? 'bg-destructive text-destructive-foreground'
-            : 'bg-muted text-muted-foreground hover:bg-destructive hover:text-destructive-foreground',
+            ? 'bg-destructive/20 border-destructive text-destructive'
+            : 'bg-white/5 border-white/10 text-muted-foreground backdrop-blur-md hover:bg-destructive/20 hover:border-destructive/50 hover:text-destructive',
           isUpdating && 'opacity-70'
         )}
         aria-label="Rechazar"
       >
-        {isUpdating ? <Loader2 className="size-4 animate-spin" /> : <XCircle className="size-5" />}
+        {isUpdating ? <Loader2 className="size-4 animate-spin" /> : <XCircle className="size-5 transition-transform duration-300" />}
       </button>
     </div>
   );
@@ -147,7 +149,7 @@ export function ClientListView({ models, projectId, realProjectId, onSelectionCh
                 key={model.id}
                 href={`/c/${projectId}/${model.id}`}
                 onClick={saveScrollPosition}
-                className="flex items-center gap-3 rounded-lg border bg-card p-3 text-card-foreground hover:bg-muted/50"
+                className="flex items-center gap-3 rounded-lg border bg-card p-3 text-card-foreground hover:bg-hover-overlay"
               >
                 <Avatar className="h-12 w-12 shrink-0">
                   <AvatarImage src={model.coverUrl || undefined} className="object-cover" />
@@ -187,7 +189,7 @@ export function ClientListView({ models, projectId, realProjectId, onSelectionCh
             {models.map((model) => {
               const currentSelection = localSelections[model.id] || model.selection || 'pending';
               return (
-                <TableRow key={model.id} className="group cursor-pointer hover:bg-muted/50">
+                <TableRow key={model.id} className="group cursor-pointer hover:bg-hover-overlay">
                   <TableCell>
                     <Avatar className="h-12 w-12">
                       <AvatarImage src={model.coverUrl || undefined} className="object-cover" />

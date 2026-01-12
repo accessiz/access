@@ -168,7 +168,7 @@ export default function ProjectsClientPage({ initialProjects, initialCount, avai
                     <div className="border rounded-lg overflow-x-auto">
                         <Table className="min-w-225">
                             <TableHeader>
-                                <TableRow>
+                                <TableRow className="bg-quaternary hover:bg-quaternary">
                                     <TableHead className="w-12">#</TableHead>
                                     <SortableHeader tkey="project_name" label="Proyecto" />
                                     <SortableHeader tkey="client_name" label="Cliente" />

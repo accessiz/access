@@ -8,7 +8,7 @@ const LogoIcon = (props) => (
         {...props}
     >
         <path
-            fill="rgb(var(--primary) / 1)"
+            fill="rgb(var(--purple) / 1)"
             d="M7.15,17.35H0V.65h8.21l14.73,14.67-1.67,1.68-6.89-6.86-7.23,7.2ZM2.37,14.98h3.8l6.53-6.51L7.23,3.02H2.37v11.96Z"
         />
     </svg>

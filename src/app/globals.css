@@ -24,15 +24,15 @@
     position: relative;
     isolation: isolate;
     overflow: hidden;
-    border-radius: var(--radius);
+    border-radius: 8px;
 
     /* Light mode: solid surface (no gradients). */
-    background: rgb(var(--card));
+    background: rgb(var(--surface-1));
 
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
 
-    border: 1px solid rgb(var(--border) / 0.45);
+    border: 1px solid rgb(var(--gray-5) / 0.45);
   }
 
   /* Dark mode: special gradient (unique element).
@@ -42,14 +42,12 @@
     background-image:
       radial-gradient(900px circle at 50% 5%, rgb(var(--wow-progress-bg-mid) / 0.22), transparent 62%),
       radial-gradient(760px circle at 85% 120%, rgb(var(--primary) / 0.10), transparent 58%),
-      linear-gradient(
-        90deg,
+      linear-gradient(90deg,
         rgb(var(--wow-progress-bg-edge) / 1) 0%,
         rgb(var(--wow-progress-bg-edge) / 1) 20%,
         rgb(var(--wow-progress-bg-mid) / 1) 50%,
         rgb(var(--wow-progress-bg-edge) / 1) 80%,
-        rgb(var(--wow-progress-bg-edge) / 1) 100%
-      );
+        rgb(var(--wow-progress-bg-edge) / 1) 100%);
   }
 
   .client-wow-progress::before {
@@ -61,14 +59,12 @@
     pointer-events: none;
 
     /* Animated “ray of light” border (masked so it becomes a 1px stroke) */
-    background: conic-gradient(
-      from var(--nyxa-angle),
-      rgb(var(--primary) / 0) 0deg,
-      rgb(var(--primary) / 0.55) 70deg,
-      rgb(var(--tertiary) / 0.55) 140deg,
-      rgb(var(--primary) / 0.55) 210deg,
-      rgb(var(--primary) / 0) 360deg
-    );
+    background: conic-gradient(from var(--nyxa-angle),
+        rgb(var(--primary) / 0) 0deg,
+        rgb(var(--primary) / 0.55) 70deg,
+        rgb(var(--purple) / 0.55) 140deg,
+        rgb(var(--primary) / 0.55) 210deg,
+        rgb(var(--primary) / 0) 360deg);
 
     -webkit-mask:
       linear-gradient(#000 0 0) content-box,
@@ -87,6 +83,7 @@
     from {
       --nyxa-angle: 0deg;
     }
+
     to {
       --nyxa-angle: 360deg;
     }
@@ -162,7 +159,7 @@
 
   /* Master panel (left sidebar in desktop, hidden in mobile) */
   .master-panel {
-    border-right: 1px solid rgb(var(--border));
+    border-right: 1px solid rgb(var(--sys-bg-secondary));
     overflow-y: auto;
     max-height: calc(100vh - 80px);
   }
@@ -170,7 +167,7 @@
   @media (max-width: 1023px) {
     .master-panel {
       border-right: none;
-      border-bottom: 1px solid rgb(var(--border));
+      border-bottom: 1px solid rgb(var(--sys-bg-secondary));
       max-height: 50vh;
     }
   }
@@ -252,68 +249,59 @@
 
 @layer base {
   :root {
-    /* MODO CLARO (Apple HIG-inspired) */
-    --background-base: 242 242 247;     /* #F2F2F7 – systemGray6 (light), grouped background */
-    --background: var(--background-base);
-    --surface-1: 255 255 255;           /* Elevated level 1 */
-    --surface-2: 255 255 255;           /* Elevated level 2 (kept subtle in light) */
-    --foreground: 20 20 20;
+    /* Light mode */
+    --primary: 11 11 12;
+    /* #040404 */
+    --secondary: 60 60 68 / 0.70;
+    /* #3c3c44 @ 60% */
+    --tertiary: 60 60 68 / 0.08;
+    /* #3c3c44 @ 8% */
+    --quaternary: 60 60 68 / 0.04;
+    /* #3c3c44 @ 4% */
+    --hover-overlay: 60 60 68 / 0.12;
+    /* #3C3C44 @ 12% - Apple-like hover */
+    --separator: 60 60 68 / 0.24;
+    /* #3C3C44 @ 24% - Apple-like separator */
+    --quinary: 245 245 247;
+    /* #D8D8DC */
 
-    --nav-background: var(--surface-1);
-    --nav-foreground: var(--foreground);
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
+    --sys-bg: var(--quinary);
+    --sys-bg-secondary: 236 236 241;
+    /* #EBEBF0 */
+    --sys-bg-tertiary: var(--tertiary);
 
-    /* shadcn semantic surfaces */
-    --card: var(--surface-1);
-    --card-foreground: var(--foreground);
-    --popover: var(--surface-1);
-    --popover-foreground: var(--foreground);
 
-    /* System colors (Apple-like) */
-    --red:        255 56 60;
-    --orange:     255 149 0;
-    --yellow:     255 204 0;
-    --green:      52 199 89;
-    --mint:       0 200 179;
-    --teal:       0 195 208;
-    --cyan:       0 192 232;
-    --blue:       0 122 255;
-    --indigo:     97 85 245;
-    --purple:     203 48 224;
-    --pink:       255 45 85;
-    --brown:      172 127 94;
+    /* Colores vibrantes (system colors) */
+    --red: 255 56 60;
+    --orange: 255 149 0;
+    --yellow: 255 204 0;
+    --green: 52 199 89;
+    --mint: 0 200 179;
+    --teal: 0 195 208;
+    --cyan: 0 192 232;
+    --blue: 0 122 255;
+    --indigo: 97 85 245;
+    --purple: 203 48 224;
+    --light-purple: 234 141 255 / 0.25;
+    --access-purple: 134 50 155;
+    --pink: 255 45 85;
+    --brown: 172 127 94;
 
-    /* Grayscale ramp (Apple-like) */
-    --gray-1: 142 142 147;
-    --gray-2: 174 174 178;
-    --gray-3: 199 199 204;
-    --gray-4: 209 209 214;
-    --gray-5: 229 229 234;
-    --gray-6: 242 242 247;
+    /* Colores Básicos */
+    --white: 235 235 240;
+    --black: 16 16 17;
 
-    /* Primary + focus */
-    --primary: var(--blue);
-    --primary-foreground: 255 255 255;
 
-    --secondary: 248 248 250;
-    --secondary-foreground: 28 26 29;
-    --muted: 248 248 250;
-    --muted-foreground: 142 142 147;
-    --accent: 248 248 250;
-    --accent-foreground: 28 26 29;
-    /* M3 Tertiary (Design System) */
-    --tertiary: var(--purple);
-    --tertiary-foreground: 255 255 255;
-    --tertiary-container: 234 186 235;
-    --tertiary-container-foreground: 109 71 113;
-    --destructive: var(--red);
-    --destructive-foreground: 255 255 255;
-    --border: var(--gray-5);
-    --input: var(--gray-5);
-    --ring: var(--primary);
-    --radius: 8px;
-    /* M3 default radius for inputs/buttons */
+    /* ==========================================
+     * SPECIAL TOKENS (UNIQUE ELEMENT)
+     * Public Client View WOW progress strip gradient.
+     * Do not reuse elsewhere.
+     * ========================================== */
+    /* Light mode stops: 20% #FFFFFF, 50% #F3E7F5, 80% #FFFFFF */
+    --wow-progress-bg-edge: 255 255 255;
+    /* ~ #FFFFFF */
+    --wow-progress-bg-mid: 243 231 245;
+    /* ~ #F3E7F5 */
 
     /* ==========================================
      * SPACING TOKENS (8pt Grid System)
@@ -331,141 +319,77 @@
     /* Block separation */
     --spacing-2xl: 48px;
     /* Hero sections */
-
-    /* Design System aliases */
-    /* Token solicitado: el negro más oscuro del sistema */
-    --ds-background-200: 1 1 1;
-
-    /* ==========================================
-     * SPECIAL TOKENS (UNIQUE ELEMENT)
-     * Public Client View WOW progress strip gradient.
-     * Do not reuse elsewhere.
-     * ========================================== */
-    /* Light mode stops: 20% #FFFFFF, 50% #F3E7F5, 80% #FFFFFF */
-    --wow-progress-bg-edge: 255 255 255; /* ~ #FFFFFF */
-    --wow-progress-bg-mid: 243 231 245; /* ~ #F3E7F5 */
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-
-    /* M3 Semantic Colors (Custom Extension) */
-    --success: 34 139 34;
-    /* Forest Green */
-    --success-foreground: 255 255 255;
-    --warning: 234 179 8;
-    /* Amber */
-    --warning-foreground: 28 26 29;
-    --info: 59 130 246;
-    /* Blue */
-    --info-foreground: 255 255 255;
   }
 
   .dark {
-    /* MODO OSCURO (Apple HIG-inspired) */
-    --background-base: 0 0 0;           /* #000000 */
-    --background: var(--background-base);
-    --surface-1: 28 28 30;              /* #1C1C1E */
-    --surface-2: 44 44 46;              /* #2C2C2E */
-    --surface-3: 58 58 60;              /* #3A3A3C */
-    --foreground: 230 230 230;
+    /* Dark mode (neutral, purple-friendly) */
+    --primary: 238 238 239;
+    /* #EEEEEF */
+    --secondary: 238 238 239 / 0.50;
+    /* 50% */
+    --tertiary: 238 238 239 / 0.08;
+    /* 8% */
+    --quaternary: 238 238 239 / 0.04;
+    /* 4% */
+    --hover-overlay: 238 238 239 / 0.08;
+    /* 8% */
+    --separator: 238 238 239 / 0.14;
+    /* 14% */
 
-    --nav-background: var(--surface-1);
-    --nav-foreground: var(--foreground);
-    /* Updated sidebar/card background based on user input */
-    --sidebar-background: 4 4 4;
-    --sidebar-foreground: 240 4.8% 95.9%;
 
-    /* shadcn semantic surfaces */
-    --card: var(--surface-1);
-    --card-foreground: var(--foreground);
-    --popover: var(--surface-2);
-    --popover-foreground: var(--foreground);
+    /* #EBEBF5 @ 18% - Apple-like separator */
+    --quinary: 1 1 1;
+    /* #040404 */
 
-    /* System colors (Apple-like, dark) */
-    --red:        255 69 69;
-    --orange:     255 159 10;
-    --yellow:     255 214 10;
-    --green:      52 199 89;
-    --mint:       0 218 195;
-    --teal:       0 210 224;
-    --cyan:       60 211 254;
-    --blue:       10 132 255;
-    --indigo:     109 124 255;
-    --purple:     219 52 242;
-    --pink:       255 55 95;
-    --brown:      183 138 102;
+    --sys-bg: var(--quinary);
+    --sys-bg-secondary: 12 11 11;
+    /* #101011 */
+    --sys-bg-tertiary: var(--tertiary);
 
-    /* Grayscale ramp (Apple-like, dark) */
-    --gray-1: 142 142 147;
-    --gray-2: 99 99 102;
-    --gray-3: 72 72 74;
-    --gray-4: 58 58 60;
-    --gray-5: 44 44 46;
-    --gray-6: 28 28 30;
 
-    /* Primary + focus */
-    --primary: var(--blue);
-    --primary-foreground: 255 255 255;
 
-    --secondary: var(--surface-2);
-    --secondary-foreground: 230 230 230;
-    --muted: var(--surface-1);
-    --muted-foreground: 174 174 178;
-    --accent: var(--surface-2);
-    /* This is likely the background for active nav links */
-    --accent-foreground: 230 230 230;
-    /* Text color for active nav links */
-    /* M3 Tertiary (Design System) */
-    --tertiary: var(--purple);
-    --tertiary-foreground: 255 255 255;
-    --tertiary-container: 234 186 235;
-    --tertiary-container-foreground: 109 71 113;
-    --destructive: var(--red);
-    --destructive-foreground: 255 255 255;
-    --border: var(--gray-5);
-    --input: var(--gray-5);
-    --ring: var(--primary);
 
-    /* Mantener el alias en oscuro igual de negro */
-    --ds-background-200: 11 11 11;
+    /* Colores vibrantes en dark */
+    --red: 255 69 69;
+    --orange: 255 159 10;
+    --yellow: 255 214 10;
+    --green: 48 209 88;
+    --mint: 0 218 195;
+    --teal: 0 210 224;
+    --cyan: 60 211 254;
+    --blue: 10 132 255;
+    --indigo: 109 124 255;
+    --purple: 176 47 194;
+    --light-purple: 234 141 255 / 0.15;
+    --access-purple: 99 13 135;
+    --pink: 255 55 95;
+    --brown: 183 138 102;
+
+    /* Colores Básicos */
+    --white: 235 235 240;
+    --black: 16 16 17;
 
     /* Special tokens (unique element) */
-    --wow-progress-bg-edge: 13 2 15; /* ~ #0D020F */
-    --wow-progress-bg-mid: 27 4 31; /* ~ #1B041F */
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-
-    /* M3 Semantic Colors (Custom Extension) - Dark Mode */
-    --success: 74 222 128;
-    /* Lighter Green */
-    --success-foreground: 28 26 29;
-    --warning: 250 204 21;
-    /* Brighter Amber */
-    --warning-foreground: 28 26 29;
-    --info: 96 165 250;
-    /* Lighter Blue */
-    --info-foreground: 28 26 29;
+    --wow-progress-bg-edge: 13 2 15;
+    /* ~ #0D020F */
+    --wow-progress-bg-mid: 27 4 31;
+    /* ~ #1B041F */
   }
 }
 
 @layer base {
   html {
     font-size: 100%;
+    background-color: rgb(var(--sys-bg-secondary));
   }
 
   * {
-    @apply border-border;
+    border-color: rgb(var(--sys-bg-secondary));
   }
 
   body {
-    @apply bg-background text-foreground;
+    background-color: rgb(var(--sys-bg-secondary));
+    color: rgb(var(--primary));
     font-feature-settings: "rlig" 1, "calt" 1;
     font-size: 1rem;
   }
@@ -516,6 +440,33 @@ body,
   /* FIX SHADCN COMMAND MOUSE */
   [data-disabled] {
     pointer-events: auto !important;
+  }
+
+  /* --- LIQUID GLASS COMPONENTS (HIG 2025-2026) --- */
+  .search-bar,
+  .add-talent-btn,
+  .create-project-btn,
+  .glass-control {
+    border-radius: 12px;
+    border: 1px solid rgb(var(--separator));
+    background: transparent;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    transition: border-color 0.2s ease, background 0.2s ease, transform 0.1s ease;
+  }
+
+  .search-bar:hover,
+  .add-talent-btn:hover,
+  .create-project-btn:hover,
+  .glass-control:hover {
+    background: rgb(var(--hover-overlay));
+    border-color: rgba(var(--primary), 0.3);
+  }
+
+  .add-talent-btn:active,
+  .create-project-btn:active,
+  .glass-control:active {
+    transform: scale(0.98);
   }
 
   /* --- GRID RESPONSIVO PARA CLIENTES (GAP más compacto) --- */

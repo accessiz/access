@@ -201,7 +201,7 @@ export function ResponsiveTable<T extends Record<string, unknown>>({
                                 onClick={onRowClick ? () => onRowClick(row) : undefined}
                                 className={cn(
                                     onRowClick && 'cursor-pointer',
-                                    hoverable && 'hover:bg-muted/50',
+                                    hoverable && 'hover:bg-hover-overlay',
                                     striped && rowIdx % 2 === 1 && 'bg-muted/30'
                                 )}
                             >
@@ -231,7 +231,7 @@ export function ResponsiveTable<T extends Record<string, unknown>>({
                         onClick={onRowClick ? () => onRowClick(row) : undefined}
                         className={cn(
                             'transition-colors',
-                            onRowClick && 'cursor-pointer hover:bg-muted/50',
+                            onRowClick && 'cursor-pointer hover:bg-hover-overlay',
                             striped && rowIdx % 2 === 1 && 'bg-muted/30'
                         )}
                     >

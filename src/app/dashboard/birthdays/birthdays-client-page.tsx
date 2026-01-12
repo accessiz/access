@@ -109,7 +109,7 @@ function BirthdayCard({ model, isToday, showDownload }: BirthdayCardProps) {
     }
 
     return (
-        <div className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-x-4 gap-y-3 p-4 rounded-lg transition-colors ${isToday ? 'bg-primary/10 border border-primary/20' : 'bg-card border'}`}>
+        <div className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-x-4 gap-y-3 p-4 rounded-lg transition-colors ${isToday ? 'bg-purple/10 border border-purple/50 backdrop-blur-md shadow-[0_0_15px_rgba(var(--purple)/0.3)]' : 'bg-quaternary hover:bg-hover-overlay border-transparent'}`}>
             <Link href={`/dashboard/models/${model.id}`} className="flex items-center gap-x-4 gap-y-4 w-full sm:w-auto flex-1 min-w-0 hover:opacity-80 transition-opacity">
                 <Avatar className="h-12 w-12 shrink-0">
                     <AvatarImage src={mediaUrl(model.cover_path) || undefined} alt={name} />
@@ -211,7 +211,7 @@ export function BirthdaysClientPage() {
             </header>
 
             {/* Sección HOY - Siempre visible */}
-            <Card className={todayBirthdays.length > 0 ? 'border-primary/30 bg-linear-to-r from-primary/10 to-primary/5' : ''}>
+            <Card className="bg-sys-bg-secondary border-transparent">
                 <CardHeader className="pb-3">
                     <CardTitle className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex items-center gap-x-2 gap-y-2">
@@ -219,7 +219,7 @@ export function BirthdaysClientPage() {
                             <span>Hoy, {todayFormatted}</span>
                         </div>
                         {todayBirthdays.length > 0 && (
-                            <Badge className="bg-primary text-primary-foreground">
+                            <Badge className="bg-purple/15 text-purple border border-purple/30 backdrop-blur-sm shadow-[0_0_10px_rgba(var(--purple)/0.2)]">
                                 <PartyPopper className="h-3 w-3 mr-1" />
                                 {todayBirthdays.length} cumpleaños
                             </Badge>
@@ -264,12 +264,12 @@ export function BirthdaysClientPage() {
             </div>
 
             {/* Lista de cumpleaños del mes */}
-            <Card>
+            <Card className="bg-sys-bg-secondary border-transparent">
                 <CardHeader>
                     <CardTitle className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                         <span className="min-w-0 wrap-break-word">Cumpleaños en {MONTHS[currentMonth - 1]}</span>
                         {!loading && (
-                            <Badge variant="secondary">{birthdays.length}</Badge>
+                            <Badge variant="secondary" className="bg-purple text-white hover:bg-purple/90">{birthdays.length}</Badge>
                         )}
                     </CardTitle>
                 </CardHeader>

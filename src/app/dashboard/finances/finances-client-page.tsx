@@ -70,7 +70,7 @@ const PAYMENT_STATUS_CONFIG: Record<PaymentStatus, {
     label: string;
     icon: React.ElementType;
     className: string;
-    badgeVariant: 'warning' | 'success' | 'info' | 'neutral';
+    badgeVariant: 'warning' | 'success' | 'info' | 'neutral' | 'danger';
 }> = {
     pending: {
         label: 'Pendiente',
@@ -93,8 +93,8 @@ const PAYMENT_STATUS_CONFIG: Record<PaymentStatus, {
     cancelled: {
         label: 'Cancelado',
         icon: XCircle,
-        className: 'text-muted-foreground',
-        badgeVariant: 'neutral',
+        className: 'text-destructive',
+        badgeVariant: 'danger',
     },
 };
 
@@ -620,14 +620,14 @@ export default function FinancesClientPage({ initialData }: FinancesClientPagePr
                     value={formatCurrency(kpis.totalPendingClients)}
                     description="Pendiente de clientes"
                     icon={Receipt}
-                    iconClassName="text-info"
+                    iconClassName="text-warning"
                 />
                 <KPICard
                     title="Por Pagar"
                     value={formatCurrency(kpis.totalPendingModels)}
                     description="Pendiente a modelos"
                     icon={Wallet}
-                    iconClassName="text-warning"
+                    iconClassName="text-orange"
                 />
                 <KPICard
                     title="Margen Bruto"
@@ -898,7 +898,7 @@ function PaymentCard({
         : daysText;
 
     return (
-        <Card className="hover:bg-muted/30 transition-colors">
+        <Card className="hover:bg-hover-overlay transition-colors">
             <CardContent className="p-4">
                 <div className="flex items-start justify-between gap-x-4 gap-y-4">
                     {/* Left: Info */}
@@ -1030,7 +1030,7 @@ function ProjectGroupCard({
     };
 
     return (
-        <Card className="hover:bg-muted/30 transition-colors">
+        <Card className="hover:bg-hover-overlay transition-colors">
             <Collapsible open={isOpen} onOpenChange={setIsOpen}>
                 <CardContent className="p-4">
                     <div className="flex items-start justify-between gap-x-4 gap-y-4">
@@ -1096,7 +1096,7 @@ function ProjectGroupCard({
                                 return (
                                     <div
                                         key={model.id}
-                                        className="flex items-center justify-between gap-x-4 gap-y-4 py-2 px-3 rounded-lg bg-muted/30"
+                                        className="flex items-center justify-between gap-x-4 gap-y-4 py-2 px-3 rounded-lg bg-quaternary"
                                     >
                                         <div className="flex items-center gap-x-3 gap-y-3 min-w-0">
                                             <User className="h-4 w-4 text-muted-foreground shrink-0" />
@@ -1171,7 +1171,7 @@ function ClientBillingCard({
     const clientDisplay = item.registered_client_name || item.client_name || 'Sin cliente';
 
     return (
-        <Card className="hover:bg-muted/30 transition-colors">
+        <Card className="hover:bg-hover-overlay transition-colors">
             <CardContent className="p-4">
                 <div className="flex items-start justify-between gap-x-4 gap-y-4">
                     {/* Left: Info */}

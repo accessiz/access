@@ -26,13 +26,13 @@ interface ComboboxProps {
   emptyMessage?: string;
 }
 
-export function Combobox({ 
-  options, 
-  value, 
-  onChange, 
-  placeholder = "Select an option", 
+export function Combobox({
+  options,
+  value,
+  onChange,
+  placeholder = "Select an option",
   searchPlaceholder = "Search...",
-  emptyMessage = "No results found" 
+  emptyMessage = "No results found"
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false)
   const [highlightedValue, setHighlightedValue] = React.useState<string | null>(null)
@@ -71,7 +71,7 @@ export function Combobox({
                       // ✅ FIX: Permite mouse events
                       "[&_[data-disabled]]:pointer-events-auto",
                       // ✅ Hover visual como flecha ↓
-                      isHighlighted && !isSelected && "bg-accent text-accent-foreground"
+                      isHighlighted && !isSelected && "bg-purple text-white"
                     )}
                     // ✅ MOUSE HOVER: Selección visual
                     onMouseEnter={() => setHighlightedValue(option.value)}

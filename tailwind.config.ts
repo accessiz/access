@@ -79,79 +79,121 @@ const config: Config = {
 				],
 			},
 			colors: {
-				border: 'rgb(var(--border) / <alpha-value>)',
-				input: 'rgb(var(--input) / <alpha-value>)',
-				ring: 'rgb(var(--ring) / <alpha-value>)',
-				background: 'rgb(var(--background) / <alpha-value>)',
-				foreground: 'rgb(var(--foreground) / <alpha-value>)',
-				'nav-background': 'rgb(var(--nav-background) / <alpha-value>)',
-				'nav-foreground': 'rgb(var(--nav-foreground) / <alpha-value>)',
-				'sidebar-background': 'hsl(var(--sidebar-background) / <alpha-value>)',
-				'sidebar-foreground': 'hsl(var(--sidebar-foreground) / <alpha-value>)',
-				primary: {
-					DEFAULT: 'rgb(var(--primary) / <alpha-value>)',
-					foreground: 'rgb(var(--primary-foreground) / <alpha-value>)',
-				},
-				secondary: {
-					DEFAULT: 'rgb(var(--secondary) / <alpha-value>)',
-					foreground: 'rgb(var(--secondary-foreground) / <alpha-value>)',
-				},
+				// Minimal token system (matches src/app/globals.css)
+				background: 'rgb(var(--sys-bg) / <alpha-value>)',
+				foreground: 'rgb(var(--primary) / <alpha-value>)',
+				border: 'rgb(var(--separator))',
+				ring: 'rgb(var(--separator))',
+				// Convenience aliases for new system backgrounds
+				'sys-bg': 'rgb(var(--sys-bg) / <alpha-value>)',
+				'sys-bg-secondary': 'rgb(var(--sys-bg-secondary))',
+				'sys-bg-tertiary': 'rgb(var(--sys-bg-tertiary))',
+				// Note: sys-bg-tertiary is currently `initial` in globals.css
+				quaternary: 'rgb(var(--quaternary))',
+				quinary: 'rgb(var(--quinary) / <alpha-value>)',
+				'hover-overlay': 'rgb(var(--hover-overlay))',
+				separator: 'rgb(var(--separator))',
+				input: 'rgb(var(--separator))',
+				muted: 'rgb(var(--primary) / <alpha-value>)',
+				'muted-foreground': 'rgb(var(--primary) / 0.7)',
+				accent: 'rgb(var(--primary) / <alpha-value>)',
+				'accent-foreground': 'rgb(var(--primary) / <alpha-value>)',
+				card: 'rgb(var(--sys-bg-secondary))',
+				'card-foreground': 'rgb(var(--primary) / <alpha-value>)',
+				popover: 'rgb(var(--sys-bg-secondary))',
+				'popover-foreground': 'rgb(var(--primary) / <alpha-value>)',
 				destructive: {
-					DEFAULT: 'rgb(var(--destructive) / <alpha-value>)',
-					foreground: 'rgb(var(--destructive-foreground) / <alpha-value>)',
+					DEFAULT: 'rgb(var(--red) / <alpha-value>)',
+					foreground: 'rgb(var(--sys-bg) / <alpha-value>)',
 				},
-				muted: {
-					DEFAULT: 'rgb(var(--muted) / <alpha-value>)',
-					foreground: 'rgb(var(--muted-foreground) / <alpha-value>)',
-				},
-				accent: {
-					DEFAULT: 'rgb(var(--accent) / <alpha-value>)',
-					foreground: 'rgb(var(--accent-foreground) / <alpha-value>)',
-				},
-				tertiary: {
-					DEFAULT: 'rgb(var(--tertiary) / <alpha-value>)',
-					foreground: 'rgb(var(--tertiary-foreground) / <alpha-value>)',
-				},
-				tertiaryContainer: {
-					DEFAULT: 'rgb(var(--tertiary-container) / <alpha-value>)',
-					foreground: 'rgb(var(--tertiary-container-foreground) / <alpha-value>)',
-				},
-				// Kebab-case aliases (more Tailwind-native, safer for scanners/tools)
-				'tertiary-container': {
-					DEFAULT: 'rgb(var(--tertiary-container) / <alpha-value>)',
-					foreground: 'rgb(var(--tertiary-container-foreground) / <alpha-value>)',
-				},
-				// M3 Semantic Colors (Custom Extension)
 				success: {
-					DEFAULT: 'rgb(var(--success) / <alpha-value>)',
-					foreground: 'rgb(var(--success-foreground) / <alpha-value>)',
+					DEFAULT: 'rgb(var(--green) / <alpha-value>)',
+					foreground: 'rgb(var(--sys-bg) / <alpha-value>)',
 				},
 				warning: {
-					DEFAULT: 'rgb(var(--warning) / <alpha-value>)',
-					foreground: 'rgb(var(--warning-foreground) / <alpha-value>)',
+					DEFAULT: 'rgb(var(--yellow) / <alpha-value>)',
+					foreground: 'rgb(var(--sys-bg) / <alpha-value>)',
 				},
 				info: {
-					DEFAULT: 'rgb(var(--info) / <alpha-value>)',
-					foreground: 'rgb(var(--info-foreground) / <alpha-value>)',
+					DEFAULT: 'rgb(var(--blue) / <alpha-value>)',
+					foreground: 'rgb(var(--sys-bg) / <alpha-value>)',
 				},
-				popover: {
-					DEFAULT: 'rgb(var(--popover) / <alpha-value>)',
-					foreground: 'rgb(var(--popover-foreground) / <alpha-value>)',
+				cyan: {
+					DEFAULT: 'rgb(var(--cyan) / <alpha-value>)',
+					foreground: 'rgb(var(--sys-bg) / <alpha-value>)',
 				},
-				card: {
-					DEFAULT: 'rgb(var(--card) / <alpha-value>)',
-					foreground: 'rgb(var(--card-foreground) / <alpha-value>)',
+				indigo: {
+					DEFAULT: 'rgb(var(--indigo) / <alpha-value>)',
+					foreground: 'rgb(var(--sys-bg) / <alpha-value>)',
+				},
+				orange: {
+					DEFAULT: 'rgb(var(--orange) / <alpha-value>)',
+					foreground: 'rgb(var(--sys-bg) / <alpha-value>)',
+				},
+				red: {
+					DEFAULT: 'rgb(var(--red) / <alpha-value>)',
+					foreground: 'rgb(var(--sys-bg) / <alpha-value>)',
+				},
+				yellow: {
+					DEFAULT: 'rgb(var(--yellow) / <alpha-value>)',
+					foreground: 'rgb(var(--sys-bg) / <alpha-value>)',
+				},
+				green: {
+					DEFAULT: 'rgb(var(--green) / <alpha-value>)',
+					foreground: 'rgb(var(--sys-bg) / <alpha-value>)',
+				},
+				mint: {
+					DEFAULT: 'rgb(var(--mint) / <alpha-value>)',
+					foreground: 'rgb(var(--sys-bg) / <alpha-value>)',
+				},
+				teal: {
+					DEFAULT: 'rgb(var(--teal) / <alpha-value>)',
+					foreground: 'rgb(var(--sys-bg) / <alpha-value>)',
+				},
+				blue: {
+					DEFAULT: 'rgb(var(--blue) / <alpha-value>)',
+					foreground: 'rgb(var(--sys-bg) / <alpha-value>)',
+				},
+				purple: {
+					DEFAULT: 'rgb(var(--purple) / <alpha-value>)',
+					foreground: 'rgb(var(--sys-bg) / <alpha-value>)',
+				},
+				'access-purple': {
+					DEFAULT: 'rgb(var(--access-purple) / <alpha-value>)',
+					foreground: 'rgb(var(--sys-bg) / <alpha-value>)',
+				},
+				pink: {
+					DEFAULT: 'rgb(var(--pink) / <alpha-value>)',
+					foreground: 'rgb(var(--sys-bg) / <alpha-value>)',
+				},
+				brown: {
+					DEFAULT: 'rgb(var(--brown) / <alpha-value>)',
+					foreground: 'rgb(var(--sys-bg) / <alpha-value>)',
+				},
+				primary: {
+					DEFAULT: 'rgb(var(--primary) / <alpha-value>)',
+					foreground: 'rgb(var(--sys-bg) / <alpha-value>)',
+				},
+				secondary: {
+					DEFAULT: 'rgb(var(--secondary))',
+					foreground: 'rgb(var(--primary) / <alpha-value>)',
+				},
+				tertiary: {
+					DEFAULT: 'rgb(var(--tertiary))',
+					foreground: 'rgb(var(--primary) / <alpha-value>)',
 				},
 				sidebar: {
-					DEFAULT: 'hsl(var(--sidebar-background))',
-					foreground: 'hsl(var(--sidebar-foreground))',
-					primary: 'hsl(var(--sidebar-primary))',
-					'primary-foreground': 'hsl(var(--sidebar-primary-foreground))',
-					accent: 'hsl(var(--sidebar-accent))',
-					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
-					border: 'hsl(var(--sidebar-border))',
-					ring: 'hsl(var(--sidebar-ring))',
+					DEFAULT: 'rgb(var(--sys-bg-secondary))',
+					foreground: 'rgb(var(--primary) / <alpha-value>)',
+					primary: 'rgb(var(--sys-bg) / <alpha-value>)',
+					'primary-foreground': 'rgb(var(--primary) / <alpha-value>)',
+					accent: 'rgb(var(--purple))',
+					'accent-foreground': 'rgb(var(--white))',
+					border: 'rgb(var(--separator))',
+					ring: 'rgb(var(--separator))',
 				},
+
+				white: 'rgb(var(--white))',
 			},
 			borderRadius: {
 				// M3 Shape Scale

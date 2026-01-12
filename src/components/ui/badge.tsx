@@ -4,7 +4,7 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const badgeVariants = cva(
-  "inline-flex items-center rounded border font-semibold text-body whitespace-nowrap transition-colors focus:outline-2 focus:outline-ring focus:outline-offset-2",
+  "inline-flex items-center rounded-full border font-semibold text-body whitespace-nowrap transition-colors focus:outline-2 focus:outline-ring focus:outline-offset-2",
   {
     variants: {
       variant: {
@@ -17,14 +17,17 @@ const badgeVariants = cva(
           "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
         outline: "bg-transparent border-border text-foreground",
 
-        // Semantic variants (new)
+        // Semantic variants (new color system)
         success: "border-success/30 bg-success/15 text-success",
         warning: "border-warning/30 bg-warning/15 text-warning",
         info: "border-info/30 bg-info/15 text-info",
-        danger: "border-destructive/30 bg-destructive/10 text-destructive",
-        neutral: "border-border bg-muted/30 text-muted-foreground",
-        accent: "border-accent/30 bg-accent/20 text-foreground",
-        review: "border-primary/30 bg-primary/15 text-primary",
+        danger: "border-destructive/30 bg-destructive/15 text-destructive",
+        neutral: "border-separator/50 bg-secondary/15 text-muted-foreground",
+        // New semantic variants (No Gray system)
+        purple: "border-purple/30 bg-purple/15 text-purple",
+        cyan: "border-cyan/30 bg-cyan/15 text-cyan",
+        indigo: "border-indigo/30 bg-indigo/15 text-indigo",
+        orange: "border-orange/30 bg-orange/15 text-orange",
       },
       size: {
         small: "h-6 px-2", // 24px height

@@ -571,11 +571,11 @@ export function TalentAssignmentPanel({
                         {/* Filtro de Género */}
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="outline" size="sm" className={cn("h-9", genderFilter !== 'all' && "border-primary text-primary")}>
+                                <Button variant="outline" size="sm" className={cn("h-9 hover:bg-hover-overlay", genderFilter !== 'all' && "bg-purple text-white border-purple hover:bg-purple/90")}>
                                     <Filter className="h-3.5 w-3.5 mr-1.5" />
                                     Género
                                     {genderFilter !== 'all' && (
-                                        <Badge variant="secondary" size="small" className="ml-1.5">
+                                        <Badge variant="secondary" size="small" className="ml-1.5 bg-white/20 text-white hover:bg-white/30">
                                             {genderFilter === 'male' ? 'H' : 'M'}
                                         </Badge>
                                     )}
@@ -584,13 +584,22 @@ export function TalentAssignmentPanel({
                             <DropdownMenuContent align="start">
                                 <DropdownMenuLabel>Filtrar por género</DropdownMenuLabel>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuCheckboxItem checked={genderFilter === 'all'} onCheckedChange={() => setGenderFilter('all')}>
+                                <DropdownMenuCheckboxItem
+                                    className="focus:bg-hover-overlay focus:text-foreground data-[state=checked]:bg-purple data-[state=checked]:text-white data-[state=checked]:focus:bg-purple/90"
+                                    checked={genderFilter === 'all'} onCheckedChange={() => setGenderFilter('all')}
+                                >
                                     Todos ({models.length})
                                 </DropdownMenuCheckboxItem>
-                                <DropdownMenuCheckboxItem checked={genderFilter === 'male'} onCheckedChange={() => setGenderFilter('male')}>
+                                <DropdownMenuCheckboxItem
+                                    className="focus:bg-hover-overlay focus:text-foreground data-[state=checked]:bg-purple data-[state=checked]:text-white data-[state=checked]:focus:bg-purple/90"
+                                    checked={genderFilter === 'male'} onCheckedChange={() => setGenderFilter('male')}
+                                >
                                     Hombres ({filterStats.male})
                                 </DropdownMenuCheckboxItem>
-                                <DropdownMenuCheckboxItem checked={genderFilter === 'female'} onCheckedChange={() => setGenderFilter('female')}>
+                                <DropdownMenuCheckboxItem
+                                    className="focus:bg-hover-overlay focus:text-foreground data-[state=checked]:bg-purple data-[state=checked]:text-white data-[state=checked]:focus:bg-purple/90"
+                                    checked={genderFilter === 'female'} onCheckedChange={() => setGenderFilter('female')}
+                                >
                                     Mujeres ({filterStats.female})
                                 </DropdownMenuCheckboxItem>
                             </DropdownMenuContent>
@@ -600,11 +609,11 @@ export function TalentAssignmentPanel({
                         {sortedSchedule.length > 0 && (
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button variant="outline" size="sm" className={cn("h-9", (availabilityFilter !== 'all' || selectedDateFilter) && "border-primary text-primary")}>
+                                    <Button variant="outline" size="sm" className={cn("h-9 hover:bg-hover-overlay", (availabilityFilter !== 'all' || selectedDateFilter) && "bg-purple text-white border-purple hover:bg-purple/90")}>
                                         <Calendar className="h-3.5 w-3.5 mr-1.5" />
                                         Fechas
                                         {(availabilityFilter !== 'all' || selectedDateFilter) && (
-                                            <Badge variant="secondary" size="small" className="ml-1.5">1</Badge>
+                                            <Badge variant="secondary" size="small" className="ml-1.5 bg-white/20 text-white hover:bg-white/30">1</Badge>
                                         )}
                                     </Button>
                                 </DropdownMenuTrigger>
@@ -612,24 +621,28 @@ export function TalentAssignmentPanel({
                                     <DropdownMenuLabel>Filtrar por asignación</DropdownMenuLabel>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuCheckboxItem
+                                        className="focus:bg-hover-overlay focus:text-foreground data-[state=checked]:bg-purple data-[state=checked]:text-white data-[state=checked]:focus:bg-purple/90"
                                         checked={availabilityFilter === 'all' && !selectedDateFilter}
                                         onCheckedChange={() => { setAvailabilityFilter('all'); setSelectedDateFilter(null); }}
                                     >
                                         Todos ({models.length})
                                     </DropdownMenuCheckboxItem>
                                     <DropdownMenuCheckboxItem
+                                        className="focus:bg-hover-overlay focus:text-foreground data-[state=checked]:bg-purple data-[state=checked]:text-white data-[state=checked]:focus:bg-purple/90"
                                         checked={availabilityFilter === 'all_dates'}
                                         onCheckedChange={() => { setAvailabilityFilter('all_dates'); setSelectedDateFilter(null); }}
                                     >
                                         ✓ Todas las fechas ({filterStats.allDates})
                                     </DropdownMenuCheckboxItem>
                                     <DropdownMenuCheckboxItem
+                                        className="focus:bg-hover-overlay focus:text-foreground data-[state=checked]:bg-purple data-[state=checked]:text-white data-[state=checked]:focus:bg-purple/90"
                                         checked={availabilityFilter === 'any_date'}
                                         onCheckedChange={() => { setAvailabilityFilter('any_date'); setSelectedDateFilter(null); }}
                                     >
                                         ○ Algunas fechas ({filterStats.anyDate})
                                     </DropdownMenuCheckboxItem>
                                     <DropdownMenuCheckboxItem
+                                        className="focus:bg-hover-overlay focus:text-foreground data-[state=checked]:bg-purple data-[state=checked]:text-white data-[state=checked]:focus:bg-purple/90"
                                         checked={availabilityFilter === 'no_dates'}
                                         onCheckedChange={() => { setAvailabilityFilter('no_dates'); setSelectedDateFilter(null); }}
                                     >
@@ -645,6 +658,7 @@ export function TalentAssignmentPanel({
                                                 return (
                                                     <DropdownMenuCheckboxItem
                                                         key={s.id}
+                                                        className="focus:bg-hover-overlay focus:text-foreground data-[state=checked]:bg-purple data-[state=checked]:text-white data-[state=checked]:focus:bg-purple/90"
                                                         checked={selectedDateFilter === s.id}
                                                         onCheckedChange={() => {
                                                             setSelectedDateFilter(selectedDateFilter === s.id ? null : s.id!)
@@ -664,28 +678,40 @@ export function TalentAssignmentPanel({
                         {/* Filtro de Estado */}
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="outline" size="sm" className={cn("h-9", statusFilter !== 'all' && "border-primary text-primary")}>
+                                <Button variant="outline" size="sm" className={cn("h-9 hover:bg-hover-overlay", statusFilter !== 'all' && "bg-purple text-white border-purple hover:bg-purple/90")}>
                                     <Check className="h-3.5 w-3.5 mr-1.5" />
                                     Estado
                                     {statusFilter !== 'all' && (
-                                        <Badge variant="secondary" size="small" className="ml-1.5">1</Badge>
+                                        <Badge variant="secondary" size="small" className="ml-1.5 bg-white/20 text-white hover:bg-white/30">1</Badge>
                                     )}
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="start">
                                 <DropdownMenuLabel>Estado de selección</DropdownMenuLabel>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuCheckboxItem checked={statusFilter === 'all'} onCheckedChange={() => setStatusFilter('all')}>
+                                <DropdownMenuCheckboxItem
+                                    className="focus:bg-hover-overlay focus:text-foreground data-[state=checked]:bg-purple data-[state=checked]:text-white data-[state=checked]:focus:bg-purple/90"
+                                    checked={statusFilter === 'all'} onCheckedChange={() => setStatusFilter('all')}
+                                >
                                     Todos ({models.length})
                                 </DropdownMenuCheckboxItem>
-                                <DropdownMenuCheckboxItem checked={statusFilter === 'approved'} onCheckedChange={() => setStatusFilter('approved')}>
-                                    <span className="text-success">Aprobados ({filterStats.approved})</span>
+                                <DropdownMenuCheckboxItem
+                                    className="focus:bg-hover-overlay focus:text-foreground data-[state=checked]:bg-purple data-[state=checked]:text-white data-[state=checked]:focus:bg-purple/90"
+                                    checked={statusFilter === 'approved'} onCheckedChange={() => setStatusFilter('approved')}
+                                >
+                                    <span className={cn(statusFilter === 'approved' && "text-white", statusFilter !== 'approved' && "text-success")}>Aprobados ({filterStats.approved})</span>
                                 </DropdownMenuCheckboxItem>
-                                <DropdownMenuCheckboxItem checked={statusFilter === 'pending'} onCheckedChange={() => setStatusFilter('pending')}>
+                                <DropdownMenuCheckboxItem
+                                    className="focus:bg-hover-overlay focus:text-foreground data-[state=checked]:bg-purple data-[state=checked]:text-white data-[state=checked]:focus:bg-purple/90"
+                                    checked={statusFilter === 'pending'} onCheckedChange={() => setStatusFilter('pending')}
+                                >
                                     Pendientes ({filterStats.pending})
                                 </DropdownMenuCheckboxItem>
-                                <DropdownMenuCheckboxItem checked={statusFilter === 'rejected'} onCheckedChange={() => setStatusFilter('rejected')}>
-                                    <span className="text-destructive">Rechazados ({filterStats.rejected})</span>
+                                <DropdownMenuCheckboxItem
+                                    className="focus:bg-hover-overlay focus:text-foreground data-[state=checked]:bg-purple data-[state=checked]:text-white data-[state=checked]:focus:bg-purple/90"
+                                    checked={statusFilter === 'rejected'} onCheckedChange={() => setStatusFilter('rejected')}
+                                >
+                                    <span className={cn(statusFilter === 'rejected' && "text-white", statusFilter !== 'rejected' && "text-destructive")}>Rechazados ({filterStats.rejected})</span>
                                 </DropdownMenuCheckboxItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
@@ -863,8 +889,8 @@ export function TalentAssignmentPanel({
                                                                     onCheckedChange={() => handleToggle(model.id, scheduleItem.id!)}
                                                                     disabled={isSaving || isRemoving}
                                                                     className={cn(
-                                                                        'h-5 w-5 transition-all shrink-0',
-                                                                        isAssigned && 'data-[state=checked]:bg-primary'
+                                                                        'h-5 w-5 transition-all shrink-0 !border-separator hover:bg-hover-overlay',
+                                                                        isAssigned && 'data-[state=checked]:bg-purple data-[state=checked]:border-purple'
                                                                     )}
                                                                 />
                                                             )}
@@ -885,9 +911,9 @@ export function TalentAssignmentPanel({
                     <ScrollArea className="w-full">
                         <div className="min-w-max">
                             {/* Cabecera con fechas */}
-                            <div className="flex border-b bg-muted/50 sticky top-0 z-10">
+                            <div className="flex border-b border-[rgb(var(--separator))] bg-sys-bg-tertiary sticky top-0 z-10">
                                 {/* Columna fija de modelos */}
-                                <div className="w-72 min-w-72 px-4 py-3 font-medium text-body border-r bg-muted/80 sticky left-0 z-20">
+                                <div className="w-72 min-w-72 px-4 py-3 font-medium text-body border-r border-[rgb(var(--separator))] bg-sys-bg-tertiary sticky left-0 z-20">
                                     Talento
                                 </div>
 
@@ -901,7 +927,7 @@ export function TalentAssignmentPanel({
                                     return (
                                         <div
                                             key={item.id}
-                                            className="flex-1 min-w-28 px-3 py-3 text-center border-r last:border-r-0"
+                                            className="flex-1 min-w-28 px-3 py-3 text-center border-r border-[rgb(var(--separator))] last:border-r-0"
                                         >
                                             <TooltipProvider>
                                                 <Tooltip>
@@ -936,7 +962,7 @@ export function TalentAssignmentPanel({
                             </div>
 
                             {/* Filas de modelos */}
-                            <ScrollArea className="h-100">
+                            <ScrollArea className="h-[500px]">
                                 {filteredModels.length === 0 ? (
                                     <div className="py-12 text-center">
                                         <Search className="h-8 w-8 mx-auto text-muted-foreground mb-2 opacity-50" />
@@ -954,12 +980,12 @@ export function TalentAssignmentPanel({
                                             <div
                                                 key={model.id}
                                                 className={cn(
-                                                    "flex border-b last:border-b-0 hover:bg-muted/30 transition-colors",
+                                                    "flex border-b border-[rgb(var(--separator))] last:border-b-0 hover:bg-hover-overlay transition-colors",
                                                     isRemoving && "opacity-50"
                                                 )}
                                             >
                                                 {/* Info del modelo */}
-                                                <div className="w-72 min-w-72 px-4 py-3 flex items-center gap-3 border-r bg-background sticky left-0 z-10">
+                                                <div className="w-72 min-w-72 px-4 py-3 flex items-center gap-3 border-r border-[rgb(var(--separator))] bg-sys-bg-secondary sticky left-0 z-10">
                                                     <Avatar className="h-10 w-10 border">
                                                         <AvatarImage
                                                             src={model.coverUrl || `${SUPABASE_PUBLIC_URL}${model.id}/Portada/cover.jpg`}
@@ -1078,7 +1104,7 @@ export function TalentAssignmentPanel({
                                                         <div
                                                             key={scheduleItem.id}
                                                             className={cn(
-                                                                'flex-1 min-w-28 flex items-center justify-center border-r last:border-r-0 py-3',
+                                                                'flex-1 min-w-28 flex items-center justify-center border-r border-[rgb(var(--separator))] last:border-r-0 py-3',
                                                                 isPendingSave && 'bg-warning/10',
                                                                 savedThis && 'bg-success/10',
                                                                 errorThis && 'bg-destructive/10'
@@ -1092,8 +1118,8 @@ export function TalentAssignmentPanel({
                                                                     onCheckedChange={() => handleToggle(model.id, scheduleItem.id!)}
                                                                     disabled={isSaving || isRemoving}
                                                                     className={cn(
-                                                                        'h-5 w-5 transition-all',
-                                                                        isAssigned && 'data-[state=checked]:bg-primary'
+                                                                        'h-5 w-5 transition-all !border-separator hover:bg-hover-overlay',
+                                                                        isAssigned && 'data-[state=checked]:bg-purple data-[state=checked]:border-purple'
                                                                     )}
                                                                 />
                                                             )}

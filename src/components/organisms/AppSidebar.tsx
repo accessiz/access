@@ -166,20 +166,20 @@ export function AppSidebar({ user, ...props }: React.ComponentProps<typeof Sideb
                   asChild
                   isActive={isActive}
                   tooltip={item.title}
-                  className={isActive ? 'data-[active=true]:bg-primary data-[active=true]:text-primary-foreground group-data-[collapsible=icon]:rounded-full' : ''}
+                  className={isActive ? 'group-data-[collapsible=icon]:rounded-full' : ''}
                 >
                   <Link href={item.url} onClick={handleNavClick}>
                     <item.icon />
                     <span>{item.title}</span>
                     {/* Indicador en modo expandido - al final de la fila */}
                     {showBirthdayIndicator && !isCollapsed && (
-                      <span className="ml-auto h-2 w-2 rounded-full bg-primary-foreground animate-pulse" />
+                      <span className="ml-auto h-2 w-2 rounded-full bg-[rgb(var(--primary))] animate-pulse" />
                     )}
                   </Link>
                 </SidebarMenuButton>
                 {/* Indicador en modo colapsado - encima del cuadro */}
                 {showBirthdayIndicator && isCollapsed && (
-                  <span className="absolute top-0 right-2 h-2 w-2 rounded-full bg-primary animate-pulse pointer-events-none" />
+                  <span className="absolute top-0 right-2 h-2 w-2 rounded-full bg-[rgb(var(--primary))] animate-pulse pointer-events-none" />
                 )}
               </SidebarMenuItem>
             )

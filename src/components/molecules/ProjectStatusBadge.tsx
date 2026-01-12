@@ -18,24 +18,37 @@ const STATUS_MAP: Record<
     variant: BadgeVariant
   }
 > = {
-  // Canonical statuses
-  draft: { label: 'Borrador', variant: 'warning' },
-  sent: { label: 'Enviado', variant: 'info' },
-  'in-review': { label: 'En Revisión', variant: 'review' },
-  completed: { label: 'Completado', variant: 'success' },
-  archived: { label: 'Archivado', variant: 'neutral' },
+  // === PROJECT WORKFLOW STATES ===
+  // Following DESIGN_SYSTEM.md Section 1.3
+  draft: { label: 'Borrador', variant: 'info' },           // Blue - neutral, internal
+  sent: { label: 'Enviado', variant: 'cyan' },             // Cyan - in transit
+  'in-review': { label: 'En Revisión', variant: 'warning' }, // Yellow - attention
+  approved: { label: 'Aprobado', variant: 'purple' },      // Purple - TOP, validated
+  completed: { label: 'Completado', variant: 'purple' },   // Purple - TOP, final
+  archived: { label: 'Archivado', variant: 'indigo' },     // Indigo - historical
 
-  // Legacy/alternate statuses used in some views
-  planning: { label: 'Planificando', variant: 'warning' },
-  active: { label: 'Activo', variant: 'info' },
-  inactive: { label: 'Inactivo', variant: 'warning' },
-  in_progress: { label: 'En progreso', variant: 'info' },
-  cancelled: { label: 'Cancelado', variant: 'neutral' },
+  // === CLIENT SELECTION/REVIEW STATES ===
+  pending: { label: 'En revisión', variant: 'warning' },   // Yellow - awaiting
+  rejected: { label: 'Rechazado', variant: 'danger' },     // Red - not approved
 
-  // Client selection statuses (used in Model views)
-  pending: { label: 'En revisión', variant: 'warning' },
-  approved: { label: 'Aprobado', variant: 'success' },
-  rejected: { label: 'Rechazado', variant: 'danger' },
+  // === LEGACY/ALTERNATE STATUSES ===
+  planning: { label: 'Planificando', variant: 'info' },    // Blue - internal
+  active: { label: 'Activo', variant: 'cyan' },            // Cyan - in progress
+  inactive: { label: 'Inactivo', variant: 'warning' },     // Yellow - needs attention
+  in_progress: { label: 'En progreso', variant: 'cyan' },  // Cyan - transit
+  cancelled: { label: 'Cancelado', variant: 'danger' },    // Red - stopped
+
+  // === FINANCE STATES ===
+  paid: { label: 'Pagado', variant: 'success' },           // Green - money received
+  invoiced: { label: 'Facturado', variant: 'info' },       // Blue - document
+  finished: { label: 'Finalizado', variant: 'purple' },    // Purple - final
+
+  // === AVAILABILITY STATES ===
+  busy: { label: 'Ocupado', variant: 'danger' },           // Red - blocked
+  free: { label: 'Libre', variant: 'success' },            // Green - available
+  error: { label: 'Error', variant: 'danger' },            // Red - problem
+  waiting: { label: 'En espera', variant: 'warning' },     // Yellow - pending
+  paused: { label: 'En pausa', variant: 'orange' },        // Orange - warning/hold
 }
 
 export function ProjectStatusBadge({ status, size = 'medium', className }: ProjectStatusBadgeProps) {

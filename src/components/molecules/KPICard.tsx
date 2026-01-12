@@ -26,13 +26,13 @@ export function KPICard({
   const card = (
     <Card
       className={cn(
-        "transition-colors hover:bg-muted/30",
+        "transition-colors hover:bg-hover-overlay",
         href && "cursor-pointer",
         className
       )}
     >
       <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-body font-medium text-muted-foreground">
+        <CardTitle className="text-body font-medium text-secondary">
           {title}
         </CardTitle>
         {Icon ? <Icon className={cn("h-5 w-5", iconClassName)} /> : null}
@@ -40,7 +40,7 @@ export function KPICard({
       <CardContent>
         <div className="text-display font-semibold">{value}</div>
         {description ? (
-          <p className="text-label text-muted-foreground">{description}</p>
+          <p className="text-label text-secondary">{description}</p>
         ) : null}
       </CardContent>
     </Card>

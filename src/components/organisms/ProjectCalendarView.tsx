@@ -31,6 +31,24 @@ function formatDateKey(date: Date): string {
     return `${y}-${m}-${d}`
 }
 
+// Helper to get status-based styles
+const getStatusStyles = (status: Project['status']) => {
+    switch (status) {
+        case 'draft':
+            return "bg-info/10 hover:bg-info/20 border-info/20 text-info"
+        case 'sent':
+            return "bg-cyan/10 hover:bg-cyan/20 border-cyan/20 text-cyan"
+        case 'in-review':
+            return "bg-warning/10 hover:bg-warning/20 border-warning/20 text-warning"
+        case 'completed':
+            return "bg-purple/10 hover:bg-purple/20 border-purple/20 text-purple"
+        case 'archived':
+            return "bg-indigo/10 hover:bg-indigo/20 border-indigo/20 text-indigo"
+        default:
+            return "bg-primary/10 hover:bg-primary/20 border-primary/20 text-primary"
+    }
+}
+
 export function ProjectCalendarView({ projects }: ProjectCalendarViewProps) {
     const router = useRouter()
     const [weekStart, setWeekStart] = useState(() => getMonday(new Date()))
@@ -145,9 +163,9 @@ export function ProjectCalendarView({ projects }: ProjectCalendarViewProps) {
                     return (
                         <Card
                             key={`mobile-day-${i}`}
-                            className={cn("p-3", isToday && "ring-1 ring-primary/50")}
+                            className={cn("p-3 bg-sys-bg-secondary border-0")}
                         >
-                            <div className="flex items-center justify-between border-b pb-2 mb-2">
+                            <div className="flex items-center justify-between border-b border-purple pb-2 mb-2">
                                 <div className={cn(
                                     "text-label font-medium",
                                     isToday ? "text-primary" : "text-muted-foreground"
@@ -166,27 +184,33 @@ export function ProjectCalendarView({ projects }: ProjectCalendarViewProps) {
                                 <div className="py-2 text-center text-body text-muted-foreground">—</div>
                             ) : (
                                 <div className="space-y-2">
-                                    {dayProjects.map(({ project, startTime }) => (
-                                        <button
-                                            key={project.id}
-                                            onClick={() => router.push(`/dashboard/projects/${project.id}`)}
-                                            className="w-full text-left p-2 rounded-md bg-primary/10 hover:bg-primary/20 transition-colors border border-primary/20"
-                                        >
-                                            {startTime && (
-                                                <div className="text-label text-primary font-medium">
-                                                    {startTime}
+                                    {dayProjects.map(({ project, startTime }) => {
+                                        const statusStyles = getStatusStyles(project.status)
+                                        return (
+                                            <button
+                                                key={project.id}
+                                                onClick={() => router.push(`/dashboard/projects/${project.id}`)}
+                                                className={cn(
+                                                    "w-full text-left p-2 rounded-md transition-colors border",
+                                                    statusStyles
+                                                )}
+                                            >
+                                                {startTime && (
+                                                    <div className="text-label font-medium opacity-90">
+                                                        {startTime}
+                                                    </div>
+                                                )}
+                                                <div className="text-body font-medium text-foreground wrap-break-word">
+                                                    {project.project_name}
                                                 </div>
-                                            )}
-                                            <div className="text-body font-medium text-foreground wrap-break-word">
-                                                {project.project_name}
-                                            </div>
-                                            {project.client_name && (
-                                                <div className="text-label text-muted-foreground wrap-break-word">
-                                                    {project.client_name}
-                                                </div>
-                                            )}
-                                        </button>
-                                    ))}
+                                                {project.client_name && (
+                                                    <div className="text-label text-muted-foreground wrap-break-word">
+                                                        {project.client_name}
+                                                    </div>
+                                                )}
+                                            </button>
+                                        )
+                                    })}
                                 </div>
                             )}
                         </Card>
@@ -207,19 +231,19 @@ export function ProjectCalendarView({ projects }: ProjectCalendarViewProps) {
                             className={cn(
                                 "text-center p-2 rounded-t-lg border-b-2",
                                 isToday
-                                    ? "bg-primary/10 border-primary"
-                                    : "bg-muted/30 border-transparent"
+                                    ? "bg-sys-bg-tertiary border-purple"
+                                    : "bg-sys-bg-tertiary border-transparent"
                             )}
                         >
                             <div className={cn(
                                 "text-label font-medium",
-                                isToday ? "text-primary" : "text-muted-foreground"
+                                isToday ? "text-purple" : "text-muted-foreground"
                             )}>
                                 {DAYS[i]}
                             </div>
                             <div className={cn(
                                 "text-display font-bold",
-                                isToday ? "text-primary" : "text-foreground"
+                                isToday ? "text-purple" : "text-foreground"
                             )}>
                                 {day.getDate()}
                             </div>
@@ -231,14 +255,13 @@ export function ProjectCalendarView({ projects }: ProjectCalendarViewProps) {
                 {weekDays.map((day, i) => {
                     const dateKey = formatDateKey(day)
                     const dayProjects = projectsByDay.get(dateKey) || []
-                    const isToday = dateKey === todayKey
+
 
                     return (
                         <Card
                             key={`cell-${i}`}
                             className={cn(
-                                "min-h-35 p-2 space-y-2",
-                                isToday && "ring-1 ring-primary/50"
+                                "min-h-35 p-2 space-y-2 bg-sys-bg-secondary border-0"
                             )}
                         >
                             {dayProjects.length === 0 ? (
@@ -246,27 +269,33 @@ export function ProjectCalendarView({ projects }: ProjectCalendarViewProps) {
                                     —
                                 </div>
                             ) : (
-                                dayProjects.map(({ project, startTime }) => (
-                                    <button
-                                        key={project.id}
-                                        onClick={() => router.push(`/dashboard/projects/${project.id}`)}
-                                        className="w-full text-left p-2 rounded-md bg-primary/10 hover:bg-primary/20 transition-colors border border-primary/20"
-                                    >
-                                        {startTime && (
-                                            <div className="text-label text-primary font-medium">
-                                                {startTime}
+                                dayProjects.map(({ project, startTime }) => {
+                                    const statusStyles = getStatusStyles(project.status)
+                                    return (
+                                        <button
+                                            key={project.id}
+                                            onClick={() => router.push(`/dashboard/projects/${project.id}`)}
+                                            className={cn(
+                                                "w-full text-left p-2 rounded-md transition-colors border",
+                                                statusStyles
+                                            )}
+                                        >
+                                            {startTime && (
+                                                <div className="text-label font-medium opacity-90">
+                                                    {startTime}
+                                                </div>
+                                            )}
+                                            <div className="text-body font-medium text-foreground truncate">
+                                                {project.project_name}
                                             </div>
-                                        )}
-                                        <div className="text-body font-medium text-foreground truncate">
-                                            {project.project_name}
-                                        </div>
-                                        {project.client_name && (
-                                            <div className="text-label text-muted-foreground truncate">
-                                                {project.client_name}
-                                            </div>
-                                        )}
-                                    </button>
-                                ))
+                                            {project.client_name && (
+                                                <div className="text-label text-muted-foreground truncate">
+                                                    {project.client_name}
+                                                </div>
+                                            )}
+                                        </button>
+                                    )
+                                })
                             )}
                         </Card>
                     )

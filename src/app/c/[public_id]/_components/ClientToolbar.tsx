@@ -1,17 +1,17 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
-import { LayoutGrid, List } from 'lucide-react';
+import { List, LayoutGrid } from 'lucide-react';
 import { useDebouncedCallback } from 'use-debounce';
+import { SegmentedControl } from '@/components/molecules/SegmentedControl';
 import { SearchBar } from '@/components/molecules/SearchBar';
 
 interface ClientToolbarProps {
-    onFilterChange: (filters: { key: string; value: string | null }) => void;
-    onViewChange: (view: 'list' | 'grid') => void;
-    currentFilters: { 
-        query: string;
-        view: 'list' | 'grid' 
-    };
+  onFilterChange: (filters: { key: string; value: string | null }) => void;
+  onViewChange: (view: 'list' | 'grid') => void;
+  currentFilters: {
+    query: string;
+    view: 'list' | 'grid'
+  };
 }
 
 export function ClientToolbar({ onFilterChange, onViewChange, currentFilters }: ClientToolbarProps) {
@@ -34,25 +34,17 @@ export function ClientToolbar({ onFilterChange, onViewChange, currentFilters }: 
       </div>
 
       {/* Selector de Vista (Grid/List) */}
+      {/* Selector de Vista (Grid/List) */}
       <div className="shrink-0">
-        <div className="flex items-center rounded-md border bg-background p-0.5">
-          <Button
-            variant={currentFilters.view === 'list' ? 'secondary' : 'ghost'}
-            size="icon"
-            onClick={() => onViewChange('list')}
-          >
-            <List className="h-4 w-4" />
-            <span className="sr-only">Vista de lista</span>
-          </Button>
-          <Button
-            variant={currentFilters.view === 'grid' ? 'secondary' : 'ghost'}
-            size="icon"
-            onClick={() => onViewChange('grid')}
-          >
-            <LayoutGrid className="h-4 w-4" />
-            <span className="sr-only">Vista de cuadrícula</span>
-          </Button>
-        </div>
+        <SegmentedControl
+          value={currentFilters.view}
+          onValueChange={onViewChange}
+          ariaLabel="Vista"
+          options={[
+            { value: 'list', label: 'Lista', icon: <List className="h-4 w-4" />, iconOnly: true },
+            { value: 'grid', label: 'Cuadrícula', icon: <LayoutGrid className="h-4 w-4" />, iconOnly: true }
+          ]}
+        />
       </div>
     </div>
   );

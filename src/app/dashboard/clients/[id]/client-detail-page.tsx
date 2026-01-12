@@ -291,7 +291,7 @@ export default function ClientDetailPage({ client }: ClientDetailPageProps) {
                                         <Link
                                             key={model.id}
                                             href={`/dashboard/models/${model.id}`}
-                                            className="flex flex-col items-start gap-x-3 gap-y-2 p-2 -mx-2 rounded-lg hover:bg-muted/50 transition-colors sm:flex-row sm:items-center sm:gap-y-3"
+                                            className="flex flex-col items-start gap-x-3 gap-y-2 p-2 -mx-2 rounded-lg bg-quaternary hover:bg-hover-overlay transition-colors sm:flex-row sm:items-center sm:gap-y-3"
                                         >
                                             <Avatar className="h-8 w-8">
                                                 {model.cover_path && (
@@ -307,7 +307,7 @@ export default function ClientDetailPage({ client }: ClientDetailPageProps) {
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-body font-medium wrap-break-word sm:truncate">{displayName}</p>
                                             </div>
-                                            <Badge variant="secondary" className="text-label shrink-0 self-end sm:self-auto">
+                                            <Badge variant="secondary" className="text-label shrink-0 self-end sm:self-auto bg-purple text-white hover:bg-purple/90">
                                                 {model.usage_count}x
                                             </Badge>
                                         </Link>
@@ -335,7 +335,7 @@ export default function ClientDetailPage({ client }: ClientDetailPageProps) {
                                         <Badge
                                             key={brand.id}
                                             variant="secondary"
-                                            className="text-body max-w-full whitespace-normal wrap-break-word"
+                                            className="text-body max-w-full whitespace-normal wrap-break-word bg-purple text-white hover:bg-purple/90"
                                         >
                                             {brand.name}
                                         </Badge>
@@ -394,7 +394,7 @@ function ProjectCard({
 
     return (
         <Link href={`/dashboard/projects/${project.id}`} className="block">
-            <Card className="hover:border-primary/20 transition-all cursor-pointer">
+            <Card className="bg-quaternary hover:bg-hover-overlay transition-all cursor-pointer border-transparent">
                 <CardContent className="p-4">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-x-4 sm:gap-y-4">
                         <div className="flex-1 min-w-0">

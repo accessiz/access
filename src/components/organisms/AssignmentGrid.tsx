@@ -366,7 +366,7 @@ export function AssignmentGrid({
                             return (
                                 <div
                                     key={model.id}
-                                    className="flex border-b last:border-b-0 hover:bg-muted/30 transition-colors"
+                                    className="flex border-b last:border-b-0 hover:bg-hover-overlay transition-colors"
                                 >
                                     {/* Info del modelo */}
                                     <div className="w-48 min-w-48 px-4 py-3 flex items-center gap-3 border-r bg-background sticky left-0 z-10">

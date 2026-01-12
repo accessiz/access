@@ -101,7 +101,7 @@ export async function getLowCompletenessModels(limit = 5) {
 
   const { data, error } = await supabase
     .from('models')
-    .select('id, alias, profile_completeness')
+    .select('id, alias, profile_completeness, birth_date, cover_path, height_cm, portfolio_path')
     .eq('user_id', user.id)
     .order('profile_completeness', { ascending: true })
     .limit(limit);
@@ -111,5 +111,13 @@ export async function getLowCompletenessModels(limit = 5) {
     return [];
   }
 
-  return data || [];
+  // Calculate missing fields for each model
+  return (data || []).map(m => {
+    const missing: string[] = [];
+    if (!m.birth_date) missing.push('Fecha de nacimiento');
+    if (!m.cover_path) missing.push('Foto de portada');
+    if (!m.height_cm) missing.push('Altura');
+    if (!m.portfolio_path) missing.push('Portfolio');
+    return { ...m, missing_fields: missing };
+  });
 }
