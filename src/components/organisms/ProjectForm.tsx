@@ -505,7 +505,7 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
                     size="sm"
                     className={cn(
                       "h-9 px-4 transition-all relative",
-                      isSelected && "bg-primary text-primary-foreground shadow-md"
+                      isSelected && "bg-primary text-primary-foreground"
                     )}
                     onClick={() => toggleProjectType(type.value)}
                   >

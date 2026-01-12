@@ -1,8 +1,0 @@
-tabla,nombre_trigger,evento,momento,definicion_accion,orientacion,condicion_extra
-brands,update_brands_updated_at,UPDATE,BEFORE,EXECUTE FUNCTION update_updated_at_column(),ROW,null
-clients,update_clients_updated_at,UPDATE,BEFORE,EXECUTE FUNCTION update_updated_at_column(),ROW,null
-models,on_model_insert_or_update,INSERT,BEFORE,EXECUTE FUNCTION update_profile_completeness(),ROW,null
-models,on_model_insert_or_update,UPDATE,BEFORE,EXECUTE FUNCTION update_profile_completeness(),ROW,null
-models,on_model_search_update,INSERT,BEFORE,EXECUTE FUNCTION update_model_fts_vector(),ROW,null
-models,on_model_search_update,UPDATE,BEFORE,EXECUTE FUNCTION update_model_fts_vector(),ROW,null
-payment_transactions,update_payment_transactions_updated_at,UPDATE,BEFORE,EXECUTE FUNCTION update_updated_at_column(),ROW,null

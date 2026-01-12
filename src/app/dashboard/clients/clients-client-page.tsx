@@ -264,7 +264,7 @@ function ClientCard({
 
     return (
         <Link href={`/dashboard/clients/${client.id}`} className="block">
-            <Card className="group relative transition-all hover:shadow-md hover:border-primary/20 cursor-pointer">
+            <Card className="group relative transition-all hover:border-primary/20 cursor-pointer">
                 <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
                         <div className="flex items-center gap-x-3 gap-y-3">

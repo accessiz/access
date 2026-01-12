@@ -79,7 +79,7 @@ export function ClientNavbar({ schedule }: ClientNavbarProps) {
               </PopoverTrigger>
               <PopoverContent
                 align="center"
-                className="z-[151] p-0 w-auto max-w-[calc(100vw-32px)] sm:max-w-[800px] bg-white/30 dark:bg-black/40 backdrop-blur-xl backdrop-saturate-150 border border-black/5 dark:border-white/15 shadow-2xl"
+                className="z-[151] p-0 w-auto max-w-[calc(100vw-32px)] sm:max-w-[800px] bg-white/30 dark:bg-black/40 backdrop-blur-xl backdrop-saturate-150 border border-black/5 dark:border-white/15"
                 sideOffset={12}
                 collisionPadding={16}
               >

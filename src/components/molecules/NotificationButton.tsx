@@ -1,13 +1,19 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Bell, Check, Loader2, FolderKanban, DollarSign, FileText, AlertTriangle } from 'lucide-react'
+import { Bell, Check, Loader2, FolderKanban, DollarSign, FileText, AlertTriangle, Info } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
     Popover,
     PopoverContent,
     PopoverTrigger,
 } from '@/components/ui/popover'
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
 
@@ -21,7 +27,7 @@ interface Notification {
 
 interface SmartAlert {
     id: string
-    type: 'payment_due' | 'invoice_reminder'
+    type: 'payment_due' | 'invoice_reminder' | 'attention_needed'
     title: string
     subtitle?: string
     priority: 'high' | 'medium'
@@ -178,41 +184,68 @@ export function NotificationButton() {
                                             Requiere acción
                                         </span>
                                     </div>
-                                    <ul className="divide-y divide-border">
-                                        {alerts.map((alert) => (
-                                            <li key={alert.id}>
-                                                <Link
-                                                    href={alert.href}
-                                                    className={cn(
-                                                        "flex items-start gap-3 px-4 py-3 hover:bg-muted/50 transition-colors",
-                                                        "focus:outline-none focus:bg-muted/50"
-                                                    )}
-                                                    onClick={() => setIsOpen(false)}
-                                                >
-                                                    <div className={cn(
-                                                        "h-8 w-8 rounded-full flex items-center justify-center shrink-0 mt-0.5",
-                                                        alert.type === 'payment_due' ? "bg-warning/20" : "bg-info/20"
-                                                    )}>
-                                                        {alert.type === 'payment_due' ? (
-                                                            <DollarSign className="h-4 w-4 text-warning" />
-                                                        ) : (
-                                                            <FileText className="h-4 w-4 text-info" />
+                                    <TooltipProvider delayDuration={200}>
+                                        <ul className="divide-y divide-border">
+                                            {alerts.map((alert) => (
+                                                <li key={alert.id}>
+                                                    <Link
+                                                        href={alert.href}
+                                                        className={cn(
+                                                            "flex items-start gap-3 px-4 py-3 hover:bg-muted/50 transition-colors",
+                                                            "focus:outline-none focus:bg-muted/50"
                                                         )}
-                                                    </div>
-                                                    <div className="flex-1 min-w-0">
-                                                        <p className="text-body text-foreground font-medium line-clamp-1">
-                                                            {alert.title}
-                                                        </p>
-                                                        {alert.subtitle && (
-                                                            <p className="text-label text-muted-foreground line-clamp-1">
-                                                                {alert.subtitle}
-                                                            </p>
-                                                        )}
-                                                    </div>
-                                                </Link>
-                                            </li>
-                                        ))}
-                                    </ul>
+                                                        onClick={() => setIsOpen(false)}
+                                                    >
+                                                        <div className={cn(
+                                                            "h-8 w-8 rounded-full flex items-center justify-center shrink-0 mt-0.5",
+                                                            alert.type === 'payment_due' ? "bg-warning/20" :
+                                                                alert.type === 'attention_needed' ? "bg-info/20" : "bg-info/20"
+                                                        )}>
+                                                            {alert.type === 'payment_due' ? (
+                                                                <DollarSign className="h-4 w-4 text-warning" />
+                                                            ) : alert.type === 'attention_needed' ? (
+                                                                <FileText className="h-4 w-4 text-info" />
+                                                            ) : (
+                                                                <FileText className="h-4 w-4 text-info" />
+                                                            )}
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex items-center gap-1.5">
+                                                                <p className="text-body text-foreground font-medium line-clamp-1">
+                                                                    {alert.title}
+                                                                </p>
+                                                                {alert.type === 'attention_needed' && (
+                                                                    <Tooltip>
+                                                                        <TooltipTrigger asChild>
+                                                                            <span
+                                                                                className="shrink-0 cursor-help"
+                                                                                onClick={(e) => e.preventDefault()}
+                                                                            >
+                                                                                <Info className="h-3.5 w-3.5 text-info" />
+                                                                            </span>
+                                                                        </TooltipTrigger>
+                                                                        <TooltipContent
+                                                                            side="top"
+                                                                            className="max-w-[200px] text-center"
+                                                                        >
+                                                                            <p className="text-label">
+                                                                                Aprueba talentos para completar o elimina el proyecto
+                                                                            </p>
+                                                                        </TooltipContent>
+                                                                    </Tooltip>
+                                                                )}
+                                                            </div>
+                                                            {alert.subtitle && (
+                                                                <p className="text-label text-muted-foreground line-clamp-1">
+                                                                    {alert.subtitle}
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                    </Link>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </TooltipProvider>
                                 </div>
                             )}
 

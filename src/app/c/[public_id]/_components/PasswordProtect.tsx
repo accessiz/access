@@ -63,13 +63,11 @@ export default function PasswordProtect({ projectId, projectName }: PasswordProt
         if (buttonRef.current) {
           await new Promise<void>((resolve) => {
             gsap.to(buttonRef.current, {
-              boxShadow: '0 0 20px rgba(139, 92, 246, 0.8), 0 0 40px rgba(139, 92, 246, 0.5), 0 0 60px rgba(139, 92, 246, 0.3)',
               scale: 1.02,
               duration: 0.4,
               ease: 'power2.out',
               onComplete: () => {
                 gsap.to(buttonRef.current, {
-                  boxShadow: '0 0 0px rgba(139, 92, 246, 0)',
                   scale: 1,
                   duration: 0.3,
                   ease: 'power2.in',
@@ -98,7 +96,7 @@ export default function PasswordProtect({ projectId, projectName }: PasswordProt
   }
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
       <div
         ref={cardRef}
         className="client-wow-progress w-full max-w-sm p-6"

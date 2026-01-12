@@ -2,9 +2,10 @@
 
 import * as React from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { Model } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { MapPin, ChevronRight } from 'lucide-react';
+import { MapPin, ChevronRight, FolderKanban } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SearchBar } from '@/components/molecules/SearchBar';
 import { SegmentedControl } from '@/components/molecules/SegmentedControl';
@@ -21,13 +22,13 @@ import { SegmentedControl } from '@/components/molecules/SegmentedControl';
 
 interface ModelsPageContentProps {
     initialModels: Model[];
-    busyModelIds?: Set<string>;
+    busyModelMap?: Map<string, string>; // modelId -> projectId
     children?: React.ReactNode; // Profile content passed from server (desktop only)
 }
 
 export function ModelsPageContent({
     initialModels,
-    busyModelIds = new Set(),
+    busyModelMap = new Map(),
     children,
 }: ModelsPageContentProps) {
     const router = useRouter();
@@ -69,11 +70,11 @@ export function ModelsPageContent({
                 if (normalizedGender !== genderFilter) return false;
             }
 
-            if (busyFilter === 'busy' && !busyModelIds.has(model.id)) return false;
+            if (busyFilter === 'busy' && !busyModelMap.has(model.id)) return false;
 
             return true;
         });
-    }, [initialModels, searchQuery, genderFilter, busyFilter, busyModelIds]);
+    }, [initialModels, searchQuery, genderFilter, busyFilter, busyModelMap]);
 
     // Handle model click - different behavior for mobile vs desktop
     const handleModelClick = React.useCallback((modelId: string) => {
@@ -99,8 +100,8 @@ export function ModelsPageContent({
 
     // Count busy models
     const busyCount = React.useMemo(() => {
-        return filteredModels.filter(m => busyModelIds.has(m.id)).length;
-    }, [filteredModels, busyModelIds]);
+        return filteredModels.filter(m => busyModelMap.has(m.id)).length;
+    }, [filteredModels, busyModelMap]);
 
     return (
         <div className="flex flex-1 min-h-0">
@@ -174,7 +175,8 @@ export function ModelsPageContent({
                     ) : (
                         <div className="divide-y divide-border">
                             {filteredModels.map((model) => {
-                                const isBusy = busyModelIds.has(model.id);
+                                const projectId = busyModelMap.get(model.id);
+                                const isBusy = !!projectId;
                                 const isSelected = selectedModelId === model.id;
                                 const initials = (model.alias || 'N/A')
                                     .split(' ')
@@ -211,10 +213,21 @@ export function ModelsPageContent({
                                         {/* Status indicator */}
                                         <div className="flex items-center gap-2 shrink-0">
                                             {isBusy ? (
-                                                <span className="relative flex h-2.5 w-2.5">
-                                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive/75" />
-                                                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-destructive" />
-                                                </span>
+                                                <>
+                                                    <span className="relative flex h-2.5 w-2.5">
+                                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive/75" />
+                                                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-destructive" />
+                                                    </span>
+                                                    {/* Project link icon */}
+                                                    <Link
+                                                        href={`/dashboard/projects?selected=${projectId}`}
+                                                        onClick={(e) => e.stopPropagation()}
+                                                        className="p-1 rounded-md hover:bg-accent transition-colors"
+                                                        title="Ver proyecto activo"
+                                                    >
+                                                        <FolderKanban className="h-4 w-4 text-destructive" />
+                                                    </Link>
+                                                </>
                                             ) : (
                                                 <span className="h-2.5 w-2.5 rounded-full bg-success" />
                                             )}

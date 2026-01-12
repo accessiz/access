@@ -19,6 +19,29 @@ const config: Config = {
 			},
 		},
 		extend: {
+			zIndex: {
+				100: '100',
+			},
+			// Accessibility note: Tailwind's focus `ring-*` utilities rely on box-shadow.
+			// We neutralize only the `shadow-*` and `drop-shadow-*` utilities by mapping them
+			// to a transparent, zero-size shadow, preserving rings while removing elevation.
+			boxShadow: {
+				sm: '0 0 #0000',
+				DEFAULT: '0 0 #0000',
+				md: '0 0 #0000',
+				lg: '0 0 #0000',
+				xl: '0 0 #0000',
+				'2xl': '0 0 #0000',
+				inner: '0 0 #0000',
+			},
+			dropShadow: {
+				sm: '0 0 #0000',
+				DEFAULT: '0 0 #0000',
+				md: '0 0 #0000',
+				lg: '0 0 #0000',
+				xl: '0 0 #0000',
+				'2xl': '0 0 #0000',
+			},
 			fontSize: {
 				// NYXA typography: ONLY 4 sizes in the entire product.
 				// 11px -> 13px -> 18.72px -> 22.464px

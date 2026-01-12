@@ -394,7 +394,7 @@ function ProjectCard({
 
     return (
         <Link href={`/dashboard/projects/${project.id}`} className="block">
-            <Card className="hover:shadow-md hover:border-primary/20 transition-all cursor-pointer">
+            <Card className="hover:border-primary/20 transition-all cursor-pointer">
                 <CardContent className="p-4">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-x-4 sm:gap-y-4">
                         <div className="flex-1 min-w-0">

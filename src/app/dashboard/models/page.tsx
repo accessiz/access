@@ -39,7 +39,7 @@ export default async function ModelsPage({ searchParams }: PageProps) {
   };
 
   // Fetch models list and busy status in parallel
-  const [modelsResult, busyModelIds] = await Promise.all([
+  const [modelsResult, busyModelMap] = await Promise.all([
     getModelsEnriched(params),
     getBusyModelsToday(),
   ]);
@@ -80,7 +80,7 @@ export default async function ModelsPage({ searchParams }: PageProps) {
 
       <ModelsPageContent
         initialModels={models}
-        busyModelIds={busyModelIds}
+        busyModelMap={busyModelMap}
       >
         {/* Right column: Full profile of selected model */}
         {selectedModel && (

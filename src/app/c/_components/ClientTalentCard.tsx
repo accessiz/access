@@ -44,7 +44,7 @@ export function ClientTalentCard({
         <div
           className={cn(
             'pointer-events-none absolute right-2 top-2 inline-flex items-center justify-center',
-            'text-foreground/70 drop-shadow-sm',
+            'text-foreground/70',
             'md:hidden'
           )}
           aria-hidden="true"
@@ -58,7 +58,7 @@ export function ClientTalentCard({
   return (
     <div
       className={cn(
-        'group rounded-lg bg-card text-card-foreground ring-1 ring-border overflow-hidden',
+        'group rounded-lg bg-card text-card-foreground border border-border overflow-hidden',
         className
       )}
     >

@@ -11,7 +11,7 @@ interface ClientHeaderProps {
 export function ClientHeader({ project }: ClientHeaderProps) {
   return (
     <header className="px-0 text-left space-y-6">
-      <Card className="shadow-none">
+      <Card>
         <CardHeader className="space-y-2">
           <CardDescription className="text-label uppercase tracking-widest text-muted-foreground">
             Proyecto
@@ -23,7 +23,7 @@ export function ClientHeader({ project }: ClientHeaderProps) {
       </Card>
 
       {project.schedule && Array.isArray(project.schedule) && project.schedule.length > 0 && (
-        <Card className="shadow-none">
+        <Card>
           <CardHeader className="space-y-1">
             <CardTitle className="text-title font-semibold">Fechas del proyecto</CardTitle>
           </CardHeader>

@@ -1,5 +1,0 @@
-Name       | Phone Number | Hombres 19 Diciembre | Hombres 22 Diciembre | Mujeres 19 Diciembre | Mujeres 22 Diciembre | Total
-Tú         |              | ✓                    | ✓                    |                      |                      | 2    
-Skopos Web |              |                      | ✓                    |                      |                      | 1    
-Gabriela   |              |                      |                      |                      | ✓                    | 1    
-Total      |              | 1                    | 2                    | 0                    | 1                    | 4    

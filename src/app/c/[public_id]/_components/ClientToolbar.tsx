@@ -29,7 +29,6 @@ export function ClientToolbar({ onFilterChange, onViewChange, currentFilters }: 
           ariaLabel="Buscar nombre o alias"
           onValueChange={handleSearch}
           defaultValue={currentFilters.query}
-          inputClassName="shadow-none"
           expand={false}
         />
       </div>
@@ -41,7 +40,6 @@ export function ClientToolbar({ onFilterChange, onViewChange, currentFilters }: 
             variant={currentFilters.view === 'list' ? 'secondary' : 'ghost'}
             size="icon"
             onClick={() => onViewChange('list')}
-            className="shadow-none"
           >
             <List className="h-4 w-4" />
             <span className="sr-only">Vista de lista</span>
@@ -50,7 +48,6 @@ export function ClientToolbar({ onFilterChange, onViewChange, currentFilters }: 
             variant={currentFilters.view === 'grid' ? 'secondary' : 'ghost'}
             size="icon"
             onClick={() => onViewChange('grid')}
-            className="shadow-none"
           >
             <LayoutGrid className="h-4 w-4" />
             <span className="sr-only">Vista de cuadrícula</span>
