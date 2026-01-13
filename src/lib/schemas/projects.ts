@@ -50,6 +50,7 @@ export const projectFormSchema = z.object({
     'editorial',
     'music_video',
     'activation',
+    'event',
   ])).min(1, 'Selecciona al menos un tipo de proyecto.').max(2, 'Máximo 2 tipos por proyecto.'),
   password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres.").optional().or(z.literal('')),
   schedule: z.array(scheduleItemSchema).min(1, 'Debes añadir al menos un horario.'),

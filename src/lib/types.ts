@@ -41,7 +41,8 @@ export type ProjectType =
   | 'tv_commercial'
   | 'ecommerce'
   | 'social_media'
-  | 'activation';
+  | 'activation'
+  | 'event';
 
 // Constante con los tipos de proyecto para UI (ordenados por jerarquía Jobs-style)
 export const PROJECT_TYPES: { value: ProjectType; label: string }[] = [
@@ -54,6 +55,7 @@ export const PROJECT_TYPES: { value: ProjectType; label: string }[] = [
   { value: 'ecommerce', label: 'E-commerce' },
   { value: 'social_media', label: 'Social Media' },
   { value: 'activation', label: 'Activación' },
+  { value: 'event', label: 'Evento' },
 ];
 
 // ----------------------------------------------------------------
