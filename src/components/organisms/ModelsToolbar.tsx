@@ -56,59 +56,66 @@ export function ModelsToolbar({ countries }: { countries: string[] }) {
   };
 
   const currentHeightLabel = useMemo(() =>
-      heightRanges.find(range => 
-        String(range.min) === (currentMinHeight || 'null') && 
-        String(range.max) === (currentMaxHeight || 'null')
-      )?.label || 'Estatura',
-  [currentMinHeight, currentMaxHeight]);
+    heightRanges.find(range =>
+      String(range.min) === (currentMinHeight || 'null') &&
+      String(range.max) === (currentMaxHeight || 'null')
+    )?.label || 'Estatura',
+    [currentMinHeight, currentMaxHeight]);
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-      <div className="flex w-full sm:w-auto items-center gap-2">
+    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      {/* Search and Filters */}
+      <div className="flex flex-col sm:flex-row w-full sm:w-auto items-stretch sm:items-center gap-2">
         <SearchBar
-          className="flex-1 sm:flex-initial sm:w-64"
+          className="w-full sm:w-64"
           placeholder="Buscar por nombre o alias..."
           defaultValue={searchParams.get('q')?.toString()}
           onValueChange={handleSearch}
         />
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="icon" className="shrink-0">
-              <ListFilter className="h-4 w-4" />
-              <span className="sr-only">{currentCountry || 'País'}</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Filtrar por país</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={() => handleFilter('country', null)}>Todos</DropdownMenuItem>
-            {countries.map((c) => <DropdownMenuItem key={c} onSelect={() => handleFilter('country', c)}>{c}</DropdownMenuItem>)}
-          </DropdownMenuContent>
-        </DropdownMenu>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="icon" className="shrink-0">
-              <Ruler className="h-4 w-4" />
-              <span className="sr-only">{currentHeightLabel}</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Filtrar por estatura</DropdownMenuLabel>
-             <DropdownMenuSeparator />
-            {heightRanges.map((r) => <DropdownMenuItem key={r.label} onSelect={() => handleFilterByHeight(r.min, r.max)}>{r.label}</DropdownMenuItem>)}
-          </DropdownMenuContent>
-        </DropdownMenu>
+
+        {/* Filters Row */}
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon" className="shrink-0">
+                <ListFilter className="h-4 w-4" />
+                <span className="sr-only">{currentCountry || 'País'}</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Filtrar por país</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={() => handleFilter('country', null)}>Todos</DropdownMenuItem>
+              {countries.map((c) => <DropdownMenuItem key={c} onSelect={() => handleFilter('country', c)}>{c}</DropdownMenuItem>)}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon" className="shrink-0">
+                <Ruler className="h-4 w-4" />
+                <span className="sr-only">{currentHeightLabel}</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Filtrar por estatura</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {heightRanges.map((r) => <DropdownMenuItem key={r.label} onSelect={() => handleFilterByHeight(r.min, r.max)}>{r.label}</DropdownMenuItem>)}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
+
+      {/* View Actions */}
       <div className="flex w-full sm:w-auto items-center gap-2">
         <div className="flex items-center rounded-md border bg-background p-0.5">
           <Button variant={view === 'list' ? 'secondary' : 'ghost'} size="icon" onClick={() => setView('list')} className="h-8 w-8"><List className="h-4 w-4" /></Button>
           <Button variant={view === 'grid' ? 'secondary' : 'ghost'} size="icon" onClick={() => setView('grid')} className="h-8 w-8"><LayoutGrid className="h-4 w-4" /></Button>
         </div>
         <Button className="gap-2 w-full sm:w-auto" asChild>
-            <Link href="/dashboard/models/new">
-                <PlusCircle className="h-4 w-4" />
-                Añadir Talento
-            </Link>
+          <Link href="/dashboard/models/new">
+            <PlusCircle className="h-4 w-4" />
+            Añadir Talento
+          </Link>
         </Button>
       </div>
     </div>

@@ -184,12 +184,16 @@ export async function getModelWorkHistory(modelId: string) {
     client_name: string | null;
     status: string;
     created_at: string;
+    default_model_fee: number | null;  // Project default cash fee
+    default_model_trade_fee: number | null;  // Project default trade fee
+    default_model_payment_type: 'cash' | 'trade' | 'mixed' | null;  // Project payment type
     clients: { name: string } | null;
     brands: { name: string } | null;
   }
 
   interface ProjectModelRow {
     agreed_fee: number | null;
+    trade_fee: number | null;  // Trade fee
     fee_type: string | null;
     currency: string | null;
     internal_status: string | null;
@@ -215,6 +219,7 @@ export async function getModelWorkHistory(modelId: string) {
     .from('projects_models')
     .select(`
       agreed_fee,
+      trade_fee,
       fee_type,
       currency,
       internal_status,
@@ -225,6 +230,9 @@ export async function getModelWorkHistory(modelId: string) {
         client_name,
         status,
         created_at,
+        default_model_fee,
+        default_model_trade_fee,
+        default_model_payment_type,
         clients (name),
         brands (name)
       )
@@ -331,11 +339,24 @@ export async function getModelWorkHistory(modelId: string) {
         .sort()
         .pop() || null;
 
-      // Total calculado
-      const fee = pm.agreed_fee || projectAssignments[0]?.daily_fee || 0;
+      // Use project's payment type as the source of truth
+      const projectPaymentType = project.default_model_payment_type || 'cash';
+
+      // Get raw values
+      const rawFee = pm.agreed_fee || projectAssignments[0]?.daily_fee || project.default_model_fee || 0;
+      const rawTradeFee = pm.trade_fee || project.default_model_trade_fee || 0;
+
+      // Apply payment type filter - only show values that match the payment type
+      const fee = projectPaymentType === 'trade' ? 0 : rawFee;
+      const tradeFee = projectPaymentType === 'cash' ? 0 : rawTradeFee;
+
       // Días trabajados: usar asignaciones si hay, sino usar schedules del proyecto
       const daysWorked = totalAssignments > 0 ? totalAssignments : dates.length || 1;
       const totalAmount = fee * daysWorked;
+      const totalTradeAmount = tradeFee * daysWorked;
+
+      // Payment type is from the project configuration
+      const paymentType: 'cash' | 'trade' | 'mixed' = projectPaymentType;
 
       return {
         projectId: project.id,
@@ -346,6 +367,9 @@ export async function getModelWorkHistory(modelId: string) {
         clientSelection: pm.client_selection || 'pending',
         createdAt: project.created_at,
         agreedFee: fee,
+        tradeFee: tradeFee,  // Trade fee per day
+        totalTradeAmount: totalTradeAmount > 0 ? totalTradeAmount : null,  // Total trade value
+        paymentType,  // Payment type: cash, trade, or mixed
         feeType: pm.fee_type || 'per_day',
         currency: pm.currency || 'GTQ',
         daysWorked,

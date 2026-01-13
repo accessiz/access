@@ -87,7 +87,7 @@ function Calendar({
                     "aria-selected:bg-accent aria-selected:text-accent-foreground",
 
                 selected:
-                    "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground",
+                    "bg-[rgb(var(--purple))] text-primary hover:bg-[rgb(var(--purple))] hover:text-primary",
 
                 today: "bg-accent text-accent-foreground",
                 outside:

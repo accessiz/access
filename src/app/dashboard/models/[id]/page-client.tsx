@@ -17,10 +17,12 @@ import { ProjectStatusBadge } from '../../../../components/molecules/ProjectStat
 import { SegmentedControl } from '../../../../components/molecules/SegmentedControl';
 import Link from 'next/link';
 import { useState, useMemo } from 'react';
-import { Pencil, Save, X, User, ImageIcon, Briefcase, Clock, CheckCircle2, AlertCircle, Wallet, TrendingUp, Building2, Send, ChevronDown, Copy } from 'lucide-react';
+import { Pencil, Save, X, User, ImageIcon, Briefcase, Clock, CheckCircle2, AlertCircle, Wallet, TrendingUp, Building2, Send, ChevronDown, Copy, Banknote, RefreshCw } from 'lucide-react';
 import { ModelForm } from '../../../../components/organisms/ModelForm';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../../components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../../../../components/ui/collapsible';
+
+import { formatCurrency } from '../../../../lib/utils/format';
 
 // Define el tipo extendido que incluye las URLs/paths
 type ModelWithImages = Model & {
@@ -44,11 +46,14 @@ interface WorkHistoryItem {
   clientSelection: string;
   createdAt: string;
   agreedFee: number;
+  tradeFee?: number | null; // Trade/barter fee
   feeType: string;
   currency: string;
   daysWorked: number;
   totalAmount: number;
+  totalTradeAmount?: number | null; // Total trade value
   paymentStatus: 'pending' | 'paid' | 'partial';
+  paymentType?: 'cash' | 'trade' | 'mixed' | null; // Payment type if paid
   lastPaymentDate: string | null;
   firstWorkDate: string | null;
   lastWorkDate: string | null;
@@ -515,9 +520,9 @@ export default function ModelProfilePageClient({ initialModel, workHistory = [] 
             {filteredWorkHistory.length > 0 ? (
               filteredWorkHistory.map((job) => {
                 const paymentStatusMap = {
-                  paid: { label: 'Pagado', icon: CheckCircle2, color: 'text-success', bg: 'bg-success/10' },
-                  partial: { label: 'Parcial', icon: AlertCircle, color: 'text-info', bg: 'bg-info/10' },
-                  pending: { label: 'Pendiente', icon: Clock, color: 'text-warning', bg: 'bg-warning/10' },
+                  paid: { label: 'Pagado', icon: CheckCircle2, color: 'text-success', variant: 'success' as const },
+                  partial: { label: 'Parcial', icon: AlertCircle, color: 'text-info', variant: 'info' as const },
+                  pending: { label: 'Pendiente', icon: Clock, color: 'text-warning', variant: 'warning' as const },
                 };
                 const statusKey = (job.paymentStatus as 'paid' | 'partial' | 'pending') || 'pending';
                 const paymentStatusConfig = paymentStatusMap[statusKey] || paymentStatusMap.pending;
@@ -525,39 +530,81 @@ export default function ModelProfilePageClient({ initialModel, workHistory = [] 
                 const StatusIcon = paymentStatusConfig.icon;
                 const daysText = job.daysWorked === 1 ? '1 día' : `${job.daysWorked} días`;
                 const totalAmount = job.totalAmount || (job.agreedFee * (job.daysWorked || 1));
+                const hasCash = job.agreedFee > 0;
+                const hasTrade = (job.tradeFee ?? 0) > 0;
 
                 return (
                   <Card key={job.projectId} className="hover:bg-hover-overlay transition-colors">
                     <CardContent className="p-4">
-                      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                        {/* Left: Info */}
-                        <div className="flex-1 min-w-0 space-y-1">
-                          <div className="flex items-center gap-x-2 gap-y-2">
+                      {/* Main container: vertical on mobile, horizontal on desktop */}
+                      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+
+                        {/* Left section: Badge + Info */}
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4 flex-1 min-w-0">
+
+                          {/* Top Row Mobile / First item Desktop: Status Badge */}
+                          <div className="flex items-center justify-between sm:contents">
+                            {/* Status Badge */}
+                            <Badge variant={paymentStatusConfig.variant} className="gap-1 shrink-0">
+                              <StatusIcon className={`h-3 w-3`} />
+                              {paymentStatusConfig.label}
+                            </Badge>
+                          </div>
+
+                          {/* Info Section */}
+                          <div className="flex-1 min-w-0 space-y-1">
+                            {/* Project Name */}
                             <Link
                               href={`/dashboard/projects/${job.projectId}`}
-                              className="font-semibold text-body hover:text-primary hover:underline transition-colors block wrap-break-word sm:truncate"
+                              className="font-semibold text-title sm:text-body text-foreground hover:text-primary hover:underline transition-colors block"
                             >
                               {job.projectName}
                             </Link>
-                          </div>
-                          <div className="flex items-center gap-x-2 gap-y-2 text-body text-muted-foreground">
-                            <Building2 className="h-3 w-3" />
-                            <span>{job.brandName || job.clientName || 'Sin cliente'}</span>
-                          </div>
-                          <div className="flex items-center gap-x-3 gap-y-3 text-label text-muted-foreground">
-                            <span>{daysText} × {job.currency} {job.agreedFee?.toLocaleString()}</span>
+
+                            {/* Client */}
+                            <div className="flex items-center gap-2 text-body text-muted-foreground">
+                              <Building2 className="h-4 w-4 sm:h-3 sm:w-3 shrink-0" />
+                              <span className="truncate">{job.brandName || job.clientName || 'Sin cliente'}</span>
+                            </div>
+
+                            {/* Days worked */}
+                            <div className="text-label text-muted-foreground">
+                              {daysText}
+                            </div>
                           </div>
                         </div>
 
-                        {/* Right: Amount and Status */}
-                        <div className="flex flex-col items-start gap-x-2 gap-y-2 w-full sm:w-auto sm:items-end sm:shrink-0">
-                          <div className="text-title font-bold">
-                            {job.currency} {totalAmount.toLocaleString()}
+                        {/* Right section: Amounts + Status */}
+                        <div className="flex items-end justify-between sm:items-center sm:gap-4 sm:shrink-0">
+
+                          {/* Amounts with circular icons */}
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+                            {hasCash && (
+                              <div className="flex items-center gap-2">
+                                <div className="w-7 h-7 rounded-full border-2 border-success bg-success/20 flex items-center justify-center">
+                                  <Banknote className="w-4 h-4 text-success" />
+                                </div>
+                                <span className="text-body font-medium text-foreground">
+                                  {formatCurrency(totalAmount, job.currency)}
+                                </span>
+                              </div>
+                            )}
+                            {hasTrade && (
+                              <div className="flex items-center gap-2">
+                                <div className="w-7 h-7 rounded-full border-2 border-blue bg-blue/20 flex items-center justify-center">
+                                  <RefreshCw className="w-4 h-4 text-blue" />
+                                </div>
+                                <span className="text-body font-medium text-foreground">
+                                  {formatCurrency(job.totalTradeAmount || (job.tradeFee || 0) * job.daysWorked, job.currency)}
+                                </span>
+                              </div>
+                            )}
+                            {!hasCash && !hasTrade && (
+                              <span className="text-body text-muted-foreground">
+                                Sin tarifa definida
+                              </span>
+                            )}
                           </div>
-                          <Badge variant="outline" className={`gap-x-1 gap-y-1 ${paymentStatusConfig.color} ${paymentStatusConfig.bg}`}>
-                            <StatusIcon className="h-3 w-3" />
-                            {paymentStatusConfig.label}
-                          </Badge>
                         </div>
                       </div>
                     </CardContent>

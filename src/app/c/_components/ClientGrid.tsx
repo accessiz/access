@@ -19,6 +19,7 @@ interface ClientGridProps {
   projectId: string; // Necesita el public_id para construir los links
   realProjectId: string; // UUID real del proyecto para server actions
   onSelectionChange?: (modelId: string, selection: GridModel['selection']) => void;
+  viewMode?: 'grid' | 'single'; // Optional: 'single' shows 1 column on mobile
 }
 
 // Componente de botones de aprobación rápida
@@ -107,7 +108,7 @@ function QuickApprovalButtons({
 }
 
 // --- Componente ClientGrid ---
-export function ClientGrid({ models, projectId, realProjectId, onSelectionChange }: ClientGridProps) {
+export function ClientGrid({ models, projectId, realProjectId, onSelectionChange, viewMode = 'grid' }: ClientGridProps) {
   // Estado local para selecciones (para feedback optimista)
   const [localSelections, setLocalSelections] = useState<Record<string, GridModel['selection']>>(() => {
     const initial: Record<string, GridModel['selection']> = {};
@@ -136,9 +137,12 @@ export function ClientGrid({ models, projectId, realProjectId, onSelectionChange
     sessionStorage.setItem(`client_scroll_${projectId}`, String(window.scrollY));
   };
 
+  // Grid class based on viewMode
+  const gridClassName = viewMode === 'single' ? 'client-grid-single' : 'client-grid';
+
   // Renderizado del grid
   return (
-    <div className="client-grid">
+    <div className={gridClassName}>
       {models.map((model) => {
         const currentSelection = localSelections[model.id] || model.selection || 'pending';
 

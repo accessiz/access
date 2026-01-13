@@ -98,8 +98,8 @@ export default function WebVisibilityClientPage() {
             </header>
 
             {/* Filtros */}
-            <div className="flex w-full flex-nowrap items-center gap-4 overflow-x-auto sm:overflow-visible">
-                <div className="relative w-72 max-w-full shrink-0 sm:w-64">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+                <div className="relative w-full sm:w-64 sm:shrink-0">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                         placeholder="Buscar talento..."
@@ -108,58 +108,60 @@ export default function WebVisibilityClientPage() {
                         className="pl-9"
                     />
                 </div>
-                <SegmentedControl<GenderFilter>
-                    ariaLabel="Filtrar por género"
-                    value={genderFilter}
-                    onValueChange={setGenderFilter}
-                    className="w-fit shrink-0"
-                    options={[
-                        {
-                            value: 'all',
-                            label: 'Todos',
-                            iconOnly: true,
-                            icon: <VenusAndMars className="h-4 w-4" aria-hidden="true" />,
-                        },
-                        {
-                            value: 'female',
-                            label: 'Mujeres',
-                            iconOnly: true,
-                            icon: <Venus className="h-4 w-4" aria-hidden="true" />,
-                        },
-                        {
-                            value: 'male',
-                            label: 'Hombres',
-                            iconOnly: true,
-                            icon: <Mars className="h-4 w-4" aria-hidden="true" />,
-                        },
-                    ]}
-                />
-                <SegmentedControl<VisibilityFilter>
-                    ariaLabel="Filtrar por visibilidad"
-                    value={visibilityFilter}
-                    onValueChange={setVisibilityFilter}
-                    className="w-fit shrink-0"
-                    options={[
-                        {
-                            value: 'all',
-                            label: 'Todos',
-                            iconOnly: true,
-                            icon: <Layers className="h-4 w-4" aria-hidden="true" />,
-                        },
-                        {
-                            value: 'visible',
-                            label: 'Visibles',
-                            iconOnly: true,
-                            icon: <Eye className="h-4 w-4" aria-hidden="true" />,
-                        },
-                        {
-                            value: 'hidden',
-                            label: 'Ocultos',
-                            iconOnly: true,
-                            icon: <EyeOff className="h-4 w-4" aria-hidden="true" />,
-                        },
-                    ]}
-                />
+                <div className="flex items-center gap-3 overflow-x-auto sm:overflow-visible">
+                    <SegmentedControl<GenderFilter>
+                        ariaLabel="Filtrar por género"
+                        value={genderFilter}
+                        onValueChange={setGenderFilter}
+                        className="w-fit shrink-0"
+                        options={[
+                            {
+                                value: 'all',
+                                label: 'Todos',
+                                iconOnly: true,
+                                icon: <VenusAndMars className="h-4 w-4" aria-hidden="true" />,
+                            },
+                            {
+                                value: 'female',
+                                label: 'Mujeres',
+                                iconOnly: true,
+                                icon: <Venus className="h-4 w-4" aria-hidden="true" />,
+                            },
+                            {
+                                value: 'male',
+                                label: 'Hombres',
+                                iconOnly: true,
+                                icon: <Mars className="h-4 w-4" aria-hidden="true" />,
+                            },
+                        ]}
+                    />
+                    <SegmentedControl<VisibilityFilter>
+                        ariaLabel="Filtrar por visibilidad"
+                        value={visibilityFilter}
+                        onValueChange={setVisibilityFilter}
+                        className="w-fit shrink-0"
+                        options={[
+                            {
+                                value: 'all',
+                                label: 'Todos',
+                                iconOnly: true,
+                                icon: <Layers className="h-4 w-4" aria-hidden="true" />,
+                            },
+                            {
+                                value: 'visible',
+                                label: 'Visibles',
+                                iconOnly: true,
+                                icon: <Eye className="h-4 w-4" aria-hidden="true" />,
+                            },
+                            {
+                                value: 'hidden',
+                                label: 'Ocultos',
+                                iconOnly: true,
+                                icon: <EyeOff className="h-4 w-4" aria-hidden="true" />,
+                            },
+                        ]}
+                    />
+                </div>
             </div>
 
             {/* Grid de modelos - 1 col mobile, 2 tablet, 3 desktop */}

@@ -277,11 +277,19 @@ export async function createProject(
     // Campos de tarifa
     default_model_fee: formData.get('default_model_fee') || null,
     default_fee_type: formData.get('default_fee_type') || 'per_day',
+    default_model_payment_type: formData.get('default_model_payment_type') || 'cash',
+    default_model_trade_category: formData.get('default_model_trade_category') || null,
+    default_model_trade_fee: formData.get('default_model_trade_fee') || null,
+    default_model_trade_details: formData.get('default_model_trade_details') || null,
     currency: formData.get('currency') || 'GTQ',
     // Campos de facturación al cliente
     revenue: formData.get('revenue') || null,
     tax_percentage: formData.get('tax_percentage') || 12,
     client_payment_status: formData.get('client_payment_status') || 'pending',
+    client_payment_type: formData.get('client_payment_type') || 'cash',
+    client_trade_category: formData.get('client_trade_category') || null,
+    client_trade_revenue: formData.get('client_trade_revenue') || null,
+    client_trade_details: formData.get('client_trade_details') || null,
     invoice_number: formData.get('invoice_number') || null,
     invoice_date: formData.get('invoice_date') || null,
   };
@@ -404,7 +412,7 @@ export async function updateProject(
   // Verify ownership and get current default_model_fee
   const { data: currentProject, error: ownerError } = await supabase
     .from('projects')
-    .select('user_id, default_model_fee, default_fee_type, currency')
+    .select('user_id, default_model_fee, default_fee_type, currency, default_model_trade_fee')
     .eq('id', projectId)
     .single();
 
@@ -412,10 +420,7 @@ export async function updateProject(
     return { success: false, error: 'No tienes permiso para editar este proyecto.' };
   }
 
-  // Guardar la tarifa anterior para comparar después
-  const previousFee = currentProject.default_model_fee;
-  const previousFeeType = currentProject.default_fee_type;
-  const previousCurrency = currentProject.currency;
+
 
   const scheduleEntries = Array.from(formData.keys())
     .filter(key => key.startsWith('schedule.'))
@@ -465,14 +470,27 @@ export async function updateProject(
     // Campos de tarifa
     default_model_fee: formData.get('default_model_fee') || null,
     default_fee_type: formData.get('default_fee_type') || 'per_day',
+    default_model_payment_type: formData.get('default_model_payment_type') || 'cash',
+    default_model_trade_category: formData.get('default_model_trade_category') || null,
+    default_model_trade_fee: formData.get('default_model_trade_fee') || null,
+    default_model_trade_details: formData.get('default_model_trade_details') || null,
     currency: formData.get('currency') || 'GTQ',
     // Campos de facturación al cliente
     revenue: formData.get('revenue') || null,
     tax_percentage: formData.get('tax_percentage') || 12,
     client_payment_status: formData.get('client_payment_status') || 'pending',
+    client_payment_type: formData.get('client_payment_type') || 'cash',
+    client_trade_category: formData.get('client_trade_category') || null,
+    client_trade_revenue: formData.get('client_trade_revenue') || null,
+    client_trade_details: formData.get('client_trade_details') || null,
     invoice_number: formData.get('invoice_number') || null,
     invoice_date: formData.get('invoice_date') || null,
   };
+
+  // DEBUG: Log para depurar cambios de tipo de pago
+  console.log('[updateProject] rawData.default_model_payment_type:', rawData.default_model_payment_type);
+  console.log('[updateProject] rawData.default_model_fee:', rawData.default_model_fee);
+  console.log('[updateProject] rawData.default_model_trade_fee:', rawData.default_model_trade_fee);
 
   const parsed = projectFormSchema.safeParse(rawData);
 
@@ -686,34 +704,31 @@ export async function updateProject(
         .in('id', scheduleIdsToDelete);
     }
 
-    // Si cambió la tarifa por defecto, actualizar modelos que tenían la tarifa anterior
+    // Siempre propagar las nuevas tarifas por defecto a todos los modelos del proyecto
+    // Esto asegura que al cambiar el tipo de pago, los modelos existentes reciban los valores correctos
     const newFee = parsed.data.default_model_fee;
     const newFeeType = parsed.data.default_fee_type;
     const newCurrency = parsed.data.currency;
+    const newTradeFee = parsed.data.default_model_trade_fee;
 
-    if (previousFee !== null && newFee !== null && previousFee !== newFee) {
-      // Actualizar solo los modelos que tenían la tarifa anterior (no personalizados)
-      await supabase
-        .from('projects_models')
-        .update({
-          agreed_fee: newFee,
-          fee_type: newFeeType || previousFeeType,
-          currency: newCurrency || previousCurrency
-        })
-        .eq('project_id', projectId)
-        .eq('agreed_fee', previousFee); // Solo los que tenían la tarifa anterior
-    }
+    // Actualizar todos los modelos del proyecto con las nuevas tarifas
+    const { error: updateModelsError } = await supabase
+      .from('projects_models')
+      .update({
+        agreed_fee: newFee ?? 0,
+        fee_type: newFeeType || 'per_day',
+        currency: newCurrency || 'GTQ',
+        trade_fee: newTradeFee ?? 0
+      })
+      .eq('project_id', projectId);
 
-    // Si cambió solo el tipo de tarifa o moneda (pero no el monto), también actualizar
-    if (newFee === previousFee && (newFeeType !== previousFeeType || newCurrency !== previousCurrency)) {
-      await supabase
-        .from('projects_models')
-        .update({
-          fee_type: newFeeType || previousFeeType,
-          currency: newCurrency || previousCurrency
-        })
-        .eq('project_id', projectId)
-        .eq('agreed_fee', previousFee);
+    if (updateModelsError) {
+      console.log('[updateProject] Error actualizando tarifas de modelos:', updateModelsError);
+    } else {
+      console.log('[updateProject] Tarifas propagadas a todos los modelos:', {
+        agreed_fee: newFee ?? 0,
+        trade_fee: newTradeFee ?? 0
+      });
     }
 
     revalidatePath('/dashboard/projects');

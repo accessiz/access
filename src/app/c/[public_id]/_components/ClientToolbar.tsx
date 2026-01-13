@@ -1,16 +1,16 @@
 'use client';
 
-import { List, LayoutGrid } from 'lucide-react';
+import { List, LayoutGrid, Rows3 } from 'lucide-react';
 import { useDebouncedCallback } from 'use-debounce';
 import { SegmentedControl } from '@/components/molecules/SegmentedControl';
 import { SearchBar } from '@/components/molecules/SearchBar';
 
 interface ClientToolbarProps {
   onFilterChange: (filters: { key: string; value: string | null }) => void;
-  onViewChange: (view: 'list' | 'grid') => void;
+  onViewChange: (view: 'list' | 'grid' | 'single') => void;
   currentFilters: {
     query: string;
-    view: 'list' | 'grid'
+    view: 'list' | 'grid' | 'single'
   };
 }
 
@@ -33,8 +33,7 @@ export function ClientToolbar({ onFilterChange, onViewChange, currentFilters }: 
         />
       </div>
 
-      {/* Selector de Vista (Grid/List) */}
-      {/* Selector de Vista (Grid/List) */}
+      {/* Selector de Vista (Grid/List/Single) */}
       <div className="shrink-0">
         <SegmentedControl
           value={currentFilters.view}
@@ -42,6 +41,7 @@ export function ClientToolbar({ onFilterChange, onViewChange, currentFilters }: 
           ariaLabel="Vista"
           options={[
             { value: 'list', label: 'Lista', icon: <List className="h-4 w-4" />, iconOnly: true },
+            { value: 'single', label: 'Vertical', icon: <Rows3 className="h-4 w-4" />, iconOnly: true, className: 'sm:hidden' },
             { value: 'grid', label: 'Cuadrícula', icon: <LayoutGrid className="h-4 w-4" />, iconOnly: true }
           ]}
         />

@@ -233,9 +233,24 @@ export async function assignModelToSchedule(scheduleId: string, modelId: string,
   const supabase = await createSupabaseServerActionClient();
 
   try {
+    // 1. Obtener defaults del proyecto
+    const { data: project } = await supabase
+      .from('projects')
+      .select('default_model_payment_type, default_model_trade_category, default_model_trade_details')
+      .eq('id', projectId)
+      .single();
+
+    const insertPayload = {
+      schedule_id: scheduleId,
+      model_id: modelId,
+      payment_type: project?.default_model_payment_type || 'cash',
+      trade_category: project?.default_model_trade_category || null,
+      trade_details: project?.default_model_trade_details || null
+    };
+
     const { error } = await supabase
       .from('model_assignments')
-      .insert({ schedule_id: scheduleId, model_id: modelId });
+      .insert(insertPayload);
 
     if (error) {
       logError(error, { action: 'assignModelToSchedule', scheduleId, modelId });

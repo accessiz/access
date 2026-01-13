@@ -25,7 +25,7 @@ export function ClientTalentCard({
   children,
 }: Props) {
   const image = (
-    <div className="relative aspect-3/4 overflow-hidden rounded-md bg-muted">
+    <div className="relative aspect-3/4 overflow-hidden rounded-md">
       {coverUrl ? (
         <img
           src={coverUrl}
@@ -35,7 +35,7 @@ export function ClientTalentCard({
           decoding="async"
         />
       ) : (
-        <div className="flex h-full w-full items-center justify-center">
+        <div className="flex h-full w-full items-center justify-center bg-muted rounded-md">
           <span className="text-body text-muted-foreground">Sin foto</span>
         </div>
       )}
@@ -58,7 +58,7 @@ export function ClientTalentCard({
   return (
     <div
       className={cn(
-        'group rounded-lg bg-card text-card-foreground border border-border overflow-hidden',
+        'group rounded-lg text-card-foreground overflow-hidden border border-[rgb(var(--separator))]',
         className
       )}
     >

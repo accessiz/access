@@ -52,7 +52,7 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
   const submitRef = useRef<HTMLDivElement>(null);
 
   // 2. ESTADOS DE FILTROS Y VISTA
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [viewMode, setViewMode] = useState<'grid' | 'list' | 'single'>('grid');
 
   const [filters, setFilters] = useState({
     query: '',
@@ -165,7 +165,7 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
     });
   };
 
-  const handleViewChange = (view: 'list' | 'grid') => {
+  const handleViewChange = (view: 'list' | 'grid' | 'single') => {
     setViewMode(view);
   };
 
@@ -227,31 +227,31 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
           </div>
 
           {/* BARRA DE PROGRESO (junto al bloque de proyecto/fechas) */}
-          <div ref={progressRef} className="client-wow-progress p-4">
-            <div className="relative z-10 flex flex-col gap-3">
-              <div className="flex flex-wrap items-center justify-between gap-2 sm:flex-nowrap sm:gap-3">
-                <div className="min-w-0">
-                  <p className="text-body font-medium text-foreground leading-snug sm:truncate">
-                    Selección de talento
-                  </p>
-                </div>
-                <div className="flex items-center gap-2 sm:shrink-0">
-                  <Badge variant="success" size="small" className="gap-1.5">
-                    <CheckCircle2 className="size-4" />
-                    <span className="sr-only">Aprobados:</span>
-                    {progressStats.approved}
-                  </Badge>
-                  <Badge variant="danger" size="small" className="gap-1.5">
-                    <XCircle className="size-4" />
-                    <span className="sr-only">Rechazados:</span>
-                    {progressStats.rejected}
-                  </Badge>
-                </div>
+          <div ref={progressRef} className="client-wow-progress dark-solid !rounded-2xl bg-white p-5">
+            <div className="relative z-10 flex flex-col gap-4">
+              {/* Título */}
+              <p className="text-title font-semibold text-foreground capitalize">
+                Selección De Talento
+              </p>
+
+              {/* Badges de aprobados/rechazados */}
+              <div className="flex items-center justify-between gap-3">
+                <Badge variant="success" size="medium" className="gap-2 rounded-lg px-3">
+                  <CheckCircle2 className="size-4" />
+                  <span className="sr-only">Aprobados:</span>
+                  {progressStats.approved}
+                </Badge>
+                <Badge variant="danger" size="medium" className="gap-2 rounded-lg px-3">
+                  <XCircle className="size-4" />
+                  <span className="sr-only">Rechazados:</span>
+                  {progressStats.rejected}
+                </Badge>
               </div>
 
+              {/* Barra de progreso */}
               <div className="flex items-center gap-3">
                 <Progress value={progressStats.percentage} className="h-2 flex-1" />
-                <span className="text-label text-foreground tabular-nums">
+                <span className="text-label text-muted-foreground tabular-nums">
                   {Math.round(progressStats.percentage)}%
                 </span>
               </div>
@@ -277,19 +277,20 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
             {menModels.length > 0 && (
               <section>
                 <h2 className="text-title mb-8 border-b pb-4 uppercase tracking-tight">Hombres</h2>
-                {viewMode === 'grid' ? (
-                  <ClientGrid
+                {viewMode === 'list' ? (
+                  <ClientListView
                     models={menModels}
                     projectId={project.public_id}
                     realProjectId={project.id}
                     onSelectionChange={handleSelectionChange}
                   />
                 ) : (
-                  <ClientListView
+                  <ClientGrid
                     models={menModels}
                     projectId={project.public_id}
                     realProjectId={project.id}
                     onSelectionChange={handleSelectionChange}
+                    viewMode={viewMode === 'single' ? 'single' : 'grid'}
                   />
                 )}
               </section>
@@ -299,19 +300,20 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
             {womenModels.length > 0 && (
               <section>
                 <h2 className="text-title mb-8 border-b pb-4 uppercase tracking-tight">Mujeres</h2>
-                {viewMode === 'grid' ? (
-                  <ClientGrid
+                {viewMode === 'list' ? (
+                  <ClientListView
                     models={womenModels}
                     projectId={project.public_id}
                     realProjectId={project.id}
                     onSelectionChange={handleSelectionChange}
                   />
                 ) : (
-                  <ClientListView
+                  <ClientGrid
                     models={womenModels}
                     projectId={project.public_id}
                     realProjectId={project.id}
                     onSelectionChange={handleSelectionChange}
+                    viewMode={viewMode === 'single' ? 'single' : 'grid'}
                   />
                 )}
               </section>
@@ -321,19 +323,20 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
             {otherModels.length > 0 && (
               <section>
                 <h2 className="text-title mb-8 border-b pb-4 uppercase tracking-tight">Otros</h2>
-                {viewMode === 'grid' ? (
-                  <ClientGrid
+                {viewMode === 'list' ? (
+                  <ClientListView
                     models={otherModels}
                     projectId={project.public_id}
                     realProjectId={project.id}
                     onSelectionChange={handleSelectionChange}
                   />
                 ) : (
-                  <ClientListView
+                  <ClientGrid
                     models={otherModels}
                     projectId={project.public_id}
                     realProjectId={project.id}
                     onSelectionChange={handleSelectionChange}
+                    viewMode={viewMode === 'single' ? 'single' : 'grid'}
                   />
                 )}
               </section>

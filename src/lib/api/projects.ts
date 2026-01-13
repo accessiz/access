@@ -381,6 +381,7 @@ export async function getModelsForProject(projectId: string): Promise<Model[]> {
       client_selection: validatedSelection,
       internal_status: item.internal_status,
       agreed_fee: item.agreed_fee,
+      trade_fee: item.trade_fee, // Mapear trade_fee
       fee_type: item.fee_type,
       currency: item.currency,
       notes: item.notes,

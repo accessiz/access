@@ -19,12 +19,13 @@ import { Badge } from '@/components/ui/badge';
 import { ProjectStatusBadge } from '@/components/molecules/ProjectStatusBadge';
 import { ScheduleChips } from '@/components/molecules/ScheduleChips';
 import { SearchBar } from '@/components/molecules/SearchBar';
+
 import { ShareProjectDialog } from '@/components/organisms/ShareProjectDialog';
 import { DeleteProjectDialog } from '@/components/organisms/DeleteProjectDialog';
 import { ProjectStatusUpdater } from '@/components/organisms/ProjectStatusUpdater';
 import {
     PlusCircle, XCircle, Loader2, Share2, Eye,
-    Pencil,
+    Pencil, ArrowRightLeft,
     CalendarCheck2, Banknote, Save, Info, Copy, ChevronDown
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -43,7 +44,7 @@ const ClientStatusBadge = ({ status }: { status: Model['client_selection'] }) =>
     return <ProjectStatusBadge status={status || 'pending'} size="small" />;
 };
 
-// Componente de Resumen de Presupuesto
+// Componente de Resumen de Presupuesto - Rediseñado según mockup
 const BudgetSummaryCard = ({ project, selectedModels }: { project: Project, selectedModels: Model[] }) => {
     const [breakdownOpen, setBreakdownOpen] = useState(false);
 
@@ -51,77 +52,171 @@ const BudgetSummaryCard = ({ project, selectedModels }: { project: Project, sele
     const approvedModels = selectedModels.filter(m => m.client_selection === 'approved');
     const pendingModels = selectedModels.filter(m => m.client_selection === 'pending');
 
-    // Calcular total a pagar solo para modelos aprobados
-    const totalApproved = approvedModels.reduce((sum, model) => {
-        const fee = model.agreed_fee || project.default_model_fee || 0;
+    // Tipo de pago del proyecto (usar el configurado, no inferir de montos)
+    const projectPaymentType = project.default_model_payment_type || 'cash';
+
+    // Helper para obtener tarifas efectivas respetando el tipo de pago
+    const getFees = (model: Model) => {
+        const rawCash = model.agreed_fee !== null ? model.agreed_fee : project.default_model_fee;
+        const rawTrade = model.trade_fee !== null ? model.trade_fee : project.default_model_trade_fee;
+
+        // Respetar el tipo de pago del proyecto
+        if (projectPaymentType === 'cash') {
+            return { cash: rawCash || 0, trade: 0 };
+        } else if (projectPaymentType === 'trade') {
+            return { cash: 0, trade: rawTrade || 0 };
+        } else {
+            // mixed
+            return { cash: rawCash || 0, trade: rawTrade || 0 };
+        }
+    };
+
+    // Calcular totales
+    let totalCash = 0;
+    let totalTrade = 0;
+
+    approvedModels.forEach(model => {
+        const fees = getFees(model);
         const daysWorked = model.assignments?.length || 1;
-        return sum + (fee * daysWorked);
-    }, 0);
+        totalCash += fees.cash * daysWorked;
+        totalTrade += fees.trade * daysWorked;
+    });
 
     const currency = project.currency || 'GTQ';
-    const feeType = project.default_fee_type === 'per_hour' ? '/hora' : project.default_fee_type === 'fixed' ? 'fijo' : '/día';
+
+
+    // Default fees for display (respetando tipo de pago)
+    const defaultCash = projectPaymentType === 'trade' ? 0 : (project.default_model_fee || 0);
+    const defaultTrade = projectPaymentType === 'cash' ? 0 : (project.default_model_trade_fee || 0);
 
     return (
         <Card className="bg-sys-bg-secondary border">
-            <CardHeader className="pb-3">
-                <CardTitle className="text-primary">
-                    Presupuesto
-                </CardTitle>
-                <CardDescription>
-                    <span className="font-bold text-foreground">{currency} {(project.default_model_fee || 0).toLocaleString()}</span> {feeType} por modelo
-                </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                <div className="grid grid-cols-3 gap-x-4 gap-y-4">
-                    <div className="text-center p-3 bg-sys-bg-tertiary rounded-lg">
-                        <p className="text-display font-black text-success">{approvedModels.length}</p>
-                        <p className="text-label text-muted-foreground uppercase font-bold tracking-wider">Aprobados</p>
-                    </div>
-                    <div className="text-center p-3 bg-sys-bg-tertiary rounded-lg">
-                        <p className="text-display font-black text-warning">{pendingModels.length}</p>
-                        <p className="text-label text-muted-foreground uppercase font-bold tracking-wider">Pendientes</p>
-                    </div>
-                    <div className="text-center p-3 bg-sys-bg-tertiary rounded-lg">
-                        <p className="text-display font-black">{selectedModels.length}</p>
-                        <p className="text-label text-muted-foreground uppercase font-bold tracking-wider">Total</p>
+            <CardContent className="p-4 space-y-4">
+                {/* Header con título y tarifas */}
+                <div className="space-y-3">
+                    <h3 className="text-title font-semibold text-foreground">Presupuesto</h3>
+
+                    {/* Tarifas por modelo */}
+                    <div className="space-y-2">
+                        {(projectPaymentType === 'cash' || projectPaymentType === 'mixed') && (
+                            <div className="flex items-center gap-3">
+                                <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-success/20 border border-success/30">
+                                    <Banknote className="w-4 h-4 text-success" />
+                                </span>
+                                <div>
+                                    <p className="text-body font-bold text-foreground">{currency} {defaultCash.toLocaleString()}</p>
+                                    <p className="text-label text-muted-foreground">Día Por Modelo</p>
+                                </div>
+                            </div>
+                        )}
+                        {(projectPaymentType === 'trade' || projectPaymentType === 'mixed') && (
+                            <div className="flex items-center gap-3">
+                                <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-info/20 border border-info/30">
+                                    <ArrowRightLeft className="w-4 h-4 text-info" />
+                                </span>
+                                <div>
+                                    <p className="text-body font-bold text-foreground">{currency} {defaultTrade.toLocaleString()}</p>
+                                    <p className="text-label text-muted-foreground">Día Por Modelo</p>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
 
-                <Separator />
-
-                <Collapsible open={breakdownOpen} onOpenChange={setBreakdownOpen}>
-                    <div className="flex justify-between items-center">
-                        <span className="text-body text-muted-foreground">Total Confirmado (aprobados):</span>
-                        <div className="flex items-center gap-2">
-                            <span className="text-title font-black text-success">
-                                {currency} {totalApproved.toLocaleString()}
-                            </span>
-                            {approvedModels.length > 0 && (
-                                <CollapsibleTrigger asChild>
-                                    <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-7 w-7"
-                                        aria-label={breakdownOpen ? 'Contraer desglose' : 'Expandir desglose'}
-                                    >
-                                        <ChevronDown className={`h-4 w-4 transition-transform ${breakdownOpen ? 'rotate-180' : ''}`} />
-                                    </Button>
-                                </CollapsibleTrigger>
-                            )}
-                        </div>
+                {/* Estadísticas - Vertical en mobile, horizontal en desktop */}
+                <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
+                    {/* Aprobados - Fondo púrpura, texto púrpura */}
+                    <div className="flex-1 text-center p-4 rounded-lg bg-purple/20 border border-purple/50">
+                        <p className="text-display font-black text-purple">{approvedModels.length}</p>
+                        <p className="text-body text-purple font-semibold">Aprobados</p>
                     </div>
+
+                    {/* Pendientes - Fondo amarillo, texto warning */}
+                    <div className="flex-1 text-center p-4 rounded-lg bg-warning/20 border border-warning/50">
+                        <p className="text-display font-black text-warning">{pendingModels.length}</p>
+                        <p className="text-body text-warning font-semibold">Pendientes</p>
+                    </div>
+
+                    {/* Total - Fondo azul, texto info */}
+                    <div className="flex-1 text-center p-4 rounded-lg bg-info/20 border border-info/50">
+                        <p className="text-display font-black text-info">{selectedModels.length}</p>
+                        <p className="text-body text-info font-semibold">Total</p>
+                    </div>
+                </div>
+
+                {/* Totales en tarjetas separadas */}
+                <div className="space-y-3">
+                    {(projectPaymentType === 'cash' || projectPaymentType === 'mixed') && (
+                        <div className="flex items-center justify-between p-4 rounded-lg bg-sys-bg-tertiary">
+                            <span className="text-body text-muted-foreground">Total:</span>
+                            <div className="flex items-center gap-2">
+                                <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-success/20">
+                                    <Banknote className="w-3.5 h-3.5 text-success" />
+                                </span>
+                                <span className="text-title font-black text-foreground">
+                                    {currency} {totalCash.toLocaleString()}
+                                </span>
+                            </div>
+                        </div>
+                    )}
+
+                    {(projectPaymentType === 'trade' || projectPaymentType === 'mixed') && (
+                        <div className="flex items-center justify-between p-4 rounded-lg bg-sys-bg-tertiary">
+                            <span className="text-body text-muted-foreground">Total:</span>
+                            <div className="flex items-center gap-2">
+                                <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-info/20">
+                                    <ArrowRightLeft className="w-3.5 h-3.5 text-info" />
+                                </span>
+                                <span className="text-title font-black text-foreground">
+                                    {currency} {totalTrade.toLocaleString()}
+                                </span>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Botón Ver Desglose */}
+                <Collapsible open={breakdownOpen} onOpenChange={setBreakdownOpen}>
+                    {approvedModels.length > 0 && (
+                        <CollapsibleTrigger asChild>
+                            <button
+                                type="button"
+                                className="flex items-center gap-3 text-body text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                                <span className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-transparent border border-separator hover:bg-hover-overlay transition-colors">
+                                    <ChevronDown className={`h-5 w-5 transition-transform duration-200 ${breakdownOpen ? 'rotate-180' : ''}`} />
+                                </span>
+                                <span>Ver Desglose</span>
+                            </button>
+                        </CollapsibleTrigger>
+                    )}
 
                     {approvedModels.length > 0 && (
                         <CollapsibleContent>
-                            <div className="mt-3 space-y-1 text-body text-muted-foreground">
+                            <div className="mt-4 space-y-2 p-4 rounded-lg bg-sys-bg-tertiary">
                                 {approvedModels.map(model => {
-                                    const fee = model.agreed_fee || project.default_model_fee || 0;
+                                    const fees = getFees(model);
                                     const days = model.assignments?.length || 1;
+                                    const amountCash = fees.cash * days;
+                                    const amountTrade = fees.trade * days;
+
                                     return (
-                                        <div key={model.id} className="flex justify-between py-0.5">
-                                            <span>{model.alias} ({days} día{days > 1 ? 's' : ''})</span>
-                                            <span className="font-mono">{currency} {(fee * days).toLocaleString()}</span>
+                                        <div key={model.id} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0 last:pb-0">
+                                            <span className="text-body font-medium text-foreground">{model.alias} ({days} día{days > 1 ? 's' : ''})</span>
+                                            <div className="flex items-center gap-3">
+                                                {amountCash > 0 && (
+                                                    <div className="flex items-center gap-1.5">
+                                                        <Banknote className="w-3.5 h-3.5 text-success" />
+                                                        <span className="text-body text-success font-semibold">{currency} {amountCash.toLocaleString()}</span>
+                                                    </div>
+                                                )}
+                                                {amountTrade > 0 && (
+                                                    <div className="flex items-center gap-1.5">
+                                                        <ArrowRightLeft className="w-3.5 h-3.5 text-info" />
+                                                        <span className="text-body text-info font-semibold">{currency} {amountTrade.toLocaleString()}</span>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                     );
                                 })}
@@ -321,9 +416,23 @@ const TalentRow = ({ model, project, onAction, isPending, actionType, onRefresh,
                     <div className="flex items-center gap-x-2 gap-y-2">
                         <p className="text-body font-medium truncate">{model.alias}</p>
                         {actionType === 'remove' && (
-                            <Badge variant="outline" size="small" className="font-mono">
-                                {model.currency} {model.agreed_fee} {model.fee_type === 'per_day' ? '/d' : model.fee_type === 'per_hour' ? '/h' : ''}
-                            </Badge>
+                            <>
+                                {(model.agreed_fee || 0) > 0 && (
+                                    <Badge variant="outline" size="small" className="font-mono">
+                                        {model.currency} {model.agreed_fee} {model.fee_type === 'per_day' ? '/d' : model.fee_type === 'per_hour' ? '/h' : ''}
+                                    </Badge>
+                                )}
+                                {(model.trade_fee || 0) > 0 && (
+                                    <Badge variant="secondary" size="small" className="font-mono bg-purple/10 text-purple border-purple/20">
+                                        {model.currency} {model.trade_fee} {model.fee_type === 'per_day' ? '/d' : model.fee_type === 'per_hour' ? '/h' : ''} (Canje)
+                                    </Badge>
+                                )}
+                                {!(model.agreed_fee || 0) && !(model.trade_fee || 0) && (
+                                    <Badge variant="outline" size="small" className="font-mono text-muted-foreground border-dashed">
+                                        Sin tarifa
+                                    </Badge>
+                                )}
+                            </>
                         )}
                     </div>
                     <p className="text-label text-muted-foreground truncate">{model.country}</p>
@@ -571,6 +680,7 @@ export default function ProjectDetailClient({ project: initialProject, initialSe
                     ...modelToAdd,
                     client_selection: 'pending',
                     agreed_fee: project.default_model_fee || 0,
+                    trade_fee: project.default_model_trade_fee || 0, // Init trade fee
                     fee_type: project.default_fee_type || 'per_day',
                     currency: project.currency || 'GTQ',
                     assignments: []
@@ -611,8 +721,13 @@ export default function ProjectDetailClient({ project: initialProject, initialSe
                     hours_worked: null,
                     adjustment_amount: 0,
                     adjustment_reason: null,
-                    payment_status: 'pending',
+                    payment_status: 'pending' as const,
                     payment_date: null,
+                    payment_type: null,
+                    trade_description: null,
+                    trade_category: null,
+                    trade_details: null,
+                    trade_fee: null,
                     notes: null,
                 };
                 return {
@@ -678,15 +793,13 @@ export default function ProjectDetailClient({ project: initialProject, initialSe
                         <CardTitle className="text-title font-semibold">Horarios</CardTitle>
 
                         <CollapsibleTrigger asChild>
-                            <Button
+                            <button
                                 type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="h-9 w-9"
+                                className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-transparent border border-separator hover:bg-hover-overlay transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                                 aria-label={scheduleOpen ? 'Contraer horarios' : 'Expandir horarios'}
                             >
-                                <ChevronDown className={`h-4 w-4 transition-transform ${scheduleOpen ? 'rotate-180' : ''}`} />
-                            </Button>
+                                <ChevronDown className={`h-5 w-5 transition-transform duration-200 ${scheduleOpen ? 'rotate-180' : ''}`} />
+                            </button>
                         </CollapsibleTrigger>
                     </CardHeader>
 

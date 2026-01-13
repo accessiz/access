@@ -11,44 +11,88 @@
  * Timezone: Guatemala (GMT-6)
  */
 
+/** Timezone para todas las operaciones de fecha en finanzas */
+export const TIMEZONE = 'America/Guatemala'; // GMT-6
+
+/** Configuración de monedas */
+export const CURRENCY = {
+    /** Moneda principal para KPIs y reportes */
+    PRIMARY: 'GTQ' as const,
+    /** Tipos de cambio para conversión a GTQ */
+    EXCHANGE_RATES: {
+        USD: 7.80, // 1 USD = 7.80 GTQ
+        GTQ: 1,
+    } as Record<string, number>,
+};
+
+/** Estados de pago a modelos */
+export const MODEL_PAYMENT_STATUSES = ['pending', 'paid'] as const;
+
+/** Estados de cobro a clientes */
+export const CLIENT_PAYMENT_STATUSES = ['pending', 'invoiced', 'paid'] as const;
+
+/** Labels en español para estados de pago */
+export const STATUS_LABELS: Record<string, string> = {
+    pending: 'Pendiente',
+    invoiced: 'Facturado',
+    paid: 'Cobrado',
+};
+
+/** Tipos de pago (efectivo vs canje) */
+export const PAYMENT_TYPES = ['cash', 'trade', 'mixed'] as const;
+
+/** Labels en español para tipos de pago */
+export const PAYMENT_TYPE_LABELS: Record<string, string> = {
+    cash: 'Efectivo',
+    trade: 'Canje',
+    mixed: 'Mixto',
+};
+
+/** Iconos para tipos de pago */
+export const PAYMENT_TYPE_ICONS: Record<string, string> = {
+    cash: 'Banknote',
+    trade: 'RefreshCw',
+    mixed: 'Shuffle',
+};
+
+/** Categorías de canje */
+export const TRADE_CATEGORIES = ['products', 'clothing', 'voucher', 'services', 'hospitality', 'other'] as const;
+
+/** Labels para categorías de canje */
+export const TRADE_CATEGORY_LABELS: Record<string, string> = {
+    products: 'Productos de marca',
+    clothing: 'Vestuario / Ropa',
+    voucher: 'Vales de consumo',
+    services: 'Servicios',
+    hospitality: 'Hospedaje / Viajes',
+    other: 'Otro',
+};
+
+// Backward compatibility
 export const FINANCE_CONSTANTS = {
-    /** Timezone para todas las operaciones de fecha en finanzas */
-    TIMEZONE: 'America/Guatemala', // GMT-6
-
-    /** Configuración de monedas */
-    CURRENCY: {
-        /** Moneda principal para KPIs y reportes */
-        PRIMARY: 'GTQ' as const,
-        /** Tipos de cambio para conversión a GTQ */
-        EXCHANGE_RATES: {
-            USD: 7.80, // 1 USD = 7.80 GTQ
-            GTQ: 1,
-        } as Record<string, number>,
-    },
-
-    /** Estados de pago a modelos */
-    MODEL_PAYMENT_STATUSES: ['pending', 'paid'] as const,
-
-    /** Estados de cobro a clientes */
-    CLIENT_PAYMENT_STATUSES: ['pending', 'invoiced', 'paid'] as const,
-
-    /** Labels en español para estados de pago */
-    STATUS_LABELS: {
-        pending: 'Pendiente',
-        invoiced: 'Facturado',
-        paid: 'Cobrado',
-    } as Record<string, string>,
+    TIMEZONE,
+    CURRENCY,
+    MODEL_PAYMENT_STATUSES,
+    CLIENT_PAYMENT_STATUSES,
+    STATUS_LABELS,
+    PAYMENT_TYPES,
+    PAYMENT_TYPE_LABELS,
+    PAYMENT_TYPE_ICONS,
+    TRADE_CATEGORIES,
+    TRADE_CATEGORY_LABELS,
 } as const;
 
 /** Tipos derivados de las constantes */
-export type ModelPaymentStatus = typeof FINANCE_CONSTANTS.MODEL_PAYMENT_STATUSES[number];
-export type ClientPaymentStatus = typeof FINANCE_CONSTANTS.CLIENT_PAYMENT_STATUSES[number];
+export type ModelPaymentStatus = typeof MODEL_PAYMENT_STATUSES[number];
+export type ClientPaymentStatus = typeof CLIENT_PAYMENT_STATUSES[number];
+export type PaymentType = typeof PAYMENT_TYPES[number];
+export type TradeCategory = typeof TRADE_CATEGORIES[number];
 
 /**
  * Convierte un monto a GTQ usando el tipo de cambio configurado
  */
 export function convertToGTQ(amount: number, currency: string): number {
-    const rate = FINANCE_CONSTANTS.CURRENCY.EXCHANGE_RATES[currency] ?? 1;
+    const rate = CURRENCY.EXCHANGE_RATES[currency] ?? 1;
     return amount * rate;
 }
 
@@ -58,7 +102,7 @@ export function convertToGTQ(amount: number, currency: string): number {
 export function getGuatemalaToday(): Date {
     const now = new Date();
     const guatemalaTime = new Date(now.toLocaleString('en-US', {
-        timeZone: FINANCE_CONSTANTS.TIMEZONE
+        timeZone: TIMEZONE
     }));
     guatemalaTime.setHours(0, 0, 0, 0);
     return guatemalaTime;
@@ -69,7 +113,7 @@ export function getGuatemalaToday(): Date {
  */
 export function getGuatemalaTodayString(): string {
     const formatter = new Intl.DateTimeFormat('en-CA', {
-        timeZone: FINANCE_CONSTANTS.TIMEZONE,
+        timeZone: TIMEZONE,
         year: 'numeric',
         month: '2-digit',
         day: '2-digit',

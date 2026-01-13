@@ -16,9 +16,8 @@ import {
   Plus,
   Save,
   X,
-  Info,
 } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+
 import {
   Select,
   SelectContent,
@@ -32,6 +31,7 @@ import { Project, Client, Brand, PROJECT_TYPES, ProjectType } from '@/lib/types'
 import { format } from 'date-fns';
 import { DatePicker } from '@/components/ui/date-picker';
 import { TimePicker } from '@/components/ui/time-picker';
+import { TRADE_CATEGORIES, TRADE_CATEGORY_LABELS } from '@/lib/constants/finance';
 import { createClient } from '@/lib/supabase/client';
 import { cn, toTitleCase } from '@/lib/utils';
 
@@ -41,6 +41,7 @@ type ProjectWithBilling = Project & {
   client_payment_status?: string | null;
   invoice_number?: string | null;
   invoice_date?: string | null;
+  client_trade_revenue?: number | null;
 };
 
 interface ProjectFormProps {
@@ -204,13 +205,21 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
           endTime: item.endTime || '05:00 PM',
         }))
         : [{ date: format(new Date(), 'yyyy-MM-dd'), startTime: '09:00 AM', endTime: '05:00 PM' }],
-      default_model_fee: initialData?.default_model_fee ?? null,
-      default_fee_type: (initialData?.default_fee_type as 'per_day' | 'per_hour' | 'fixed') ?? 'per_day',
-      currency: (initialData?.currency as 'GTQ' | 'USD' | 'EUR' | 'MXN' | 'COP' | 'PEN' | 'ARS' | 'CLP' | 'BRL') ?? 'GTQ',
+      default_model_fee: initialData?.default_model_fee || null,
+      default_fee_type: (initialData?.default_fee_type as 'per_day' | 'per_hour' | 'fixed') || 'per_day',
+      default_model_payment_type: initialData?.default_model_payment_type || 'cash',
+      default_model_trade_category: initialData?.default_model_trade_category || null,
+      default_model_trade_fee: initialData?.default_model_trade_fee || null,
+      default_model_trade_details: initialData?.default_model_trade_details || null,
+      currency: (initialData?.currency as 'GTQ' | 'USD' | 'EUR') || 'GTQ',
       // Campos de facturación al cliente
       revenue: initialData?.revenue ?? null,
       tax_percentage: initialData?.tax_percentage ?? 12,
       client_payment_status: normalizedClientPaymentStatus,
+      client_payment_type: (initialData?.client_payment_type as 'cash' | 'trade' | 'mixed') ?? 'cash',
+      client_trade_category: initialData?.client_trade_category || null,
+      client_trade_revenue: initialData?.client_trade_revenue || null,
+      client_trade_details: initialData?.client_trade_details || null,
       invoice_number: initialData?.invoice_number ?? '',
       invoice_date: initialData?.invoice_date ?? '',
     },
@@ -346,11 +355,19 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
     fd.set('password', values.password || '');
     fd.set('default_model_fee', values.default_model_fee?.toString() || '');
     fd.set('default_fee_type', values.default_fee_type || 'per_day');
+    fd.set('default_model_payment_type', values.default_model_payment_type || 'cash');
+    fd.set('default_model_trade_category', values.default_model_trade_category || '');
+    fd.set('default_model_trade_fee', values.default_model_trade_fee?.toString() || '');
+    fd.set('default_model_trade_details', values.default_model_trade_details || '');
     fd.set('currency', values.currency || 'GTQ');
     // Campos de facturación al cliente
     fd.set('revenue', values.revenue?.toString() || '');
     fd.set('tax_percentage', values.tax_percentage?.toString() || '12');
     fd.set('client_payment_status', values.client_payment_status || 'pending');
+    fd.set('client_payment_type', values.client_payment_type || 'cash');
+    fd.set('client_trade_category', values.client_trade_category || '');
+    fd.set('client_trade_revenue', values.client_trade_revenue?.toString() || '');
+    fd.set('client_trade_details', values.client_trade_details || '');
     fd.set('invoice_number', values.invoice_number || '');
     fd.set('invoice_date', values.invoice_date || '');
 
@@ -713,62 +730,176 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
           <div className="flex items-center gap-2">
             <h2 className="text-title">Presupuesto y Tarifas</h2>
           </div>
-          <div className="border bg-card rounded-lg p-6 grid md:grid-cols-2 gap-6">
+          <div className="border bg-card rounded-lg p-6 space-y-6">
+            {/* 1. Tipo de Pago (Prioridad Superior) */}
             <div className="space-y-2">
-              <Label>Tarifa por Modelo</Label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-body">
-                  GTQ
-                </span>
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="0.00"
-                  className="pl-14"
-                  {...form.register('default_model_fee')}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center gap-1.5">
-                <Label>Tipo de Tarifa</Label>
-                <TooltipProvider>
-                  <Tooltip delayDuration={100}>
-                    <TooltipTrigger asChild>
-                      <button type="button" className="text-muted-foreground hover:text-foreground">
-                        <Info className="h-3.5 w-3.5" />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="right" className="max-w-xs p-3">
-                      <ul className="space-y-1 text-label">
-                        <li><strong>Por día:</strong> Tarifa diaria.</li>
-                        <li><strong>Por hora:</strong> Tarifa por hora trabajada.</li>
-                        <li><strong>Tarifa fija:</strong> Monto único por proyecto.</li>
-                      </ul>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
+              <Label>Tipo de Pago (Default)</Label>
               <Controller
                 control={form.control}
-                name="default_fee_type"
+                name="default_model_payment_type"
                 render={({ field }) => (
                   <>
-                    <input type="hidden" name="default_fee_type" value={field.value || ''} />
-                    <Select value={field.value || 'per_day'} onValueChange={field.onChange}>
+                    <input type="hidden" name="default_model_payment_type" value={field.value || 'cash'} />
+                    <Select value={field.value || 'cash'} onValueChange={field.onChange}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="per_day">Por día</SelectItem>
-                        <SelectItem value="per_hour">Por hora</SelectItem>
-                        <SelectItem value="fixed">Tarifa fija</SelectItem>
+                        <SelectItem value="cash">Efectivo / Transferencia</SelectItem>
+                        <SelectItem value="trade">Canje / Intercambio</SelectItem>
+                        <SelectItem value="mixed">Mixto (Efectivo + Canje)</SelectItem>
                       </SelectContent>
                     </Select>
                   </>
                 )}
               />
             </div>
+
+            {/* 2. Campos Según Tipo */}
+            {form.watch('default_model_payment_type') === 'cash' && (
+              <div className="grid md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-top-2">
+                <div className="space-y-2">
+                  <Label>Tarifa por Modelo</Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-body">
+                      GTQ
+                    </span>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="0.00"
+                      className="pl-14"
+                      {...form.register('default_model_fee')}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Tipo de Tarifa</Label>
+                  <Controller
+                    control={form.control}
+                    name="default_fee_type"
+                    render={({ field }) => (
+                      <Select value={field.value || 'per_day'} onValueChange={field.onChange}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="per_day">Por día</SelectItem>
+                          <SelectItem value="per_hour">Por hora</SelectItem>
+                          <SelectItem value="fixed">Fija</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                </div>
+              </div>
+            )}
+
+            {form.watch('default_model_payment_type') === 'trade' && (
+              <div className="grid md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-top-2">
+                <div className="space-y-2">
+                  <Label>Valor Canje</Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-body">GTQ</span>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      placeholder="0.00"
+                      className="pl-14"
+                      {...form.register('default_model_trade_fee')}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Categoría de Canje</Label>
+                  <Controller
+                    control={form.control}
+                    name="default_model_trade_category"
+                    render={({ field }) => (
+                      <Select value={field.value || ''} onValueChange={field.onChange}>
+                        <SelectTrigger><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
+                        <SelectContent>
+                          {TRADE_CATEGORIES.map(cat => (
+                            <SelectItem key={cat} value={cat}>{TRADE_CATEGORY_LABELS[cat]}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                  <input type="hidden" name="default_model_trade_category" value={form.watch('default_model_trade_category') || ''} />
+                </div>
+              </div>
+            )}
+
+            {form.watch('default_model_payment_type') === 'mixed' && (
+              <div className="space-y-6 animate-in fade-in slide-in-from-top-2">
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label>Tarifa en Efectivo</Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-body">GTQ</span>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="0.00"
+                        className="pl-14"
+                        {...form.register('default_model_fee')}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Tipo de Tarifa</Label>
+                    <Controller
+                      control={form.control}
+                      name="default_fee_type"
+                      render={({ field }) => (
+                        <Select value={field.value || ''} onValueChange={field.onChange}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Seleccionar..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="per_day">Por día</SelectItem>
+                            <SelectItem value="per_hour">Por hora</SelectItem>
+                            <SelectItem value="fixed">Fija / Flat Fee</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label>Valor Canje</Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-body">GTQ</span>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="0.00"
+                        className="pl-14"
+                        {...form.register('default_model_trade_fee')}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Categoría de Canje</Label>
+                    <Controller
+                      control={form.control}
+                      name="default_model_trade_category"
+                      render={({ field }) => (
+                        <Select value={field.value || ''} onValueChange={field.onChange}>
+                          <SelectTrigger><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
+                          <SelectContent>
+                            {TRADE_CATEGORIES.map(cat => (
+                              <SelectItem key={cat} value={cat}>{TRADE_CATEGORY_LABELS[cat]}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                    <input type="hidden" name="default_model_trade_category" value={form.watch('default_model_trade_category') || ''} />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -778,70 +909,160 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
             <h2 className="text-title">Facturación al Cliente</h2>
             <span className="text-label text-muted-foreground">(opcional)</span>
           </div>
-          <div className="border bg-card rounded-lg p-6">
-            <div className="grid md:grid-cols-3 gap-6">
-              <div className="space-y-2">
-                <Label>Subtotal a cobrar</Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-body">
-                    {form.watch('currency') || 'GTQ'}
-                  </span>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="0.00"
-                    className="pl-14"
-                    {...form.register('revenue')}
-                  />
-                </div>
-                <input type="hidden" name="revenue" value={form.watch('revenue')?.toString() || ''} />
-              </div>
+          <div className="border bg-card rounded-lg p-6 space-y-6">
+            {/* 1. Tipo de Pago Cliente (Prioridad) */}
+            <div className="space-y-2">
+              <Label>Tipo de Pago (Cliente)</Label>
+              <Controller
+                control={form.control}
+                name="client_payment_type"
+                render={({ field }) => (
+                  <>
+                    <input type="hidden" name="client_payment_type" value={field.value || 'cash'} />
+                    <Select value={field.value || 'cash'} onValueChange={field.onChange}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="cash">Efectivo / Transferencia</SelectItem>
+                        <SelectItem value="trade">Canje</SelectItem>
+                        <SelectItem value="mixed">Mixto</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </>
+                )}
+              />
+            </div>
 
-              <div className="space-y-2">
-                <Label>Impuesto (%)</Label>
-                <Controller
-                  control={form.control}
-                  name="tax_percentage"
-                  render={({ field }) => (
-                    <>
-                      <input type="hidden" name="tax_percentage" value={field.value?.toString() || '12'} />
-                      <Select
-                        value={field.value?.toString() || '12'}
-                        onValueChange={(v) => field.onChange(Number(v))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
+            {/* 2. Campos Según Tipo */}
+            {form.watch('client_payment_type') === 'cash' && (
+              <div className="grid md:grid-cols-3 gap-6 animate-in fade-in slide-in-from-top-2">
+                <div className="space-y-2">
+                  <Label>Subtotal</Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-body">{form.watch('currency') || 'GTQ'}</span>
+                    <Input type="number" step="0.01" className="pl-14" {...form.register('revenue')} />
+                  </div>
+                  <input type="hidden" name="revenue" value={form.watch('revenue')?.toString() || ''} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Impuesto (%)</Label>
+                  <Controller
+                    control={form.control}
+                    name="tax_percentage"
+                    render={({ field }) => (
+                      <Select value={field.value?.toString() || '12'} onValueChange={(v) => field.onChange(Number(v))}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="0">0% (Sin impuesto)</SelectItem>
+                          <SelectItem value="0">0%</SelectItem>
                           <SelectItem value="5">5%</SelectItem>
-                          <SelectItem value="8">8%</SelectItem>
+                          <SelectItem value="7">7%</SelectItem>
                           <SelectItem value="10">10%</SelectItem>
-                          <SelectItem value="12">12% (IVA Guatemala)</SelectItem>
+                          <SelectItem value="12">12%</SelectItem>
+                          <SelectItem value="13">13%</SelectItem>
                           <SelectItem value="15">15%</SelectItem>
                           <SelectItem value="16">16%</SelectItem>
                           <SelectItem value="18">18%</SelectItem>
                           <SelectItem value="19">19%</SelectItem>
                           <SelectItem value="21">21%</SelectItem>
+                          <SelectItem value="23">23%</SelectItem>
                         </SelectContent>
                       </Select>
-                    </>
-                  )}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Total con impuesto</Label>
-                <div className="h-10 px-3 py-2 bg-transparent border border-input rounded-md flex items-center font-medium text-body">
-                  {form.watch('currency') || 'GTQ'}{' '}
-                  {((
-                    (Number(form.watch('revenue')) || 0) *
-                    (1 + (Number(form.watch('tax_percentage')) || 12) / 100)
-                  ).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}
+                    )}
+                  />
+                  <input type="hidden" name="tax_percentage" value={form.watch('tax_percentage')?.toString() || '12'} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Total</Label>
+                  <div className="h-10 px-3 py-2 bg-transparent border border-input rounded-md flex items-center font-medium text-body">
+                    {form.watch('currency') || 'GTQ'}{' '}
+                    {(((Number(form.watch('revenue')) || 0) * (1 + (Number(form.watch('tax_percentage')) || 12) / 100)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
+
+            {form.watch('client_payment_type') === 'trade' && (
+              <div className="grid md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-top-2">
+                <div className="space-y-2">
+                  <Label>Valor Canje</Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-body">{form.watch('currency') || 'GTQ'}</span>
+                    <Input type="number" step="0.01" className="pl-14" {...form.register('client_trade_revenue')} />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Categoría</Label>
+                  <Controller
+                    control={form.control}
+                    name="client_trade_category"
+                    render={({ field }) => (
+                      <Select value={field.value || ''} onValueChange={field.onChange}>
+                        <SelectTrigger><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
+                        <SelectContent>
+                          {TRADE_CATEGORIES.map(cat => (
+                            <SelectItem key={cat} value={cat}>{TRADE_CATEGORY_LABELS[cat]}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                  <input type="hidden" name="client_trade_category" value={form.watch('client_trade_category') || ''} />
+                </div>
+              </div>
+            )}
+
+            {form.watch('client_payment_type') === 'mixed' && (
+              <div className="space-y-6 animate-in fade-in slide-in-from-top-2">
+                <div className="grid md:grid-cols-3 gap-6">
+                  <div className="space-y-2">
+                    <Label>Subtotal (Efectivo)</Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-body">{form.watch('currency') || 'GTQ'}</span>
+                      <Input type="number" step="0.01" className="pl-14" {...form.register('revenue')} />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>IVA (%)</Label>
+                    <Input type="number" placeholder="5" {...form.register('tax_percentage')} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Total Factura</Label>
+                    <div className="h-10 flex items-center px-3 border rounded-md bg-muted text-muted-foreground">
+                      {new Intl.NumberFormat('es-GT', { style: 'currency', currency: form.watch('currency') || 'GTQ' }).format(
+                        (parseFloat(form.watch('revenue') as unknown as string) || 0) * (1 + (parseFloat(form.watch('tax_percentage') as unknown as string) || 0) / 100)
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label>Valor Canje</Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-body">{form.watch('currency') || 'GTQ'}</span>
+                      <Input type="number" step="0.01" className="pl-14" {...form.register('client_trade_revenue')} />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Categoría</Label>
+                    <Controller
+                      control={form.control}
+                      name="client_trade_category"
+                      render={({ field }) => (
+                        <Select value={field.value || ''} onValueChange={field.onChange}>
+                          <SelectTrigger><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
+                          <SelectContent>
+                            {TRADE_CATEGORIES.map(cat => (
+                              <SelectItem key={cat} value={cat}>{TRADE_CATEGORY_LABELS[cat]}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                    <input type="hidden" name="client_trade_category" value={form.watch('client_trade_category') || ''} />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

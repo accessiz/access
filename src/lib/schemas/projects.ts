@@ -56,11 +56,20 @@ export const projectFormSchema = z.object({
   // Campos de tarifa
   default_model_fee: z.coerce.number().min(0, "La tarifa debe ser mayor o igual a 0.").optional().nullable(),
   default_fee_type: z.enum(['per_day', 'per_hour', 'fixed']).optional().nullable(),
+  default_model_payment_type: z.enum(['cash', 'trade', 'mixed']).optional().nullable(),
+  default_model_trade_category: z.enum(['products', 'clothing', 'voucher', 'services', 'hospitality', 'other']).optional().nullable(),
+  default_model_trade_fee: z.coerce.number().min(0, "El valor debe ser mayor o igual a 0.").optional().nullable(),
+  default_model_trade_details: z.string().optional().nullable(),
   currency: z.enum(['GTQ', 'USD', 'EUR', 'MXN', 'COP', 'PEN', 'ARS', 'CLP', 'BRL']).optional().nullable(),
+
   // Campos de facturación al cliente
   revenue: z.coerce.number().min(0, "El monto debe ser mayor o igual a 0.").optional().nullable(),
   tax_percentage: z.coerce.number().min(0).max(100).optional().nullable(),
   client_payment_status: z.enum(['pending', 'invoiced', 'paid']).optional().nullable(),
+  client_payment_type: z.enum(['cash', 'trade', 'mixed']).optional().nullable(),
+  client_trade_category: z.enum(['products', 'clothing', 'voucher', 'services', 'hospitality', 'other']).optional().nullable(),
+  client_trade_revenue: z.coerce.number().min(0, "El valor debe ser mayor o igual a 0.").optional().nullable(),
+  client_trade_details: z.string().optional().nullable(),
   invoice_number: z.string().optional().nullable(),
   invoice_date: z.string().optional().nullable(),
 });

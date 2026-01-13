@@ -57,7 +57,9 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { type PaymentType } from '@/lib/constants/finance';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { FINANCE_CONSTANTS, type PaymentType } from '@/lib/constants/finance';
 import {
     Collapsible,
     CollapsibleContent,
@@ -209,9 +211,7 @@ export default function FinancesClientPage({ initialData }: FinancesClientPagePr
     // Payment Type Dialog state
     const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
     const [selectedPaymentItem, setSelectedPaymentItem] = useState<FinanceSummaryItem | null>(null);
-    const [selectedPaymentItems, setSelectedPaymentItems] = useState<FinanceSummaryItem[]>([]); // For batch payments
-    const [selectedProjectName, setSelectedProjectName] = useState<string>(''); // Project name for batch
-    const [, setSelectedPaymentType] = useState<PaymentType>('cash');
+    const [selectedPaymentType, setSelectedPaymentType] = useState<PaymentType>('cash');
     const [tradeDescription, setTradeDescription] = useState('');
 
     // KPIs calculados dinámicamente para feedback inmediato
@@ -429,144 +429,112 @@ export default function FinancesClientPage({ initialData }: FinancesClientPagePr
         return Array.from(groups.values()).sort((a, b) => b.total_pending - a.total_pending);
     }, [filteredModelPayments]);
 
-    // Abrir diálogo para pago individual
+    // Abrir diálogo para seleccionar tipo de pago
     const handleMarkAsPaid = (item: FinanceSummaryItem) => {
         setSelectedPaymentItem(item);
-        setSelectedPaymentItems([]);
-        setSelectedProjectName('');
         setSelectedPaymentType('cash');
         setTradeDescription('');
         setPaymentDialogOpen(true);
     };
 
-    // Abrir diálogo para pago de proyecto completo (múltiples modelos)
-    const handleMarkAllAsPaidForProject = (pendingModels: FinanceSummaryItem[], projectName: string) => {
-        setSelectedPaymentItem(null);
-        setSelectedPaymentItems(pendingModels);
-        setSelectedProjectName(projectName);
-        setSelectedPaymentType('cash');
-        setTradeDescription('');
-        setPaymentDialogOpen(true);
-    };
-
-    // Confirmar el pago (individual o múltiple)
+    // Confirmar el pago con tipo seleccionado
     const confirmPayment = async () => {
-        // Determine items to pay - single or batch
-        const itemsToPay = selectedPaymentItem ? [selectedPaymentItem] : selectedPaymentItems;
+        if (!selectedPaymentItem) return;
 
-        if (itemsToPay.length === 0) return;
+        const item = selectedPaymentItem;
+        console.log('[confirmPayment] Iniciando...', {
+            model_id: item.model_id,
+            project_id: item.project_id,
+            payment_type: selectedPaymentType,
+            trade_description: tradeDescription,
+        });
+
         const supabase = createClient();
-        let totalDaysUpdated = 0;
 
-        for (const item of itemsToPay) {
-            console.log('[confirmPayment] Procesando modelo...', {
-                model_id: item.model_id,
-                project_id: item.project_id,
-            });
+        // Paso 1: Obtener todos los schedule_ids de este proyecto
+        const { data: schedules, error: scheduleError } = await supabase
+            .from('project_schedule')
+            .select('id')
+            .eq('project_id', item.project_id);
 
-            // Paso 1: Obtener todos los schedule_ids de este proyecto
-            const { data: schedules, error: scheduleError } = await supabase
-                .from('project_schedule')
-                .select('id')
-                .eq('project_id', item.project_id);
-
-            if (scheduleError) {
-                console.error('[confirmPayment] Error al buscar schedules:', scheduleError);
-                toast.error('Error al buscar fechas del proyecto');
-                continue;
-            }
-
-            if (!schedules || schedules.length === 0) {
-                console.warn('[confirmPayment] No schedules found for project:', item.project_id);
-                continue;
-            }
-
-            const scheduleIds = schedules.map(s => s.id);
-
-            // Paso 2: Buscar asignaciones de este modelo en estos schedules
-            const { data: existingAssignments, error: fetchError } = await supabase
-                .from('model_assignments')
-                .select('id, schedule_id, payment_status')
-                .eq('model_id', item.model_id)
-                .in('schedule_id', scheduleIds);
-
-            if (fetchError) {
-                console.error('[confirmPayment] Error al buscar asignaciones:', fetchError);
-                continue;
-            }
-
-            if (!existingAssignments || existingAssignments.length === 0) {
-                console.warn('[confirmPayment] No assignments found for model:', item.model_id);
-                continue;
-            }
-
-            // Determine payment type based on what the item has
-            let paymentType: PaymentType = 'cash';
-            const hasCash = (item.daily_fee ?? 0) > 0;
-            const hasTrade = (item.daily_trade_fee ?? 0) > 0;
-            if (hasCash && hasTrade) {
-                paymentType = 'mixed';
-            } else if (hasTrade && !hasCash) {
-                paymentType = 'trade';
-            }
-
-            // Paso 3: Actualizar las asignaciones
-            const assignmentIds = existingAssignments.map(a => a.id);
-
-            const updatePayload: {
-                payment_status: string;
-                payment_date: string;
-                payment_type: PaymentType;
-                trade_details: string | null;
-            } = {
-                payment_status: 'paid',
-                payment_date: new Date().toISOString(),
-                payment_type: paymentType,
-                trade_details: paymentType !== 'cash' ? tradeDescription || null : null,
-            };
-
-            const { error } = await supabase
-                .from('model_assignments')
-                .update(updatePayload)
-                .in('id', assignmentIds);
-
-            if (error) {
-                console.error('[confirmPayment] Error en update:', error);
-                toast.error(`Error al actualizar ${item.model_alias || item.model_name}`, {
-                    description: error.message,
-                });
-                continue;
-            }
-
-            totalDaysUpdated += existingAssignments.length;
-
-            // Actualizar estado local para este item
-            setModelPayments(prev => prev.map(i =>
-                i.id === item.id
-                    ? {
-                        ...i,
-                        payment_status: 'paid' as PaymentStatus,
-                        payment_date: new Date().toISOString(),
-                        payment_type: paymentType,
-                        trade_description: paymentType !== 'cash' ? tradeDescription || null : null,
-                        pending_amount: 0,
-                        total_paid: i.total_amount
-                    }
-                    : i
-            ));
+        if (scheduleError) {
+            console.error('[confirmPayment] Error al buscar schedules:', scheduleError);
+            toast.error('Error al buscar fechas del proyecto');
+            return;
         }
+
+        if (!schedules || schedules.length === 0) {
+            toast.error('No se encontraron fechas para este proyecto');
+            return;
+        }
+
+        const scheduleIds = schedules.map(s => s.id);
+
+        // Paso 2: Buscar asignaciones de este modelo en estos schedules
+        const { data: existingAssignments, error: fetchError } = await supabase
+            .from('model_assignments')
+            .select('id, schedule_id, payment_status')
+            .eq('model_id', item.model_id)
+            .in('schedule_id', scheduleIds);
+
+        if (fetchError) {
+            console.error('[confirmPayment] Error al buscar asignaciones:', fetchError);
+        }
+
+        if (!existingAssignments || existingAssignments.length === 0) {
+            toast.error('No se encontraron asignaciones para actualizar');
+            return;
+        }
+
+        // Paso 3: Actualizar las asignaciones con tipo de pago
+        const assignmentIds = existingAssignments.map(a => a.id);
+
+        const updatePayload: {
+            payment_status: string;
+            payment_date: string;
+            payment_type: PaymentType;
+            trade_description: string | null;
+        } = {
+            payment_status: 'paid',
+            payment_date: new Date().toISOString(),
+            payment_type: selectedPaymentType,
+            trade_description: selectedPaymentType !== 'cash' ? tradeDescription || null : null,
+        };
+
+        const { error } = await supabase
+            .from('model_assignments')
+            .update(updatePayload)
+            .in('id', assignmentIds);
+
+        if (error) {
+            console.error('[confirmPayment] Error en update:', error);
+            toast.error('Error al actualizar estado', {
+                description: error.message,
+            });
+            return;
+        }
+
+        // Actualizar estado local
+        setModelPayments(prev => prev.map(i =>
+            i.id === item.id
+                ? {
+                    ...i,
+                    payment_status: 'paid' as PaymentStatus,
+                    payment_date: new Date().toISOString(),
+                    payment_type: selectedPaymentType,
+                    trade_description: selectedPaymentType !== 'cash' ? tradeDescription || null : null,
+                    pending_amount: 0,
+                    total_paid: i.total_amount
+                }
+                : i
+        ));
 
         // Cerrar diálogo y limpiar
         setPaymentDialogOpen(false);
         setSelectedPaymentItem(null);
-        setSelectedPaymentItems([]);
-        setSelectedProjectName('');
 
-        if (itemsToPay.length === 1) {
-            toast.success(`Pago registrado: ${totalDaysUpdated} día(s)`);
-        } else {
-            toast.success(`${itemsToPay.length} pagos registrados: ${totalDaysUpdated} día(s) total`);
-        }
+        const typeLabel = FINANCE_CONSTANTS.PAYMENT_TYPE_LABELS[selectedPaymentType];
+        toast.success(`Pago registrado: ${existingAssignments.length} día(s) - ${typeLabel}`);
         router.refresh();
     };
 
@@ -881,7 +849,6 @@ export default function FinancesClientPage({ initialData }: FinancesClientPagePr
                                     key={group.project_id}
                                     group={group}
                                     onMarkAsPaid={handleMarkAsPaid}
-                                    onMarkAllAsPaid={(pendingModels) => handleMarkAllAsPaidForProject(pendingModels, group.project_name)}
                                     onMarkAsCancelled={handleMarkAsCancelled}
                                 />
                             ))
@@ -952,185 +919,75 @@ export default function FinancesClientPage({ initialData }: FinancesClientPagePr
                 </TabsContent>
             </Tabs>
 
-            {/* Payment Confirmation Dialog - Handles single and batch payments */}
+            {/* Payment Type Dialog */}
             <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
-                <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
+                <DialogContent className="sm:max-w-md">
                     <DialogHeader>
-                        <DialogTitle>Confirmar Pago</DialogTitle>
-                        <DialogDescription asChild>
-                            <div className="space-y-1">
-                                {selectedPaymentItem ? (
-                                    <span className="block">
-                                        ¿Confirmas el pago a <strong>{selectedPaymentItem.model_alias || selectedPaymentItem.model_name}</strong>?
-                                    </span>
-                                ) : selectedPaymentItems.length > 0 ? (
-                                    <span className="block">
-                                        ¿Confirmas el pago a <strong>{selectedPaymentItems.length} modelo{selectedPaymentItems.length !== 1 ? 's' : ''}</strong> del proyecto <strong>{selectedProjectName}</strong>?
-                                    </span>
-                                ) : null}
-                            </div>
+                        <DialogTitle>Registrar Pago</DialogTitle>
+                        <DialogDescription>
+                            {selectedPaymentItem && (
+                                <span>
+                                    <strong>{selectedPaymentItem.model_alias || selectedPaymentItem.model_name}</strong>
+                                    {' - '}
+                                    {formatCurrency(selectedPaymentItem.total_amount, selectedPaymentItem.currency)}
+                                </span>
+                            )}
                         </DialogDescription>
                     </DialogHeader>
 
-                    {/* Single payment view */}
-                    {selectedPaymentItem && (
-                        <div className="py-4 space-y-4">
-                            <div className="flex flex-col gap-3">
-                                {(selectedPaymentItem.daily_fee ?? 0) > 0 && (
-                                    <div className="flex items-center gap-3 p-3 rounded-lg bg-quaternary">
-                                        <div className="w-10 h-10 rounded-full border-2 border-success bg-success/20 flex items-center justify-center shrink-0">
-                                            <Banknote className="w-5 h-5 text-success" />
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-body font-medium text-foreground">Efectivo</p>
-                                            <p className="text-label text-muted-foreground">
-                                                {selectedPaymentItem.days_worked} {selectedPaymentItem.days_worked === 1 ? 'día' : 'días'} × {formatCurrency(selectedPaymentItem.daily_fee, selectedPaymentItem.currency)}/día
-                                            </p>
-                                        </div>
-                                        <span className="text-title font-bold text-foreground">
-                                            {formatCurrency(selectedPaymentItem.total_amount, selectedPaymentItem.currency)}
-                                        </span>
-                                    </div>
-                                )}
-                                {(selectedPaymentItem.daily_trade_fee ?? 0) > 0 && (
-                                    <div className="flex items-center gap-3 p-3 rounded-lg bg-quaternary">
-                                        <div className="w-10 h-10 rounded-full border-2 border-blue bg-blue/20 flex items-center justify-center shrink-0">
-                                            <RefreshCw className="w-5 h-5 text-blue" />
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-body font-medium text-foreground">Canje</p>
-                                            <p className="text-label text-muted-foreground">
-                                                {selectedPaymentItem.days_worked} {selectedPaymentItem.days_worked === 1 ? 'día' : 'días'} × {formatCurrency(selectedPaymentItem.daily_trade_fee, selectedPaymentItem.currency)}/día
-                                            </p>
-                                        </div>
-                                        <span className="text-title font-bold text-foreground">
-                                            {formatCurrency(selectedPaymentItem.total_trade_value || 0, selectedPaymentItem.currency)}
-                                        </span>
-                                    </div>
-                                )}
-                                {(selectedPaymentItem.daily_fee ?? 0) === 0 && (selectedPaymentItem.daily_trade_fee ?? 0) === 0 && (
-                                    <div className="flex items-center gap-3 p-3 rounded-lg bg-quaternary">
-                                        <div className="w-10 h-10 rounded-full border-2 border-muted bg-muted/20 flex items-center justify-center shrink-0">
-                                            <AlertCircle className="w-5 h-5 text-muted-foreground" />
-                                        </div>
-                                        <p className="text-body text-muted-foreground">
-                                            Sin monto definido para este pago
-                                        </p>
-                                    </div>
-                                )}
-                            </div>
-                            <div className="flex items-center gap-2 text-label text-muted-foreground">
-                                <Building2 className="h-3.5 w-3.5 shrink-0" />
-                                <span className="truncate">{selectedPaymentItem.project_name}</span>
-                            </div>
+                    <div className="space-y-4 py-4">
+                        {/* Payment Type Selector */}
+                        <div className="space-y-2">
+                            <Label>Tipo de pago</Label>
+                            <SegmentedControl
+                                ariaLabel="Tipo de pago"
+                                value={selectedPaymentType}
+                                onValueChange={setSelectedPaymentType}
+                                mobileColumns={3}
+                                options={[
+                                    {
+                                        value: 'cash',
+                                        label: 'Efectivo',
+                                        icon: <Banknote className="h-4 w-4" />,
+                                    },
+                                    {
+                                        value: 'trade',
+                                        label: 'Canje',
+                                        icon: <RefreshCw className="h-4 w-4" />,
+                                    },
+                                    {
+                                        value: 'mixed',
+                                        label: 'Mixto',
+                                        icon: <CreditCard className="h-4 w-4" />,
+                                    },
+                                ]}
+                            />
                         </div>
-                    )}
 
-                    {/* Batch payment view - multiple models */}
-                    {selectedPaymentItems.length > 0 && (
-                        <div className="py-4 space-y-4">
-                            {/* List of models to pay */}
-                            <div className="flex flex-col gap-2">
-                                {selectedPaymentItems.map((item) => {
-                                    const hasCash = (item.daily_fee ?? 0) > 0;
-                                    const hasTrade = (item.daily_trade_fee ?? 0) > 0;
-                                    return (
-                                        <div key={item.id} className="flex items-center gap-3 p-3 rounded-lg bg-quaternary">
-                                            <User className="w-5 h-5 text-muted-foreground shrink-0" />
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-body font-medium text-foreground truncate">
-                                                    {item.model_alias || item.model_name}
-                                                </p>
-                                                <p className="text-label text-muted-foreground">
-                                                    {item.days_worked} {item.days_worked === 1 ? 'día' : 'días'}
-                                                </p>
-                                            </div>
-                                            <div className="flex flex-col items-end gap-1 shrink-0">
-                                                {hasCash && (
-                                                    <div className="flex items-center gap-1.5">
-                                                        <div className="w-5 h-5 rounded-full border border-success bg-success/20 flex items-center justify-center">
-                                                            <Banknote className="w-3 h-3 text-success" />
-                                                        </div>
-                                                        <span className="text-body font-medium text-foreground">
-                                                            {formatCurrency(item.total_amount, item.currency)}
-                                                        </span>
-                                                    </div>
-                                                )}
-                                                {hasTrade && (
-                                                    <div className="flex items-center gap-1.5">
-                                                        <div className="w-5 h-5 rounded-full border border-blue bg-blue/20 flex items-center justify-center">
-                                                            <RefreshCw className="w-3 h-3 text-blue" />
-                                                        </div>
-                                                        <span className="text-body font-medium text-foreground">
-                                                            {formatCurrency(item.total_trade_value || 0, item.currency)}
-                                                        </span>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
+                        {/* Trade Description (only show if not cash) */}
+                        {selectedPaymentType !== 'cash' && (
+                            <div className="space-y-2">
+                                <Label htmlFor="trade-description">
+                                    Descripción del canje
+                                    <span className="text-muted-foreground ml-1">(opcional)</span>
+                                </Label>
+                                <Input
+                                    id="trade-description"
+                                    placeholder="Ej: 2 tratamientos faciales, ropa valorada en Q500..."
+                                    value={tradeDescription}
+                                    onChange={(e) => setTradeDescription(e.target.value)}
+                                />
                             </div>
-
-                            {/* Totals summary */}
-                            <Separator />
-                            <div className="flex flex-col gap-2">
-                                {(() => {
-                                    const totalCash = selectedPaymentItems.reduce((sum, i) => sum + (i.total_amount || 0), 0);
-                                    const totalTrade = selectedPaymentItems.reduce((sum, i) => sum + (i.total_trade_value || 0), 0);
-                                    const currency = selectedPaymentItems[0]?.currency || 'GTQ';
-                                    return (
-                                        <>
-                                            {totalCash > 0 && (
-                                                <div className="flex items-center justify-between">
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="w-6 h-6 rounded-full border-2 border-success bg-success/20 flex items-center justify-center">
-                                                            <Banknote className="w-3.5 h-3.5 text-success" />
-                                                        </div>
-                                                        <span className="text-body text-muted-foreground">Total Efectivo</span>
-                                                    </div>
-                                                    <span className="text-title font-bold text-foreground">
-                                                        {formatCurrency(totalCash, currency)}
-                                                    </span>
-                                                </div>
-                                            )}
-                                            {totalTrade > 0 && (
-                                                <div className="flex items-center justify-between">
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="w-6 h-6 rounded-full border-2 border-blue bg-blue/20 flex items-center justify-center">
-                                                            <RefreshCw className="w-3.5 h-3.5 text-blue" />
-                                                        </div>
-                                                        <span className="text-body text-muted-foreground">Total Canje</span>
-                                                    </div>
-                                                    <span className="text-title font-bold text-foreground">
-                                                        {formatCurrency(totalTrade, currency)}
-                                                    </span>
-                                                </div>
-                                            )}
-                                        </>
-                                    );
-                                })()}
-                            </div>
-                        </div>
-                    )}
+                        )}
+                    </div>
 
                     <DialogFooter className="gap-2 sm:gap-0">
-                        <Button
-                            variant="outline"
-                            onClick={() => setPaymentDialogOpen(false)}
-                            className="border-separator bg-transparent hover:bg-hover-overlay"
-                        >
+                        <Button variant="outline" onClick={() => setPaymentDialogOpen(false)}>
                             Cancelar
                         </Button>
-                        <Button
-                            onClick={confirmPayment}
-                            className="gap-2 bg-[rgb(var(--purple))] hover:bg-[rgb(var(--purple))]/90 text-white"
-                        >
+                        <Button onClick={confirmPayment} className="gap-2">
                             <CheckCircle2 className="h-4 w-4" />
-                            {selectedPaymentItems.length > 1
-                                ? `Confirmar ${selectedPaymentItems.length} Pagos`
-                                : 'Confirmar Pago'
-                            }
+                            Confirmar Pago
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -1139,7 +996,7 @@ export default function FinancesClientPage({ initialData }: FinancesClientPagePr
     );
 }
 
-// Nuevo componente de tarjeta de pago - Diseño unificado responsive
+// Nuevo componente de tarjeta de pago - Diseño limpio estilo Jobs/Norman
 function PaymentCard({
     item,
     onMarkAsPaid,
@@ -1155,193 +1012,202 @@ function PaymentCard({
 
     const clientDisplay = item.brand_name || item.registered_client_name || item.client_name || '-';
     const modelDisplay = item.model_alias || item.model_name;
-    const daysText = item.days_worked === 1 ? '1 día' : `${item.days_worked} días`;
 
-    // Build breakdown text based on payment type
+    // Build breakdown text
     const hasCash = (item.daily_fee ?? 0) > 0;
     const hasTrade = (item.daily_trade_fee ?? 0) > 0;
+    const daysText = item.days_worked === 1 ? '1 día' : `${item.days_worked} días`;
 
     let breakdownText = daysText;
     if (hasCash) {
         breakdownText += ` × ${formatCurrency(item.daily_fee || 0, item.currency)}/día`;
     }
 
-    const isPending = status === 'pending' || status === 'partial';
+    // Actions Menu (for reuse)
+    const ActionsMenu = (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+                    <MoreHorizontal className="h-4 w-4" />
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={onMarkAsPaid}>
+                    <CheckCircle2 className="mr-2 h-4 w-4 text-success" />
+                    Marcar como Pagado
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                    <CreditCard className="mr-2 h-4 w-4" />
+                    Registrar Pago Parcial
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                    onClick={onMarkAsCancelled}
+                    className="text-destructive focus:text-destructive"
+                >
+                    <XCircle className="mr-2 h-4 w-4" />
+                    Cancelar Pago
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
+    );
 
     return (
         <Card className="hover:bg-hover-overlay transition-colors">
             <CardContent className="p-4">
-                {/* Main container: vertical on mobile, horizontal on desktop */}
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                {/* Mobile Layout (Stack) */}
+                <div className="flex flex-col gap-4 sm:hidden">
+                    {/* Top Row: Badge + Menu */}
+                    <div className="flex items-center justify-between">
+                        <Badge variant={statusConfig.badgeVariant} className="gap-1 rounded-full px-3">
+                            <StatusIcon className={`h-3 w-3 ${statusConfig.className}`} />
+                            {statusConfig.label}
+                        </Badge>
+                        {(status === 'pending' || status === 'partial') && ActionsMenu}
+                    </div>
 
-                    {/* Left section: Badge + Info */}
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4 flex-1 min-w-0">
+                    {/* Model Info */}
+                    <div>
+                        <h3 className="text-body font-bold text-foreground mb-1">{modelDisplay}</h3>
+                        {item.model_alias && (
+                            <p className="text-label text-muted-foreground mb-2">{item.model_name}</p>
+                        )}
+                    </div>
 
-                        {/* Top Row Mobile / First item Desktop: Status Badge + Options */}
-                        <div className="flex items-center justify-between sm:contents">
-                            {/* Status Badge */}
-                            {isPending ? (
-                                <Badge variant="warning" className="text-label shrink-0">
-                                    Pendiente
-                                </Badge>
-                            ) : (
-                                <Badge variant={statusConfig.badgeVariant} className="gap-1 shrink-0">
-                                    <StatusIcon className={`h-3 w-3 ${statusConfig.className}`} />
-                                    {statusConfig.label}
-                                </Badge>
-                            )}
-
-                            {/* Options Menu - Mobile only in this position */}
-                            <div className="sm:hidden">
-                                {isPending && (
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="secondary" size="icon" className="h-8 w-8 rounded-full bg-card hover:bg-card/80 border border-border">
-                                                <MoreHorizontal className="h-4 w-4" />
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                            <DropdownMenuItem onClick={onMarkAsPaid}>
-                                                <CheckCircle2 className="mr-2 h-4 w-4 text-success" />
-                                                Marcar como Pagado
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem>
-                                                <CreditCard className="mr-2 h-4 w-4" />
-                                                Registrar Pago Parcial
-                                            </DropdownMenuItem>
-                                            <DropdownMenuSeparator />
-                                            <DropdownMenuItem
-                                                onClick={onMarkAsCancelled}
-                                                className="text-destructive focus:text-destructive"
-                                            >
-                                                <XCircle className="mr-2 h-4 w-4" />
-                                                Cancelar Pago
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                )}
-                            </div>
+                    {/* Project / Client Details */}
+                    <div className="space-y-1">
+                        <div className="flex items-center gap-2 text-label text-muted-foreground">
+                            <Wallet className="h-3.5 w-3.5" />
+                            <span className="truncate max-w-[200px]">{item.project_name}</span>
                         </div>
-
-                        {/* Info Section */}
-                        <div className="flex-1 min-w-0 space-y-1">
-                            {/* Model Name */}
-                            <h3 className="font-semibold text-title sm:text-body text-foreground truncate">
-                                {modelDisplay}
-                            </h3>
-
-                            {/* Project + Client */}
-                            <div className="flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-2 text-body text-muted-foreground">
-                                <div className="flex items-center gap-2">
-                                    <Building2 className="h-4 w-4 sm:h-3 sm:w-3 shrink-0" />
-                                    <Link
-                                        href={`/dashboard/projects/${item.project_id}`}
-                                        className="hover:text-foreground hover:underline transition-colors truncate"
-                                    >
-                                        {item.project_name}
-                                    </Link>
-                                </div>
-                                <span className="hidden sm:inline">•</span>
-                                <div className="flex items-center gap-2 sm:gap-1">
-                                    <Building2 className="h-4 w-4 sm:h-3 sm:w-3 shrink-0" />
-                                    <span className="truncate">{clientDisplay}</span>
-                                </div>
-                            </div>
-
-                            {/* Date Range */}
-                            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-3 text-label text-muted-foreground">
-                                <div className="flex items-center gap-2 sm:gap-1">
-                                    <Calendar className="h-4 w-4 sm:h-3 sm:w-3 shrink-0" />
-                                    <span>{formatDateRange(item.first_work_date, item.last_work_date)}</span>
-                                </div>
-                                <span className="ml-6 sm:ml-0 text-foreground/70">({breakdownText})</span>
-                            </div>
+                        <div className="flex items-center gap-2 text-label text-muted-foreground">
+                            <Building2 className="h-3.5 w-3.5" />
+                            <span className="truncate max-w-[200px]">{clientDisplay}</span>
                         </div>
                     </div>
 
-                    {/* Right section: Amounts + Actions */}
-                    <div className="flex items-end justify-between sm:items-center sm:gap-4 sm:shrink-0">
+                    {/* Date / Rates */}
+                    <div className="mt-2 space-y-1">
+                        <div className="flex items-center gap-2 text-label text-muted-foreground">
+                            <Calendar className="h-3.5 w-3.5" />
+                            <span>{formatDateRange(item.first_work_date, item.last_work_date)}</span>
+                        </div>
+                        <div className="text-label text-muted-foreground pl-[22px]">
+                            ({breakdownText})
+                        </div>
+                    </div>
 
-                        {/* Amounts with circular icons */}
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+                    {/* Bottom: Amounts + Action */}
+                    <div className="flex items-end justify-between mt-2 pt-2 border-t border-border/50">
+                        {/* Amounts */}
+                        <div className="flex flex-col gap-2">
                             {hasCash && (
                                 <div className="flex items-center gap-2">
-                                    <div className="w-7 h-7 rounded-full border-2 border-success bg-success/20 flex items-center justify-center">
+                                    <div className="w-8 h-8 rounded-full border-2 border-success bg-success/20 flex items-center justify-center">
                                         <Banknote className="w-4 h-4 text-success" />
                                     </div>
-                                    <span className="text-body font-medium text-foreground">
+                                    <span className="text-body-lg font-bold text-foreground">
                                         {formatCurrency(item.total_amount, item.currency)}
                                     </span>
                                 </div>
                             )}
                             {hasTrade && (
                                 <div className="flex items-center gap-2">
-                                    <div className="w-7 h-7 rounded-full border-2 border-blue bg-blue/20 flex items-center justify-center">
+                                    <div className="w-8 h-8 rounded-full border-2 border-blue bg-blue/20 flex items-center justify-center">
                                         <RefreshCw className="w-4 h-4 text-blue" />
                                     </div>
-                                    <span className="text-body font-medium text-foreground">
-                                        {formatCurrency(item.total_trade_value || 0, item.currency)}
-                                    </span>
+                                    <div className="flex flex-col">
+                                        <span className="text-body-lg font-bold text-foreground">
+                                            {formatCurrency(item.total_trade_value || 0, item.currency)}
+                                        </span>
+                                        {item.trade_category && (
+                                            <span className="text-[10px] text-muted-foreground uppercase">{item.trade_category}</span>
+                                        )}
+                                    </div>
                                 </div>
                             )}
+                            {/* Fallback total if neither (shouldn't happen but safe) */}
                             {!hasCash && !hasTrade && (
-                                <span className="text-body font-medium text-foreground">
+                                <span className="text-title font-bold text-foreground">
                                     {formatCurrency(item.total_amount, item.currency)}
                                 </span>
                             )}
                         </div>
 
-                        {/* Actions */}
-                        <div className="flex items-center gap-2">
-                            {/* Pay Button */}
-                            {isPending && (
-                                <Button
-                                    size="sm"
-                                    onClick={onMarkAsPaid}
-                                    className="gap-x-1.5 text-label bg-transparent hover:bg-hover-overlay text-foreground border border-separator"
-                                >
-                                    Pagar Todo
-                                </Button>
-                            )}
+                        {/* Pagar Todo Button (Only for pending/partial) */}
+                        {(status === 'pending' || status === 'partial') && (
+                            <Button
+                                size="sm"
+                                onClick={onMarkAsPaid}
+                                className="bg-[rgb(var(--purple))] hover:bg-[rgb(var(--purple))/0.9] text-white border-none px-4 h-9 shadow-md"
+                            >
+                                Pagar Todo
+                            </Button>
+                        )}
+                    </div>
+                </div>
 
-                            {/* Paid Date */}
-                            {status === 'paid' && item.payment_date && (
-                                <span className="text-label text-muted-foreground">
-                                    {format(parseISO(item.payment_date), "d MMM yyyy", { locale: es })}
+
+                {/* Desktop Layout (Horizontal Row) - hidden on mobile */}
+                <div className="hidden sm:flex flex-row items-center justify-between gap-4">
+                    {/* Info Block */}
+                    <div className="flex-1 min-w-0 space-y-1">
+                        <div className="flex items-center gap-2">
+                            <h3 className="font-semibold text-body truncate">{modelDisplay}</h3>
+                            {item.model_alias && (
+                                <span className="text-label text-muted-foreground truncate max-w-[150px]">
+                                    {item.model_name}
                                 </span>
                             )}
-
-                            {/* Options Menu - Desktop */}
-                            <div className="hidden sm:block">
-                                {isPending && (
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                                                <MoreHorizontal className="h-4 w-4" />
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                            <DropdownMenuItem onClick={onMarkAsPaid}>
-                                                <CheckCircle2 className="mr-2 h-4 w-4 text-success" />
-                                                Marcar como Pagado
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem>
-                                                <CreditCard className="mr-2 h-4 w-4" />
-                                                Registrar Pago Parcial
-                                            </DropdownMenuItem>
-                                            <DropdownMenuSeparator />
-                                            <DropdownMenuItem
-                                                onClick={onMarkAsCancelled}
-                                                className="text-destructive focus:text-destructive"
-                                            >
-                                                <XCircle className="mr-2 h-4 w-4" />
-                                                Cancelar Pago
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                )}
-                            </div>
                         </div>
+
+                        <div className="flex flex-wrap items-center gap-x-2 text-label text-muted-foreground">
+                            <span className="font-medium text-foreground">{item.project_name}</span>
+                            <span>•</span>
+                            <span>{clientDisplay}</span>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-x-2 text-label text-muted-foreground">
+                            <Calendar className="h-3 w-3" />
+                            <span>{formatDateRange(item.first_work_date, item.last_work_date)}</span>
+                            <span className="text-muted-foreground/70">({breakdownText})</span>
+                        </div>
+                    </div>
+
+                    {/* Amounts Block */}
+                    <div className="flex items-center gap-4 shrink-0">
+                        {hasCash && (
+                            <div className="flex items-center gap-2">
+                                <div className="w-7 h-7 rounded-full border-2 border-success bg-success/20 flex items-center justify-center">
+                                    <Banknote className="w-3.5 h-3.5 text-success" />
+                                </div>
+                                <span className="text-body font-medium">
+                                    {formatCurrency(item.total_amount, item.currency)}
+                                </span>
+                            </div>
+                        )}
+                        {hasTrade && (
+                            <div className="flex items-center gap-2">
+                                <div className="w-7 h-7 rounded-full border-2 border-blue bg-blue/20 flex items-center justify-center">
+                                    <RefreshCw className="w-3.5 h-3.5 text-blue" />
+                                </div>
+                                <div className="flex flex-col leading-none">
+                                    <span className="text-body font-medium">
+                                        {formatCurrency(item.total_trade_value || 0, item.currency)}
+                                    </span>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Actions Block */}
+                    <div className="flex items-center gap-3 shrink-0 pl-2 border-l border-border/50 h-10">
+                        <Badge variant={statusConfig.badgeVariant} className="gap-1 h-7">
+                            <StatusIcon className={`h-3 w-3 ${statusConfig.className}`} />
+                            <span className="hidden lg:inline">{statusConfig.label}</span>
+                        </Badge>
+
+                        {(status === 'pending' || status === 'partial') && ActionsMenu}
                     </div>
                 </div>
             </CardContent>
@@ -1349,11 +1215,11 @@ function PaymentCard({
     );
 }
 
+
 // Componente para agrupar por proyecto
 function ProjectGroupCard({
     group,
     onMarkAsPaid,
-    onMarkAllAsPaid,
     onMarkAsCancelled,
 }: {
     group: {
@@ -1368,7 +1234,6 @@ function ProjectGroupCard({
         models: FinanceSummaryItem[];
     };
     onMarkAsPaid: (item: FinanceSummaryItem) => void;
-    onMarkAllAsPaid: (pendingModels: FinanceSummaryItem[]) => void;
     onMarkAsCancelled: (item: FinanceSummaryItem) => void;
 }) {
     const [isOpen, setIsOpen] = React.useState(false);
@@ -1376,8 +1241,10 @@ function ProjectGroupCard({
     const pendingModels = group.models.filter(m => m.payment_status === 'pending' || m.payment_status === 'partial');
     const hasPendingPayments = pendingModels.length > 0;
 
-    const handleMarkAllAsPaid = () => {
-        onMarkAllAsPaid(pendingModels);
+    const handleMarkAllAsPaid = async () => {
+        for (const model of pendingModels) {
+            await onMarkAsPaid(model);
+        }
     };
 
     return (
@@ -1473,7 +1340,7 @@ function ProjectGroupCard({
                                     <Button
                                         size="sm"
                                         onClick={handleMarkAllAsPaid}
-                                        className="gap-x-1.5 text-label bg-transparent hover:bg-hover-overlay text-foreground border border-separator"
+                                        className="gap-x-1.5 text-label bg-[rgb(var(--purple))] hover:bg-[rgb(var(--purple))/0.9] text-white border-none"
                                     >
                                         Pagar Todo
                                     </Button>
@@ -1582,7 +1449,7 @@ function ProjectGroupCard({
     );
 }
 
-// Componente para mostrar cobros a clientes - Diseño unificado responsive
+// Componente para mostrar cobros a clientes
 function ClientBillingCard({
     item,
     onUpdateStatus,
@@ -1594,184 +1461,117 @@ function ClientBillingCard({
     const StatusIcon = statusConfig.icon;
 
     const clientDisplay = item.registered_client_name || item.client_name || 'Sin cliente';
-    const isPending = item.payment_status === 'pending';
-    const hasCash = (item.subtotal ?? 0) > 0;
-    const hasTrade = (item.trade_value ?? 0) > 0;
 
     return (
         <Card className="hover:bg-hover-overlay transition-colors">
             <CardContent className="p-4">
-                {/* Main container: vertical on mobile, horizontal on desktop */}
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-start justify-between gap-x-4 gap-y-4">
+                    {/* Left: Info */}
+                    <div className="flex-1 min-w-0 space-y-1">
+                        {/* Nombre del proyecto */}
+                        <div className="flex items-center gap-x-2 gap-y-2">
+                            <FolderOpen className="h-4 w-4 text-muted-foreground shrink-0" />
+                            <Link
+                                href={`/dashboard/projects/${item.project_id}`}
+                                className="font-semibold text-body truncate hover:text-primary hover:underline transition-colors"
+                            >
+                                {item.project_name}
+                            </Link>
+                        </div>
 
-                    {/* Left section: Badge + Info */}
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4 flex-1 min-w-0">
+                        {/* Cliente y marca */}
+                        <div className="flex items-center gap-x-2 gap-y-2 text-body text-muted-foreground ml-6">
+                            <Building2 className="h-3 w-3" />
+                            <span>{clientDisplay}</span>
+                            {item.brand_name && (
+                                <>
+                                    <span>•</span>
+                                    <span className="truncate">{item.brand_name}</span>
+                                </>
+                            )}
+                        </div>
 
-                        {/* Top Row Mobile / First item Desktop: Status Badge + Options */}
-                        <div className="flex items-center justify-between sm:contents">
-                            {/* Status Badge */}
-                            <Badge variant={statusConfig.badgeVariant} className="gap-1 shrink-0">
+                        {/* Factura info */}
+                        {item.invoice_number && (
+                            <div className="flex items-center gap-x-2 gap-y-2 text-label text-muted-foreground ml-6">
+                                <Receipt className="h-3 w-3" />
+                                <span>Factura #{item.invoice_number}</span>
+                                {item.invoice_date && (
+                                    <span>({format(parseISO(item.invoice_date), "d MMM yyyy", { locale: es })})</span>
+                                )}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Right: Amounts and Status */}
+                    <div className="flex flex-col items-start gap-2 w-full sm:w-auto sm:items-end sm:shrink-0">
+                        {/* Payment amounts with type badges */}
+                        <div className="flex flex-wrap items-center gap-2 sm:flex-col sm:items-end">
+                            {/* Cash amount with tax */}
+                            {(item.subtotal ?? 0) > 0 && (
+                                <div className="flex flex-col items-end">
+                                    <Badge variant="success" size="small" className="gap-1">
+                                        <Banknote className="h-3 w-3" />
+                                        {formatCurrency(item.total_with_tax, item.currency)}
+                                    </Badge>
+                                    <span className="text-label text-muted-foreground">
+                                        {formatCurrency(item.subtotal, item.currency)} + {item.tax_percentage}% IVA
+                                    </span>
+                                </div>
+                            )}
+                            {/* Trade amount (no tax) */}
+                            {(item.trade_value ?? 0) > 0 && (
+                                <Badge variant="purple" size="small" className="gap-1">
+                                    <RefreshCw className="h-3 w-3" />
+                                    {formatCurrency(item.trade_value, item.currency)}
+                                </Badge>
+                            )}
+                            {/* Fallback if no amounts */}
+                            {(item.subtotal ?? 0) === 0 && (item.trade_value ?? 0) === 0 && (
+                                <span className="text-muted-foreground">Sin monto definido</span>
+                            )}
+                        </div>
+
+                        {/* Status badge y acciones */}
+                        <div className="flex flex-wrap items-center gap-2">
+                            <Badge variant={statusConfig.badgeVariant} className="gap-x-1 gap-y-1">
                                 <StatusIcon className={`h-3 w-3 ${statusConfig.className}`} />
                                 {statusConfig.label}
                             </Badge>
-
-                            {/* Options Menu - Mobile only in this position */}
-                            <div className="sm:hidden">
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="secondary" size="icon" className="h-8 w-8 rounded-full bg-card hover:bg-card/80 border border-border">
-                                            <MoreHorizontal className="h-4 w-4" />
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                        {item.payment_status !== 'pending' && (
-                                            <DropdownMenuItem onClick={() => onUpdateStatus('pending')}>
-                                                <Clock className="mr-2 h-4 w-4 text-warning" />
-                                                Marcar Pendiente
-                                            </DropdownMenuItem>
-                                        )}
-                                        {item.payment_status !== 'invoiced' && (
-                                            <DropdownMenuItem onClick={() => onUpdateStatus('invoiced')}>
-                                                <Receipt className="mr-2 h-4 w-4 text-info" />
-                                                Marcar Facturado
-                                            </DropdownMenuItem>
-                                        )}
-                                        {item.payment_status !== 'paid' && (
-                                            <DropdownMenuItem onClick={() => onUpdateStatus('paid')}>
-                                                <CheckCircle2 className="mr-2 h-4 w-4 text-success" />
-                                                Marcar Cobrado
-                                            </DropdownMenuItem>
-                                        )}
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            </div>
-                        </div>
-
-                        {/* Info Section */}
-                        <div className="flex-1 min-w-0 space-y-1">
-                            {/* Project Icon + Name */}
-                            <div className="flex items-start gap-2">
-                                <FolderOpen className="h-5 w-5 sm:h-4 sm:w-4 text-muted-foreground shrink-0 mt-0.5 sm:mt-0" />
-                                <Link
-                                    href={`/dashboard/projects/${item.project_id}`}
-                                    className="font-semibold text-title sm:text-body text-foreground hover:text-primary hover:underline transition-colors"
-                                >
-                                    {item.project_name}
-                                </Link>
-                            </div>
-
-                            {/* Client + Brand */}
-                            <div className="flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-2 text-body text-muted-foreground">
-                                <div className="flex items-center gap-2">
-                                    <Users className="h-4 w-4 sm:h-3 sm:w-3 shrink-0" />
-                                    <span className="truncate">{clientDisplay}</span>
-                                </div>
-                                {item.brand_name && (
-                                    <>
-                                        <span className="hidden sm:inline">•</span>
-                                        <div className="flex items-center gap-2 sm:gap-1">
-                                            <Building2 className="h-4 w-4 sm:h-3 sm:w-3 shrink-0" />
-                                            <span className="truncate">{item.brand_name}</span>
-                                        </div>
-                                    </>
-                                )}
-                            </div>
-
-                            {/* Invoice info - desktop only inline */}
-                            {item.invoice_number && (
-                                <div className="flex items-center gap-2 sm:gap-1 text-label text-muted-foreground">
-                                    <Receipt className="h-4 w-4 sm:h-3 sm:w-3 shrink-0" />
-                                    <span>Factura #{item.invoice_number}</span>
-                                    {item.invoice_date && (
-                                        <span className="hidden sm:inline">({format(parseISO(item.invoice_date), "d MMM yyyy", { locale: es })})</span>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Right section: Amounts + Actions */}
-                    <div className="flex items-end justify-between sm:items-center sm:gap-4 sm:shrink-0">
-
-                        {/* Amounts with circular icons */}
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-                            {hasCash && (
-                                <div className="flex items-center gap-2">
-                                    <div className="w-7 h-7 rounded-full border-2 border-success bg-success/20 flex items-center justify-center">
-                                        <Banknote className="w-4 h-4 text-success" />
-                                    </div>
-                                    <span className="text-body font-medium text-foreground">
-                                        {formatCurrency(item.total_with_tax, item.currency)}
-                                    </span>
-                                </div>
-                            )}
-                            {hasTrade && (
-                                <div className="flex items-center gap-2">
-                                    <div className="w-7 h-7 rounded-full border-2 border-blue bg-blue/20 flex items-center justify-center">
-                                        <RefreshCw className="w-4 h-4 text-blue" />
-                                    </div>
-                                    <span className="text-body font-medium text-foreground">
-                                        {formatCurrency(item.trade_value, item.currency)}
-                                    </span>
-                                </div>
-                            )}
-                            {!hasCash && !hasTrade && (
-                                <span className="text-body text-muted-foreground">
-                                    Sin monto definido
-                                </span>
-                            )}
-                        </div>
-
-                        {/* Actions */}
-                        <div className="flex items-center gap-2">
-                            {/* Pay Button - only for pending */}
-                            {isPending && (
-                                <Button
-                                    size="sm"
-                                    onClick={() => onUpdateStatus('paid')}
-                                    className="gap-x-1.5 text-label bg-transparent hover:bg-hover-overlay text-foreground border border-separator"
-                                >
-                                    Pagar Todo
-                                </Button>
-                            )}
-
-                            {/* Paid Date */}
                             {item.payment_status === 'paid' && item.payment_date && (
                                 <span className="text-label text-muted-foreground">
                                     {format(parseISO(item.payment_date), "d MMM yyyy", { locale: es })}
                                 </span>
                             )}
 
-                            {/* Options Menu - Desktop */}
-                            <div className="hidden sm:block">
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                                            <MoreHorizontal className="h-4 w-4" />
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                        {item.payment_status !== 'pending' && (
-                                            <DropdownMenuItem onClick={() => onUpdateStatus('pending')}>
-                                                <Clock className="mr-2 h-4 w-4 text-warning" />
-                                                Marcar Pendiente
-                                            </DropdownMenuItem>
-                                        )}
-                                        {item.payment_status !== 'invoiced' && (
-                                            <DropdownMenuItem onClick={() => onUpdateStatus('invoiced')}>
-                                                <Receipt className="mr-2 h-4 w-4 text-info" />
-                                                Marcar Facturado
-                                            </DropdownMenuItem>
-                                        )}
-                                        {item.payment_status !== 'paid' && (
-                                            <DropdownMenuItem onClick={() => onUpdateStatus('paid')}>
-                                                <CheckCircle2 className="mr-2 h-4 w-4 text-success" />
-                                                Marcar Cobrado
-                                            </DropdownMenuItem>
-                                        )}
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            </div>
+                            {/* Dropdown para cambiar estado */}
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                                        <MoreHorizontal className="h-4 w-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    {item.payment_status !== 'pending' && (
+                                        <DropdownMenuItem onClick={() => onUpdateStatus('pending')}>
+                                            <Clock className="mr-2 h-4 w-4 text-warning" />
+                                            Marcar Pendiente
+                                        </DropdownMenuItem>
+                                    )}
+                                    {item.payment_status !== 'invoiced' && (
+                                        <DropdownMenuItem onClick={() => onUpdateStatus('invoiced')}>
+                                            <Receipt className="mr-2 h-4 w-4 text-info" />
+                                            Marcar Facturado
+                                        </DropdownMenuItem>
+                                    )}
+                                    {item.payment_status !== 'paid' && (
+                                        <DropdownMenuItem onClick={() => onUpdateStatus('paid')}>
+                                            <CheckCircle2 className="mr-2 h-4 w-4 text-success" />
+                                            Marcar Cobrado
+                                        </DropdownMenuItem>
+                                    )}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                         </div>
                     </div>
                 </div>

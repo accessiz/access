@@ -73,6 +73,7 @@ export interface Model extends DbModel {
   client_selection?: 'pending' | 'approved' | 'rejected' | null;
   internal_status?: string | null;
   agreed_fee?: number | null;
+  trade_fee?: number | null; // Nuevo campo para canjes
   fee_type?: string | null;
   currency?: string | null;
   notes?: string | null;
@@ -97,6 +98,16 @@ export interface Project extends DbProject {
   assigned_models_count?: number;
   // Modelos aprobados con sus detalles (para lista de proyectos)
   approved_models?: { id: string; alias: string; coverUrl: string | null }[];
+
+  // Campos de configuración de pago (defaults)
+  default_model_payment_type: 'cash' | 'trade' | 'mixed' | null;
+  default_model_trade_category: 'products' | 'clothing' | 'voucher' | 'services' | 'hospitality' | 'other' | null;
+  default_model_trade_fee: number | null;
+  default_model_trade_details: string | null;
+  client_payment_type: 'cash' | 'trade' | 'mixed' | null;
+  client_trade_category: 'products' | 'clothing' | 'voucher' | 'services' | 'hospitality' | 'other' | null;
+  client_trade_revenue: number | null;
+  client_trade_details: string | null;
 }
 
 export interface Client extends DbClient {

@@ -19,6 +19,8 @@ export type SegmentedOption<T extends string> = {
   disabled?: boolean;
   /** Only applies on mobile grid layout. */
   mobileColSpan?: 1 | 2 | 3 | 4;
+  /** Custom className for this option (e.g., for responsive visibility). */
+  className?: string;
 };
 
 type Props<T extends string> = {
@@ -100,7 +102,8 @@ export function SegmentedControl<T extends string>({
                 "disabled:pointer-events-none disabled:opacity-50",
                 isActive
                   ? "bg-[rgb(var(--light-purple))] text-primary"
-                  : "text-muted-foreground hover:bg-hover-overlay hover:text-foreground"
+                  : "text-muted-foreground hover:bg-hover-overlay hover:text-foreground",
+                opt.className
               )}
             >
               {opt.icon ? <span className="shrink-0">{opt.icon}</span> : null}

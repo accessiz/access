@@ -17,12 +17,17 @@ export type FinanceSummaryItem = {
     registered_client_name: string | null;
     brand_name: string | null;
     days_worked: number;               // Días trabajados
-    daily_fee: number | null;          // Tarifa por día
-    total_amount: number;              // Total = días × tarifa
+    daily_fee: number | null;          // Tarifa por día (efectivo)
+    total_amount: number;              // Total efectivo = días × tarifa
+    daily_trade_fee: number | null;    // Tarifa canje por día
+    total_trade_value: number | null;  // Total canje
+    trade_category: string | null;     // Categoría del canje
+    trade_details: string | null;      // Detalles del canje
     first_work_date: string;           // Primera fecha de trabajo
     last_work_date: string;            // Última fecha de trabajo
     payment_status: PaymentStatus | null;
     payment_date: string | null;
+    payment_type: 'cash' | 'trade' | 'mixed' | null;  // Tipo de pago
     total_paid: number;
     pending_amount: number;
     currency: string;
@@ -35,7 +40,9 @@ export type ClientBillingItem = {
     client_name: string | null;
     registered_client_name: string | null;
     brand_name: string | null;
-    subtotal: number;
+    subtotal: number;                    // Cash amount
+    trade_value: number;                 // Trade value from client
+    payment_type: 'cash' | 'trade' | 'mixed';  // Client payment type
     tax_percentage: number;
     tax_amount: number;
     total_with_tax: number;
@@ -97,6 +104,8 @@ export default async function FinancesPage() {
             project_name,
             client_name,
             revenue,
+            client_trade_revenue,
+            client_payment_type,
             tax_percentage,
             client_payment_status,
             client_payment_date,
@@ -119,6 +128,8 @@ export default async function FinancesPage() {
         project_name: string;
         client_name: string | null;
         revenue: number | null;
+        client_trade_revenue: number | null;  // Trade value from client
+        client_payment_type: string | null;   // cash, trade, or mixed
         tax_percentage: number | null;
         client_payment_status: string | null;
         client_payment_date: string | null;
@@ -159,10 +170,15 @@ export default async function FinancesPage() {
             days_worked: Number(item.days_worked) || 0,
             daily_fee: item.daily_fee ? Number(item.daily_fee) : null,
             total_amount: Number(item.total_amount) || 0,
+            daily_trade_fee: item.daily_trade_fee ? Number(item.daily_trade_fee) : null,
+            total_trade_value: item.total_trade_value ? Number(item.total_trade_value) : null,
+            trade_category: item.trade_category || null,
+            trade_details: item.trade_details || null,
             first_work_date: item.first_work_date!,
             last_work_date: item.last_work_date!,
             payment_status: item.payment_status as PaymentStatus | null,
             payment_date: item.payment_date,
+            payment_type: item.payment_type as 'cash' | 'trade' | 'mixed' | null,
             total_paid: Number(item.total_paid) || 0,
             pending_amount: Number(item.pending_amount) || 0,
             currency: item.currency || 'GTQ',
@@ -174,14 +190,16 @@ export default async function FinancesPage() {
 
     // Mapear cobros a clientes
     // Condiciones para "Por Cobrar":
-    // 1. revenue > 0 (hay monto definido)
+    // 1. revenue > 0 O client_trade_revenue > 0 (hay monto definido, sea efectivo o canje)
     // 2. status = 'completed' (proyecto terminado)
     // 3. Tiene al menos 1 modelo aprobado
-    // 4. La última fecha del proyecto ya pasó
+    // 4. La última fecha del proyecto ya pasó (opcional - si hay schedule)
     const clientBilling: ClientBillingItem[] = ((projectsData || []) as ProjectBillingRow[])
         .filter(p => {
-            // Condición 1: Tiene revenue
-            if (!p.revenue || p.revenue <= 0) return false;
+            // Condición 1: Tiene revenue (efectivo) O client_trade_revenue (canje)
+            const hasCashRevenue = (p.revenue ?? 0) > 0;
+            const hasTradeRevenue = (p.client_trade_revenue ?? 0) > 0;
+            if (!hasCashRevenue && !hasTradeRevenue) return false;
 
             // Condición 2: Status completado
             if (p.status !== 'completed') return false;
@@ -190,19 +208,41 @@ export default async function FinancesPage() {
             const hasApprovedModel = p.projects_models?.some(pm => pm.client_selection === 'approved');
             if (!hasApprovedModel) return false;
 
-            // Condición 4: La última fecha del proyecto ya pasó
-            if (p.schedule && p.schedule.length > 0) {
-                const lastDate = p.schedule.reduce((max, s) => s.date > max ? s.date : max, p.schedule[0].date);
-                if (lastDate >= todayStr) return false; // Aún no termina
+            // Condición 4: Si tiene schedule, verificar que la última fecha ya pasó
+            // Si NO tiene schedule, asumimos que ya pasó (proyecto completado = listo para cobro)
+            if (p.schedule && Array.isArray(p.schedule) && p.schedule.length > 0) {
+                // El schedule es un array de objetos {date, startTime, endTime}
+                const dates = p.schedule
+                    .map(s => typeof s === 'object' && s.date ? s.date : null)
+                    .filter((d): d is string => d !== null);
+
+                if (dates.length > 0) {
+                    const lastDate = dates.sort().pop() || '';
+                    // Solo excluir si la fecha es FUTURA (> hoy, no >= hoy)
+                    if (lastDate > todayStr) return false;
+                }
             }
 
             return true;
         })
         .map(p => {
-            const subtotal = Number(p.revenue) || 0;
+            const paymentType = (p.client_payment_type as 'cash' | 'trade' | 'mixed') || 'cash';
+
+            // Filtrar valores según el tipo de pago para evitar datos residuales
+            let cashSubtotal = Number(p.revenue) || 0;
+            let tradeValue = Number(p.client_trade_revenue) || 0;
+
+            if (paymentType === 'cash') {
+                tradeValue = 0;
+            } else if (paymentType === 'trade') {
+                cashSubtotal = 0;
+            }
+            // Si es 'mixed', mantenemos ambos valores
+
             const taxPercent = Number(p.tax_percentage) || 12;
-            const taxAmount = subtotal * (taxPercent / 100);
-            const totalWithTax = subtotal + taxAmount;
+            // Tax only applies to cash, not trade
+            const taxAmount = cashSubtotal * (taxPercent / 100);
+            const totalWithTax = cashSubtotal + taxAmount;
 
             return {
                 project_id: p.id,
@@ -210,7 +250,9 @@ export default async function FinancesPage() {
                 client_name: p.client_name,
                 registered_client_name: p.client?.name || null,
                 brand_name: p.brand?.name || null,
-                subtotal,
+                subtotal: cashSubtotal,
+                trade_value: tradeValue,
+                payment_type: paymentType,
                 tax_percentage: taxPercent,
                 tax_amount: taxAmount,
                 total_with_tax: totalWithTax,

@@ -150,12 +150,13 @@ export default function ClientAnimationWrapper({ children }: { children: ReactNo
     // Phase 4: Watch for "login" state to animate login card
     useEffect(() => {
         if (animationState === 'login') {
-            // The login card will handle its own fade-in via CSS/Framer
-            // We just ensure the overlay stays visible but dims slightly
+            // The login card handles its own background (pure black)
+            // Keep the overlay transparent and disable pointer events so login is clickable
             const ctx = gsap.context(() => {
                 gsap.to(containerRef.current, {
-                    backgroundColor: 'rgba(0,0,0,0.3)',
-                    duration: 0.5,
+                    backgroundColor: 'transparent',
+                    pointerEvents: 'none',
+                    duration: 0.3,
                     ease: 'power2.out'
                 });
             }, comp);
@@ -176,7 +177,7 @@ export default function ClientAnimationWrapper({ children }: { children: ReactNo
                 {animationState !== 'finished' && (
                     <div
                         ref={containerRef}
-                        className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background"
+                        className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black"
                         style={{ visibility: 'hidden' }}
                     >
                         {/* Logo SVG */}
@@ -190,7 +191,7 @@ export default function ClientAnimationWrapper({ children }: { children: ReactNo
                             <defs>
                                 <style>{`
                   .st0 { fill: currentColor; }
-                  .st1 { fill: rgb(var(--primary) / 1); }
+                  .st1 { fill: rgb(var(--purple) / 1); }
                 `}</style>
                             </defs>
                             {/* Letter A - Isotipo */}

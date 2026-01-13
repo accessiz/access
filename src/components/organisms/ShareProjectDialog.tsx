@@ -29,7 +29,7 @@ interface ShareProjectDialogProps {
 export function ShareProjectDialog({ project, children, onStatusChange }: ShareProjectDialogProps) {
   const [isPending, startTransition] = useTransition();
   const [copied, setCopied] = useState(false);
-  
+
   // Define la URL y el mensaje para compartir
   const projectUrl = typeof window !== 'undefined' ? `${window.location.origin}/c/${project.id}` : '';
   const shareMessage = `Hola,\n\nTe compartimos el enlace para la selección del casting del proyecto "${project.project_name}".\n\nEnlace: ${projectUrl}\n${project.password ? `Contraseña: ${project.password}\n` : ''}\nPara cualquier consulta, quedamos a disposición.\nIZ Management | IZ ACCESS`;
@@ -61,11 +61,11 @@ export function ShareProjectDialog({ project, children, onStatusChange }: ShareP
       textArea.style.top = '-9999px';
       textArea.style.left = '-9999px';
       textArea.style.opacity = '0';
-      
+
       document.body.appendChild(textArea);
       textArea.focus();
       textArea.select();
-      
+
       // document.execCommand retorna un booleano de éxito/fallo
       const successful = document.execCommand('copy');
       return successful;
@@ -105,7 +105,7 @@ export function ShareProjectDialog({ project, children, onStatusChange }: ShareP
 
   // Función principal: Copia el mensaje completo y actualiza el estado
   const handleShareAndSend = async () => {
-    
+
     // 1. Llama a la nueva función de copiado y espera el resultado
     const success = await copyToClipboardFallback(shareMessage);
 
@@ -166,15 +166,15 @@ export function ShareProjectDialog({ project, children, onStatusChange }: ShareP
               <Label htmlFor="project-password">Contraseña</Label>
               <div className="flex items-center gap-2">
                 <Input id="project-password" value={project.password} readOnly className="w-0 flex-1 min-w-0" />
-                 <Button size="icon" variant="outline" onClick={handleCopyPassword}>
-                    <Copy className="h-4 w-4" />
+                <Button size="icon" variant="outline" onClick={handleCopyPassword}>
+                  <Copy className="h-4 w-4" />
                 </Button>
               </div>
             </div>
           )}
         </div>
         <DialogFooter className="sm:justify-between gap-2">
-          <DialogClose asChild><Button type="button" variant="secondary">Cerrar</Button></DialogClose>
+          <DialogClose asChild><Button type="button" variant="outline" style={{ borderColor: 'rgb(var(--separator))' }}>Cerrar</Button></DialogClose>
           <Button onClick={handleShareAndSend} disabled={isPending}>
             {copied ? <Check className="mr-2" /> : <Copy className="mr-2" />}
             {isPending ? 'Actualizando...' : 'Copiar Mensaje Completo'}

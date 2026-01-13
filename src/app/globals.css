@@ -43,13 +43,18 @@
       radial-gradient(900px circle at 50% 5%, rgb(var(--wow-progress-bg-mid) / 0.22), transparent 62%),
       radial-gradient(760px circle at 85% 120%, rgb(var(--primary) / 0.10), transparent 58%),
       linear-gradient(90deg,
-        rgb(var(--wow-progress-bg-edge) / 1) 0%,
-        rgb(var(--wow-progress-bg-edge) / 1) 20%,
-        rgb(var(--wow-progress-bg-mid) / 1) 50%,
-        rgb(var(--wow-progress-bg-edge) / 1) 80%,
-        rgb(var(--wow-progress-bg-edge) / 1) 100%);
+        #da8ae9 0%,
+        #B02FC2 100%);
   }
 
+  /* Variante con fondo oscuro sólido (para barra de progreso y login) */
+  .dark .client-wow-progress.dark-solid {
+    background-color: #0F0510 !important;
+    background-image: none !important;
+    border: none !important;
+  }
+
+  /* Light mode: white transparent segments */
   .client-wow-progress::before {
     content: "";
     position: absolute;
@@ -58,13 +63,14 @@
     border-radius: inherit;
     pointer-events: none;
 
-    /* Animated “ray of light” border (masked so it becomes a 1px stroke) */
+    /* Animated "ray of light" border - Magenta glow effect */
+    /* All purple gradient to match dark mode */
     background: conic-gradient(from var(--nyxa-angle),
-        rgb(var(--primary) / 0) 0deg,
-        rgb(var(--primary) / 0.55) 70deg,
-        rgb(var(--purple) / 0.55) 140deg,
-        rgb(var(--primary) / 0.55) 210deg,
-        rgb(var(--primary) / 0) 360deg);
+        #9a2bb0 0deg,
+        #B02FC2 120deg,
+        #ecc6f1 180deg,
+        #B02FC2 240deg,
+        #9a2bb0 360deg);
 
     -webkit-mask:
       linear-gradient(#000 0 0) content-box,
@@ -75,9 +81,21 @@
     -webkit-mask-composite: xor;
     mask-composite: exclude;
 
-    opacity: 0.95;
+    opacity: 1;
     animation: nyxa-rotate-border 3.25s linear infinite;
   }
+
+  /* Dark mode: use page background for the non-glowing parts.
+     The glow is concentrated in a smaller arc (90deg) so less black is visible */
+  .dark .client-wow-progress::before {
+    background: conic-gradient(from var(--nyxa-angle),
+        #9a2bb0 0deg,
+        #B02FC2 120deg,
+        #e6acee 180deg,
+        #B02FC2 240deg,
+        #9a2bb0 360deg);
+  }
+
 
   @keyframes nyxa-rotate-border {
     from {
@@ -270,6 +288,9 @@
     /* #EBEBF0 */
     --sys-bg-tertiary: var(--tertiary);
 
+    --login-card-bg: 185 76 201;
+    /* #B94CC9 */
+
 
     /* Colores vibrantes (system colors) */
     --red: 255 56 60;
@@ -345,6 +366,9 @@
     --sys-bg-secondary: 12 11 11;
     /* #101011 */
     --sys-bg-tertiary: var(--tertiary);
+
+    --login-card-bg: 15 5 16;
+    /* #0F0510 */
 
 
 
@@ -478,18 +502,33 @@ body,
     /* Mobile Portrait (2) */
   }
 
+  /* Single column grid for mobile vertical view */
+  .client-grid-single {
+    @apply grid gap-4;
+    grid-template-columns: 1fr;
+    max-width: 400px;
+    margin: 0 auto;
+  }
+
   @media (min-width: 480px) {
 
     /* Mobile Landscape (3) */
     .client-grid {
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
+
+    /* On larger screens, single grid becomes normal grid */
+    .client-grid-single {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      max-width: none;
+    }
   }
 
   @media (min-width: 900px) {
 
     /* Tablet (4) */
-    .client-grid {
+    .client-grid,
+    .client-grid-single {
       grid-template-columns: repeat(4, minmax(0, 1fr));
     }
   }
@@ -497,7 +536,8 @@ body,
   @media (min-width: 1200px) {
 
     /* Desktop (5) */
-    .client-grid {
+    .client-grid,
+    .client-grid-single {
       grid-template-columns: repeat(5, minmax(0, 1fr));
     }
   }
@@ -505,7 +545,8 @@ body,
   @media (min-width: 1600px) {
 
     /* Desktop XL (6) */
-    .client-grid {
+    .client-grid,
+    .client-grid-single {
       grid-template-columns: repeat(6, minmax(0, 1fr));
     }
   }
