@@ -2,9 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 // IMPORTANTE: Estamos importando NUESTRO sidebar, no el generico
 import { AppSidebar } from "@/components/organisms/AppSidebar"
-import { DynamicBreadcrumb } from "@/components/molecules/DynamicBreadcrumb"
 import { HeaderActions } from "@/components/molecules/HeaderActions"
-import { Separator } from "@/components/ui/separator"
 import {
   SidebarInset,
   SidebarProvider,
