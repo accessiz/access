@@ -189,8 +189,8 @@ export function ScheduleMigrationModal({
                                     className="relative rounded-lg border border-separator p-4"
                                 >
                                     {/* Old Date Card - Red border */}
-                                    <div className="rounded-lg border border-red bg-red/5 p-3 mb-4">
-                                        <div className="flex items-center justify-between">
+                                    <div className="rounded-lg border border-red bg-red/5 h-12 sm:h-10 px-3 mb-4 flex items-center">
+                                        <div className="flex items-center justify-between w-full">
                                             <span className="text-body font-medium text-foreground">
                                                 {formatDateShort(schedule.oldDate!)}
                                             </span>
@@ -214,7 +214,7 @@ export function ScheduleMigrationModal({
                                         onValueChange={(value) => handleMappingChange(schedule.oldScheduleId!, value)}
                                     >
                                         <SelectTrigger className={cn(
-                                            "w-full h-12 sm:h-10 bg-card border-separator",
+                                            "w-full h-12 sm:h-10 bg-card border-separator focus:ring-0 focus:ring-offset-0",
                                             isSelected && "border-purple bg-purple/20 text-white"
                                         )}>
                                             <SelectValue placeholder="Elegir nueva fecha..." />

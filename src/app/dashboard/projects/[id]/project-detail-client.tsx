@@ -26,26 +26,32 @@ import { ProjectStatusUpdater } from '@/components/organisms/ProjectStatusUpdate
 import {
     PlusCircle, XCircle, Loader2, Share2, Eye,
     Pencil, ArrowRightLeft,
-    CalendarCheck2, Banknote, Save, Info, Copy, ChevronDown
+    CalendarCheck2, Banknote, Save, Info, Copy, ChevronDown,
+    TrendingUp, TrendingDown
 } from 'lucide-react';
+import { ExpandButton } from '@/components/molecules/ExpandButton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ProjectForm } from '@/components/organisms/ProjectForm';
 import { TalentAssignmentPanel } from '@/components/organisms/TalentAssignmentPanel';
 import { assignModelToSchedule, unassignModelFromSchedule } from '@/lib/actions/projects_models';
 import { syncProjectSchedule, autoCloseExpiredProject } from '@/lib/actions/projects';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { AdjustmentInfo, ADJUSTMENT_REASONS } from '@/components/molecules/AdjustmentInfo';
 
 
 const ClientStatusBadge = ({ status }: { status: Model['client_selection'] }) => {
     return <ProjectStatusBadge status={status || 'pending'} size="small" />;
 };
 
+
+
 // Componente de Resumen de Presupuesto - Rediseñado según mockup
-const BudgetSummaryCard = ({ project, selectedModels }: { project: Project, selectedModels: Model[] }) => {
+const BudgetSummaryCard = ({ project, selectedModels, onRefresh }: { project: Project, selectedModels: Model[], onRefresh?: () => void }) => {
     const [breakdownOpen, setBreakdownOpen] = useState(false);
 
     // Calcular estadísticas
@@ -78,8 +84,11 @@ const BudgetSummaryCard = ({ project, selectedModels }: { project: Project, sele
     approvedModels.forEach(model => {
         const fees = getFees(model);
         const daysWorked = model.assignments?.length || 1;
-        totalCash += fees.cash * daysWorked;
-        totalTrade += fees.trade * daysWorked;
+        // Incluir ajustes en el total (separados para cash y trade)
+        const adjustmentPerDayCash = model.assignments?.[0]?.adjustment_amount || 0;
+        const adjustmentPerDayTrade = model.assignments?.[0]?.adjustment_amount_trade || 0;
+        totalCash += (fees.cash * daysWorked) + (adjustmentPerDayCash * daysWorked);
+        totalTrade += (fees.trade * daysWorked) + (adjustmentPerDayTrade * daysWorked);
     });
 
     const currency = project.currency || 'GTQ';
@@ -197,19 +206,38 @@ const BudgetSummaryCard = ({ project, selectedModels }: { project: Project, sele
                                 {approvedModels.map(model => {
                                     const fees = getFees(model);
                                     const days = model.assignments?.length || 1;
-                                    const amountCash = fees.cash * days;
-                                    const amountTrade = fees.trade * days;
+                                    // Obtener el ajuste del primer assignment (se aplica a todos)
+                                    const adjustmentPerDay = model.assignments?.[0]?.adjustment_amount || 0;
+                                    const adjustmentPerDayTrade = model.assignments?.[0]?.adjustment_amount_trade || 0;
+
+                                    const totalAdjustment = adjustmentPerDay * days;
+                                    const totalAdjustmentTrade = adjustmentPerDayTrade * days;
+
+                                    const amountCash = (fees.cash * days) + totalAdjustment;
+                                    const amountTrade = (fees.trade * days) + totalAdjustmentTrade;
 
                                     return (
-                                        <div key={model.id} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0 last:pb-0">
-                                            <span className="text-body font-medium text-foreground">{model.alias} ({days} día{days > 1 ? 's' : ''})</span>
-                                            <div className="flex items-center gap-3">
+                                        <div key={model.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 py-3 border-b border-border/50 last:border-0 last:pb-0">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-body font-medium text-foreground">{model.alias} ({days} día{days > 1 ? 's' : ''})</span>
+                                                <PaymentEditorPopover
+                                                    model={model}
+                                                    project={project}
+                                                    onRefresh={onRefresh}
+                                                />
+                                            </div>
+                                            <div className="flex items-center gap-3 pl-0 sm:pl-0">
                                                 {amountCash > 0 && (
                                                     <div className="flex items-center gap-1.5">
                                                         <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-success/15">
                                                             <Banknote className="w-3 h-3 text-success" />
                                                         </span>
                                                         <span className="text-body text-success font-semibold">{currency} {amountCash.toLocaleString()}</span>
+                                                        <AdjustmentInfo
+                                                            amount={totalAdjustment}
+                                                            reason={model.assignments?.[0]?.adjustment_reason || null}
+                                                            currency={currency}
+                                                        />
                                                     </div>
                                                 )}
                                                 {amountTrade > 0 && (
@@ -218,6 +246,11 @@ const BudgetSummaryCard = ({ project, selectedModels }: { project: Project, sele
                                                             <ArrowRightLeft className="w-3 h-3 text-info" />
                                                         </span>
                                                         <span className="text-body text-info font-semibold">{currency} {amountTrade.toLocaleString()}</span>
+                                                        <AdjustmentInfo
+                                                            amount={totalAdjustmentTrade}
+                                                            reason={model.assignments?.[0]?.adjustment_reason_trade || null}
+                                                            currency={currency}
+                                                        />
                                                     </div>
                                                 )}
                                             </div>
@@ -233,6 +266,9 @@ const BudgetSummaryCard = ({ project, selectedModels }: { project: Project, sele
     );
 };
 
+// Razones de ajuste predefinidas para la industria de modelaje/publicidad
+
+
 const PaymentEditorPopover = ({
     model,
     project,
@@ -245,18 +281,53 @@ const PaymentEditorPopover = ({
     onPaymentChange?: (modelId: string, fee: number, feeType: string, currency: string) => void
 }) => {
     const [fee, setFee] = useState(model.agreed_fee?.toString() || '0');
+    const [tradeFee, setTradeFee] = useState(model.trade_fee?.toString() || '0');
     const [feeType, setFeeType] = useState(model.fee_type || 'per_day');
     const [currency, setCurrency] = useState(model.currency || 'GTQ');
+    const [adjustmentCash, setAdjustmentCash] = useState('0');
+    const [adjustmentCashReason, setAdjustmentCashReason] = useState('');
+    const [adjustmentTrade, setAdjustmentTrade] = useState('0');
+    const [adjustmentTradeReason, setAdjustmentTradeReason] = useState('');
     const [isUpdating, setIsUpdating] = useState(false);
     const [open, setOpen] = useState(false);
+    const [baseDetailsOpen, setBaseDetailsOpen] = useState(false);
+
+    // Determinar tipo de pago del proyecto
+    const paymentType = project.default_model_payment_type || 'cash';
+    const showCash = paymentType === 'cash' || paymentType === 'mixed';
+    const showTrade = paymentType === 'trade' || paymentType === 'mixed';
+
+    // Cargar valores existentes cuando el dialog se abre
+    useEffect(() => {
+        if (open) {
+            const assignment = model.assignments?.[0];
+            if (assignment) {
+                setAdjustmentCash(assignment.adjustment_amount?.toString() || '0');
+                setAdjustmentCashReason(assignment.adjustment_reason || '');
+                setAdjustmentTrade(assignment.adjustment_amount_trade?.toString() || '0');
+                setAdjustmentTradeReason(assignment.adjustment_reason_trade || '');
+            }
+        }
+    }, [open, model.assignments]);
+
+    const parsedAdjustmentCash = parseFloat(adjustmentCash) || 0;
+    const parsedAdjustmentTrade = parseFloat(adjustmentTrade) || 0;
+    const parsedFee = parseFloat(fee) || 0;
+    const parsedTradeFee = parseFloat(tradeFee) || 0;
+    const calculatedTotalCash = parsedFee + parsedAdjustmentCash;
+    const calculatedTotalTrade = parsedTradeFee + parsedAdjustmentTrade;
 
     const handleSave = async () => {
         setIsUpdating(true);
-        const parsedFee = parseFloat(fee);
         const result = await updateModelPaymentDetail(project.id, model.id, {
             agreed_fee: parsedFee,
+            trade_fee: parsedTradeFee,
             fee_type: feeType,
-            currency: currency
+            currency: currency,
+            adjustment_amount: parsedAdjustmentCash,
+            adjustment_reason: adjustmentCashReason || null,
+            adjustment_amount_trade: parsedAdjustmentTrade,
+            adjustment_reason_trade: adjustmentTradeReason || null
         });
         if (result.success) {
             toast.success('Pago actualizado correctamente.');
@@ -271,83 +342,205 @@ const PaymentEditorPopover = ({
     };
 
     return (
-        <Popover open={open} onOpenChange={setOpen}>
-            <PopoverTrigger asChild>
-                <Button size="icon" variant="outline" className="h-8 w-8" title="Editar Pago">
-                    <Banknote className="h-4 w-4" />
+        <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+                <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-7 w-7 border border-success/50 bg-success/10 text-success hover:bg-success/20 hover:border-success"
+                    title="Editar Pago"
+                >
+                    <Pencil className="h-3.5 w-3.5" />
                 </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-80 p-4" align="end">
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle>Detalles de Pago</DialogTitle>
+                    <DialogDescription>Ajusta la tarifa individual para {model.alias}.</DialogDescription>
+                </DialogHeader>
                 <div className="space-y-4">
-                    <div className="space-y-1">
-                        <h4 className="font-medium text-body">Detalles de Pago</h4>
-                        <p className="text-label text-muted-foreground">Ajusta la tarifa individual para {model.alias}.</p>
-                    </div>
+                    <div className="grid gap-y-3">
 
-                    <div className="grid gap-x-3 gap-y-3">
-                        <div className="grid gap-x-2 gap-y-2">
-                            <Label htmlFor="fee">Tarifa</Label>
-                            <Input
-                                id="fee"
-                                type="number"
-                                value={fee}
-                                onChange={(e) => setFee(e.target.value)}
-                                className="h-9"
-                            />
-                        </div>
 
-                        <div className="grid gap-x-2 gap-y-2">
-                            <div className="flex items-center gap-x-2 gap-y-2">
-                                <Label>Tipo de Pago</Label>
-                                <TooltipProvider>
-                                    <Tooltip delayDuration={100}>
-                                        <TooltipTrigger asChild>
-                                            <button type="button" className="text-muted-foreground hover:text-foreground transition-colors">
-                                                <Info className="h-3 w-3" />
-                                            </button>
-                                        </TooltipTrigger>
-                                        <TooltipContent side="top" className="max-w-xs p-3 text-body">
-                                            <p className="font-semibold mb-2">¿Cuál elegir?</p>
-                                            <ul className="space-y-1 text-label">
-                                                <li><strong>Por día:</strong> Según días trabajados.</li>
-                                                <li><strong>Por hora:</strong> Según horas trabajadas.</li>
-                                                <li><strong>Tarifa fija:</strong> Pago único por el proyecto.</li>
-                                            </ul>
-                                        </TooltipContent>
-                                    </Tooltip>
-                                </TooltipProvider>
+                        {/* Configuración Base Colapsable */}
+                        <Collapsible open={baseDetailsOpen} onOpenChange={setBaseDetailsOpen} className="space-y-3">
+                            <div className="flex items-center justify-between">
+                                <span className="text-body font-medium text-foreground">Configuración Base</span>
+                                <CollapsibleTrigger asChild>
+                                    <ExpandButton isOpen={baseDetailsOpen} size="sm" />
+                                </CollapsibleTrigger>
                             </div>
-                            <Select value={feeType} onValueChange={setFeeType}>
-                                <SelectTrigger className="h-9">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="per_day">Por día</SelectItem>
-                                    <SelectItem value="per_hour">Por hora</SelectItem>
-                                    <SelectItem value="fixed">Tarifa fija</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
 
-                        <div className="grid gap-x-2 gap-y-2">
-                            <Label>Moneda</Label>
-                            <Select value={currency} onValueChange={setCurrency}>
-                                <SelectTrigger className="h-9">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="GTQ">GTQ</SelectItem>
-                                    <SelectItem value="USD">USD</SelectItem>
-                                    <SelectItem value="EUR">EUR</SelectItem>
-                                    <SelectItem value="MXN">MXN</SelectItem>
-                                    <SelectItem value="COP">COP</SelectItem>
-                                    <SelectItem value="PEN">PEN</SelectItem>
-                                    <SelectItem value="ARS">ARS</SelectItem>
-                                    <SelectItem value="CLP">CLP</SelectItem>
-                                    <SelectItem value="BRL">BRL</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
+                            <CollapsibleContent className="space-y-3 pt-1">
+                                {/* Tarifa base */}
+                                <div className="grid gap-y-2">
+                                    <Label htmlFor="fee">Tarifa Base</Label>
+                                    <Input
+                                        id="fee"
+                                        type="number"
+                                        value={fee}
+                                        onChange={(e) => setFee(e.target.value)}
+                                        className="h-9"
+                                    />
+                                </div>
+
+                                {/* Tipo de Tarifa */}
+                                <div className="grid gap-y-2">
+                                    <div className="flex items-center gap-2">
+                                        <Label>Tipo de Tarifa</Label>
+                                        <TooltipProvider>
+                                            <Tooltip delayDuration={100}>
+                                                <TooltipTrigger asChild>
+                                                    <button type="button" className="text-muted-foreground hover:text-foreground transition-colors">
+                                                        <Info className="h-3 w-3" />
+                                                    </button>
+                                                </TooltipTrigger>
+                                                <TooltipContent side="top" className="max-w-xs p-3 text-body">
+                                                    <p className="font-semibold mb-2">¿Cuál elegir?</p>
+                                                    <ul className="space-y-1 text-label">
+                                                        <li><strong>Por día:</strong> Según días trabajados.</li>
+                                                        <li><strong>Por hora:</strong> Según horas trabajadas.</li>
+                                                        <li><strong>Tarifa fija:</strong> Pago único por el proyecto.</li>
+                                                    </ul>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
+                                    </div>
+                                    <Select value={feeType} onValueChange={setFeeType}>
+                                        <SelectTrigger className="h-9">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="per_day">Por día</SelectItem>
+                                            <SelectItem value="per_hour">Por hora</SelectItem>
+                                            <SelectItem value="fixed">Tarifa fija</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                {/* Moneda */}
+                                <div className="grid gap-y-2">
+                                    <Label>Moneda</Label>
+                                    <Select value={currency} onValueChange={setCurrency}>
+                                        <SelectTrigger className="h-9">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="GTQ">GTQ</SelectItem>
+                                            <SelectItem value="USD">USD</SelectItem>
+                                            <SelectItem value="EUR">EUR</SelectItem>
+                                            <SelectItem value="MXN">MXN</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </CollapsibleContent>
+                        </Collapsible>
+
+                        {/* Separador */}
+                        <Separator className="my-1" />
+
+                        {/* Ajuste Cash */}
+                        {showCash && (
+                            <>
+                                <div className="grid gap-y-2">
+                                    <div className="flex items-center gap-2">
+                                        <Label htmlFor="adjustmentCash" className="text-success">Ajuste Cash</Label>
+                                        <span className="text-label text-muted-foreground">(+bonus / -deducción)</span>
+                                    </div>
+                                    <Input
+                                        id="adjustmentCash"
+                                        type="number"
+                                        value={adjustmentCash}
+                                        onChange={(e) => setAdjustmentCash(e.target.value)}
+                                        className={`h-9 ${parsedAdjustmentCash > 0 ? 'text-success border-success' : parsedAdjustmentCash < 0 ? 'text-destructive border-destructive' : ''}`}
+                                        placeholder="0"
+                                    />
+                                </div>
+
+                                {parsedAdjustmentCash !== 0 && (
+                                    <div className="grid gap-y-2">
+                                        <Label>Razón (Cash)</Label>
+                                        <Select value={adjustmentCashReason} onValueChange={setAdjustmentCashReason}>
+                                            <SelectTrigger className="h-9">
+                                                <SelectValue placeholder="Seleccionar razón..." />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {parsedAdjustmentCash > 0 && ADJUSTMENT_REASONS.filter(r => r.type === 'positive').map(r => (
+                                                    <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                                                ))}
+                                                {parsedAdjustmentCash < 0 && ADJUSTMENT_REASONS.filter(r => r.type === 'negative').map(r => (
+                                                    <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                                                ))}
+                                                {ADJUSTMENT_REASONS.filter(r => r.type === 'neutral').map(r => (
+                                                    <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                )}
+                            </>
+                        )}
+
+                        {/* Ajuste Trade */}
+                        {showTrade && (
+                            <>
+                                <div className="grid gap-y-2">
+                                    <div className="flex items-center gap-2">
+                                        <Label htmlFor="adjustmentTrade" className="text-info">Ajuste Canje</Label>
+                                        <span className="text-label text-muted-foreground">(+bonus / -deducción)</span>
+                                    </div>
+                                    <Input
+                                        id="adjustmentTrade"
+                                        type="number"
+                                        value={adjustmentTrade}
+                                        onChange={(e) => setAdjustmentTrade(e.target.value)}
+                                        className={`h-9 ${parsedAdjustmentTrade > 0 ? 'text-info border-info' : parsedAdjustmentTrade < 0 ? 'text-destructive border-destructive' : ''}`}
+                                        placeholder="0"
+                                    />
+                                </div>
+
+                                {parsedAdjustmentTrade !== 0 && (
+                                    <div className="grid gap-y-2">
+                                        <Label>Razón (Canje)</Label>
+                                        <Select value={adjustmentTradeReason} onValueChange={setAdjustmentTradeReason}>
+                                            <SelectTrigger className="h-9">
+                                                <SelectValue placeholder="Seleccionar razón..." />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {parsedAdjustmentTrade > 0 && ADJUSTMENT_REASONS.filter(r => r.type === 'positive').map(r => (
+                                                    <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                                                ))}
+                                                {parsedAdjustmentTrade < 0 && ADJUSTMENT_REASONS.filter(r => r.type === 'negative').map(r => (
+                                                    <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                                                ))}
+                                                {ADJUSTMENT_REASONS.filter(r => r.type === 'neutral').map(r => (
+                                                    <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                )}
+                            </>
+                        )}
+
+                        {/* Totales calculados */}
+                        {(parsedAdjustmentCash !== 0 || parsedAdjustmentTrade !== 0) && (
+                            <div className="p-3 rounded-lg bg-sys-bg-tertiary space-y-2">
+                                <span className="text-label text-muted-foreground">Total por día:</span>
+                                <div className="flex items-center gap-4">
+                                    {showCash && parsedAdjustmentCash !== 0 && (
+                                        <span className={`text-body font-semibold ${parsedAdjustmentCash > 0 ? 'text-success' : 'text-destructive'}`}>
+                                            Cash: {currency} {calculatedTotalCash.toLocaleString()}
+                                        </span>
+                                    )}
+                                    {showTrade && parsedAdjustmentTrade !== 0 && (
+                                        <span className={`text-body font-semibold ${parsedAdjustmentTrade > 0 ? 'text-info' : 'text-destructive'}`}>
+                                            Canje: {currency} {calculatedTotalTrade.toLocaleString()}
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     <Button className="w-full" size="sm" onClick={handleSave} disabled={isUpdating}>
@@ -355,8 +548,8 @@ const PaymentEditorPopover = ({
                         Guardar Cambios
                     </Button>
                 </div>
-            </PopoverContent>
-        </Popover>
+            </DialogContent>
+        </Dialog>
     );
 };
 
@@ -724,7 +917,9 @@ export default function ProjectDetailClient({ project: initialProject, initialSe
                     daily_fee: null,
                     hours_worked: null,
                     adjustment_amount: 0,
+                    adjustment_amount_trade: 0,
                     adjustment_reason: null,
+                    adjustment_reason_trade: null,
                     payment_status: 'pending' as const,
                     payment_date: null,
                     payment_type: null,
@@ -788,7 +983,7 @@ export default function ProjectDetailClient({ project: initialProject, initialSe
                     <Button onClick={() => setIsEditing(true)} variant="outline" className="grow sm:grow-0">
                         <Pencil className="mr-2 h-4 w-4" /> Editar Proyecto
                     </Button>
-                    <ShareProjectDialog project={project} onStatusChange={handleStatusChange}>
+                    <ShareProjectDialog project={project} onStatusChange={handleStatusChange} selectedModels={selectedModels}>
                         <Button className="grow sm:grow-0"><Share2 className="mr-2 h-4 w-4" /> Compartir</Button>
                     </ShareProjectDialog>
                 </div>
@@ -824,7 +1019,7 @@ export default function ProjectDetailClient({ project: initialProject, initialSe
             <ProjectStatusUpdater project={project} selectedModels={selectedModels} />
 
             {/* Resumen de Presupuesto */}
-            <BudgetSummaryCard project={project} selectedModels={selectedModels} />
+            <BudgetSummaryCard project={project} selectedModels={selectedModels} onRefresh={handleRefresh} />
 
             <div className="grid md:grid-cols-[30%_1fr] gap-6 items-start">
                 <Card className="flex flex-col h-full">

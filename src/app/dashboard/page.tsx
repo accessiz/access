@@ -12,11 +12,14 @@ import { KPICard } from '@/components/molecules/KPICard';
 import { CheckCircle2, Eye, FileText, Send } from 'lucide-react';
 import Link from 'next/link';
 import { IncompleteProfilesList } from '@/components/molecules/IncompleteProfilesList';
+import { getModelApplicationStats } from '@/lib/api/dashboard';
+import { ModelRankingsCard } from '@/components/organisms/ModelRankingsCard';
 
 export default async function DashboardPage() {
   const counts = await getProjectStatusCounts();
   const activity = await getRecentActivity(5);
   const lowModels = await getLowCompletenessModels(5);
+  const modelStats = await getModelApplicationStats(20);
 
   return (
     <div className="grid gap-6">
@@ -142,6 +145,9 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Rankings de Modelos - Full Width */}
+      <ModelRankingsCard initialData={modelStats} />
     </div>
   );
 }

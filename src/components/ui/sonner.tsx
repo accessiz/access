@@ -24,8 +24,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
             "group-[.toast]:bg-[rgb(var(--purple))] group-[.toast]:text-white group-[.toast]:rounded-md group-[.toast]:px-3 group-[.toast]:py-1.5 group-[.toast]:text-label group-[.toast]:font-medium",
           cancelButton:
             "group-[.toast]:bg-transparent group-[.toast]:border group-[.toast]:border-separator group-[.toast]:text-muted-foreground group-[.toast]:rounded-md group-[.toast]:px-3 group-[.toast]:py-1.5 group-[.toast]:text-label",
-          closeButton:
-            "group-[.toast]:bg-card/50 group-[.toast]:text-muted-foreground group-[.toast]:border-separator group-[.toast]:backdrop-blur-sm hover:group-[.toast]:bg-hover-overlay",
+          closeButton: "",
           // Glassmorphism uniforme para todos los tipos - sin colores
           success:
             "group-[.toaster]:!backdrop-blur-xl group-[.toaster]:!bg-card/70 group-[.toaster]:!border-separator group-[.toaster]:!text-foreground",

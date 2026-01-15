@@ -121,3 +121,68 @@ export async function getLowCompletenessModels(limit = 5) {
     return { ...m, missing_fields: missing };
   });
 }
+
+export type ModelRankingItem = {
+  model_id: string;
+  alias: string;
+  coverUrl: string | null;
+  approved_count: number;
+  rejected_count: number;
+  total_count: number;
+};
+
+export type ModelRankings = {
+  mostApproved: ModelRankingItem[];
+  mostRefused: ModelRankingItem[];
+  mostApplied: ModelRankingItem[];
+};
+
+export async function getModelApplicationStats(limit = 20): Promise<ModelRankings> {
+  noStore();
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return { mostApproved: [], mostRefused: [], mostApplied: [] };
+  }
+
+  // Use RPC function for efficient SQL aggregation
+  const { data, error } = await supabase.rpc('get_model_application_stats');
+
+  if (error) {
+    logError(error, { action: 'getModelApplicationStats' });
+    return { mostApproved: [], mostRefused: [], mostApplied: [] };
+  }
+
+  if (!data || data.length === 0) return { mostApproved: [], mostRefused: [], mostApplied: [] };
+
+  const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL?.replace(/\/$/, '') || '';
+  const toPublicUrl = (path: string | null | undefined) => path && R2_PUBLIC_URL ? `${R2_PUBLIC_URL}/${path}` : null;
+
+  const allStats: ModelRankingItem[] = data.map((row: { model_id: string; alias: string | null; cover_path: string | null; total_count: number; approved_count: number; rejected_count: number }) => ({
+    model_id: row.model_id,
+    alias: row.alias || 'Sin alias',
+    coverUrl: toPublicUrl(row.cover_path),
+    approved_count: Number(row.approved_count),
+    rejected_count: Number(row.rejected_count),
+    total_count: Number(row.total_count),
+  }));
+
+  const mostApproved = [...allStats]
+    .sort((a, b) => b.approved_count - a.approved_count)
+    .slice(0, limit);
+
+  const mostRefused = [...allStats]
+    .sort((a, b) => b.rejected_count - a.rejected_count)
+    .slice(0, limit);
+
+  const mostApplied = [...allStats]
+    .sort((a, b) => b.total_count - a.total_count)
+    .slice(0, limit);
+
+  return {
+    mostApproved,
+    mostRefused,
+    mostApplied,
+  };
+}
+

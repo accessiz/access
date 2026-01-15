@@ -209,6 +209,10 @@ export async function getModelWorkHistory(modelId: string) {
     daily_fee: number | null;
     amount_gtq: number | null;
     exchange_rate_used: number | null;
+    adjustment_amount: number | null;
+    adjustment_amount_trade: number | null;
+    adjustment_reason: string | null;
+    adjustment_reason_trade: string | null;
     project_schedule: {
       project_id: string;
       start_time: string;  // ISO timestamp, e.g. "2026-01-06T10:00:00+00:00"
@@ -257,6 +261,10 @@ export async function getModelWorkHistory(modelId: string) {
       daily_fee,
       amount_gtq,
       exchange_rate_used,
+      adjustment_amount,
+      adjustment_amount_trade,
+      adjustment_reason,
+      adjustment_reason_trade,
       project_schedule (
         project_id,
         start_time,
@@ -356,8 +364,20 @@ export async function getModelWorkHistory(modelId: string) {
 
       // Días trabajados: usar asignaciones si hay, sino usar schedules del proyecto
       const daysWorked = totalAssignments > 0 ? totalAssignments : dates.length || 1;
-      const totalAmount = fee * daysWorked;
-      const totalTradeAmount = tradeFee * daysWorked;
+
+      // --- Calculate Adjustments ---
+      // We assume adjustments are per day, or we sum them up if they are stored in assignments
+      // Based on previous context, adjustments are stored in model_assignments table
+
+      const totalAdjustmentAmount = projectAssignments.reduce((acc, curr) => acc + (curr.adjustment_amount || 0), 0);
+      const totalAdjustmentAmountTrade = projectAssignments.reduce((acc, curr) => acc + (curr.adjustment_amount_trade || 0), 0);
+
+      // Get the first non-null reason if any
+      const adjustmentReason = projectAssignments.find(a => a.adjustment_reason)?.adjustment_reason || null;
+      const adjustmentReasonTrade = projectAssignments.find(a => a.adjustment_reason_trade)?.adjustment_reason_trade || null;
+
+      const totalAmount = (fee * daysWorked) + totalAdjustmentAmount;
+      const totalTradeAmount = (tradeFee * daysWorked) + totalAdjustmentAmountTrade;
 
       // Calculate Total Paid GTQ
       // Sum amount_gtq for paid assignments
@@ -378,7 +398,7 @@ export async function getModelWorkHistory(modelId: string) {
         createdAt: project.created_at,
         agreedFee: fee,
         tradeFee: tradeFee,  // Trade fee per day
-        totalTradeAmount: totalTradeAmount > 0 ? totalTradeAmount : null,  // Total trade value
+        totalTradeAmount: totalTradeAmount > 0 || projectPaymentType !== 'cash' ? totalTradeAmount : null,
         paymentType,  // Payment type: cash, trade, or mixed
         feeType: pm.fee_type || 'per_day',
         currency: pm.currency || 'GTQ',
@@ -389,7 +409,12 @@ export async function getModelWorkHistory(modelId: string) {
         lastPaymentDate,
         firstWorkDate,
         lastWorkDate,
-        assignments: projectAssignments
+        assignments: projectAssignments,
+        // Add adjustment info to return object
+        adjustmentAmount: totalAdjustmentAmount,
+        adjustmentAmountTrade: totalAdjustmentAmountTrade,
+        adjustmentReason,
+        adjustmentReasonTrade
       };
     })
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());

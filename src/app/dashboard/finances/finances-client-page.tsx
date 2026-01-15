@@ -63,6 +63,7 @@ import {
     CollapsibleContent,
     CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import { AdjustmentInfo } from '@/components/molecules/AdjustmentInfo';
 
 
 import { FinanceSummaryItem, FinanceKPIs, PaymentStatus, ClientBillingItem, ClientPaymentStatus } from './page';
@@ -73,6 +74,7 @@ type FinancesClientPageProps = {
         modelPayments: FinanceSummaryItem[];
         clientBilling: ClientBillingItem[];
         kpis: FinanceKPIs;
+        currentExchangeRate: number;
     };
 };
 
@@ -701,28 +703,24 @@ export default function FinancesClientPage({ initialData }: FinancesClientPagePr
                 <KPICard
                     title="Por Cobrar"
                     value={formatCurrency(kpis.totalPendingClients)}
-                    description="Pendiente de clientes"
                     icon={Receipt}
                     iconClassName="text-warning"
                 />
                 <KPICard
                     title="Por Pagar"
                     value={formatCurrency(kpis.totalPendingModels)}
-                    description="Pendiente a modelos"
                     icon={Wallet}
                     iconClassName="text-orange"
                 />
                 <KPICard
                     title="Margen Bruto"
                     value={formatCurrency(kpis.grossMargin)}
-                    description="Cobros - Pagos"
                     icon={TrendingUp}
                     iconClassName={kpis.grossMargin >= 0 ? "text-success" : "text-destructive"}
                 />
                 <KPICard
                     title="Modelos Pendientes"
                     value={kpis.modelsWithPendingPayments.toString()}
-                    description="Con pagos pendientes"
                     icon={Users}
                     iconClassName="text-accent"
                 />
@@ -877,6 +875,7 @@ export default function FinancesClientPage({ initialData }: FinancesClientPagePr
                                     item={item}
                                     onMarkAsPaid={() => handleMarkAsPaid(item)}
                                     onMarkAsCancelled={() => handleMarkAsCancelled(item)}
+                                    currentRate={initialData.currentExchangeRate}
                                 />
                             ))
                         ) : (
@@ -887,6 +886,7 @@ export default function FinancesClientPage({ initialData }: FinancesClientPagePr
                                     onMarkAsPaid={handleMarkAsPaid}
                                     onMarkAllAsPaid={(pendingModels) => handleMarkAllAsPaidForProject(pendingModels, group.project_name)}
                                     onMarkAsCancelled={handleMarkAsCancelled}
+                                    currentRate={initialData.currentExchangeRate}
                                 />
                             ))
                         )}
@@ -1148,10 +1148,12 @@ function PaymentCard({
     item,
     onMarkAsPaid,
     onMarkAsCancelled,
+    currentRate,
 }: {
     item: FinanceSummaryItem;
     onMarkAsPaid: () => void;
     onMarkAsCancelled: () => void;
+    currentRate: number;
 }) {
     const status = item.payment_status || 'pending';
     const statusConfig = PAYMENT_STATUS_CONFIG[status];
@@ -1230,8 +1232,14 @@ function PaymentCard({
                         {/* Info Section */}
                         <div className="flex-1 min-w-0 space-y-1">
                             {/* Model Name */}
+                            {/* Model Name */}
                             <h3 className="font-semibold text-title sm:text-body text-foreground truncate">
-                                {modelDisplay}
+                                <Link
+                                    href={`/dashboard/models/${item.model_id}?tab=trabajos`}
+                                    className="hover:text-primary hover:underline transition-colors"
+                                >
+                                    {modelDisplay}
+                                </Link>
                             </h3>
 
                             {/* Project + Client */}
@@ -1276,6 +1284,16 @@ function PaymentCard({
                                     <span className="text-body font-medium text-foreground">
                                         {formatCurrency(item.total_amount, item.currency)}
                                     </span>
+                                    {item.currency !== 'GTQ' && (
+                                        <span className="text-xs text-muted-foreground">
+                                            ({formatCurrency(item.total_amount * currentRate, 'GTQ')})
+                                        </span>
+                                    )}
+                                    <AdjustmentInfo
+                                        amount={(item.adjustment_amount || 0) * (item.days_worked || 1)}
+                                        reason={item.adjustment_reason || null}
+                                        currency={item.currency}
+                                    />
                                 </div>
                             )}
                             {hasTrade && (
@@ -1286,6 +1304,16 @@ function PaymentCard({
                                     <span className="text-body font-medium text-foreground">
                                         {formatCurrency(item.total_trade_value || 0, item.currency)}
                                     </span>
+                                    {item.currency !== 'GTQ' && (
+                                        <span className="text-xs text-muted-foreground">
+                                            ({formatCurrency((item.total_trade_value || 0) * currentRate, 'GTQ')})
+                                        </span>
+                                    )}
+                                    <AdjustmentInfo
+                                        amount={(item.adjustment_amount_trade || 0) * (item.days_worked || 1)}
+                                        reason={item.adjustment_reason_trade || null}
+                                        currency={item.currency}
+                                    />
                                 </div>
                             )}
                             {!hasCash && !hasTrade && (
@@ -1359,6 +1387,7 @@ function ProjectGroupCard({
     onMarkAsPaid,
     onMarkAllAsPaid,
     onMarkAsCancelled,
+    currentRate,
 }: {
     group: {
         project_id: string;
@@ -1374,6 +1403,7 @@ function ProjectGroupCard({
     onMarkAsPaid: (item: FinanceSummaryItem) => void;
     onMarkAllAsPaid: (pendingModels: FinanceSummaryItem[]) => void;
     onMarkAsCancelled: (item: FinanceSummaryItem) => void;
+    currentRate: number;
 }) {
     const [isOpen, setIsOpen] = React.useState(false);
     const clientDisplay = group.brand_name || group.client_name || '-';
@@ -1410,7 +1440,14 @@ function ProjectGroupCard({
                             {/* Desktop Info */}
                             <div className="hidden sm:block flex-1 min-w-0">
                                 <div className="flex items-center gap-x-2">
-                                    <h3 className="font-semibold text-body truncate">{group.project_name}</h3>
+                                    <h3 className="font-semibold text-body truncate">
+                                        <Link
+                                            href={`/dashboard/projects/${group.project_id}`}
+                                            className="hover:text-primary hover:underline transition-colors"
+                                        >
+                                            {group.project_name}
+                                        </Link>
+                                    </h3>
                                 </div>
                                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-label text-muted-foreground">
                                     <div className="flex items-center gap-x-1">
@@ -1429,7 +1466,14 @@ function ProjectGroupCard({
                         {/* Mobile Info Row */}
                         <div className="sm:hidden w-full">
                             <div className="flex items-center gap-x-2 mb-1">
-                                <h3 className="font-semibold text-body truncate">{group.project_name}</h3>
+                                <h3 className="font-semibold text-body truncate">
+                                    <Link
+                                        href={`/dashboard/projects/${group.project_id}`}
+                                        className="hover:text-primary hover:underline transition-colors"
+                                    >
+                                        {group.project_name}
+                                    </Link>
+                                </h3>
                             </div>
                             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-label text-muted-foreground">
                                 <div className="flex items-center gap-x-1">
@@ -1456,6 +1500,11 @@ function ProjectGroupCard({
                                         <span className="text-body font-medium text-foreground">
                                             {formatCurrency(group.total_amount, group.currency)}
                                         </span>
+                                        {group.currency !== 'GTQ' && (
+                                            <span className="text-xs text-muted-foreground">
+                                                ({formatCurrency(group.total_amount * currentRate, 'GTQ')})
+                                            </span>
+                                        )}
                                     </div>
                                 )}
                                 {/* Trade amount - blue */}
@@ -1467,6 +1516,11 @@ function ProjectGroupCard({
                                         <span className="text-body font-medium text-foreground">
                                             {formatCurrency(group.total_trade_value, group.currency)}
                                         </span>
+                                        {group.currency !== 'GTQ' && (
+                                            <span className="text-xs text-muted-foreground">
+                                                ({formatCurrency(group.total_trade_value * currentRate, 'GTQ')})
+                                            </span>
+                                        )}
                                     </div>
                                 )}
                             </div>
@@ -1529,15 +1583,35 @@ function ProjectGroupCard({
                                                 <Badge variant="success" size="small" className="gap-1">
                                                     <Banknote className="h-3 w-3" />
                                                     {formatCurrency(model.total_amount, model.currency)}
+                                                    {model.currency !== 'GTQ' && (
+                                                        <span className="text-secondary/70 ml-1">
+                                                            ({formatCurrency(model.total_amount * currentRate, 'GTQ')})
+                                                        </span>
+                                                    )}
                                                 </Badge>
                                             )}
+                                            <AdjustmentInfo
+                                                amount={(model.adjustment_amount || 0) * (model.days_worked || 1)}
+                                                reason={model.adjustment_reason || null}
+                                                currency={model.currency}
+                                            />
                                             {/* Trade badge */}
                                             {hasTrade && (
                                                 <Badge variant="blue" size="small" className="gap-1">
                                                     <RefreshCw className="h-3 w-3" />
                                                     {formatCurrency(model.total_trade_value || 0, model.currency)}
+                                                    {model.currency !== 'GTQ' && (
+                                                        <span className="text-secondary/70 ml-1">
+                                                            ({formatCurrency((model.total_trade_value || 0) * currentRate, 'GTQ')})
+                                                        </span>
+                                                    )}
                                                 </Badge>
                                             )}
+                                            <AdjustmentInfo
+                                                amount={(model.adjustment_amount_trade || 0) * (model.days_worked || 1)}
+                                                reason={model.adjustment_reason_trade || null}
+                                                currency={model.currency}
+                                            />
                                             {/* Fallback if no fee defined */}
                                             {!hasCash && !hasTrade && (
                                                 <span className="text-muted-foreground text-label">Sin tarifa</span>
@@ -1582,7 +1656,7 @@ function ProjectGroupCard({
                     </CollapsibleContent>
                 </CardContent>
             </Collapsible>
-        </Card>
+        </Card >
     );
 }
 

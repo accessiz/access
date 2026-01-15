@@ -23,6 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../../components
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../../../../components/ui/collapsible';
 
 import { formatCurrency } from '../../../../lib/utils/format';
+import { AdjustmentInfo } from '../../../../components/molecules/AdjustmentInfo';
 
 // Define el tipo extendido que incluye las URLs/paths
 type ModelWithImages = Model & {
@@ -58,6 +59,10 @@ interface WorkHistoryItem {
   firstWorkDate: string | null;
   lastWorkDate: string | null;
   totalPaidGTQ: number | null;
+  adjustmentAmount?: number | null;
+  adjustmentAmountTrade?: number | null;
+  adjustmentReason?: string | null;
+  adjustmentReasonTrade?: string | null;
 }
 
 interface ModelProfileClientProps {
@@ -603,6 +608,11 @@ export default function ModelProfilePageClient({ initialModel, workHistory = [],
                                   <span className="text-body font-medium text-foreground">
                                     {formatCurrency(job.totalPaidGTQ || (job.currency === 'USD' ? totalAmount * currentRate : totalAmount), 'GTQ')}
                                   </span>
+                                  <AdjustmentInfo
+                                    amount={job.adjustmentAmount || 0}
+                                    reason={job.adjustmentReason || null}
+                                    currency={job.currency}
+                                  />
                                 </div>
                                 {job.currency === 'USD' && (
                                   <span className="text-xs text-muted-foreground mr-1">
@@ -619,6 +629,11 @@ export default function ModelProfilePageClient({ initialModel, workHistory = [],
                                 <span className="text-body font-medium text-foreground">
                                   {formatCurrency(job.totalTradeAmount || (job.tradeFee || 0) * job.daysWorked, job.currency)}
                                 </span>
+                                <AdjustmentInfo
+                                  amount={job.adjustmentAmountTrade || 0}
+                                  reason={job.adjustmentReasonTrade || null}
+                                  currency={job.currency}
+                                />
                               </div>
                             )}
                             {!hasCash && !hasTrade && (
@@ -683,33 +698,38 @@ export default function ModelProfilePageClient({ initialModel, workHistory = [],
           {/* Lista de postulaciones */}
           <div className="space-y-3">
             {filteredApplications.length > 0 ? (
-              filteredApplications.map((app) => {
+              filteredApplications.map((app, index) => {
                 return (
                   <Card key={app.projectId} className="hover:bg-hover-overlay transition-colors">
                     <CardContent className="p-4">
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        {/* Left: Project info */}
-                        <div className="min-w-0 flex-1">
-                          <Link
-                            href={`/dashboard/projects/${app.projectId}`}
-                            className="text-body font-semibold hover:underline block wrap-break-word sm:truncate"
-                          >
-                            {app.projectName}
-                          </Link>
-                          <div className="flex items-center gap-x-2 gap-y-2 text-label text-muted-foreground mt-1">
-                            <Building2 className="h-3 w-3 shrink-0" />
-                            <span>{app.brandName || app.clientName || 'Sin cliente'}</span>
-                            {app.firstWorkDate && (
-                              <>
-                                <span>•</span>
-                                <span>{new Date(app.firstWorkDate + 'T00:00:00').toLocaleDateString('es-GT', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-                              </>
-                            )}
+                        {/* Left: Number + Project info */}
+                        <div className="flex items-start gap-3 min-w-0 flex-1">
+                          <span className="text-muted-foreground text-label font-medium shrink-0 w-6 text-center pt-0.5">
+                            {index + 1}.
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <Link
+                              href={`/dashboard/projects/${app.projectId}`}
+                              className="text-body font-semibold hover:underline block wrap-break-word sm:truncate"
+                            >
+                              {app.projectName}
+                            </Link>
+                            <div className="flex items-center gap-x-2 gap-y-2 text-label text-muted-foreground mt-1">
+                              <Building2 className="h-3 w-3 shrink-0" />
+                              <span>{app.brandName || app.clientName || 'Sin cliente'}</span>
+                              {app.firstWorkDate && (
+                                <>
+                                  <span>•</span>
+                                  <span>{new Date(app.firstWorkDate + 'T00:00:00').toLocaleDateString('es-GT', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                                </>
+                              )}
+                            </div>
                           </div>
                         </div>
 
                         {/* Right: Status badge */}
-                        <ProjectStatusBadge status={app.clientSelection} className="self-start sm:self-auto" />
+                        <ProjectStatusBadge status={app.clientSelection} className="self-start sm:self-auto ml-9 sm:ml-0" />
                       </div>
                     </CardContent>
                   </Card>

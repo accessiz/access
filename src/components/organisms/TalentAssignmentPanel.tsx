@@ -4,7 +4,7 @@ import { useState, useCallback, useMemo, useEffect, useRef } from 'react'
 import { toast } from 'sonner'
 import {
     Check, Loader2, Save, CheckCircle2,
-    Search, Filter, X, Users, Calendar, CheckCheck,
+    Search, Filter, X, Trash2, Users, Calendar, CheckCheck,
     ThumbsUp, ThumbsDown
 } from 'lucide-react'
 import { Model, Project } from '@/lib/types'
@@ -816,14 +816,14 @@ export function TalentAssignmentPanel({
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
-                                                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                                    className="h-8 w-8 text-destructive hover:bg-destructive/10"
                                                     onClick={() => handleRemoveModel(model.id)}
                                                     disabled={isRemoving}
                                                 >
                                                     {isRemoving ? (
                                                         <Loader2 className="h-4 w-4 animate-spin" />
                                                     ) : (
-                                                        <X className="h-4 w-4" />
+                                                        <Trash2 className="h-4 w-4" />
                                                     )}
                                                 </Button>
                                             </div>
@@ -913,7 +913,7 @@ export function TalentAssignmentPanel({
                             {/* Cabecera con fechas */}
                             <div className="flex border-b border-[rgb(var(--separator))] bg-sys-bg-tertiary sticky top-0 z-10">
                                 {/* Columna fija de modelos */}
-                                <div className="w-72 min-w-72 px-4 py-3 font-medium text-body border-r border-[rgb(var(--separator))] bg-sys-bg-tertiary sticky left-0 z-20">
+                                <div className="flex-1 min-w-64 px-4 py-3 font-medium text-body border-r border-[rgb(var(--separator))] bg-sys-bg-tertiary sticky left-0 z-20">
                                     Talento
                                 </div>
 
@@ -927,7 +927,7 @@ export function TalentAssignmentPanel({
                                     return (
                                         <div
                                             key={item.id}
-                                            className="flex-1 min-w-28 px-3 py-3 text-center border-r border-[rgb(var(--separator))] last:border-r-0"
+                                            className="w-28 min-w-28 px-2 py-3 text-center border-r border-[rgb(var(--separator))] last:border-r-0"
                                         >
                                             <TooltipProvider>
                                                 <Tooltip>
@@ -985,7 +985,7 @@ export function TalentAssignmentPanel({
                                                 )}
                                             >
                                                 {/* Info del modelo */}
-                                                <div className="w-72 min-w-72 px-4 py-3 flex items-center gap-3 border-r border-[rgb(var(--separator))] bg-sys-bg-secondary sticky left-0 z-10">
+                                                <div className="flex-1 min-w-64 px-4 py-3 flex items-center gap-3 border-r border-[rgb(var(--separator))] bg-sys-bg-secondary sticky left-0 z-10">
                                                     <Avatar className="h-10 w-10 border">
                                                         <AvatarImage
                                                             src={model.coverUrl || `${SUPABASE_PUBLIC_URL}${model.id}/Portada/cover.jpg`}
@@ -1104,7 +1104,7 @@ export function TalentAssignmentPanel({
                                                         <div
                                                             key={scheduleItem.id}
                                                             className={cn(
-                                                                'flex-1 min-w-28 flex items-center justify-center border-r border-[rgb(var(--separator))] last:border-r-0 py-3',
+                                                                'w-28 min-w-28 flex items-center justify-center border-r border-[rgb(var(--separator))] last:border-r-0 py-3',
                                                                 isPendingSave && 'bg-warning/10',
                                                                 savedThis && 'bg-success/10',
                                                                 errorThis && 'bg-destructive/10'
@@ -1135,14 +1135,14 @@ export function TalentAssignmentPanel({
                                                                 <Button
                                                                     variant="ghost"
                                                                     size="icon"
-                                                                    className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                                                                    className="h-7 w-7 text-destructive hover:bg-destructive/10"
                                                                     onClick={() => handleRemoveModel(model.id)}
                                                                     disabled={isRemoving}
                                                                 >
                                                                     {isRemoving ? (
                                                                         <Loader2 className="h-4 w-4 animate-spin" />
                                                                     ) : (
-                                                                        <X className="h-4 w-4" />
+                                                                        <Trash2 className="h-4 w-4" />
                                                                     )}
                                                                 </Button>
                                                             </TooltipTrigger>

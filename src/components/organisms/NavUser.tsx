@@ -1,11 +1,11 @@
 "use client"
 
 import {
-  BadgeCheck,
-  Bell,
   ChevronsUpDown,
   LogOut,
+  Settings,
 } from "lucide-react"
+import Link from "next/link"
 
 import {
   Avatar,
@@ -15,7 +15,6 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -45,7 +44,7 @@ export function NavUser({ user }: { user: User }) {
             >
               <Avatar className="h-8 w-8 rounded-lg">
                 <AvatarImage src={user.user_metadata?.avatar_url || ""} alt={user.email || ""} />
-                <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
+                <AvatarFallback className="rounded-lg bg-purple text-white">{initials}</AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-body leading-tight">
                 <span className="truncate font-semibold">Mi Cuenta</span>
@@ -63,7 +62,8 @@ export function NavUser({ user }: { user: User }) {
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-body">
                 <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
+                  <AvatarImage src={user.user_metadata?.avatar_url || ""} alt={user.email || ""} />
+                  <AvatarFallback className="rounded-lg bg-purple text-white">{initials}</AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-body leading-tight">
                   <span className="truncate font-semibold">IZ Access</span>
@@ -72,16 +72,14 @@ export function NavUser({ user }: { user: User }) {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <BadgeCheck className="mr-2 h-4 w-4" />
-                Cuenta
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Bell className="mr-2 h-4 w-4" />
-                Notificaciones
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
+
+            <DropdownMenuItem asChild>
+              <Link href="/dashboard/settings" className="cursor-pointer">
+                <Settings className="mr-2 h-4 w-4" />
+                Configuración
+              </Link>
+            </DropdownMenuItem>
+
             <DropdownMenuSeparator />
 
             {/* Botón de Logout real conectado a tu ruta de auth */}

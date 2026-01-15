@@ -26,6 +26,9 @@ export const metadata: Metadata = {
     description: 'Portal de Gestión para IZ Management.',
     images: ['/images/hero-photo-cover.jpg'],
   },
+  icons: {
+    icon: '/favicon.ico',
+  },
 };
 
 export default function RootLayout({

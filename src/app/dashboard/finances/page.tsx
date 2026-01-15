@@ -33,6 +33,10 @@ export type FinanceSummaryItem = {
     pending_amount: number;
     currency: string;
     total_paid_gtq: number; // Added for multi-currency
+    adjustment_amount?: number;
+    adjustment_amount_trade?: number;
+    adjustment_reason?: string | null;
+    adjustment_reason_trade?: string | null;
 };
 
 // Tipo para cobros a clientes
@@ -207,7 +211,98 @@ export default async function FinancesPage() {
             pending_amount: Number(item.pending_amount) || 0,
             currency: item.currency || 'GTQ',
             total_paid_gtq: Number(item.total_paid_gtq) || 0,
+            adjustment_amount: 0,
+            adjustment_amount_trade: 0,
+            adjustment_reason: null,
+            adjustment_reason_trade: null,
         }));
+
+    // 1.5. Obtener ajustes de asignaciones para estos pagos
+    // Dado que finance_summary es una vista, necesitamos obtener los detalles de ajustes por separado
+    // Usamos model_assignments.id que corresponde a finance_summary.id (si es por assignment)
+    // O necesitamos buscar las asignaciones correspondientes.
+
+    // Verificamos si podemos obtenerlos.
+    // Asumimos que finance_summary item ID es el assignment ID o podemos linkear.
+    // NOTA: Si finance_summary agrupa, esto sería complejo. Pero parece ser una vista plana de assignments o consolidada.
+    // Si la vista es 'finance_summary', veamos si el ID es 'model_assignments.id'.
+    // Si ID es de model_assignments, podemos hacer fetch IN ids.
+
+    // 1.5. Obtener ajustes de asignaciones para estos pagos
+    // La vista finance_summary no incluye las columnas nuevas de ajustes, así que las buscamos manualmente.
+    // Relación: Project -> ProjectSchedule -> ModelAssignment
+
+    const uniqueProjectIds = Array.from(new Set(modelPayments.map(i => i.project_id)));
+
+    if (uniqueProjectIds.length > 0) {
+        // A. Obtener schedules de estos proyectos
+        const { data: schedulesData } = await supabase
+            .from('project_schedule')
+            .select('id, project_id')
+            .in('project_id', uniqueProjectIds);
+
+        if (schedulesData && schedulesData.length > 0) {
+            const scheduleIds = schedulesData.map(s => s.id);
+            const scheduleProjectMap = new Map(schedulesData.map(s => [s.id, s.project_id]));
+
+            // B. Obtener asignaciones con ajustes
+            const { data: assignmentsData } = await supabase
+                .from('model_assignments')
+                .select('model_id, schedule_id, adjustment_amount, adjustment_amount_trade, adjustment_reason, adjustment_reason_trade')
+                .in('schedule_id', scheduleIds)
+                .or('adjustment_amount.neq.0,adjustment_amount_trade.neq.0'); // Solo traer los que tengan ajuste
+
+            if (assignmentsData && assignmentsData.length > 0) {
+                // Crear mapa: project_id + model_id -> adjustment data
+                // Usamos una clave compuesta string
+                const adjMap = new Map<string, typeof assignmentsData[0]>();
+
+                assignmentsData.forEach(assign => {
+                    if (!assign.schedule_id) return;
+                    const projectId = scheduleProjectMap.get(assign.schedule_id);
+                    if (projectId) {
+                        const key = `${projectId}-${assign.model_id}`;
+                        // Solo necesitamos uno (asumiendo que todos los asignments del modelo en el proyecto tienen el mismo ajuste, o tomamos el primero)
+                        if (!adjMap.has(key)) {
+                            adjMap.set(key, assign);
+                        }
+                    }
+                });
+
+                // C. Actualizar modelPayments
+                modelPayments.forEach(item => {
+                    const key = `${item.project_id}-${item.model_id}`;
+                    const adj = adjMap.get(key);
+
+                    if (adj) {
+                        item.adjustment_amount = adj.adjustment_amount || 0;
+                        item.adjustment_amount_trade = adj.adjustment_amount_trade || 0;
+                        item.adjustment_reason = adj.adjustment_reason;
+                        item.adjustment_reason_trade = adj.adjustment_reason_trade;
+
+                        // Recalcular totales incluyendo ajustes
+                        const days = item.days_worked || 1;
+                        const totalAdjustment = (item.adjustment_amount || 0) * days;
+                        const totalAdjustmentTrade = (item.adjustment_amount_trade || 0) * days;
+
+                        item.total_amount += totalAdjustment;
+
+                        // Actualizar total_trade_value
+                        if (item.total_trade_value !== null) {
+                            item.total_trade_value += totalAdjustmentTrade;
+                        } else if (totalAdjustmentTrade !== 0) {
+                            item.total_trade_value = totalAdjustmentTrade;
+                        }
+
+                        // Actualizar pending_amount si el estado es pendiente
+                        if (item.payment_status === 'pending') {
+                            item.pending_amount = item.total_amount;
+                        }
+                    }
+                });
+            }
+        }
+    }
 
 
     // Mapear cobros a clientes

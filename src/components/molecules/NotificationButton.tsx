@@ -175,8 +175,8 @@ export function NotificationButton() {
                         </div>
                     ) : totalCount === 0 ? (
                         <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
-                            <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
-                                <Bell className="h-5 w-5 text-muted-foreground" />
+                            <div className="h-12 w-12 rounded-full bg-[rgb(var(--tertiary))] flex items-center justify-center mb-3">
+                                <Bell className="h-5 w-5 text-secondary" />
                             </div>
                             <p className="text-body text-muted-foreground">
                                 Sin notificaciones

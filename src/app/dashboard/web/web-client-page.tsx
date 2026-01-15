@@ -6,10 +6,14 @@ import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { toast } from 'sonner'
 import { toggleModelVisibility } from '@/lib/actions/models'
 import { getAllModelsForWeb } from '@/lib/actions/web'
+import { getTopApprovedModelIds } from '@/lib/actions/rankings'
 import { SegmentedControl } from '@/components/molecules/SegmentedControl'
+import { FeaturedModelsPanel } from '@/components/organisms/FeaturedModelsPanel'
 
 type Model = {
     id: string
@@ -35,16 +39,22 @@ export default function WebVisibilityClientPage() {
     const [genderFilter, setGenderFilter] = useState<GenderFilter>('all')
     const [visibilityFilter, setVisibilityFilter] = useState<VisibilityFilter>('all')
     const [updating, setUpdating] = useState<string | null>(null)
+    const [topApprovedIds, setTopApprovedIds] = useState<string[]>([])
 
     useEffect(() => {
-        const fetchModels = async () => {
+        const fetchData = async () => {
             try {
+                // Fetch models
                 const result = await getAllModelsForWeb()
                 if (result.success && result.data) {
                     setModels(result.data)
                 } else {
                     toast.error(result.error || 'Error al cargar modelos')
                 }
+
+                // Fetch top approved models
+                const topIds = await getTopApprovedModelIds(20)
+                setTopApprovedIds(topIds)
             } catch (err) {
                 console.error(err)
                 toast.error('Error al cargar modelos')
@@ -52,7 +62,7 @@ export default function WebVisibilityClientPage() {
                 setLoading(false)
             }
         }
-        fetchModels()
+        fetchData()
     }, [])
 
     const handleToggle = async (modelId: string, newValue: boolean) => {
@@ -84,7 +94,8 @@ export default function WebVisibilityClientPage() {
     const publicCount = models.filter(m => m.is_public).length
 
     return (
-        <div className="grid gap-6">
+        <div className="grid gap-8">
+            {/* Header */}
             <header className="flex flex-col gap-x-4 gap-y-4 pb-4 border-b sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <div className="flex items-center gap-3">
@@ -97,118 +108,113 @@ export default function WebVisibilityClientPage() {
                 </div>
             </header>
 
-            {/* Filtros */}
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-                <div className="relative w-full sm:w-64 sm:shrink-0">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                        placeholder="Buscar talento..."
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        className="pl-9"
-                    />
-                </div>
-                <div className="flex items-center gap-3 overflow-x-auto sm:overflow-visible">
-                    <SegmentedControl<GenderFilter>
-                        ariaLabel="Filtrar por género"
-                        value={genderFilter}
-                        onValueChange={setGenderFilter}
-                        className="w-fit shrink-0"
-                        options={[
-                            {
-                                value: 'all',
-                                label: 'Todos',
-                                iconOnly: true,
-                                icon: <VenusAndMars className="h-4 w-4" aria-hidden="true" />,
-                            },
-                            {
-                                value: 'female',
-                                label: 'Mujeres',
-                                iconOnly: true,
-                                icon: <Venus className="h-4 w-4" aria-hidden="true" />,
-                            },
-                            {
-                                value: 'male',
-                                label: 'Hombres',
-                                iconOnly: true,
-                                icon: <Mars className="h-4 w-4" aria-hidden="true" />,
-                            },
-                        ]}
-                    />
-                    <SegmentedControl<VisibilityFilter>
-                        ariaLabel="Filtrar por visibilidad"
-                        value={visibilityFilter}
-                        onValueChange={setVisibilityFilter}
-                        className="w-fit shrink-0"
-                        options={[
-                            {
-                                value: 'all',
-                                label: 'Todos',
-                                iconOnly: true,
-                                icon: <Layers className="h-4 w-4" aria-hidden="true" />,
-                            },
-                            {
-                                value: 'visible',
-                                label: 'Visibles',
-                                iconOnly: true,
-                                icon: <Eye className="h-4 w-4" aria-hidden="true" />,
-                            },
-                            {
-                                value: 'hidden',
-                                label: 'Ocultos',
-                                iconOnly: true,
-                                icon: <EyeOff className="h-4 w-4" aria-hidden="true" />,
-                            },
-                        ]}
-                    />
-                </div>
-            </div>
+            {/* Model list in Card with scroll */}
+            <Card className="bg-sys-bg-secondary">
+                <CardHeader className="py-6 border-b border-separator bg-quaternary rounded-t-lg">
+                    <div className="flex flex-col gap-4">
+                        {/* Title */}
+                        <CardTitle className="flex items-center gap-2 text-lg">
+                            <Globe className="h-5 w-5 text-primary" />
+                            Talentos
+                        </CardTitle>
 
-            {/* Grid de modelos - 1 col mobile, 2 tablet, 3 desktop */}
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {loading ? (
-                    Array.from({ length: 9 }).map((_, i) => (
-                        <div key={i} className="flex items-center gap-4 p-3 rounded-lg border">
-                            <Skeleton className="h-10 w-10 rounded-full" />
-                            <Skeleton className="h-4 w-24 flex-1" />
-                            <Skeleton className="h-6 w-10" />
-                        </div>
-                    ))
-                ) : filteredModels.length === 0 ? (
-                    <div className="col-span-full flex flex-col items-center justify-center py-12 text-muted-foreground">
-                        <Globe className="h-12 w-12 mb-4 opacity-50" />
-                        <p className="text-body">No se encontraron talentos</p>
-                    </div>
-                ) : (
-                    filteredModels.map(model => (
-                        <div
-                            key={model.id}
-                            className="flex items-center gap-3 p-3 rounded-lg border-transparent bg-sys-bg-secondary hover:bg-hover-overlay transition-colors"
-                        >
-                            <Avatar className="h-10 w-10 shrink-0">
-                                <AvatarImage src={mediaUrl(model.cover_path) || undefined} />
-                                <AvatarFallback>
-                                    <User className="h-5 w-5" />
-                                </AvatarFallback>
-                            </Avatar>
-                            <span className="text-body font-medium flex-1 truncate">
-                                {model.alias || model.full_name}
-                            </span>
-                            <div className="flex items-center gap-2 shrink-0">
-                                {updating === model.id && (
-                                    <Loader2 className="h-4 w-4 animate-spin text-purple" />
-                                )}
-                                <Switch
-                                    checked={model.is_public}
-                                    onCheckedChange={(checked) => handleToggle(model.id, checked)}
-                                    disabled={updating === model.id}
-                                    className="data-[state=unchecked]:bg-quaternary data-[state=checked]:bg-purple border-transparent [&>span]:data-[state=unchecked]:bg-tertiary [&>span]:data-[state=checked]:bg-white"
+                        {/* Search and Filters - Mobile: search top, filters bottom. Desktop: side by side */}
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            {/* Search */}
+                            <div className="relative w-full sm:w-64 shrink-0">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    placeholder="Buscar talento..."
+                                    value={search}
+                                    onChange={(e) => setSearch(e.target.value)}
+                                    className="pl-9"
+                                />
+                            </div>
+
+                            {/* Filters - Mobile: stack, Desktop: row */}
+                            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+                                <SegmentedControl<GenderFilter>
+                                    ariaLabel="Filtrar por género"
+                                    value={genderFilter}
+                                    onValueChange={setGenderFilter}
+                                    className="w-fit shrink-0"
+                                    options={[
+                                        { value: 'all', label: 'Todos', iconOnly: true, icon: <VenusAndMars className="h-4 w-4" aria-hidden="true" /> },
+                                        { value: 'female', label: 'Mujeres', iconOnly: true, icon: <Venus className="h-4 w-4" aria-hidden="true" /> },
+                                        { value: 'male', label: 'Hombres', iconOnly: true, icon: <Mars className="h-4 w-4" aria-hidden="true" /> },
+                                    ]}
+                                />
+                                <SegmentedControl<VisibilityFilter>
+                                    ariaLabel="Filtrar por visibilidad"
+                                    value={visibilityFilter}
+                                    onValueChange={setVisibilityFilter}
+                                    className="w-fit shrink-0"
+                                    options={[
+                                        { value: 'all', label: 'Todos', iconOnly: true, icon: <Layers className="h-4 w-4" aria-hidden="true" /> },
+                                        { value: 'visible', label: 'Visibles', iconOnly: true, icon: <Eye className="h-4 w-4" aria-hidden="true" /> },
+                                        { value: 'hidden', label: 'Ocultos', iconOnly: true, icon: <EyeOff className="h-4 w-4" aria-hidden="true" /> },
+                                    ]}
                                 />
                             </div>
                         </div>
-                    ))
-                )}
-            </div>
+                    </div>
+                </CardHeader>
+
+                <CardContent className="p-4">
+
+                    {/* Model grid with scroll */}
+                    <ScrollArea className="h-[400px]">
+                        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 pr-4">
+                            {loading ? (
+                                Array.from({ length: 9 }).map((_, i) => (
+                                    <div key={i} className="flex items-center gap-4 p-3 rounded-lg border">
+                                        <Skeleton className="h-10 w-10 rounded-full" />
+                                        <Skeleton className="h-4 w-24 flex-1" />
+                                        <Skeleton className="h-6 w-10" />
+                                    </div>
+                                ))
+                            ) : filteredModels.length === 0 ? (
+                                <div className="col-span-full flex flex-col items-center justify-center py-12 text-muted-foreground">
+                                    <Globe className="h-12 w-12 mb-4 opacity-50" />
+                                    <p className="text-body">No se encontraron talentos</p>
+                                </div>
+                            ) : (
+                                filteredModels.map(model => (
+                                    <div
+                                        key={model.id}
+                                        className="flex items-center gap-3 p-3 rounded-lg border-transparent bg-sys-bg-tertiary hover:bg-hover-overlay transition-colors"
+                                    >
+                                        <Avatar className="h-10 w-10 shrink-0">
+                                            <AvatarImage src={mediaUrl(model.cover_path) || undefined} />
+                                            <AvatarFallback>
+                                                <User className="h-5 w-5" />
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        <span className="text-body font-medium flex-1 truncate">
+                                            {model.alias || model.full_name}
+                                        </span>
+                                        <div className="flex items-center gap-2 shrink-0">
+                                            {updating === model.id && (
+                                                <Loader2 className="h-4 w-4 animate-spin text-purple" />
+                                            )}
+                                            <Switch
+                                                checked={model.is_public}
+                                                onCheckedChange={(checked) => handleToggle(model.id, checked)}
+                                                disabled={updating === model.id}
+                                                className="data-[state=unchecked]:bg-quaternary data-[state=checked]:bg-purple border-transparent [&>span]:data-[state=unchecked]:bg-tertiary [&>span]:data-[state=checked]:bg-white"
+                                            />
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </ScrollArea>
+                </CardContent>
+            </Card>
+
+            {/* Featured Models Section */}
+            <FeaturedModelsPanel allModels={models} topApprovedModelIds={topApprovedIds} />
         </div>
     )
 }
+

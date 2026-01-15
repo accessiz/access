@@ -294,10 +294,15 @@ export async function updateModelPaymentDetail(
   modelId: string,
   data: {
     agreed_fee?: number | null;
+    trade_fee?: number | null;
     fee_type?: string | null;
     currency?: string | null;
     internal_status?: string | null;
     notes?: string | null;
+    adjustment_amount?: number | null;
+    adjustment_reason?: string | null;
+    adjustment_amount_trade?: number | null;
+    adjustment_reason_trade?: string | null;
   }
 ) {
   const supabase = await createSupabaseServerActionClient();
@@ -307,15 +312,53 @@ export async function updateModelPaymentDetail(
   }
 
   try {
-    const { error } = await supabase
+    // Separar datos para projects_models vs model_assignments
+    const { adjustment_amount, adjustment_reason, adjustment_amount_trade, adjustment_reason_trade, ...projectModelData } = data;
+
+    // 1. Actualizar projects_models (tarifa base, tipo, moneda)
+    const { error: pmError } = await supabase
       .from('projects_models')
-      .update(data)
+      .update(projectModelData)
       .eq('project_id', projectId)
       .eq('model_id', modelId);
 
-    if (error) {
-      logError(error, { action: 'updateModelPaymentDetail', projectId, modelId, data });
+    if (pmError) {
+      logError(pmError, { action: 'updateModelPaymentDetail.projects_models', projectId, modelId, data });
       return { success: false, error: 'No se pudo actualizar la información de pago.' };
+    }
+
+    // 2. Si hay ajuste, actualizar todas las asignaciones del modelo en este proyecto
+    if (adjustment_amount !== undefined || adjustment_amount_trade !== undefined) {
+      // Obtener todos los schedule_ids de este proyecto
+      const { data: schedules } = await supabase
+        .from('project_schedule')
+        .select('id')
+        .eq('project_id', projectId);
+
+      if (schedules && schedules.length > 0) {
+        const scheduleIds = schedules.map(s => s.id);
+
+        const updatePayload: Record<string, unknown> = {};
+        if (adjustment_amount !== undefined) {
+          updatePayload.adjustment_amount = adjustment_amount;
+          updatePayload.adjustment_reason = adjustment_reason;
+        }
+        if (adjustment_amount_trade !== undefined) {
+          updatePayload.adjustment_amount_trade = adjustment_amount_trade;
+          updatePayload.adjustment_reason_trade = adjustment_reason_trade;
+        }
+
+        const { error: maError } = await supabase
+          .from('model_assignments')
+          .update(updatePayload)
+          .eq('model_id', modelId)
+          .in('schedule_id', scheduleIds);
+
+        if (maError) {
+          logError(maError, { action: 'updateModelPaymentDetail.model_assignments', projectId, modelId });
+          // No retornamos error aquí, la actualización principal fue exitosa
+        }
+      }
     }
 
     revalidatePath(`/dashboard/projects/${projectId}`);

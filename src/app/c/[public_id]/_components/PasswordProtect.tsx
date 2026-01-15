@@ -44,10 +44,23 @@ export default function PasswordProtect({ projectId }: PasswordProtectProps) {
   // Animate card entrance when it becomes visible
   useEffect(() => {
     if (showCard && cardRef.current) {
-      gsap.fromTo(cardRef.current,
-        { opacity: 0, y: 30, scale: 0.95 },
-        { opacity: 1, y: 0, scale: 1, duration: 0.6, ease: 'power2.out' }
-      );
+      // Hacer visible y configurar estado inicial inmediatamente
+      gsap.set(cardRef.current, {
+        visibility: 'visible',
+        opacity: 0,
+        y: 30,
+        scale: 0.95
+      });
+      // Animar suavemente después de un frame
+      requestAnimationFrame(() => {
+        gsap.to(cardRef.current, {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          duration: 0.6,
+          ease: 'power2.out'
+        });
+      });
     }
   }, [showCard]);
 
@@ -99,7 +112,7 @@ export default function PasswordProtect({ projectId }: PasswordProtectProps) {
       <div
         ref={cardRef}
         className="w-full max-w-[340px]"
-        style={{ opacity: 0 }}
+        style={{ visibility: 'hidden' }}
       >
         {/* Card con borde animado magenta */}
         <div className="client-wow-progress dark-solid !rounded-2xl !bg-[#0a0510] px-8 py-10 flex flex-col items-center text-center">
