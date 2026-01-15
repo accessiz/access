@@ -1598,7 +1598,6 @@ function ClientBillingCard({
     const StatusIcon = statusConfig.icon;
 
     const clientDisplay = item.registered_client_name || item.client_name || 'Sin cliente';
-    const isPending = item.payment_status === 'pending';
     const hasCash = (item.subtotal ?? 0) > 0;
     const hasTrade = (item.trade_value ?? 0) > 0;
 

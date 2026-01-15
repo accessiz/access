@@ -112,17 +112,6 @@ export function ScheduleMigrationModal({
         await onConfirm(mapping)
     }
 
-    const handleDiscard = () => {
-        // Marcar todo como "delete" y confirmar
-        const discardMapping: MigrationMapping = {}
-        schedulesWithAssignments.forEach(schedule => {
-            if (schedule.oldScheduleId) {
-                discardMapping[schedule.oldScheduleId] = 'delete'
-            }
-        })
-        onConfirm(discardMapping)
-    }
-
     // Si no hay asignaciones afectadas, confirmar directamente
     if (schedulesWithAssignments.length === 0) {
         return (
