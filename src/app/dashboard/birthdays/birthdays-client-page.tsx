@@ -269,7 +269,7 @@ export function BirthdaysClientPage() {
                     <CardTitle className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                         <span className="min-w-0 wrap-break-word">Cumpleaños en {MONTHS[currentMonth - 1]}</span>
                         {!loading && (
-                            <Badge variant="secondary" className="bg-purple text-white hover:bg-purple/90">{birthdays.length}</Badge>
+                            <Badge variant="secondary" className="w-fit bg-purple text-white hover:bg-purple/90">{birthdays.length}</Badge>
                         )}
                     </CardTitle>
                 </CardHeader>

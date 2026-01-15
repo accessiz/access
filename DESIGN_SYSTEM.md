@@ -233,6 +233,42 @@ A continuación se detalla la estandarización de estados usando colores con sig
 | **Margen bruto** | Cyan | Dato analítico |
 | **Modelos pendientes** | Rojo | Bloqueo operativo |
 
+#### F. Montos Multi-Moneda (Display)
+
+> **Regla:** Los montos financieros se muestran según la moneda original del proyecto.
+
+| Moneda Original | Display | Ejemplo |
+| :--- | :--- | :--- |
+| **GTQ (Quetzales)** | Solo monto en GTQ, **sin tipo de cambio** | `Q 1,500.00` |
+| **USD (Dólares)** | Monto USD + equivalente GTQ **al lado** (no abajo) | `USD 200 (Q 1,534.02)` |
+
+> [!IMPORTANT]
+> - Si el proyecto está en **Quetzales (GTQ)**: No es necesario mostrar tipo de cambio ni equivalencia.
+> - Si el proyecto está en **Dólares (USD)**: El equivalente en Quetzales se muestra **al lado** del monto USD, **nunca debajo**.
+
+**Especificaciones de Estilo:**
+
+| Elemento | Tipografía | Color | Ejemplo |
+| :--- | :--- | :--- | :--- |
+| Monto principal (GTQ o USD) | `text-body`, `font-medium` | `text-foreground` | `Q 1,500.00` o `USD 200` |
+| Equivalente GTQ (solo para USD) | `text-label` (más pequeña) | `text-secondary` | `(Q 1,534.02)` |
+
+**Formato del equivalente:**
+- Usar paréntesis: `(Q {monto})`
+- Posición: Al lado del monto USD, en la misma línea
+- Separación: `gap-1` o `gap-2` entre montos
+
+```jsx
+// Ejemplo de implementación
+{currency === 'USD' ? (
+  <div className="flex items-center gap-1">
+    <span className="text-body font-medium text-foreground">USD {amount}</span>
+    <span className="text-label text-secondary">(Q {amountGTQ})</span>
+  </div>
+) : (
+  <span className="text-body font-medium text-foreground">Q {amount}</span>
+)}
+
 ---
 
 ### 1.4 Uso Estricto del Morado (Regla de Oro)
@@ -845,7 +881,28 @@ Los contenidos se agrupan en bloques con diferentes niveles de énfasis visual s
 └───────────────┘
 ```
 
+#### G. Condiciones de Visibilidad en Finanzas
+
+Las secciones de Finanzas tienen reglas específicas sobre cuándo un proyecto aparece en cada vista:
+
+##### Pago a Modelos
+Un proyecto aparece en esta sección cuando **TODAS** las condiciones se cumplen:
+1. **Status:** Proyecto con estado `completed`
+2. **Aprobación:** Al menos 1 modelo con `client_selection = 'approved'`
+3. **Fecha:** La última fecha del proyecto (`last_work_date`) ha pasado (`<= hoy`)
+
+##### Cobro a Clientes
+Un proyecto aparece en esta sección cuando **TODAS** las condiciones se cumplen:
+1. **Revenue:** Tiene `revenue > 0` O `client_trade_revenue > 0`
+2. **Status:** Proyecto con estado `completed`
+3. **Aprobación:** Al menos 1 modelo aprobado por el cliente
+4. **Fecha:** La última fecha del schedule ha pasado (`<= hoy`)
+
+> [!IMPORTANT]
+> Ambas secciones comparten la misma lógica de fecha: el proyecto **no debe aparecer** hasta que su fecha final haya pasado. Esto evita mostrar proyectos futuros como "por pagar" o "por cobrar".
+
 ---
+
 
 ## 5. 📄 Pagination
 

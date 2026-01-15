@@ -33,6 +33,7 @@ export default function NewModelPage() {
       gender: null,
       birth_date: '',
       country: null,
+      birth_country: null,
       height_cm: null,
       shoulders_cm: null,
       chest_cm: null,

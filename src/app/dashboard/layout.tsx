@@ -33,8 +33,6 @@ export default async function DashboardLayout({
         <header className="flex h-16 shrink-0 items-center justify-between px-4 transition-all duration-300">
           <div className="flex items-center gap-2">
             <SidebarTrigger className="-ml-1" />
-            <Separator orientation="vertical" className="mr-2 h-4 bg-separator" />
-            <DynamicBreadcrumb />
           </div>
 
           {/* Iconos de notificaciones y tema */}
@@ -42,7 +40,7 @@ export default async function DashboardLayout({
         </header>
 
         {/* Área de contenido fluida */}
-        <main className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-4 pb-6 sm:px-6">
+        <main className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-12 pb-6">
           {children}
         </main>
       </SidebarInset>

@@ -147,6 +147,10 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
   const pendingFormDataRef = useRef<FormData | null>(null);
   const pendingNewScheduleRef = useRef<{ date: string; startTime: string; endTime: string }[]>([]);
 
+  // Estado separado para moneda del cliente (puede ser diferente a la de modelos)
+  const [clientCurrency, setClientCurrency] = useState<'GTQ' | 'USD'>((initialData?.currency as 'GTQ' | 'USD') || 'GTQ');
+  const [hasManuallySetClientCurrency, setHasManuallySetClientCurrency] = useState(false);
+
   // Cargar clientes al montar
   useEffect(() => {
     const loadClients = async () => {
@@ -285,6 +289,14 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
     });
     return () => subscription.unsubscribe();
   }, [form, availableBrands, clients]);
+
+  // Sincronizar moneda del cliente cuando cambia la moneda de modelos (solo si no ha sido modificada manualmente)
+  const watchedCurrency = form.watch('currency');
+  useEffect(() => {
+    if (!hasManuallySetClientCurrency && watchedCurrency) {
+      setClientCurrency(watchedCurrency as 'GTQ' | 'USD');
+    }
+  }, [watchedCurrency, hasManuallySetClientCurrency]);
 
   const clientOptions = useMemo(() => [
     ...clients.map(c => ({
@@ -731,26 +743,47 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
             <h2 className="text-title">Presupuesto y Tarifas</h2>
           </div>
           <div className="border bg-card rounded-lg p-6 space-y-6">
-            {/* 1. Tipo de Pago (Prioridad Superior) */}
-            <div className="space-y-2">
-              <Label>Tipo de Pago (Default)</Label>
-              <Controller
-                control={form.control}
-                name="default_model_payment_type"
-                render={({ field }) => (
-                  <>
-                    <input type="hidden" name="default_model_payment_type" value={field.value || 'cash'} />
-                    <Select value={field.value || 'cash'} onValueChange={field.onChange}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="cash">Efectivo / Transferencia</SelectItem>
-                        <SelectItem value="trade">Canje / Intercambio</SelectItem>
-                        <SelectItem value="mixed">Mixto (Efectivo + Canje)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </>
-                )}
-              />
+            {/* 1. Tipo de Pago y Moneda */}
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label>Tipo de Pago</Label>
+                <Controller
+                  control={form.control}
+                  name="default_model_payment_type"
+                  render={({ field }) => (
+                    <>
+                      <input type="hidden" name="default_model_payment_type" value={field.value || 'cash'} />
+                      <Select value={field.value || 'cash'} onValueChange={field.onChange}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="cash">Efectivo / Transferencia</SelectItem>
+                          <SelectItem value="trade">Canje / Intercambio</SelectItem>
+                          <SelectItem value="mixed">Mixto (Efectivo + Canje)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </>
+                  )}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Moneda</Label>
+                <Controller
+                  control={form.control}
+                  name="currency"
+                  render={({ field }) => (
+                    <>
+                      <input type="hidden" name="currency" value={field.value || 'GTQ'} />
+                      <Select value={field.value || 'GTQ'} onValueChange={field.onChange}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="GTQ">GTQ - Quetzal</SelectItem>
+                          <SelectItem value="USD">USD - Dólar</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </>
+                  )}
+                />
+              </div>
             </div>
 
             {/* 2. Campos Según Tipo */}
@@ -760,7 +793,7 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
                   <Label>Tarifa por Modelo</Label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-body">
-                      GTQ
+                      {watchedCurrency || 'GTQ'}
                     </span>
                     <Input
                       type="number"
@@ -797,7 +830,7 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
                 <div className="space-y-2">
                   <Label>Valor Canje</Label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-body">GTQ</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-body">{watchedCurrency || 'GTQ'}</span>
                     <Input
                       type="number"
                       step="0.01"
@@ -834,7 +867,7 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
                   <div className="space-y-2">
                     <Label>Tarifa en Efectivo</Label>
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-body">GTQ</span>
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-body">{watchedCurrency || 'GTQ'}</span>
                       <Input
                         type="number"
                         step="0.01"
@@ -869,7 +902,7 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
                   <div className="space-y-2">
                     <Label>Valor Canje</Label>
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-body">GTQ</span>
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-body">{watchedCurrency || 'GTQ'}</span>
                       <Input
                         type="number"
                         step="0.01"
@@ -910,26 +943,44 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
             <span className="text-label text-muted-foreground">(opcional)</span>
           </div>
           <div className="border bg-card rounded-lg p-6 space-y-6">
-            {/* 1. Tipo de Pago Cliente (Prioridad) */}
-            <div className="space-y-2">
-              <Label>Tipo de Pago (Cliente)</Label>
-              <Controller
-                control={form.control}
-                name="client_payment_type"
-                render={({ field }) => (
-                  <>
-                    <input type="hidden" name="client_payment_type" value={field.value || 'cash'} />
-                    <Select value={field.value || 'cash'} onValueChange={field.onChange}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="cash">Efectivo / Transferencia</SelectItem>
-                        <SelectItem value="trade">Canje</SelectItem>
-                        <SelectItem value="mixed">Mixto</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </>
-                )}
-              />
+            {/* 1. Tipo de Pago y Moneda Cliente */}
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label>Tipo de Pago</Label>
+                <Controller
+                  control={form.control}
+                  name="client_payment_type"
+                  render={({ field }) => (
+                    <>
+                      <input type="hidden" name="client_payment_type" value={field.value || 'cash'} />
+                      <Select value={field.value || 'cash'} onValueChange={field.onChange}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="cash">Efectivo / Transferencia</SelectItem>
+                          <SelectItem value="trade">Canje</SelectItem>
+                          <SelectItem value="mixed">Mixto</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </>
+                  )}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Moneda</Label>
+                <Select
+                  value={clientCurrency}
+                  onValueChange={(val) => {
+                    setClientCurrency(val as 'GTQ' | 'USD');
+                    setHasManuallySetClientCurrency(true);
+                  }}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="GTQ">GTQ - Quetzal</SelectItem>
+                    <SelectItem value="USD">USD - Dólar</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             {/* 2. Campos Según Tipo */}
@@ -938,7 +989,7 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
                 <div className="space-y-2">
                   <Label>Subtotal</Label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-body">{form.watch('currency') || 'GTQ'}</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-body">{clientCurrency}</span>
                     <Input type="number" step="0.01" className="pl-14" {...form.register('revenue')} />
                   </div>
                   <input type="hidden" name="revenue" value={form.watch('revenue')?.toString() || ''} />
@@ -972,10 +1023,12 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
                 </div>
                 <div className="space-y-2">
                   <Label>Total</Label>
-                  <div className="h-10 px-3 py-2 bg-transparent border border-input rounded-md flex items-center font-medium text-body">
-                    {form.watch('currency') || 'GTQ'}{' '}
-                    {(((Number(form.watch('revenue')) || 0) * (1 + (Number(form.watch('tax_percentage')) || 12) / 100)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}
-                  </div>
+                  <Input
+                    readOnly
+                    disabled
+                    value={`${clientCurrency} ${(((Number(form.watch('revenue')) || 0) * (1 + (Number(form.watch('tax_percentage')) || 12) / 100)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}`}
+                    className="font-medium text-foreground bg-tertiary"
+                  />
                 </div>
               </div>
             )}
@@ -985,7 +1038,7 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
                 <div className="space-y-2">
                   <Label>Valor Canje</Label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-body">{form.watch('currency') || 'GTQ'}</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-body">{clientCurrency}</span>
                     <Input type="number" step="0.01" className="pl-14" {...form.register('client_trade_revenue')} />
                   </div>
                 </div>
@@ -1016,7 +1069,7 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
                   <div className="space-y-2">
                     <Label>Subtotal (Efectivo)</Label>
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-body">{form.watch('currency') || 'GTQ'}</span>
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-body">{clientCurrency}</span>
                       <Input type="number" step="0.01" className="pl-14" {...form.register('revenue')} />
                     </div>
                   </div>
@@ -1026,11 +1079,14 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
                   </div>
                   <div className="space-y-2">
                     <Label>Total Factura</Label>
-                    <div className="h-10 flex items-center px-3 border rounded-md bg-muted text-muted-foreground">
-                      {new Intl.NumberFormat('es-GT', { style: 'currency', currency: form.watch('currency') || 'GTQ' }).format(
+                    <Input
+                      readOnly
+                      disabled
+                      value={new Intl.NumberFormat('es-GT', { style: 'currency', currency: clientCurrency }).format(
                         (parseFloat(form.watch('revenue') as unknown as string) || 0) * (1 + (parseFloat(form.watch('tax_percentage') as unknown as string) || 0) / 100)
                       )}
-                    </div>
+                      className="font-medium text-foreground bg-tertiary"
+                    />
                   </div>
                 </div>
 
@@ -1038,7 +1094,7 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
                   <div className="space-y-2">
                     <Label>Valor Canje</Label>
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-body">{form.watch('currency') || 'GTQ'}</span>
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-body">{clientCurrency}</span>
                       <Input type="number" step="0.01" className="pl-14" {...form.register('client_trade_revenue')} />
                     </div>
                   </div>

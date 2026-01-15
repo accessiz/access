@@ -5,6 +5,7 @@ import ModelProfilePageClient from './[id]/page-client';
 import Link from 'next/link';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { getExchangeRate } from '@/lib/actions/exchange-rates';
 
 // Tipo para las props de la página
 type PageProps = {
@@ -57,6 +58,10 @@ export default async function ModelsPage({ searchParams }: PageProps) {
     ]);
   }
 
+  // Get current exchange rate for currency display
+  const rateResult = await getExchangeRate();
+  const currentRate = rateResult.success && rateResult.rate ? rateResult.rate : 7.70;
+
   return (
     <div className="flex flex-1 min-h-0 flex-col gap-6">
       <header className="flex flex-col gap-x-4 gap-y-4 pb-4 border-b sm:flex-row sm:items-center sm:justify-between">
@@ -88,6 +93,7 @@ export default async function ModelsPage({ searchParams }: PageProps) {
             key={selectedModel.id}
             initialModel={selectedModel}
             workHistory={workHistory}
+            currentRate={currentRate}
           />
         )}
       </ModelsPageContent>

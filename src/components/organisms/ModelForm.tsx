@@ -95,7 +95,7 @@ export const ModelForm = ({ isSubmitting }: ModelFormProps) => {
             <FieldError name="birth_date" />
           </FormField>
 
-          <FormField label="País" htmlFor="country">
+          <FormField label="País de Residencia" htmlFor="country">
             <Controller name="country" control={control} render={({ field }) => (
               <Combobox
                 options={countries}
@@ -107,6 +107,20 @@ export const ModelForm = ({ isSubmitting }: ModelFormProps) => {
               />
             )} />
             <FieldError name="country" />
+          </FormField>
+
+          <FormField label="País de Nacimiento" htmlFor="birth_country">
+            <Controller name="birth_country" control={control} render={({ field }) => (
+              <Combobox
+                options={countries}
+                value={field.value ?? ''}
+                onChange={field.onChange}
+                placeholder="Selecciona un país..."
+                searchPlaceholder="Buscar país..."
+                emptyMessage="No se encontró el país."
+              />
+            )} />
+            <FieldError name="birth_country" />
           </FormField>
 
           <FormField label="Documento ID" htmlFor="national_id">

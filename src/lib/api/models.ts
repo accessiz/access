@@ -207,6 +207,8 @@ export async function getModelWorkHistory(modelId: string) {
     payment_status: string | null;
     payment_date: string | null;
     daily_fee: number | null;
+    amount_gtq: number | null;
+    exchange_rate_used: number | null;
     project_schedule: {
       project_id: string;
       start_time: string;  // ISO timestamp, e.g. "2026-01-06T10:00:00+00:00"
@@ -253,6 +255,8 @@ export async function getModelWorkHistory(modelId: string) {
       payment_status,
       payment_date,
       daily_fee,
+      amount_gtq,
+      exchange_rate_used,
       project_schedule (
         project_id,
         start_time,
@@ -355,6 +359,12 @@ export async function getModelWorkHistory(modelId: string) {
       const totalAmount = fee * daysWorked;
       const totalTradeAmount = tradeFee * daysWorked;
 
+      // Calculate Total Paid GTQ
+      // Sum amount_gtq for paid assignments
+      const totalPaidGTQ = projectAssignments
+        .filter(a => a.payment_status === 'paid' && a.amount_gtq)
+        .reduce((sum, a) => sum + (a.amount_gtq || 0), 0);
+
       // Payment type is from the project configuration
       const paymentType: 'cash' | 'trade' | 'mixed' = projectPaymentType;
 
@@ -374,6 +384,7 @@ export async function getModelWorkHistory(modelId: string) {
         currency: pm.currency || 'GTQ',
         daysWorked,
         totalAmount,
+        totalPaidGTQ: totalPaidGTQ > 0 ? totalPaidGTQ : null,
         paymentStatus,
         lastPaymentDate,
         firstWorkDate,

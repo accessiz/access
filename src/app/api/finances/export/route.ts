@@ -97,17 +97,22 @@ async function exportModelPayments(
     const wb = new ExcelJS.Workbook();
     const ws = wb.addWorksheet('Pagos a Modelos');
 
-    // Definir columnas con headers y anchos
+    // Definir columnas con headers y anchos (versión mejorada)
     ws.columns = [
         { header: 'Modelo', key: 'modelo', width: 20 },
         { header: 'Nombre Completo', key: 'nombre_completo', width: 25 },
         { header: 'Proyecto', key: 'proyecto', width: 30 },
         { header: 'Cliente', key: 'cliente', width: 20 },
         { header: 'Marca', key: 'marca', width: 15 },
-        { header: 'Fecha Trabajo', key: 'fecha_trabajo', width: 12 },
+        { header: 'Primera Fecha', key: 'primera_fecha', width: 12 },
+        { header: 'Última Fecha', key: 'ultima_fecha', width: 12 },
         { header: 'Días', key: 'dias', width: 6 },
+        { header: 'Tipo Pago', key: 'tipo_pago', width: 12 },
         { header: 'Tarifa/Día', key: 'tarifa_dia', width: 12 },
-        { header: 'Total', key: 'total', width: 12 },
+        { header: 'Tarifa Canje', key: 'tarifa_canje', width: 12 },
+        { header: 'Total Efectivo', key: 'total_efectivo', width: 14 },
+        { header: 'Total Canje', key: 'total_canje', width: 12 },
+        { header: 'Categoría Canje', key: 'categoria_canje', width: 15 },
         { header: 'Pagado', key: 'pagado', width: 12 },
         { header: 'Pendiente', key: 'pendiente', width: 12 },
         { header: 'Moneda', key: 'moneda', width: 8 },
@@ -117,19 +122,31 @@ async function exportModelPayments(
 
     // Agregar filas de datos
     filteredData.forEach(item => {
+        // Determinar tipo de pago basado en datos disponibles
+        const hasCash = item.daily_fee && item.daily_fee > 0;
+        const hasTrade = item.daily_trade_fee && item.daily_trade_fee > 0;
+        let tipoPago = 'Efectivo';
+        if (hasCash && hasTrade) tipoPago = 'Mixto';
+        else if (hasTrade && !hasCash) tipoPago = 'Canje';
+
         ws.addRow({
             modelo: item.model_alias || item.model_name,
             nombre_completo: item.model_name,
             proyecto: item.project_name,
             cliente: item.registered_client_name || item.client_name || '-',
             marca: item.brand_name || '-',
-            fecha_trabajo: formatDate(item.first_work_date || ''),
+            primera_fecha: formatDate(item.first_work_date || ''),
+            ultima_fecha: formatDate(item.last_work_date || ''),
             dias: item.days_worked,
-            tarifa_dia: item.daily_fee,
-            total: item.total_amount,
-            pagado: item.total_paid,
-            pendiente: item.pending_amount,
-            moneda: item.currency,
+            tipo_pago: tipoPago,
+            tarifa_dia: item.daily_fee || 0,
+            tarifa_canje: item.daily_trade_fee || 0,
+            total_efectivo: item.total_amount || 0,
+            total_canje: item.total_trade_value || 0,
+            categoria_canje: item.trade_category || '-',
+            pagado: item.total_paid || 0,
+            pendiente: item.pending_amount || 0,
+            moneda: item.currency || 'GTQ',
             estado: translatePaymentStatus(item.payment_status),
             fecha_pago: item.payment_date ? formatDate(item.payment_date) : '-',
         });
@@ -250,34 +267,45 @@ async function exportClientBilling(
     const wb = new ExcelJS.Workbook();
     const ws = wb.addWorksheet('Cobros a Clientes');
 
-    // Definir columnas con headers y anchos
+    // Definir columnas con headers y anchos (versión mejorada)
     ws.columns = [
         { header: 'Proyecto', key: 'proyecto', width: 30 },
         { header: 'Cliente', key: 'cliente', width: 20 },
         { header: 'Marca', key: 'marca', width: 15 },
-        { header: 'Subtotal', key: 'subtotal', width: 12 },
+        { header: 'Tipo Pago', key: 'tipo_pago', width: 12 },
+        { header: 'Subtotal Efectivo', key: 'subtotal', width: 16 },
+        { header: 'Valor Canje', key: 'valor_canje', width: 12 },
         { header: 'IVA (%)', key: 'iva_percent', width: 10 },
         { header: 'Monto IVA', key: 'iva_monto', width: 12 },
-        { header: 'Total', key: 'total', width: 12 },
+        { header: 'Total con IVA', key: 'total', width: 12 },
         { header: 'Moneda', key: 'moneda', width: 8 },
         { header: 'Estado', key: 'estado', width: 12 },
         { header: 'Fecha Factura', key: 'fecha_factura', width: 12 },
         { header: 'No. Factura', key: 'no_factura', width: 15 },
         { header: 'Fecha Pago', key: 'fecha_pago', width: 12 },
+        { header: 'Fecha Creación', key: 'fecha_creacion', width: 14 },
     ];
 
     // Agregar filas de datos
     filteredData.forEach((item) => {
         const subtotal = item.revenue || 0;
+        const tradeValue = (item as unknown as { client_trade_revenue?: number }).client_trade_revenue || 0;
         const taxPercent = item.tax_percentage || 12;
         const taxAmount = subtotal * (taxPercent / 100);
         const total = subtotal + taxAmount;
+
+        // Determinar tipo de pago
+        let tipoPago = 'Efectivo';
+        if (subtotal > 0 && tradeValue > 0) tipoPago = 'Mixto';
+        else if (tradeValue > 0 && subtotal === 0) tipoPago = 'Canje';
 
         ws.addRow({
             proyecto: item.project_name,
             cliente: item.client?.name || item.client_name || '-',
             marca: item.brand?.name || '-',
+            tipo_pago: tipoPago,
             subtotal: subtotal,
+            valor_canje: tradeValue,
             iva_percent: taxPercent,
             iva_monto: taxAmount,
             total: total,
@@ -286,6 +314,7 @@ async function exportClientBilling(
             fecha_factura: item.invoice_date ? formatDate(item.invoice_date) : '-',
             no_factura: item.invoice_number || '-',
             fecha_pago: item.client_payment_date ? formatDate(item.client_payment_date) : '-',
+            fecha_creacion: formatDate(item.created_at),
         });
     });
 

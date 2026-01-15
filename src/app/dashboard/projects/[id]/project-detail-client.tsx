@@ -125,10 +125,10 @@ const BudgetSummaryCard = ({ project, selectedModels }: { project: Project, sele
 
                 {/* Estadísticas - Vertical en mobile, horizontal en desktop */}
                 <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
-                    {/* Aprobados - Fondo púrpura, texto púrpura */}
-                    <div className="flex-1 text-center p-4 rounded-lg bg-purple/20 border border-purple/50">
-                        <p className="text-display font-black text-purple">{approvedModels.length}</p>
-                        <p className="text-body text-purple font-semibold">Aprobados</p>
+                    {/* Total - Fondo azul, texto info */}
+                    <div className="flex-1 text-center p-4 rounded-lg bg-info/20 border border-info/50">
+                        <p className="text-display font-black text-info">{selectedModels.length}</p>
+                        <p className="text-body text-info font-semibold">Total</p>
                     </div>
 
                     {/* Pendientes - Fondo amarillo, texto warning */}
@@ -137,10 +137,10 @@ const BudgetSummaryCard = ({ project, selectedModels }: { project: Project, sele
                         <p className="text-body text-warning font-semibold">Pendientes</p>
                     </div>
 
-                    {/* Total - Fondo azul, texto info */}
-                    <div className="flex-1 text-center p-4 rounded-lg bg-info/20 border border-info/50">
-                        <p className="text-display font-black text-info">{selectedModels.length}</p>
-                        <p className="text-body text-info font-semibold">Total</p>
+                    {/* Aprobados - Fondo púrpura, texto púrpura */}
+                    <div className="flex-1 text-center p-4 rounded-lg bg-purple/20 border border-purple/50">
+                        <p className="text-display font-black text-purple">{approvedModels.length}</p>
+                        <p className="text-body text-purple font-semibold">Aprobados</p>
                     </div>
                 </div>
 
@@ -206,13 +206,17 @@ const BudgetSummaryCard = ({ project, selectedModels }: { project: Project, sele
                                             <div className="flex items-center gap-3">
                                                 {amountCash > 0 && (
                                                     <div className="flex items-center gap-1.5">
-                                                        <Banknote className="w-3.5 h-3.5 text-success" />
+                                                        <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-success/15">
+                                                            <Banknote className="w-3 h-3 text-success" />
+                                                        </span>
                                                         <span className="text-body text-success font-semibold">{currency} {amountCash.toLocaleString()}</span>
                                                     </div>
                                                 )}
                                                 {amountTrade > 0 && (
                                                     <div className="flex items-center gap-1.5">
-                                                        <ArrowRightLeft className="w-3.5 h-3.5 text-info" />
+                                                        <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-info/15">
+                                                            <ArrowRightLeft className="w-3 h-3 text-info" />
+                                                        </span>
                                                         <span className="text-body text-info font-semibold">{currency} {amountTrade.toLocaleString()}</span>
                                                     </div>
                                                 )}
@@ -729,6 +733,9 @@ export default function ProjectDetailClient({ project: initialProject, initialSe
                     trade_details: null,
                     trade_fee: null,
                     notes: null,
+                    // Currency conversion fields
+                    amount_gtq: null,
+                    exchange_rate_used: null,
                 };
                 return {
                     ...model,

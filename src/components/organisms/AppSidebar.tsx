@@ -13,6 +13,7 @@ import {
   Settings,
   Cake,
   Globe,
+  AlertTriangle,
 } from "lucide-react"
 
 import { NavUser } from "@/components/organisms/NavUser"
@@ -70,6 +71,11 @@ const navMain = [
     icon: Globe,
   },
   {
+    title: "Alertas",
+    url: "/dashboard/alerts",
+    icon: AlertTriangle,
+  },
+  {
     title: "Configuración",
     url: "/dashboard/settings",
     icon: Settings,
@@ -81,6 +87,7 @@ export function AppSidebar({ user, ...props }: React.ComponentProps<typeof Sideb
   const { state, isMobile, setOpenMobile, openMobile } = useSidebar()
   const isCollapsed = state === "collapsed"
   const [hasTodayBirthdays, setHasTodayBirthdays] = useState(false)
+  const [alertCount, setAlertCount] = useState(0)
 
   // Ref para rastrear si hay una navegación pendiente en mobile
   const pendingNavigationRef = useRef(false)
@@ -109,6 +116,25 @@ export function AppSidebar({ user, ...props }: React.ComponentProps<typeof Sideb
       }
     }
     checkBirthdays()
+  }, [])
+
+  // Cargar conteo de alertas
+  useEffect(() => {
+    const fetchAlertCount = async () => {
+      try {
+        const response = await fetch('/api/alerts')
+        if (response.ok) {
+          const data = await response.json()
+          setAlertCount(data.count || 0)
+        }
+      } catch {
+        // Silently fail - alerts are not critical
+      }
+    }
+    fetchAlertCount()
+    // Refetch every 5 minutes
+    const interval = setInterval(fetchAlertCount, 5 * 60 * 1000)
+    return () => clearInterval(interval)
   }, [])
 
   return (
@@ -160,6 +186,9 @@ export function AppSidebar({ user, ...props }: React.ComponentProps<typeof Sideb
             // Determinar si mostrar indicador de cumpleaños
             const showBirthdayIndicator = item.url === '/dashboard/birthdays' && hasTodayBirthdays
 
+            // Determinar si mostrar indicador de alertas
+            const showAlertIndicator = item.url === '/dashboard/alerts' && alertCount > 0
+
             return (
               <SidebarMenuItem key={item.title} className="relative overflow-visible">
                 <SidebarMenuButton
@@ -171,15 +200,27 @@ export function AppSidebar({ user, ...props }: React.ComponentProps<typeof Sideb
                   <Link href={item.url} onClick={handleNavClick}>
                     <item.icon />
                     <span>{item.title}</span>
-                    {/* Indicador en modo expandido - al final de la fila */}
+                    {/* Indicador de cumpleaños en modo expandido */}
                     {showBirthdayIndicator && !isCollapsed && (
                       <span className="ml-auto h-2 w-2 rounded-full bg-[rgb(var(--primary))] animate-pulse" />
+                    )}
+                    {/* Indicador de alertas con contador en modo expandido */}
+                    {showAlertIndicator && !isCollapsed && (
+                      <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-warning px-1.5 text-[10px] font-semibold text-warning-foreground">
+                        {alertCount > 99 ? '99+' : alertCount}
+                      </span>
                     )}
                   </Link>
                 </SidebarMenuButton>
                 {/* Indicador en modo colapsado - encima del cuadro */}
                 {showBirthdayIndicator && isCollapsed && (
                   <span className="absolute top-0 right-2 h-2 w-2 rounded-full bg-[rgb(var(--primary))] animate-pulse pointer-events-none" />
+                )}
+                {/* Indicador de alertas en modo colapsado */}
+                {showAlertIndicator && isCollapsed && (
+                  <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-warning px-1 text-[9px] font-bold text-warning-foreground pointer-events-none">
+                    {alertCount > 9 ? '9+' : alertCount}
+                  </span>
                 )}
               </SidebarMenuItem>
             )

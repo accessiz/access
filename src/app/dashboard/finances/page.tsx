@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import FinancesClientPage from './finances-client-page';
 import { logError } from '@/lib/utils/errors';
+import { getTodayRate } from '@/lib/utils/currency';
 
 // Tipos para el resumen financiero v2 (consolidado por modelo+proyecto)
 export type PaymentStatus = 'pending' | 'paid' | 'partial' | 'cancelled';
@@ -31,6 +32,7 @@ export type FinanceSummaryItem = {
     total_paid: number;
     pending_amount: number;
     currency: string;
+    total_paid_gtq: number; // Added for multi-currency
 };
 
 // Tipo para cobros a clientes
@@ -47,6 +49,8 @@ export type ClientBillingItem = {
     tax_amount: number;
     total_with_tax: number;
     currency: string;
+    client_exchange_rate_used: number | null;
+    client_amount_gtq: number | null;
     payment_status: ClientPaymentStatus;
     payment_date: string | null;
     invoice_number: string | null;
@@ -72,6 +76,7 @@ type InitialData = {
     modelPayments: FinanceSummaryItem[];
     clientBilling: ClientBillingItem[];
     kpis: FinanceKPIs;
+    currentExchangeRate: number;
 };
 
 export default async function FinancesPage() {
@@ -112,6 +117,8 @@ export default async function FinancesPage() {
             invoice_number,
             invoice_date,
             currency,
+            client_exchange_rate_used,
+            client_amount_gtq,
             created_at,
             status,
             schedule,
@@ -136,6 +143,8 @@ export default async function FinancesPage() {
         invoice_number: string | null;
         invoice_date: string | null;
         currency: string | null;
+        client_exchange_rate_used: number | null;
+        client_amount_gtq: number | null;
         created_at: string;
         status: string;
         schedule: { date: string }[] | null;
@@ -149,14 +158,29 @@ export default async function FinancesPage() {
     }
 
     // Mapear pagos a modelos
+    // Obtener fecha actual en Guatemala para comparar
+    const { getGuatemalaTodayString } = await import('@/lib/constants/finance');
+    const todayStr = getGuatemalaTodayString();
+
+    // Mapear pagos a modelos
+    // Condiciones adicionales (además de las de la vista SQL):
+    // - La última fecha de trabajo debe haber pasado (last_work_date <= today)
     const modelPayments: FinanceSummaryItem[] = (summaryData || [])
-        .filter(item =>
-            item.id &&
-            item.model_id &&
-            item.project_id &&
-            item.model_name &&
-            item.project_name
-        )
+        .filter(item => {
+            // Validaciones básicas de campos requeridos
+            if (!item.id || !item.model_id || !item.project_id || !item.model_name || !item.project_name) {
+                return false;
+            }
+
+            // Validación de fecha: la última fecha de trabajo debe haber pasado
+            // Si no hay last_work_date, incluir el item (fallback para datos legacy)
+            if (item.last_work_date) {
+                const lastDate = item.last_work_date.substring(0, 10); // Format: YYYY-MM-DD
+                if (lastDate > todayStr) return false;
+            }
+
+            return true;
+        })
         .map(item => ({
             id: item.id!,
             model_id: item.model_id!,
@@ -182,11 +206,9 @@ export default async function FinancesPage() {
             total_paid: Number(item.total_paid) || 0,
             pending_amount: Number(item.pending_amount) || 0,
             currency: item.currency || 'GTQ',
+            total_paid_gtq: Number(item.total_paid_gtq) || 0,
         }));
 
-    // Obtener fecha actual en Guatemala para comparar
-    const { getGuatemalaTodayString } = await import('@/lib/constants/finance');
-    const todayStr = getGuatemalaTodayString();
 
     // Mapear cobros a clientes
     // Condiciones para "Por Cobrar":
@@ -257,6 +279,8 @@ export default async function FinancesPage() {
                 tax_amount: taxAmount,
                 total_with_tax: totalWithTax,
                 currency: p.currency || 'GTQ',
+                client_exchange_rate_used: p.client_exchange_rate_used ? Number(p.client_exchange_rate_used) : null,
+                client_amount_gtq: p.client_amount_gtq ? Number(p.client_amount_gtq) : null,
                 payment_status: (p.client_payment_status as ClientPaymentStatus) || 'pending',
                 payment_date: p.client_payment_date,
                 invoice_number: p.invoice_number,
@@ -264,6 +288,9 @@ export default async function FinancesPage() {
                 created_at: p.created_at,
             };
         });
+
+    // Obtener tasa de cambio actual para estimaciones
+    const currentRate = await getTodayRate();
 
     // Calcular KPIs
     const now = new Date();
@@ -288,27 +315,46 @@ export default async function FinancesPage() {
     // Margen bruto (solo cobros RECIBIDOS - pagos REALIZADOS)
     const paidClientItems = clientBilling.filter(i => i.payment_status === 'paid');
     const paidModelItems = modelPayments.filter(i => i.payment_status === 'paid');
-    const totalClientRevenue = paidClientItems.reduce((acc, i) => acc + i.subtotal, 0);
-    const totalModelCosts = paidModelItems.reduce((acc, i) => acc + i.total_amount, 0);
+    // Helper para convertir a GTQ
+    const toGTQ = (amount: number, currency: string) => {
+        if (currency === 'GTQ') return amount;
+        return amount * currentRate;
+    };
+
+    const totalPendingModelsGTQ = pendingModelItems.reduce((acc, i) => acc + toGTQ(i.pending_amount || 0, i.currency), 0);
+    // Para pagados, usamos total_paid_gtq si existe, o convertimos total_paid (fallback para antiguos)
+    const totalPaidModelsGTQ = paidModelsThisMonth.reduce((acc, i) => acc + (i.total_paid_gtq || toGTQ(i.total_paid || 0, i.currency)), 0);
+
+    // Para clientes pendientes
+    const totalPendingClientsGTQ = pendingClientItems.reduce((acc, i) => acc + toGTQ(i.total_with_tax, i.currency), 0);
+
+    // Para clientes cobrados (usar client_amount_gtq si existe)
+    const totalReceivedGTQ = receivedThisMonth.reduce((acc, i) => acc + (i.client_amount_gtq || toGTQ(i.total_with_tax, i.currency)), 0);
+
+    // Margen bruto (solo cobros RECIBIDOS - pagos REALIZADOS)
+    // Usar históricos para precisión
+    const totalClientRevenueGTQ = paidClientItems.reduce((acc, i) => acc + (i.client_amount_gtq || toGTQ(i.subtotal, i.currency)), 0);
+    const totalModelCostsGTQ = paidModelItems.reduce((acc, i) => acc + (i.total_paid_gtq || toGTQ(i.total_amount, i.currency)), 0);
 
     const kpis: FinanceKPIs = {
         // Pagos a Modelos
-        totalPendingModels: pendingModelItems.reduce((acc, i) => acc + (i.pending_amount || 0), 0),
-        totalPaidModelsThisMonth: paidModelsThisMonth.reduce((acc, i) => acc + (i.total_paid || 0), 0),
+        totalPendingModels: totalPendingModelsGTQ,
+        totalPaidModelsThisMonth: totalPaidModelsGTQ,
         pendingModelPayments: pendingModelItems.length,
         modelsWithPendingPayments: new Set(pendingModelItems.map(i => i.model_id)).size,
         // Cobros a Clientes
-        totalPendingClients: pendingClientItems.reduce((acc, i) => acc + i.total_with_tax, 0),
-        totalReceivedThisMonth: receivedThisMonth.reduce((acc, i) => acc + i.total_with_tax, 0),
+        totalPendingClients: totalPendingClientsGTQ,
+        totalReceivedThisMonth: totalReceivedGTQ,
         pendingClientPayments: pendingClientItems.length,
         // Margen
-        grossMargin: totalClientRevenue - totalModelCosts,
+        grossMargin: totalClientRevenueGTQ - totalModelCostsGTQ,
     };
 
     const initialData: InitialData = {
         modelPayments,
         clientBilling,
         kpis,
+        currentExchangeRate: currentRate,
     };
 
     return <FinancesClientPage initialData={initialData} />;

@@ -1,8 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import { useState, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useMemo, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
     Wallet,
@@ -193,10 +193,14 @@ function getCurrentYearInGuatemala(): number {
 
 export default function FinancesClientPage({ initialData }: FinancesClientPageProps) {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const [modelPayments, setModelPayments] = useState<FinanceSummaryItem[]>(initialData.modelPayments);
     const [clientBilling, setClientBilling] = useState<ClientBillingItem[]>(initialData.clientBilling);
     const [searchQuery, setSearchQuery] = useState('');
-    const [mainTab, setMainTab] = useState('models'); // 'models' | 'clients'
+    const [mainTab, setMainTab] = useState(() => {
+        const tabParam = searchParams.get('tab');
+        return tabParam === 'clients' ? 'clients' : 'models';
+    }); // 'models' | 'clients'
     const [modelStatusTab, setModelStatusTab] = useState('pending');
     const [clientStatusTab, setClientStatusTab] = useState('pending');
     const [viewMode, setViewMode] = useState<'model' | 'project'>('model');
@@ -1724,17 +1728,6 @@ function ClientBillingCard({
 
                         {/* Actions */}
                         <div className="flex items-center gap-2">
-                            {/* Pay Button - only for pending */}
-                            {isPending && (
-                                <Button
-                                    size="sm"
-                                    onClick={() => onUpdateStatus('paid')}
-                                    className="gap-x-1.5 text-label bg-transparent hover:bg-hover-overlay text-foreground border border-separator"
-                                >
-                                    Pagar Todo
-                                </Button>
-                            )}
-
                             {/* Paid Date */}
                             {item.payment_status === 'paid' && item.payment_date && (
                                 <span className="text-label text-muted-foreground">
@@ -1751,24 +1744,27 @@ function ClientBillingCard({
                                         </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
-                                        {item.payment_status !== 'pending' && (
-                                            <DropdownMenuItem onClick={() => onUpdateStatus('pending')}>
-                                                <Clock className="mr-2 h-4 w-4 text-warning" />
-                                                Marcar Pendiente
-                                            </DropdownMenuItem>
-                                        )}
-                                        {item.payment_status !== 'invoiced' && (
-                                            <DropdownMenuItem onClick={() => onUpdateStatus('invoiced')}>
-                                                <Receipt className="mr-2 h-4 w-4 text-info" />
-                                                Marcar Facturado
-                                            </DropdownMenuItem>
-                                        )}
-                                        {item.payment_status !== 'paid' && (
-                                            <DropdownMenuItem onClick={() => onUpdateStatus('paid')}>
-                                                <CheckCircle2 className="mr-2 h-4 w-4 text-success" />
-                                                Marcar Cobrado
-                                            </DropdownMenuItem>
-                                        )}
+                                        <DropdownMenuItem
+                                            onClick={() => onUpdateStatus('pending')}
+                                            disabled={item.payment_status === 'pending'}
+                                        >
+                                            <Clock className="mr-2 h-4 w-4 text-warning" />
+                                            Pendiente
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                            onClick={() => onUpdateStatus('invoiced')}
+                                            disabled={item.payment_status === 'invoiced'}
+                                        >
+                                            <Receipt className="mr-2 h-4 w-4 text-info" />
+                                            Facturado
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                            onClick={() => onUpdateStatus('paid')}
+                                            disabled={item.payment_status === 'paid'}
+                                        >
+                                            <CheckCircle2 className="mr-2 h-4 w-4 text-success" />
+                                            Cobrado
+                                        </DropdownMenuItem>
                                     </DropdownMenuContent>
                                 </DropdownMenu>
                             </div>

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { AlertCircle, ArrowRight, Loader2, Check, Trash2 } from 'lucide-react'
+import { AlertCircle, ArrowDown, Loader2, Check, Users } from 'lucide-react'
 import {
     Dialog,
     DialogContent,
@@ -68,7 +68,7 @@ const formatNewScheduleOption = (schedule: NewScheduleOption) => {
         day: 'numeric',
         month: 'short',
     })
-    return `${formatted} - ${schedule.startTime} (Nueva)`
+    return `${formatted} - ${schedule.startTime}`
 }
 
 // Crear un ID único para cada schedule (fecha + hora de inicio)
@@ -130,12 +130,12 @@ export function ScheduleMigrationModal({
                 <DialogContent className="max-w-md">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-3">
-                            <div className="h-10 w-10 rounded-full bg-success/10 flex items-center justify-center">
-                                <Check className="h-5 w-5 text-success" />
+                            <div className="h-12 w-12 rounded-full bg-success/20 border border-success flex items-center justify-center">
+                                <Check className="h-6 w-6 text-success" />
                             </div>
-                            Cambios listos para guardar
+                            <span className="text-title font-semibold">Cambios listos para guardar</span>
                         </DialogTitle>
-                        <DialogDescription className="pt-2">
+                        <DialogDescription className="pt-2 text-body text-muted-foreground">
                             Los cambios en las fechas no afectan ninguna asignación existente.
                         </DialogDescription>
                     </DialogHeader>
@@ -144,12 +144,14 @@ export function ScheduleMigrationModal({
                             variant="outline"
                             onClick={() => onOpenChange(false)}
                             disabled={isProcessing}
+                            className="border-separator bg-transparent hover:bg-hover-overlay"
                         >
                             Cancelar
                         </Button>
                         <Button
                             onClick={handleConfirm}
                             disabled={isProcessing}
+                            className="bg-[rgb(var(--purple))] hover:bg-[rgb(var(--purple))]/90 text-white"
                         >
                             {isProcessing ? (
                                 <>
@@ -168,122 +170,105 @@ export function ScheduleMigrationModal({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-xl">
-                <DialogHeader>
-                    <DialogTitle className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-full bg-warning/10 flex items-center justify-center">
-                            <AlertCircle className="h-5 w-5 text-warning" />
-                        </div>
-                        Reasignar Modelos
-                    </DialogTitle>
-                    <DialogDescription className="pt-2">
-                        Acción requerida: Mueve los modelos de las fechas eliminadas a los nuevos horarios disponibles.
-                    </DialogDescription>
+            <DialogContent className="max-w-md sm:max-w-lg p-0 gap-0 overflow-visible">
+                <DialogHeader className="p-6 pb-4 space-y-4">
+                    {/* Warning Icon */}
+                    <div className="w-12 h-12 rounded-full bg-warning/20 border border-warning flex items-center justify-center">
+                        <AlertCircle className="h-6 w-6 text-warning" />
+                    </div>
+
+                    {/* Title & Description */}
+                    <div className="space-y-2">
+                        <DialogTitle className="text-display font-semibold text-foreground">
+                            Reasignar Modelos
+                        </DialogTitle>
+                        <DialogDescription className="text-body text-muted-foreground">
+                            Acción requerida: Mueve los modelos de las fechas eliminadas a los nuevos horarios disponibles.
+                        </DialogDescription>
+                    </div>
                 </DialogHeader>
 
-                <ScrollArea className="max-h-100 pr-4">
-                    <div className="space-y-4 py-3">
+                {/* Content */}
+                <ScrollArea className="max-h-[50vh] px-6">
+                    <div className="space-y-6 py-2">
                         {schedulesWithAssignments.map((schedule) => {
                             const isSelected = mapping[schedule.oldScheduleId!] && mapping[schedule.oldScheduleId!] !== ''
 
                             return (
                                 <div
                                     key={schedule.oldScheduleId}
-                                    className={cn(
-                                        "relative rounded-lg border p-5 transition-all",
-                                        isSelected
-                                            ? "border-primary bg-primary/5"
-                                            : "border-border"
-                                    )}
+                                    className="relative rounded-lg border border-separator p-4"
                                 >
-                                    <div className="flex flex-wrap items-center gap-4 sm:flex-nowrap sm:gap-5">
-                                        {/* Icono de papelera */}
-                                        <div className="shrink-0">
-                                            <div className="h-11 w-11 rounded-lg bg-muted flex items-center justify-center">
-                                                <Trash2 className="h-5 w-5 text-muted-foreground" />
-                                            </div>
-                                        </div>
-
-                                        {/* Fecha antigua */}
-                                        <div className="min-w-0 flex-1 sm:shrink-0 sm:flex-none sm:min-w-25">
-                                            <p className="text-body font-medium line-through text-muted-foreground whitespace-nowrap truncate">
+                                    {/* Old Date Card - Red border */}
+                                    <div className="rounded-lg border border-red bg-red/5 p-3 mb-4">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-body font-medium text-foreground">
                                                 {formatDateShort(schedule.oldDate!)}
-                                            </p>
-                                            <p className="text-label text-muted-foreground uppercase tracking-wide mt-1">
-                                                {schedule.assignmentCount} asignacion{schedule.assignmentCount !== 1 ? 'es' : ''}
-                                            </p>
-                                        </div>
-
-                                        {/* Flecha */}
-                                        <ArrowRight className="hidden h-5 w-5 text-muted-foreground shrink-0 sm:block" />
-
-                                        {/* Selector de destino */}
-                                        <div className="w-full min-w-0 sm:w-auto sm:flex-1 sm:min-w-45">
-                                            <Select
-                                                value={mapping[schedule.oldScheduleId!] || ''}
-                                                onValueChange={(value) => handleMappingChange(schedule.oldScheduleId!, value)}
-                                            >
-                                                <SelectTrigger className={cn(
-                                                    "w-full h-11",
-                                                    isSelected && "border-primary"
-                                                )}>
-                                                    <SelectValue placeholder="Elegir nueva fecha..." />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {newSchedules.map((newSchedule, idx) => (
-                                                        <SelectItem key={idx} value={getScheduleUniqueId(newSchedule)}>
-                                                            {formatNewScheduleOption(newSchedule)}
-                                                        </SelectItem>
-                                                    ))}
-
-                                                    {newSchedules.length > 0 && (
-                                                        <div className="my-1 border-t" />
-                                                    )}
-
-                                                    <SelectItem value="none">
-                                                        Sin fecha (mantener sin asignar)
-                                                    </SelectItem>
-                                                    <SelectItem value="delete" className="text-destructive">
-                                                        Eliminar asignaciones
-                                                    </SelectItem>
-                                                </SelectContent>
-                                            </Select>
+                                            </span>
+                                            <div className="flex items-center gap-1.5 text-red">
+                                                <Users className="h-4 w-4" />
+                                                <span className="text-body font-medium">
+                                                    {schedule.assignmentCount} Asignacion{schedule.assignmentCount !== 1 ? 'es' : ''}
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
 
-                                    {/* Check indicator */}
-                                    {isSelected && (
-                                        <div className="absolute -right-2 -top-2">
-                                            <div className="h-5 w-5 rounded-full bg-primary flex items-center justify-center">
-                                                <Check className="h-3 w-3 text-primary-foreground" />
-                                            </div>
-                                        </div>
-                                    )}
+                                    {/* Arrow Down */}
+                                    <div className="flex justify-center mb-4">
+                                        <ArrowDown className="h-5 w-5 text-muted-foreground" />
+                                    </div>
+
+                                    {/* Target Selector */}
+                                    <Select
+                                        value={mapping[schedule.oldScheduleId!] || ''}
+                                        onValueChange={(value) => handleMappingChange(schedule.oldScheduleId!, value)}
+                                    >
+                                        <SelectTrigger className={cn(
+                                            "w-full h-12 sm:h-10 bg-card border-separator",
+                                            isSelected && "border-purple bg-purple/20 text-white"
+                                        )}>
+                                            <SelectValue placeholder="Elegir nueva fecha..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {newSchedules.map((newSchedule, idx) => (
+                                                <SelectItem key={idx} value={getScheduleUniqueId(newSchedule)}>
+                                                    {formatNewScheduleOption(newSchedule)}
+                                                </SelectItem>
+                                            ))}
+
+                                            {newSchedules.length > 0 && (
+                                                <div className="my-1 border-t border-separator" />
+                                            )}
+
+                                            <SelectItem value="none">
+                                                Sin fecha (mantener sin asignar)
+                                            </SelectItem>
+                                            <SelectItem value="delete" className="text-destructive">
+                                                Eliminar asignaciones
+                                            </SelectItem>
+                                        </SelectContent>
+                                    </Select>
                                 </div>
                             )
                         })}
                     </div>
                 </ScrollArea>
 
-                <DialogFooter className="flex-col sm:flex-row gap-2">
-                    <Button
-                        variant="ghost"
-                        onClick={handleDiscard}
-                        disabled={isProcessing}
-                        className="text-muted-foreground hover:text-destructive sm:mr-auto"
-                    >
-                        Descartar
-                    </Button>
+                {/* Footer */}
+                <DialogFooter className="p-6 pt-4 gap-3 sm:gap-3 flex-row">
                     <Button
                         variant="outline"
                         onClick={() => onOpenChange(false)}
                         disabled={isProcessing}
+                        className="flex-1 h-12 sm:h-10 border-separator bg-transparent hover:bg-hover-overlay text-body font-medium"
                     >
                         Cancelar
                     </Button>
                     <Button
                         onClick={handleConfirm}
                         disabled={isProcessing}
+                        className="flex-1 h-12 sm:h-10 bg-[rgb(var(--purple))] hover:bg-[rgb(var(--purple))]/90 text-white text-body font-medium"
                     >
                         {isProcessing ? (
                             <>
@@ -291,7 +276,7 @@ export function ScheduleMigrationModal({
                                 Aplicando...
                             </>
                         ) : (
-                            'Aplicar Cambios'
+                            'Aplicar'
                         )}
                     </Button>
                 </DialogFooter>

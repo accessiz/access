@@ -101,6 +101,7 @@ export const modelFormSchema = z.object({
   birth_date: optionalString,
   date_joined_agency: optionalString,
   country: optionalString,
+  birth_country: optionalString,
 
   // Medidas y Tallas (todos opcionales)
   height_cm: optionalPositiveNumber,

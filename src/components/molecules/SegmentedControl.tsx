@@ -70,7 +70,7 @@ export function SegmentedControl<T extends string>({
           "sm:flex sm:items-center",
           "gap-1",
           "w-full sm:w-fit",
-          "rounded-lg bg-transparent p-1 ring-1 ring-separator ring-inset",
+          "rounded-md bg-transparent p-1 ring-1 ring-separator ring-inset",
           className
         )}
       >
@@ -93,9 +93,9 @@ export function SegmentedControl<T extends string>({
                 "inline-flex items-center",
                 isIconOnly ? "justify-center" : "justify-start sm:justify-center",
                 isIconOnly ? "gap-0" : "gap-2",
-                "h-12 md:h-10",
+                "h-12 sm:h-8",
                 "rounded-md",
-                isIconOnly ? "w-12 md:w-10 px-0" : "px-3",
+                isIconOnly ? "w-12 sm:w-8 px-0" : "px-3",
                 "text-body",
                 "transition-colors",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",

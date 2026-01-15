@@ -95,8 +95,19 @@ export function NotificationButton() {
     // Cargar al montar y refrescar cada 60 segundos
     useEffect(() => {
         fetchAll()
+
+        // Listen for alerts update event (from Alerts page)
+        const handleAlertsUpdate = () => {
+            fetchAll();
+        };
+
+        window.addEventListener('alerts-updated', handleAlertsUpdate);
+
         const interval = setInterval(fetchAll, 60000)
-        return () => clearInterval(interval)
+        return () => {
+            clearInterval(interval);
+            window.removeEventListener('alerts-updated', handleAlertsUpdate);
+        }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 

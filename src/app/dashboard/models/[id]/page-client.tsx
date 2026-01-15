@@ -57,11 +57,13 @@ interface WorkHistoryItem {
   lastPaymentDate: string | null;
   firstWorkDate: string | null;
   lastWorkDate: string | null;
+  totalPaidGTQ: number | null;
 }
 
 interface ModelProfileClientProps {
   initialModel: ModelWithImages;
   workHistory?: WorkHistoryItem[];
+  currentRate: number;
 }
 
 // Componente para mostrar la información en modo de solo lectura
@@ -81,7 +83,7 @@ function isValidStatus(status: unknown): status is ModelStatus {
   return VALID_STATUSES.includes(status as ModelStatus);
 }
 
-export default function ModelProfilePageClient({ initialModel, workHistory = [] }: ModelProfileClientProps) {
+export default function ModelProfilePageClient({ initialModel, workHistory = [], currentRate }: ModelProfileClientProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState('info');
   const [dangerOpen, setDangerOpen] = useState(false);
@@ -121,6 +123,7 @@ export default function ModelProfilePageClient({ initialModel, workHistory = [] 
       phone_e164: initialModel.phone_e164 ?? '',
       email: initialModel.email ?? '',
       country: initialModel.country ?? null,
+      birth_country: initialModel.birth_country ?? null,
       height_cm: initialModel.height_cm ?? null,
       shoulders_cm: initialModel.shoulders_cm ?? null,
       chest_cm: initialModel.chest_cm ?? null,
@@ -199,15 +202,26 @@ export default function ModelProfilePageClient({ initialModel, workHistory = [] 
     // Total Generado: solo incluye trabajos ya pagados (cumple 3 condiciones: aprobado + fecha pasada + pago confirmado)
     const totalEarned = completedWork
       .filter((job) => job.paymentStatus === 'paid')
-      .reduce((acc, job) => acc + (job.totalAmount || job.agreedFee * (job.daysWorked || 1)), 0);
+      .reduce((acc, job) => {
+        // Use stored GTQ amount if available, otherwise convert using current rate if USD (fallback)
+        const amountGTQ = job.totalPaidGTQ || (job.currency === 'USD' ? (job.totalAmount || job.agreedFee * (job.daysWorked || 1)) * currentRate : (job.totalAmount || job.agreedFee * (job.daysWorked || 1)));
+        return acc + amountGTQ;
+      }, 0);
+
     const totalPending = completedWork
       .filter((job) => job.paymentStatus !== 'paid')
-      .reduce((acc, job) => acc + (job.totalAmount || job.agreedFee * (job.daysWorked || 1)), 0);
+      .reduce((acc, job) => {
+        // Always usage current rate for pending
+        const rawAmount = job.totalAmount || job.agreedFee * (job.daysWorked || 1);
+        const amountGTQ = job.currency === 'USD' ? rawAmount * currentRate : rawAmount;
+        return acc + amountGTQ;
+      }, 0);
+
     const paidCount = completedWork.filter((job) => job.paymentStatus === 'paid').length;
     const pendingCount = completedWork.filter((job) => job.paymentStatus !== 'paid').length;
 
     return { totalEarned, totalPending, paidCount, pendingCount };
-  }, [completedWork]);
+  }, [completedWork, currentRate]);
 
   // Filtrar historial de trabajos (solo completados)
   const filteredWorkHistory = useMemo(() => {
@@ -329,7 +343,8 @@ export default function ModelProfilePageClient({ initialModel, workHistory = [] 
                     <InfoDisplay label="Género" value={initialModel.gender} />
                     <InfoDisplay label="Fecha de Nacimiento" value={initialModel.birth_date} />
                     <InfoDisplay label="Documento ID" value={initialModel.national_id} />
-                    <InfoDisplay label="País" value={initialModel.country} />
+                    <InfoDisplay label="País de Residencia" value={initialModel.country} />
+                    <InfoDisplay label="País de Nacimiento" value={initialModel.birth_country} />
                   </Grid>
                 </CardContent>
               </Card>
@@ -580,13 +595,20 @@ export default function ModelProfilePageClient({ initialModel, workHistory = [] 
                           {/* Amounts with circular icons */}
                           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
                             {hasCash && (
-                              <div className="flex items-center gap-2">
-                                <div className="w-7 h-7 rounded-full border-2 border-success bg-success/20 flex items-center justify-center">
-                                  <Banknote className="w-4 h-4 text-success" />
+                              <div className="flex flex-col items-end">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-7 h-7 rounded-full border-2 border-success bg-success/20 flex items-center justify-center">
+                                    <Banknote className="w-4 h-4 text-success" />
+                                  </div>
+                                  <span className="text-body font-medium text-foreground">
+                                    {formatCurrency(job.totalPaidGTQ || (job.currency === 'USD' ? totalAmount * currentRate : totalAmount), 'GTQ')}
+                                  </span>
                                 </div>
-                                <span className="text-body font-medium text-foreground">
-                                  {formatCurrency(totalAmount, job.currency)}
-                                </span>
+                                {job.currency === 'USD' && (
+                                  <span className="text-xs text-muted-foreground mr-1">
+                                    ({formatCurrency(totalAmount, 'USD')})
+                                  </span>
+                                )}
                               </div>
                             )}
                             {hasTrade && (

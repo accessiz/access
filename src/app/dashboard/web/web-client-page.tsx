@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Eye, EyeOff, Globe, Layers, Mars, Search, User, Venus, VenusAndMars } from 'lucide-react'
+import { Eye, EyeOff, Globe, Layers, Loader2, Mars, Search, User, Venus, VenusAndMars } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -194,12 +194,17 @@ export default function WebVisibilityClientPage() {
                             <span className="text-body font-medium flex-1 truncate">
                                 {model.alias || model.full_name}
                             </span>
-                            <Switch
-                                checked={model.is_public}
-                                onCheckedChange={(checked) => handleToggle(model.id, checked)}
-                                disabled={updating === model.id}
-                                className="data-[state=unchecked]:bg-quaternary data-[state=checked]:bg-purple border-transparent [&>span]:data-[state=unchecked]:bg-tertiary [&>span]:data-[state=checked]:bg-white"
-                            />
+                            <div className="flex items-center gap-2 shrink-0">
+                                {updating === model.id && (
+                                    <Loader2 className="h-4 w-4 animate-spin text-purple" />
+                                )}
+                                <Switch
+                                    checked={model.is_public}
+                                    onCheckedChange={(checked) => handleToggle(model.id, checked)}
+                                    disabled={updating === model.id}
+                                    className="data-[state=unchecked]:bg-quaternary data-[state=checked]:bg-purple border-transparent [&>span]:data-[state=unchecked]:bg-tertiary [&>span]:data-[state=checked]:bg-white"
+                                />
+                            </div>
                         </div>
                     ))
                 )}
