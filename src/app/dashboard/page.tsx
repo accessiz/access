@@ -19,7 +19,7 @@ export default async function DashboardPage() {
   const counts = await getProjectStatusCounts();
   const activity = await getRecentActivity(5);
   const lowModels = await getLowCompletenessModels(5);
-  const modelStats = await getModelApplicationStats(20);
+  const modelStats = await getModelApplicationStats(100);
 
   return (
     <div className="grid gap-6">

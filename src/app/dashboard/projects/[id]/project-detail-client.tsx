@@ -26,8 +26,7 @@ import { ProjectStatusUpdater } from '@/components/organisms/ProjectStatusUpdate
 import {
     PlusCircle, XCircle, Loader2, Share2, Eye,
     Pencil, ArrowRightLeft,
-    CalendarCheck2, Banknote, Save, Info, Copy, ChevronDown,
-    TrendingUp, TrendingDown
+    CalendarCheck2, Banknote, Save, Info, Copy, ChevronDown
 } from 'lucide-react';
 import { ExpandButton } from '@/components/molecules/ExpandButton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -281,7 +280,6 @@ const PaymentEditorPopover = ({
     onPaymentChange?: (modelId: string, fee: number, feeType: string, currency: string) => void
 }) => {
     const [fee, setFee] = useState(model.agreed_fee?.toString() || '0');
-    const [tradeFee, setTradeFee] = useState(model.trade_fee?.toString() || '0');
     const [feeType, setFeeType] = useState(model.fee_type || 'per_day');
     const [currency, setCurrency] = useState(model.currency || 'GTQ');
     const [adjustmentCash, setAdjustmentCash] = useState('0');
@@ -313,7 +311,7 @@ const PaymentEditorPopover = ({
     const parsedAdjustmentCash = parseFloat(adjustmentCash) || 0;
     const parsedAdjustmentTrade = parseFloat(adjustmentTrade) || 0;
     const parsedFee = parseFloat(fee) || 0;
-    const parsedTradeFee = parseFloat(tradeFee) || 0;
+    const parsedTradeFee = parseFloat(model.trade_fee?.toString() || '0') || 0;
     const calculatedTotalCash = parsedFee + parsedAdjustmentCash;
     const calculatedTotalTrade = parsedTradeFee + parsedAdjustmentTrade;
 

@@ -42,20 +42,24 @@ export type ProjectType =
   | 'ecommerce'
   | 'social_media'
   | 'activation'
-  | 'event';
+  | 'event'
+  | 'production';
 
-// Constante con los tipos de proyecto para UI (ordenados por jerarquía Jobs-style)
+// Constante con los tipos de proyecto para UI (ordenados por frecuencia de uso histórico)
 export const PROJECT_TYPES: { value: ProjectType; label: string }[] = [
-  { value: 'runway', label: 'Runway' },
+  // Más usados según análisis de nombres históricos
+  { value: 'production', label: 'Producción' },       // "Produ/Producción" = término más usado (~25+)
+  { value: 'photoshoot', label: 'Photoshoot' },       // "Shoot" = segundo más usado (~20+)
+  { value: 'social_media', label: 'Social Media' },   // "Campaña/TikTok" relacionado
+  { value: 'tv_commercial', label: 'TV Commercial' }, // Comerciales de TV
+  { value: 'activation', label: 'Activación' },       // Para activaciones de marca
+  { value: 'event', label: 'Evento' },                // "Evento/Pasarela"
+  { value: 'ecommerce', label: 'E-commerce' },
+  // Menos usados hasta ahora
   { value: 'editorial', label: 'Editorial' },
+  { value: 'runway', label: 'Runway' },
   { value: 'cinema', label: 'Cinema' },
   { value: 'music_video', label: 'Music Video' },
-  { value: 'photoshoot', label: 'Photoshoot' },
-  { value: 'tv_commercial', label: 'TV Commercial' },
-  { value: 'ecommerce', label: 'E-commerce' },
-  { value: 'social_media', label: 'Social Media' },
-  { value: 'activation', label: 'Activación' },
-  { value: 'event', label: 'Evento' },
 ];
 
 // ----------------------------------------------------------------

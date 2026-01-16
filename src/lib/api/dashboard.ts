@@ -129,20 +129,22 @@ export type ModelRankingItem = {
   approved_count: number;
   rejected_count: number;
   total_count: number;
+  last_project_date: string | null;
 };
 
 export type ModelRankings = {
   mostApproved: ModelRankingItem[];
   mostRefused: ModelRankingItem[];
   mostApplied: ModelRankingItem[];
+  leastApplied: ModelRankingItem[];
 };
 
-export async function getModelApplicationStats(limit = 20): Promise<ModelRankings> {
+export async function getModelApplicationStats(limit = 100): Promise<ModelRankings> {
   noStore();
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
-    return { mostApproved: [], mostRefused: [], mostApplied: [] };
+    return { mostApproved: [], mostRefused: [], mostApplied: [], leastApplied: [] };
   }
 
   // Use RPC function for efficient SQL aggregation
@@ -150,21 +152,33 @@ export async function getModelApplicationStats(limit = 20): Promise<ModelRanking
 
   if (error) {
     logError(error, { action: 'getModelApplicationStats' });
-    return { mostApproved: [], mostRefused: [], mostApplied: [] };
+    return { mostApproved: [], mostRefused: [], mostApplied: [], leastApplied: [] };
   }
 
-  if (!data || data.length === 0) return { mostApproved: [], mostRefused: [], mostApplied: [] };
+  if (!data || data.length === 0) return { mostApproved: [], mostRefused: [], mostApplied: [], leastApplied: [] };
 
   const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL?.replace(/\/$/, '') || '';
   const toPublicUrl = (path: string | null | undefined) => path && R2_PUBLIC_URL ? `${R2_PUBLIC_URL}/${path}` : null;
 
-  const allStats: ModelRankingItem[] = data.map((row: { model_id: string; alias: string | null; cover_path: string | null; total_count: number; approved_count: number; rejected_count: number }) => ({
+  // Type the response explicitly to include last_project_date
+  type StatsRow = {
+    model_id: string;
+    alias: string | null;
+    cover_path: string | null;
+    total_count: number;
+    approved_count: number;
+    rejected_count: number;
+    last_project_date: string | null;
+  };
+
+  const allStats: ModelRankingItem[] = (data as StatsRow[]).map((row) => ({
     model_id: row.model_id,
     alias: row.alias || 'Sin alias',
     coverUrl: toPublicUrl(row.cover_path),
     approved_count: Number(row.approved_count),
     rejected_count: Number(row.rejected_count),
     total_count: Number(row.total_count),
+    last_project_date: row.last_project_date,
   }));
 
   const mostApproved = [...allStats]
@@ -179,10 +193,24 @@ export async function getModelApplicationStats(limit = 20): Promise<ModelRanking
     .sort((a, b) => b.total_count - a.total_count)
     .slice(0, limit);
 
+  // Least applied: sorted by total_count ascending (least first), then by last_project_date ascending (oldest first)
+  const leastApplied = [...allStats]
+    .sort((a, b) => {
+      if (a.total_count !== b.total_count) {
+        return a.total_count - b.total_count;
+      }
+      // If same count, prioritize older last_project_date
+      const dateA = a.last_project_date ? new Date(a.last_project_date).getTime() : 0;
+      const dateB = b.last_project_date ? new Date(b.last_project_date).getTime() : 0;
+      return dateA - dateB;
+    })
+    .slice(0, limit);
+
   return {
     mostApproved,
     mostRefused,
     mostApplied,
+    leastApplied,
   };
 }
 

@@ -25,10 +25,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Combobox } from '@/components/ui/combobox';
+import { BrandAutocomplete, BrandOption } from '@/components/ui/brand-autocomplete';
 import { useRouter } from 'next/navigation';
 import { Project, Client, Brand, PROJECT_TYPES, ProjectType } from '@/lib/types';
-import { format } from 'date-fns';
+import { format, parse } from 'date-fns';
+import { es } from 'date-fns/locale';
 import { DatePicker } from '@/components/ui/date-picker';
 import { TimePicker } from '@/components/ui/time-picker';
 import { TRADE_CATEGORIES, TRADE_CATEGORY_LABELS } from '@/lib/constants/finance';
@@ -53,11 +54,21 @@ type ClientWithBrands = Client & { brands: Brand[] };
 
 const EMPTY_PROJECT_TYPES: ProjectType[] = [];
 
+function formatDateShort(dateStr: string): string {
+  try {
+    const date = parse(dateStr, 'yyyy-MM-dd', new Date());
+    return format(date, 'd MMM', { locale: es });
+  } catch {
+    return dateStr;
+  }
+}
+
 function generateProjectName(
   types: ProjectType[],
   clientName: string | null | undefined,
   brandName: string | null | undefined,
-  customName: string | null | undefined
+  customName: string | null | undefined,
+  scheduleDates: string[] = []
 ): string {
   const parts: string[] = [];
 
@@ -67,14 +78,26 @@ function generateProjectName(
     parts.push(firstType);
   }
 
-  // 2. Marca o Cliente (aplicar Title Case para normalizar)
+  // 2. Fechas (primera y última cronológicamente) - AHORA VAN ANTES DE LA MARCA
+  if (scheduleDates.length > 0) {
+    const sortedDates = [...scheduleDates].filter(Boolean).sort();
+    if (sortedDates.length === 1) {
+      parts.push(formatDateShort(sortedDates[0]));
+    } else if (sortedDates.length > 1) {
+      const firstDate = formatDateShort(sortedDates[0]);
+      const lastDate = formatDateShort(sortedDates[sortedDates.length - 1]);
+      parts.push(`${firstDate} - ${lastDate}`);
+    }
+  }
+
+  // 3. Marca o Cliente (aplicar Title Case para normalizar)
   if (brandName) {
     parts.push(toTitleCase(brandName));
   } else if (clientName) {
     parts.push(toTitleCase(clientName));
   }
 
-  // 3. Nombre personalizado (opcional, también con Title Case)
+  // 4. Nombre personalizado (opcional, también con Title Case)
   if (customName && customName.trim()) {
     parts.push(toTitleCase(customName.trim()));
   }
@@ -240,55 +263,42 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
   const selectedProjectTypes = form.watch('project_types') ?? EMPTY_PROJECT_TYPES;
   const watchedClientName = form.watch('client_name'); // <-- Watch client_name directly
 
-  const selectedClient = useMemo(() =>
-    clients.find(c => c.id === selectedClientId),
-    [clients, selectedClientId]
-  );
+  // Observar el schedule para las fechas
+  const scheduleDates = useMemo(() => {
+    const watchedSchedule = form.watch('schedule') || [];
+    const dates = watchedSchedule.map(s => s?.date).filter(Boolean) as string[];
+    return dates;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.watch('schedule')]);
 
-  const selectedBrand = useMemo(() =>
-    selectedClient?.brands?.find(b => b.id === selectedBrandId),
-    [selectedClient, selectedBrandId]
-  );
-
-  const availableBrands = useMemo(() => {
-    if (!selectedClientId) return [];
-    return selectedClient?.brands || [];
-  }, [selectedClientId, selectedClient]);
+  // Estado para el nombre de la marca (para marcas nuevas que no tienen ID)
+  const [brandNameState, setBrandNameState] = useState<string>(() => {
+    if (initialData?.brand_id) {
+      // Buscar el nombre de la marca existente
+      return ''; // Se actualizará cuando se carguen los clientes
+    }
+    return initialData?.client_name || '';
+  });
 
   // Generar nombre del proyecto en tiempo real
   const generatedProjectName = useMemo(() => {
+    // Con el nuevo BrandAutocomplete, usamos brandNameState directamente
+    // ya que contiene el nombre de la marca (existente o nueva)
     return generateProjectName(
       selectedProjectTypes,
-      selectedClient?.name || watchedClientName,
-      selectedBrand?.name,
-      customProjectName
+      null, // Ya no usamos selectedClient, la marca es lo principal
+      brandNameState || watchedClientName, // brandNameState tiene prioridad
+      customProjectName,
+      scheduleDates
     );
-  }, [selectedProjectTypes, selectedClient, selectedBrand, customProjectName, watchedClientName]);
+  }, [selectedProjectTypes, brandNameState, customProjectName, watchedClientName, scheduleDates]);
 
   // Sincronizar el nombre generado con el formulario
   useEffect(() => {
     form.setValue('project_name', generatedProjectName);
   }, [generatedProjectName, form]);
 
-  // Limpiar marca si cambia el cliente
-  useEffect(() => {
-    const subscription = form.watch((value, { name }) => {
-      if (name === 'client_id') {
-        const currentBrandId = form.getValues('brand_id');
-        const isValidBrand = availableBrands.some(b => b.id === currentBrandId);
-        if (!isValidBrand) {
-          form.setValue('brand_id', null);
-        }
-        if (value.client_id) {
-          const client = clients.find(c => c.id === value.client_id);
-          if (client) {
-            form.setValue('client_name', client.name);
-          }
-        }
-      }
-    });
-    return () => subscription.unsubscribe();
-  }, [form, availableBrands, clients]);
+
 
   // Sincronizar moneda del cliente cuando cambia la moneda de modelos (solo si no ha sido modificada manualmente)
   const watchedCurrency = form.watch('currency');
@@ -298,20 +308,36 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
     }
   }, [watchedCurrency, hasManuallySetClientCurrency]);
 
-  const clientOptions = useMemo(() => [
-    ...clients.map(c => ({
-      label: c.company ? `${c.name} (${c.company})` : c.name,
-      value: c.id,
-    }))
-  ], [clients]);
+  // Consolidar TODAS las marcas de todos los clientes en una sola lista
+  const allBrandsForAutocomplete = useMemo<BrandOption[]>(() => {
+    const brands: BrandOption[] = [];
+    clients.forEach(client => {
+      if (client.brands && client.brands.length > 0) {
+        client.brands.forEach(brand => {
+          brands.push({
+            id: brand.id,
+            name: brand.name,
+            client_id: client.id,
+            client_name: client.name,
+          });
+        });
+      }
+    });
+    return brands.sort((a, b) => a.name.localeCompare(b.name));
+  }, [clients]);
 
-  const brandOptions = useMemo(() =>
-    availableBrands.map(b => ({
-      label: b.name,
-      value: b.id,
-    })),
-    [availableBrands]
-  );
+  // Actualizar brandNameState cuando se carguen los clientes (para modo edición)
+  useEffect(() => {
+    if (initialData?.brand_id && clients.length > 0) {
+      const client = clients.find(c => c.id === initialData.client_id);
+      const brand = client?.brands?.find(b => b.id === initialData.brand_id);
+      if (brand) {
+        setBrandNameState(brand.name);
+      }
+    } else if (initialData?.client_name && !initialData?.brand_id && !brandNameState) {
+      setBrandNameState(initialData.client_name);
+    }
+  }, [clients, initialData, brandNameState]);
 
   // Toggle de tipos (máximo 2)
   const toggleProjectType = (type: ProjectType) => {
@@ -481,19 +507,21 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
         className="space-y-8"
       >
         <header className="sticky top-0 z-20 flex flex-col items-start gap-4 pb-4 pt-2 border-b bg-background sm:flex-row sm:items-center sm:justify-between -mx-6 px-6">
-          <div className="space-y-0.5">
+          <div className="border border-purple/30 bg-purple/5 rounded-lg px-4 py-3 space-y-1">
             {/* El nombre del proyecto es el protagonista */}
-            <h1 className="text-display leading-tight transition-all duration-200">
+            <h1 className="text-display leading-tight transition-all duration-200 text-primary">
               {generatedProjectName}
             </h1>
-            {/* Subtexto de contexto */}
-            <p className="text-body text-muted-foreground flex items-center gap-1.5">
+            {/* Subtexto de contexto: muestra marca > cliente > placeholder */}
+            <span className="text-title text-purple">
               {isEditing ? (
                 <>Editando proyecto</>
+              ) : brandNameState ? (
+                <>{brandNameState}</>
               ) : (
-                <>Nuevo proyecto</>
+                <>Nueva marca</>
               )}
-            </p>
+            </span>
           </div>
           <div className="flex flex-col-reverse items-stretch gap-2 w-full sm:flex-row sm:w-auto">
             <Button variant="outline" type="button" onClick={onCancel ? onCancel : () => router.push('/dashboard/projects')} className="w-full sm:w-auto">
@@ -557,113 +585,7 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
           </div>
         </div>
 
-        {/* ========== PASO 2: CLIENTE ========== */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <h2 className="text-title">Cliente</h2>
-            <span className="text-label text-muted-foreground">(recomendado)</span>
-          </div>
-          <div className="border bg-card rounded-lg p-6 space-y-4">
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label>Seleccionar cliente registrado</Label>
-                <Controller
-                  control={form.control}
-                  name="client_id"
-                  render={({ field }) => (
-                    <>
-                      <input type="hidden" name="client_id" value={field.value || ''} />
-                      <Combobox
-                        options={clientOptions}
-                        value={field.value || ''}
-                        onChange={(value) => field.onChange(value || null)}
-                        placeholder={isLoadingClients ? "Cargando..." : "Buscar cliente..."}
-                        searchPlaceholder="Buscar por nombre o empresa..."
-                        emptyMessage="No se encontraron clientes"
-                      />
-                    </>
-                  )}
-                />
-                {selectedClientId && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 px-2 text-label text-muted-foreground"
-                    onClick={() => {
-                      form.setValue('client_id', null);
-                      form.setValue('brand_id', null);
-                      form.setValue('client_name', '');
-                    }}
-                  >
-                    <X className="mr-1 h-3 w-3" /> Quitar cliente
-                  </Button>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label>O escribir nombre manualmente</Label>
-                <Input
-                  placeholder="Nombre del cliente"
-                  value={form.watch('client_name') || ''}
-                  onChange={(e) => {
-                    form.setValue('client_name', e.target.value);
-                    form.setValue('client_id', null);
-                    form.setValue('brand_id', null);
-                  }}
-                  disabled={!!selectedClientId}
-                />
-                <input type="hidden" name="client_name" value={form.watch('client_name') || ''} />
-              </div>
-            </div>
-
-            {/* Selector de Marca */}
-            {selectedClientId && availableBrands.length > 0 && (
-              <div className="pt-4 border-t space-y-2">
-                <div className="flex items-center gap-2">
-                  <Label>Marca del proyecto</Label>
-                </div>
-                <Controller
-                  control={form.control}
-                  name="brand_id"
-                  render={({ field }) => (
-                    <>
-                      <input type="hidden" name="brand_id" value={field.value || ''} />
-                      <Combobox
-                        options={brandOptions}
-                        value={field.value || ''}
-                        onChange={(value) => field.onChange(value || null)}
-                        placeholder="Seleccionar marca..."
-                        searchPlaceholder="Buscar marca..."
-                        emptyMessage="No hay marcas"
-                      />
-                    </>
-                  )}
-                />
-                <p className="text-label text-muted-foreground">
-                  {selectedClient?.name} tiene {availableBrands.length} marca{availableBrands.length !== 1 ? 's' : ''}.
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* ========== PASO 3: NOMBRE ADICIONAL ========== */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <h2 className="text-title">Palabra adicional</h2>
-            <span className="text-label text-muted-foreground">(opcional)</span>
-          </div>
-          <div className="border bg-card rounded-lg p-6">
-            <Input
-              placeholder="Ej: Navidad, Fashion Week, Catálogo Verano..."
-              value={customProjectName}
-              onChange={(e) => setCustomProjectName(e.target.value)}
-            />
-          </div>
-        </div>
-
-        {/* ========== PASO 4: FECHAS Y HORARIOS ========== */}
+        {/* ========== PASO 2: FECHAS Y HORARIOS ========== */}
         <div className="space-y-4">
           <h2 className="text-title">Fechas y Horarios</h2>
           <div className="border bg-card rounded-lg p-6 space-y-4">
@@ -734,6 +656,54 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
             <Button type="button" variant="outline" onClick={() => append({ date: format(new Date(), 'yyyy-MM-dd'), startTime: '09:00 AM', endTime: '05:00 PM' })}>
               <Plus className="mr-2 h-4 w-4" /> Añadir fecha
             </Button>
+          </div>
+        </div>
+
+        {/* ========== PASO 3: MARCA ========== */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <h2 className="text-title">Marca</h2>
+            <span className="text-label text-muted-foreground">(recomendado)</span>
+          </div>
+          <div className="border bg-card rounded-lg p-6 space-y-2">
+            <Label>Marca del proyecto</Label>
+            <BrandAutocomplete
+              brands={allBrandsForAutocomplete}
+              value={brandNameState}
+              selectedBrandId={selectedBrandId ?? null}
+              selectedClientId={selectedClientId ?? null}
+              isLoading={isLoadingClients}
+              onChange={({ brandName, brandId, clientId, clientName }) => {
+                setBrandNameState(brandName);
+                form.setValue('brand_id', brandId);
+                form.setValue('client_id', clientId);
+                form.setValue('client_name', clientName || brandName);
+              }}
+              placeholder={isLoadingClients ? 'Cargando marcas...' : 'Escribir o seleccionar marca...'}
+            />
+            {/* Hidden inputs for form submission */}
+            <input type="hidden" name="client_id" value={selectedClientId || ''} />
+            <input type="hidden" name="brand_id" value={selectedBrandId || ''} />
+            <input type="hidden" name="client_name" value={form.watch('client_name') || ''} />
+            <p className="text-label text-muted-foreground">
+              Escribe para buscar o crear una nueva marca. Las marcas existentes se autocompletarán.
+            </p>
+          </div>
+        </div>
+
+        {/* ========== PASO 4: NOMBRE ADICIONAL ========== */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <h2 className="text-title">Palabra adicional</h2>
+            <span className="text-label text-muted-foreground">(opcional)</span>
+          </div>
+          <div className="border bg-card rounded-lg p-6">
+            <Input
+              placeholder="Distingue este proyecto: Campaña 2026, Rebranding, Navidad..."
+              value={customProjectName}
+              onChange={(e) => setCustomProjectName(e.target.value)}
+            />
+            <p className="text-label text-muted-foreground mt-2">Esta palabra se agrega al final del nombre del proyecto</p>
           </div>
         </div>
 

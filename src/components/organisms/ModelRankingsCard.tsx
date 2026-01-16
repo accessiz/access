@@ -8,11 +8,13 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import NextLink from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { ModelRankings, ModelRankingItem } from '@/lib/api/dashboard';
-import { Trophy } from 'lucide-react';
+import { Trophy, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { formatDistanceToNow } from 'date-fns';
+import { es } from 'date-fns/locale';
 
-type RankingType = 'approved' | 'refused' | 'applied';
+type RankingType = 'approved' | 'refused' | 'applied' | 'least';
 
 interface ModelRankingsCardProps {
     initialData: ModelRankings;
@@ -29,12 +31,24 @@ export function ModelRankingsCard({ initialData, className }: ModelRankingsCardP
             case 'refused':
                 return { data: initialData.mostRefused, badgeVariant: 'danger' };
             case 'applied':
+                return { data: initialData.mostApplied, badgeVariant: 'info' };
+            case 'least':
+                return { data: initialData.leastApplied, badgeVariant: 'warning' };
             default:
                 return { data: initialData.mostApplied, badgeVariant: 'info' };
         }
     };
 
     const { data, badgeVariant } = getListData();
+
+    const formatLastDate = (dateStr: string | null): string => {
+        if (!dateStr) return 'Sin postulaciones';
+        try {
+            return formatDistanceToNow(new Date(dateStr), { addSuffix: true, locale: es });
+        } catch {
+            return dateStr;
+        }
+    };
 
     return (
         <Card className={cn("bg-[rgb(var(--sys-bg-secondary))]", className)}>
@@ -51,6 +65,7 @@ export function ModelRankingsCard({ initialData, className }: ModelRankingsCardP
                         <SelectItem value="approved">Más Aprobadas</SelectItem>
                         <SelectItem value="refused">Más Rechazadas</SelectItem>
                         <SelectItem value="applied">Más Postulaciones</SelectItem>
+                        <SelectItem value="least">Menos Postulaciones</SelectItem>
                     </SelectContent>
                 </Select>
             </CardHeader>
@@ -81,6 +96,12 @@ export function ModelRankingsCard({ initialData, className }: ModelRankingsCardP
                                             <span className="font-semibold text-foreground truncate group-hover:text-primary transition-colors">
                                                 {model.alias}
                                             </span>
+                                            {view === 'least' && model.last_project_date && (
+                                                <span className="text-label text-muted-foreground flex items-center gap-1">
+                                                    <Clock className="h-3 w-3" />
+                                                    Última: {formatLastDate(model.last_project_date)}
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
 
@@ -89,6 +110,7 @@ export function ModelRankingsCard({ initialData, className }: ModelRankingsCardP
                                             {view === 'approved' && model.approved_count}
                                             {view === 'refused' && model.rejected_count}
                                             {view === 'applied' && model.total_count}
+                                            {view === 'least' && model.total_count}
                                         </Badge>
                                     </div>
                                 </NextLink>
