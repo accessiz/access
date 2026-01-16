@@ -264,12 +264,10 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
   const watchedClientName = form.watch('client_name'); // <-- Watch client_name directly
 
   // Observar el schedule para las fechas
-  const scheduleDates = useMemo(() => {
-    const watchedSchedule = form.watch('schedule') || [];
-    const dates = watchedSchedule.map(s => s?.date).filter(Boolean) as string[];
-    return dates;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.watch('schedule')]);
+  const watchedSchedule = form.watch('schedule');
+  const scheduleDates = watchedSchedule
+    ? watchedSchedule.map(s => s?.date).filter(Boolean) as string[]
+    : [];
 
   // Estado para el nombre de la marca (para marcas nuevas que no tienen ID)
   const [brandNameState, setBrandNameState] = useState<string>(() => {
