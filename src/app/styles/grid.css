@@ -1,0 +1,198 @@
+/**
+ * Grid System
+ * CSS Grid layouts, master-detail patterns, responsive grids
+ */
+
+@layer utilities {
+    /* ============================================
+   * CSS GRID LAYOUT SYSTEM
+   * Symmetric layouts with consistent spacing
+   * ============================================ */
+
+    /* Grid variables */
+    :root {
+        --grid-gutter: 1rem;
+        /* 16px - default gap */
+        --grid-gutter-sm: 0.5rem;
+        /* 8px - compact gap */
+        --grid-gutter-lg: 1.5rem;
+        /* 24px - spacious gap */
+        --master-width: 400px;
+        /* Fixed width for master column */
+        --master-width-sm: 320px;
+        /* Smaller master on tablets */
+    }
+
+    /* Base grid container */
+    .layout-grid {
+        display: grid;
+        gap: var(--grid-gutter);
+    }
+
+    /* Symmetric column layouts */
+    .layout-1-col {
+        grid-template-columns: 1fr;
+    }
+
+    .layout-2-col {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .layout-3-col {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .layout-4-col {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    /* Master-detail layout (sidebar + content) */
+    .layout-master-detail {
+        display: grid;
+        grid-template-columns: 1fr;
+        /* Mobile: single column */
+        gap: var(--grid-gutter);
+    }
+
+    @media (min-width: 1024px) {
+        .layout-master-detail {
+            grid-template-columns: var(--master-width-sm) 1fr;
+        }
+    }
+
+    @media (min-width: 1280px) {
+        .layout-master-detail {
+            grid-template-columns: var(--master-width) 1fr;
+        }
+    }
+
+    /* Master panel (left sidebar in desktop, hidden in mobile) */
+    .master-panel {
+        border-right: 1px solid rgb(var(--sys-bg-secondary));
+        overflow-y: auto;
+        max-height: calc(100vh - 80px);
+    }
+
+    @media (max-width: 1023px) {
+        .master-panel {
+            border-right: none;
+            border-bottom: 1px solid rgb(var(--sys-bg-secondary));
+            max-height: 50vh;
+        }
+    }
+
+    /* Detail panel (main content) */
+    .detail-panel {
+        overflow-y: auto;
+        max-height: calc(100vh - 80px);
+    }
+
+    @media (max-width: 1023px) {
+        .detail-panel {
+            max-height: none;
+        }
+    }
+
+    /* Responsive grid that adapts to viewport */
+    .layout-responsive {
+        display: grid;
+        gap: var(--grid-gutter);
+        grid-template-columns: repeat(1, 1fr);
+    }
+
+    @media (min-width: 640px) {
+        .layout-responsive {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (min-width: 768px) {
+        .layout-responsive {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+
+    @media (min-width: 1024px) {
+        .layout-responsive {
+            grid-template-columns: repeat(4, 1fr);
+        }
+    }
+
+    @media (min-width: 1280px) {
+        .layout-responsive {
+            grid-template-columns: repeat(5, 1fr);
+        }
+    }
+
+    /* ==========================================
+   * SEMANTIC GRID UTILITIES
+   * Pre-built layouts using spacing tokens
+   * ========================================== */
+
+    /* Page-level grid with 24px gaps */
+    .page-grid {
+        display: grid;
+        gap: var(--spacing-lg);
+    }
+
+    /* Section-level grid with 16px gaps */
+    .section-grid {
+        display: grid;
+        gap: var(--spacing-md);
+    }
+
+    /* Card content grid with 16px gaps */
+    .card-grid {
+        display: grid;
+        gap: var(--spacing-md);
+    }
+
+    /* Inline items with 8px gaps */
+    .inline-grid {
+        display: grid;
+        grid-auto-flow: column;
+        gap: var(--spacing-sm);
+        align-items: center;
+    }
+
+    /* ==========================================
+   * CONTENT-VISIBILITY UTILITIES
+   * Improve rendering performance for long lists
+   * Browser skips rendering off-screen content
+   * ========================================== */
+
+    /* Auto content-visibility for list items */
+    .cv-auto {
+        content-visibility: auto;
+        contain-intrinsic-size: auto 200px;
+        /* Estimated height */
+    }
+
+    /* Smaller items (table rows, compact cards) */
+    .cv-auto-sm {
+        content-visibility: auto;
+        contain-intrinsic-size: auto 60px;
+    }
+
+    /* Medium items (cards, panels) */
+    .cv-auto-md {
+        content-visibility: auto;
+        contain-intrinsic-size: auto 150px;
+    }
+
+    /* Large items (full cards, modals) */
+    .cv-auto-lg {
+        content-visibility: auto;
+        contain-intrinsic-size: auto 300px;
+    }
+
+    /* Skip rendering entirely when hidden */
+    .cv-hidden {
+        content-visibility: hidden;
+    }
+
+    /* Visible content (default, for explicit override) */
+    .cv-visible {
+        content-visibility: visible;
+    }
+}

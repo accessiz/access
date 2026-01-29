@@ -1,163 +1,118 @@
-# Plan: Sistema de Conversión de Monedas USD → GTQ
+# 🚀 Plan de Optimización Vercel - IZ ACCESS
 
-## Objetivo
+## Estado Actual (2026-01-29)
 
-Implementar conversión automática de USD a GTQ en toda la plataforma, guardando tasas históricas para pagos ya realizados y usando tasa actual para pendientes.
-
----
-
-## API de Tasas de Cambio
-
-**Seleccionada:** [Open Exchange Rates API](https://open.er-api.com) (gratuita, sin API key)
-
-```
-GET https://open.er-api.com/v6/latest/USD
-→ { "rates": { "GTQ": 7.67, ... } }
-```
-
-- ✅ Gratis sin límites estrictos
-- ✅ No requiere API key
-- ✅ Actualiza diariamente
+### Métricas al inicio del sprint:
+| Recurso | Uso | Límite | % |
+|---------|-----|--------|---|
+| Fluid Active CPU | 3h 8m | 4h | 78% |
+| Fast Origin Transfer | 7.12 GB | 10 GB | 71% |
+| Function Invocations | 428K | 1M | 43% |
+| Edge Requests | 261K | 1M | 26% |
 
 ---
 
-## Cambios en Base de Datos
+## ✅ Fase 1: Optimizaciones Críticas (COMPLETADO)
 
-### 1. Nueva tabla: `exchange_rates` (cache de tasas)
+### 1.1 Eliminar Polling Agresivo
+- [x] `NotificationButton.tsx` - Polling 60s → Solo cuando pestaña visible
+- [x] `AppSidebar.tsx` - Polling 5min → Solo cuando pestaña visible
+- **Impacto**: ~50-70% menos invocaciones de API cuando usuario inactivo
 
-```sql
-CREATE TABLE exchange_rates (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  date date UNIQUE NOT NULL,
-  usd_to_gtq numeric NOT NULL,
-  fetched_at timestamptz DEFAULT now()
-);
-```
+### 1.2 Bypass Proxy R2
+- [x] Configurar CORS en Cloudflare R2
+- [x] Agregar `NEXT_PUBLIC_R2_PUBLIC_URL` a `.env.local`
+- [x] Actualizar `src/lib/constants.ts` para usar variable pública
+- [x] Actualizar `src/lib/utils.ts` - `mediaUrl()` retorna URL directa
+- [x] Actualizar `FeaturedModelsPanel.tsx`
+- [x] Actualizar `BirthdayPanel.tsx`
+- [x] Actualizar `web-client-page.tsx`
+- [x] Actualizar `birthdays-client-page.tsx`
+- **Impacto**: ~5GB menos de Fast Origin Transfer
 
-### 2. Modificar `model_assignments`
+### 1.3 Dynamic Imports
+- [x] `web/page.tsx` - Lazy load con skeleton
+- [x] `birthdays/page.tsx` - Lazy load con skeleton
+- [x] `alerts/page.tsx` - Lazy load con skeleton
+- [x] `settings/page.tsx` - Lazy load con skeleton
+- **Impacto**: Menor bundle inicial, mejor FCP
 
-```sql
-ALTER TABLE model_assignments 
-  ADD COLUMN exchange_rate_used numeric,
-  ADD COLUMN amount_gtq numeric;
-```
-
-### 3. Modificar `projects` (para cobros a clientes)
-
-```sql
-ALTER TABLE projects
-  ADD COLUMN client_exchange_rate_used numeric,
-  ADD COLUMN client_amount_gtq numeric;
-```
-
----
-
-## Componentes a Crear/Modificar
-
-### Backend
-
-| Archivo | Cambio |
-|---------|--------|
-| `lib/utils/currency.ts` | **NUEVO** - Funciones de conversión y fetch de tasa |
-| `lib/actions/exchange-rates.ts` | **NUEVO** - Server actions para tasas |
-| `app/api/cron/exchange-rate/route.ts` | **NUEVO** - Cron job para actualizar tasa diaria |
-
-### Frontend - Finanzas
-
-| Archivo | Cambio |
-|---------|--------|
-| `finances-client-page.tsx` | Mostrar KPIs en GTQ, indicar moneda original |
-| Diálogo de pago | Mostrar conversión antes de confirmar |
-
-### Frontend - Modelo
-
-| Archivo | Cambio |
-|---------|--------|
-| `page-client.tsx` (modelo) | Mostrar historial con montos en GTQ |
+### 1.4 Cache Headers en API Routes
+- [x] `/api/notifications` - Cache 60s + stale-while-revalidate
+- [x] `/api/alerts` - Cache 60s + stale-while-revalidate
+- [x] `/api/dashboard/activity` - Cache 30s + stale-while-revalidate
+- **Impacto**: Menos invocaciones de función
 
 ---
 
-## Lógica de Conversión
+## ✅ Fase 2: Optimizaciones Server-Side (COMPLETADO)
 
-```
-┌─────────────────────────────────────────┐
-│           AL MARCAR COMO PAGADO         │
-├─────────────────────────────────────────┤
-│ 1. IF currency === 'GTQ'                │
-│      amount_gtq = amount_original       │
-│      exchange_rate = 1                  │
-│ 2. ELSE (USD)                           │
-│      rate = getTodayRate()              │
-│      amount_gtq = amount × rate         │
-│      exchange_rate = rate               │
-│ 3. Guardar en BD                        │
-└─────────────────────────────────────────┘
-```
+### 2.1 React.cache() para Deduplicación ✅
+- [x] Envolver `createClient` en `React.cache()` - `src/lib/supabase/server.ts`
+- [x] Crear `src/lib/api/cached.ts` con funciones cacheadas
+- [x] Actualizar `projects/[id]/page.tsx` para usar versiones cacheadas
+- [x] Actualizar `models/page.tsx` para usar versiones cacheadas
+- **Impacto**: Menos queries a Supabase por request (reutiliza cliente)
+
+### 2.2 Suspense Boundaries para Streaming ✅
+- [x] Refactorizar `dashboard/page.tsx` en componentes async separados
+- [x] Agregar `<Suspense>` con skeletons para cada sección
+- [x] KPICards, RecentActivityCard, IncompleteProfilesCard, ModelRankingsSection
+- **Impacto**: Mejor TTFB, UX más responsive (contenido aparece progresivamente)
 
 ---
 
-## KPIs Unificados
+## ⏳ Fase 3: Optimizaciones Client-Side (PENDIENTE)
 
-| KPI | Fórmula |
-|-----|---------|
-| **Total Pagado** | Σ `amount_gtq` (ya convertido) |
-| **Por Cobrar** | Σ (`amount` × `tasa_actual`) donde currency='USD' + Σ `amount` donde currency='GTQ' |
-| **Total Generado** | Σ `amount_gtq` (histórico) |
+### 3.1 useTransition para Updates No-Urgentes
+- [x] Envolver actualizaciones de filtros en `startTransition`
+- [x] Evitar bloquear UI durante búsquedas/filtrado
+- **Archivos candidatos**:
+  - `models-client-page.tsx` (filtros) ✅
+  - `projects-client-page.tsx` (filtros) ✅
+  - `finances-client-page.tsx` (tabs, filtros)
+- **Impacto**: UI más fluida
 
----
-
-## UI: Indicador de Moneda
-
-En tarjetas de pago mostrar:
-- Badge con moneda original: `USD 150`
-- Tooltip o texto secundario: `≈ Q 1,150.50 @ 7.67`
-
----
-
-## Fases de Implementación
-
-### Fase 1: Base de datos y utilidades
-- [ ] Crear tabla `exchange_rates`
-- [ ] Agregar columnas a `model_assignments` y `projects`
-- [ ] Crear `lib/utils/currency.ts`
-- [ ] Crear `lib/actions/exchange-rates.ts`
-
-### Fase 2: Integración en pagos
-- [ ] Modificar flujo de "Marcar como Pagado" para guardar `exchange_rate_used` y `amount_gtq`
-- [ ] Modificar flujo de cobro a cliente igual
-
-### Fase 3: KPIs y visualización
-- [ ] Actualizar cálculos de KPIs en finanzas
-- [ ] Actualizar vista de trabajos del modelo
-- [ ] Mostrar indicadores de moneda en las tarjetas
-
-### Fase 4: Cron y mantenimiento
-- [ ] Crear Edge Function para actualizar tasa diaria
-- [ ] Configurar cron en Supabase (o Vercel)
+### 3.2 content-visibility para Listas Largas
+- [x] Agregar CSS `content-visibility: auto` a tablas/listas
+- [x] Aplicar a `ScrollArea` con muchos items
+- **Archivos CSS a modificar**:
+  - `src/app/globals.css`
+- **Impacto**: Mejor rendering performance
 
 ---
 
-## Migración de Datos Existentes
+## ✅ Fase 4: Limpieza de Proyecto (COMPLETADO)
 
-Para pagos ya marcados como "paid" que no tienen `exchange_rate_used`:
-- Opción A: Usar tasa de hoy (menos preciso pero simple)
-- Opción B: Dejar en blanco y mostrar "?" en UI
-- **Recomendado:** Opción A con nota que son aproximados
+### 4.1 Eliminar Archivos Temporales
+- [x] `.tmp-tailwind.css` (79KB)
+- [x] `tmp-tailwind-out.css` (99KB)
+- [x] `material-theme.json` (15KB)
+- [x] `new-globals.html` (2.6KB)
+- [x] `original.html` (16KB)
+
+### 4.2 Revisar Carpetas
+- [x] `audits/` - Eliminada (Backup innecesario)
+- [x] `archivos.md/` - No encontrado
+- [x] `skills/` en raíz - MANTENIDA (Solicitud usuario)
+- [x] `supabase 11 - 01/` - No encontrado
+
+### 4.3 Simplificar DESIGN_SYSTEM.md
+- [x] Reducir de 1115 líneas a ~300 líneas esenciales
+- [x] Mantener solo: tokens, colores, tipografía, reglas críticas
 
 ---
 
-## Estimación
+## 📋 Prioridad de Implementación
 
-| Fase | Tiempo |
-|------|--------|
-| Fase 1 | 30 min |
-| Fase 2 | 45 min |
-| Fase 3 | 30 min |
-| Fase 4 | 15 min |
-| **Total** | ~2 horas |
+| Orden | Tarea | Impacto | Esfuerzo |
+|-------|-------|---------|----------|
+| 1 | ✅ Polling + R2 Bypass | CRÍTICO | Medio |
+| 2 | ✅ Dynamic Imports | ALTO | Bajo |
+| 3 | React.cache() | MEDIO | Medio |
+| 4 | Suspense Boundaries | MEDIO | Medio |
+| 5 | useTransition | BAJO | Bajo |
+| 6 | ✅ content-visibility | BAJO | Bajo |
+| 7 | ✅ Limpieza archivos | BAJO | Bajo |
 
 ---
-
-## ¿Aprobado?
-
-Confirma para proceder con la implementación.

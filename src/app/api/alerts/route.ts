@@ -21,6 +21,11 @@ export async function GET(request: NextRequest) {
             success: true,
             data: alerts,
             count: alerts.length,
+        }, {
+            headers: {
+                // Cache por 60s, permite servir stale mientras revalida
+                'Cache-Control': 'private, max-age=60, stale-while-revalidate=120',
+            }
         });
     } catch (err) {
         logError(err, { route: '/api/alerts' });

@@ -1,5 +1,18 @@
 import { Metadata } from 'next'
-import { BirthdaysClientPage } from './birthdays-client-page'
+import dynamic from 'next/dynamic'
+import { Skeleton } from '@/components/ui/skeleton'
+
+const BirthdaysClientPage = dynamic(
+    () => import('./birthdays-client-page').then(mod => ({ default: mod.BirthdaysClientPage })),
+    {
+        loading: () => (
+            <div className="grid gap-6">
+                <Skeleton className="h-12 w-48" />
+                <Skeleton className="h-[300px] w-full" />
+            </div>
+        )
+    }
+)
 
 export const metadata: Metadata = {
     title: 'Cumpleaños | Dashboard',

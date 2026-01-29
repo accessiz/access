@@ -1,13 +1,13 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useTransition } from 'react';
 import { useSearchParams, usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Project } from '@/lib/types';
 
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { PlusCircle, ArrowDown, ArrowUp, List, CalendarDays } from 'lucide-react';
+import { PlusCircle, ArrowDown, ArrowUp, List, CalendarDays, Loader2 } from 'lucide-react';
 import { ProjectCalendarView } from '@/components/organisms/ProjectCalendarView';
 import { ProjectsToolbar } from '@/components/organisms/ProjectsToolbar';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from "@/components/ui/pagination";
@@ -42,6 +42,9 @@ export default function ProjectsClientPage({ initialProjects, initialCount, avai
     const [count, setCount] = useState(initialCount);
     const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
 
+    // useTransition for non-blocking UI updates during navigation
+    const [isPending, startTransition] = useTransition();
+
     // Sincronizar estado cuando los props cambian (navegación de página)
     useEffect(() => {
         setProjects(initialProjects);
@@ -60,6 +63,7 @@ export default function ProjectsClientPage({ initialProjects, initialCount, avai
         direction: (searchParams.get('dir') as 'asc' | 'desc') || 'desc',
     }), [searchParams]);
 
+    // Wrap navigation in startTransition for non-blocking updates
     const handleSort = (key: keyof Project) => {
         const params = new URLSearchParams(searchParams);
         let direction: 'asc' | 'desc' = 'asc';
@@ -69,7 +73,9 @@ export default function ProjectsClientPage({ initialProjects, initialCount, avai
         params.set('sort', key);
         params.set('dir', direction);
         params.set('page', '1');
-        router.replace(`${pathname}?${params.toString()}`);
+        startTransition(() => {
+            router.replace(`${pathname}?${params.toString()}`);
+        });
     };
 
     const createPageURL = (pageNumber: number | string) => {
@@ -181,7 +187,7 @@ export default function ProjectsClientPage({ initialProjects, initialCount, avai
                                 {projects.map((project, index) => {
                                     const rowNumber = ((currentPage - 1) * PAGE_SIZE) + index + 1;
                                     return (
-                                        <TableRow key={project.id}>
+                                        <TableRow key={project.id} className="cv-auto-sm">
                                             <TableCell className="text-muted-foreground font-mono text-label">
                                                 {rowNumber.toString().padStart(2, '0')}
                                             </TableCell>
@@ -214,7 +220,14 @@ export default function ProjectsClientPage({ initialProjects, initialCount, avai
     };
 
     return (
-        <div className="space-y-4">
+        <div className={cn("space-y-4", isPending && "opacity-70 pointer-events-none")}>
+            {/* Loading indicator for pending transitions */}
+            {isPending && (
+                <div className="fixed top-4 right-4 z-50 flex items-center gap-2 bg-background/80 backdrop-blur-sm px-3 py-2 rounded-md border shadow-sm">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="text-label">Actualizando...</span>
+                </div>
+            )}
             {/* DS §0: Simplified header - less cognitive load for María */}
             <header className="flex flex-col gap-x-4 gap-y-4 pb-4 border-b sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-x-4 gap-y-4">

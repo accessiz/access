@@ -8,7 +8,7 @@ import { UploadCloud, Trash2, Loader2 } from 'lucide-react';
 import { cn, mediaUrl } from '@/lib/utils';
 import { toast } from 'sonner';
 import { Label } from '@/components/ui/label';
-import { uploadModelImage, deleteModelImage } from '@/lib/actions/storage';
+import { uploadModelImage, deleteModelImage, cleanupOrphanedGalleryPaths } from '@/lib/actions/storage';
 import { ImageCropDialog } from './ImageCropDialog';
 import { Model } from '@/lib/types';
 import { CompCardPrintTemplate } from '@/app/dashboard/models/[id]/_components/CompCardPrintTemplate';
@@ -21,7 +21,7 @@ import {
 import { toJpeg, toPng } from 'html-to-image';
 import { jsPDF } from 'jspdf';
 import JSZip from 'jszip';
-import { AlertCircle, ChevronDown, Download, ExternalLink, FileType, Layers } from 'lucide-react';
+import { AlertCircle, ChevronDown, Download, ExternalLink, FileType, Layers, RefreshCw } from 'lucide-react';
 import {
     Select,
     SelectContent,
@@ -105,7 +105,7 @@ const PhotoSlot = ({ className, imageUrl, onFileSelect, onDelete, label, isUploa
     return (
         <div
             className={cn(
-                "relative group bg-muted/50 border-2 border-dashed border-border rounded-lg flex items-center justify-center overflow-hidden transition-all",
+                "relative group bg-quaternary border-2 border-dashed border-border/50 rounded-lg flex items-center justify-center overflow-hidden transition-all",
                 isDragging && "border-primary ring-2 ring-primary ring-offset-2", // Estilo cuando se arrastra sobre el elemento
                 className
             )}
@@ -181,6 +181,7 @@ export function CompCardManager({
 
     // --- ESTADOS DE DESCARGA ---
     const [isDownloading, setIsDownloading] = useState(false);
+    const [isCleaningGallery, setIsCleaningGallery] = useState(false);
     const [downloadFormat, setDownloadFormat] = useState<'portada' | 'contraportada' | 'hoja_completa' | 'todos'>('hoja_completa');
     const [fileType, setFileType] = useState<'jpg' | 'png' | 'zip' | 'pdf'>('png');
     const printContainerId = 'compcard-print-container';
@@ -403,21 +404,35 @@ export function CompCardManager({
             filePathToDelete = coverPath;
         } else if (category === 'Portfolio') {
             filePathToDelete = portfolioPath;
-        } else if (slotIndex !== undefined && slotIndex >= 0 && slotIndex < 4) {
+        } else if (category === 'Contraportada' && slotIndex !== undefined && slotIndex >= 0 && slotIndex < 4) {
             filePathToDelete = compCardPaths[slotIndex];
-        } else if (slotIndex !== undefined && slotIndex >= 0 && slotIndex < 4) {
-            filePathToDelete = compCardPaths[slotIndex];
-        } else if (category === 'PortfolioGallery' && path) {
-            filePathToDelete = path;
+        } else if (category === 'PortfolioGallery') {
+            // Para galería, siempre usar el path pasado directamente
+            // Este es el path almacenado en galleryPaths[i]
+            if (path) {
+                filePathToDelete = path;
+            } else if (slotIndex !== undefined && galleryPaths[slotIndex]) {
+                // Fallback: usar el índice si no se pasó el path
+                filePathToDelete = galleryPaths[slotIndex];
+            }
         }
 
         if (!filePathToDelete) {
+            // Para galería, si no hay path válido, eliminar el item localmente de todas formas
+            // Esto limpia referencias huérfanas de la UI
+            if (category === 'PortfolioGallery' && slotIndex !== undefined) {
+                setGalleryUrls(prev => prev.filter((_, i) => i !== slotIndex));
+                setGalleryPaths(prev => prev.filter((_, i) => i !== slotIndex));
+                toast.info('Imagen eliminada de la galería local.');
+                return;
+            }
             toast.error('No se encontró la imagen para eliminar. Refresca la página.');
             return;
         }
 
         try {
             const res = await deleteModelImage(modelId, filePathToDelete, category, slotIndex);
+
 
             if (!res.success) {
                 toast.error(res.error || 'Error desconocido al eliminar.');
@@ -1020,8 +1035,39 @@ export function CompCardManager({
 
             {/* Tarjeta de Galería de Portafolio - Separada */}
             <Card className="mt-6">
-                <CardHeader>
+                <CardHeader className="flex flex-row items-center justify-between">
                     <CardTitle>Galería de Portafolio</CardTitle>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={async () => {
+                            setIsCleaningGallery(true);
+                            try {
+                                const res = await cleanupOrphanedGalleryPaths(modelId);
+                                if (res.success) {
+                                    if (res.removed && res.removed > 0) {
+                                        toast.success(`Se limpiaron ${res.removed} imagen(es) huérfana(s). Recarga la página para ver los cambios.`);
+                                        // Recargar la página para reflejar cambios
+                                        window.location.reload();
+                                    } else {
+                                        toast.info('No se encontraron imágenes huérfanas.');
+                                    }
+                                } else {
+                                    toast.error(res.error || 'Error al sincronizar');
+                                }
+                            } catch {
+                                toast.error('Error al sincronizar la galería');
+                            } finally {
+                                setIsCleaningGallery(false);
+                            }
+                        }}
+                        disabled={isCleaningGallery || galleryUrls.length === 0}
+                        title="Sincronizar galería con R2 (elimina referencias a imágenes que ya no existen)"
+                        className="text-muted-foreground hover:text-foreground"
+                    >
+                        <RefreshCw className={cn("h-4 w-4 mr-2", isCleaningGallery && "animate-spin")} />
+                        {isCleaningGallery ? 'Sincronizando...' : 'Sincronizar'}
+                    </Button>
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-6">
@@ -1117,6 +1163,16 @@ export function CompCardManager({
                                                 alt={`Galería ${i + 1}`}
                                                 className="w-full h-auto block transform transition-transform duration-500 group-hover:scale-105"
                                                 loading="lazy"
+                                                onError={(e) => {
+                                                    const target = e.target as HTMLImageElement;
+                                                    target.style.display = 'none';
+                                                    target.parentElement?.classList.add('bg-destructive/10', 'flex', 'items-center', 'justify-center', 'min-h-[200px]');
+                                                    // Agregar texto de error al padre
+                                                    const errorText = document.createElement('div');
+                                                    errorText.className = 'text-destructive text-sm font-medium flex flex-col items-center gap-2';
+                                                    errorText.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>Imagen Rota';
+                                                    target.parentElement?.appendChild(errorText);
+                                                }}
                                             />
 
                                             {/* Overlay con acciones */}

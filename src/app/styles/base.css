@@ -1,0 +1,60 @@
+/**
+ * Base Styles - HTML/Body defaults and global resets
+ */
+
+@layer base {
+    html {
+        font-size: 100%;
+        background-color: rgb(var(--sys-bg-secondary));
+    }
+
+    * {
+        border-color: rgb(var(--sys-bg-secondary));
+    }
+
+    body {
+        background-color: rgb(var(--sys-bg-secondary));
+        color: rgb(var(--primary));
+        font-feature-settings: "rlig" 1, "calt" 1;
+        font-size: 1rem;
+    }
+}
+
+/* Scrollbar Invisible Global */
+html,
+body,
+:root,
+* {
+    scrollbar-width: none !important;
+    /* Firefox */
+    -ms-overflow-style: none !important;
+    /* IE and Edge */
+}
+
+/* Chrome, Safari, Edge, Opera */
+::-webkit-scrollbar,
+*::-webkit-scrollbar {
+    display: none !important;
+    width: 0px !important;
+    height: 0px !important;
+    background: transparent !important;
+    -webkit-appearance: none !important;
+}
+
+/* Inputs WebKit */
+.dark input {
+    color-scheme: dark;
+}
+
+.dark input[type=number]::-webkit-inner-spin-button,
+.dark input[type=number]::-webkit-outer-spin-button {
+    opacity: 1;
+}
+
+.dark input[type=number]::-webkit-inner-spin-button {
+    filter: invert(0.5) brightness(1.5);
+}
+
+.dark input[type=number]::-webkit-outer-spin-button {
+    filter: invert(0.5) brightness(1.5);
+}

@@ -16,7 +16,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
 import { Label } from '@/components/ui/label'
-import { Crop } from 'lucide-react'
+import { Crop, Loader2 } from 'lucide-react'
 import { MAX_UPLOAD_BYTES } from '@/lib/constants'
 
 interface ImageCropDialogProps {
@@ -95,6 +95,7 @@ export function ImageCropDialog({
   const [crop, setCrop] = useState({ x: 0, y: 0 })
   const [zoom, setZoom] = useState(1)
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
 
   const handleCropComplete = useCallback(
     (_croppedArea: Area, croppedAreaPixelsValue: Area) => {
@@ -105,6 +106,7 @@ export function ImageCropDialog({
 
   const handleConfirmCrop = useCallback(async () => {
     if (!croppedAreaPixels || !imageSrc) return
+    setIsLoading(true)
 
     const image = new Image()
     image.src = imageSrc
@@ -120,6 +122,7 @@ export function ImageCropDialog({
       onClose()
     }
     image.onerror = () => {
+      setIsLoading(false)
       onClose();
     }
   }, [croppedAreaPixels, imageSrc, onCropComplete, onClose])
@@ -163,9 +166,13 @@ export function ImageCropDialog({
           <DialogClose asChild>
             <Button variant="outline">Cancelar</Button>
           </DialogClose>
-          <Button onClick={handleConfirmCrop}>
-            <Crop className="mr-2 h-4 w-4" />
-            Confirmar Recorte
+          <Button onClick={handleConfirmCrop} disabled={isLoading}>
+            {isLoading ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Crop className="mr-2 h-4 w-4" />
+            )}
+            {isLoading ? 'Procesando...' : 'Confirmar Recorte'}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -157,6 +157,12 @@ export default function PortfolioView({ project, model: initialModel }: Portfoli
                       alt={`${model.alias} - Foto ${index + 1}`}
                       className="w-full h-auto block transform transition-transform duration-500 group-hover:scale-105"
                       loading="lazy"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        // Ocultar el contenedor padre (div.break-inside-avoid)
+                        const parent = target.closest('.break-inside-avoid') as HTMLElement;
+                        if (parent) parent.style.display = 'none';
+                      }}
                     />
 
                     {/* Overlay al hacer hover */}

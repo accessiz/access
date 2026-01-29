@@ -1,6 +1,19 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import SettingsClientPage from './settings-client-page';
+import dynamicImport from 'next/dynamic';
+import { Skeleton } from '@/components/ui/skeleton';
+
+const SettingsClientPage = dynamicImport(
+    () => import('./settings-client-page'),
+    {
+        loading: () => (
+            <div className="grid gap-6">
+                <Skeleton className="h-12 w-48" />
+                <Skeleton className="h-[300px] w-full" />
+            </div>
+        )
+    }
+)
 
 export const dynamic = 'force-dynamic';
 

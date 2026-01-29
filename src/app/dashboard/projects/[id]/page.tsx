@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import { getProjectById, getModelsForProject } from '@/lib/api/projects';
+import { getProjectByIdCached, getModelsForProjectCached } from '@/lib/api/cached';
 import { getModelsEnriched } from '@/lib/api/models';
 import { syncProjectSchedule } from '@/lib/actions/projects';
 import ProjectDetailClient from './project-detail-client';
@@ -23,8 +23,8 @@ export default async function ProjectDetailPage({ params }: PageProps) {
   }
 
   const [project, selectedModels, { data: allModels }] = await Promise.all([
-    getProjectById(id),
-    getModelsForProject(id),
+    getProjectByIdCached(id),
+    getModelsForProjectCached(id),
     getModelsEnriched({ limit: 1000 })
   ]);
 
@@ -41,7 +41,7 @@ export default async function ProjectDetailPage({ params }: PageProps) {
   if ((!project.project_schedule || project.project_schedule.length === 0) && project.schedule && Array.isArray(project.schedule) && project.schedule.length > 0) {
     await syncProjectSchedule(id);
     // Re-fetch to get IDs
-    const updatedProject = await getProjectById(id);
+    const updatedProject = await getProjectByIdCached(id);
     if (updatedProject) {
       return (
         <ProjectDetailClient

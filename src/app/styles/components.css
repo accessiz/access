@@ -1,0 +1,305 @@
+/**
+ * Component Styles
+ * Glass controls, client grids, navigation, calendar, phone input, toast
+ */
+
+@layer components {
+
+    /* FIX SHADCN COMMAND MOUSE */
+    [data-disabled] {
+        pointer-events: auto !important;
+    }
+
+    /* --- LIQUID GLASS COMPONENTS (HIG 2025-2026) --- */
+    .search-bar,
+    .add-talent-btn,
+    .create-project-btn,
+    .glass-control {
+        border-radius: 12px;
+        border: 1px solid rgb(var(--separator));
+        background: transparent;
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        transition: border-color 0.2s ease, background 0.2s ease, transform 0.1s ease;
+    }
+
+    .search-bar:hover,
+    .add-talent-btn:hover,
+    .create-project-btn:hover,
+    .glass-control:hover {
+        background: rgb(var(--hover-overlay));
+        border-color: rgba(var(--primary), 0.3);
+    }
+
+    .add-talent-btn:active,
+    .create-project-btn:active,
+    .glass-control:active {
+        transform: scale(0.98);
+    }
+
+    /* --- GRID RESPONSIVO PARA CLIENTES (GAP más compacto) --- */
+    .client-grid {
+        /* Menos espacio horizontal para fotos más grandes */
+        @apply grid gap-x-2 gap-y-4;
+        /* gap-x-2 = 0.5rem / 8px, gap-y-4 = 1rem / 16px */
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        /* Mobile Portrait (2) */
+    }
+
+    /* Single column grid for mobile vertical view */
+    .client-grid-single {
+        @apply grid gap-4;
+        grid-template-columns: 1fr;
+        max-width: 400px;
+        margin: 0 auto;
+    }
+
+    @media (min-width: 480px) {
+
+        /* Mobile Landscape (3) */
+        .client-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        /* On larger screens, single grid becomes normal grid */
+        .client-grid-single {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            max-width: none;
+        }
+    }
+
+    @media (min-width: 900px) {
+
+        /* Tablet (4) */
+        .client-grid,
+        .client-grid-single {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+    }
+
+    @media (min-width: 1200px) {
+
+        /* Desktop (5) */
+        .client-grid,
+        .client-grid-single {
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+        }
+    }
+
+    @media (min-width: 1600px) {
+
+        /* Desktop XL (6) */
+        .client-grid,
+        .client-grid-single {
+            grid-template-columns: repeat(6, minmax(0, 1fr));
+        }
+    }
+
+    /* --- EFECTO GLOW PARA NAVBAR ACTIVO --- */
+    .active-nav-glow::after {
+        content: '';
+        /* Obligatorio para pseudo-elementos */
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        right: 0;
+        width: 3px;
+        /* Ancho de la barra de color */
+        background-color: rgb(var(--primary));
+        /* Usa tu color primario */
+        /* Opcional: redondear la barra misma */
+        border-radius: 0 3px 3px 0;
+    }
+
+    /* --- ESTILOS PARA DROPDOWNS DEL CALENDARIO (MES Y AÑO) --- */
+    /* Los dropdowns nativos del react-day-picker necesitan estilizado específico */
+    .rdp-dropdown {
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        background-color: rgb(var(--popover));
+        color: rgb(var(--popover-foreground));
+        border: 1px solid rgb(var(--border));
+        border-radius: var(--radius);
+        padding: 0.25rem 2rem 0.25rem 0.75rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        cursor: pointer;
+        outline: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 0.5rem center;
+        background-size: 12px;
+    }
+
+    .rdp-dropdown:hover {
+        background-color: rgb(var(--accent));
+    }
+
+    .rdp-dropdown:focus {
+        border-color: rgb(var(--ring));
+        outline: 2px solid rgb(var(--ring) / 0.35);
+        outline-offset: 2px;
+    }
+
+    .rdp-dropdown option {
+        background-color: rgb(var(--popover));
+        color: rgb(var(--popover-foreground));
+        padding: 0.5rem;
+    }
+
+    .rdp-dropdown option:checked,
+    .rdp-dropdown option:hover {
+        background-color: rgb(var(--accent));
+        color: rgb(var(--accent-foreground));
+    }
+
+    /* Estilos específicos para modo oscuro */
+    .dark .rdp-dropdown {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23aaa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    }
+
+    /* --- ESTILOS PARA REACT-PHONE-INPUT-2 --- */
+    .phone-input-container {
+        width: 100%;
+        font-family: inherit;
+    }
+
+    .phone-input-container .phone-input-field {
+        width: 100% !important;
+        height: 2.25rem !important;
+        padding: 0.5rem 0.75rem 0.5rem 3rem !important;
+        background-color: rgb(var(--background)) !important;
+        color: rgb(var(--foreground)) !important;
+        border: 1px solid rgb(var(--input)) !important;
+        border-radius: var(--radius) !important;
+        font-size: 0.875rem !important;
+        outline: none !important;
+        transition: border-color 0.15s ease;
+    }
+
+    .phone-input-container .phone-input-field:focus {
+        border-color: rgb(var(--ring)) !important;
+        outline: 2px solid rgb(var(--ring) / 0.35) !important;
+        outline-offset: 2px !important;
+    }
+
+    .phone-input-container .phone-input-field:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .phone-input-container .phone-input-button {
+        background-color: rgb(var(--background)) !important;
+        border: 1px solid rgb(var(--input)) !important;
+        border-right: none !important;
+        border-radius: var(--radius) 0 0 var(--radius) !important;
+    }
+
+    .phone-input-container .phone-input-button:hover {
+        background-color: rgb(var(--accent)) !important;
+    }
+
+    .phone-input-container .phone-input-dropdown {
+        background-color: rgb(var(--popover)) !important;
+        color: rgb(var(--popover-foreground)) !important;
+        border: 1px solid rgb(var(--border)) !important;
+        border-radius: var(--radius) !important;
+        max-height: 250px !important;
+    }
+
+    .phone-input-container .phone-input-dropdown .country {
+        padding: 0.5rem 0.75rem !important;
+        color: rgb(var(--popover-foreground)) !important;
+    }
+
+    .phone-input-container .phone-input-dropdown .country:hover,
+    .phone-input-container .phone-input-dropdown .country.highlight {
+        background-color: rgb(var(--accent)) !important;
+        color: rgb(var(--accent-foreground)) !important;
+    }
+
+    .phone-input-container .phone-input-dropdown .divider {
+        border-color: rgb(var(--border)) !important;
+    }
+
+    .phone-input-container .phone-input-search {
+        background-color: rgb(var(--background)) !important;
+        border-bottom: 1px solid rgb(var(--border)) !important;
+        padding: 0.5rem !important;
+    }
+
+    .phone-input-container .phone-input-search input {
+        background-color: rgb(var(--background)) !important;
+        color: rgb(var(--foreground)) !important;
+        border: 1px solid rgb(var(--input)) !important;
+        border-radius: var(--radius) !important;
+        padding: 0.25rem 0.5rem !important;
+        width: 100% !important;
+        font-size: 0.875rem !important;
+    }
+
+    .phone-input-container .phone-input-search input::placeholder {
+        color: rgb(var(--muted-foreground)) !important;
+    }
+
+    .phone-input-container .phone-input-search input:focus {
+        outline: none !important;
+        border-color: rgb(var(--ring)) !important;
+    }
+
+    /* Modo oscuro específico */
+    .dark .phone-input-container .selected-flag {
+        background-color: transparent !important;
+    }
+
+    .dark .phone-input-container .selected-flag:hover,
+    .dark .phone-input-container .selected-flag:focus,
+    .dark .phone-input-container .selected-flag.open {
+        background-color: rgb(var(--accent)) !important;
+    }
+
+    .dark .phone-input-container .arrow {
+        border-top-color: rgb(var(--foreground)) !important;
+    }
+
+    .dark .phone-input-container .arrow.up {
+        border-bottom-color: rgb(var(--foreground)) !important;
+    }
+
+    /* --- SONNER TOAST CLOSE BUTTON --- */
+    /* Move X button to the right, inside toast, no circle, --secondary color */
+    .toaster [data-close-button],
+    [data-sonner-toaster] button[data-close-button] {
+        position: absolute !important;
+        left: unset !important;
+        right: 12px !important;
+        top: 50% !important;
+        transform: translateY(-50%) !important;
+        width: 20px !important;
+        height: 20px !important;
+        background: transparent !important;
+        border: none !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        color: rgb(var(--secondary)) !important;
+        opacity: 0.5;
+        transition: opacity 0.15s ease;
+        padding: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    .toaster [data-close-button]:hover,
+    [data-sonner-toaster] button[data-close-button]:hover {
+        opacity: 1;
+        background: transparent !important;
+    }
+
+    .toaster [data-close-button] svg,
+    [data-sonner-toaster] button[data-close-button] svg {
+        width: 14px !important;
+        height: 14px !important;
+    }
+}

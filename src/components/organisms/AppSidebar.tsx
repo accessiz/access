@@ -118,7 +118,7 @@ export function AppSidebar({ user, ...props }: React.ComponentProps<typeof Sideb
     checkBirthdays()
   }, [])
 
-  // Cargar conteo de alertas
+  // Cargar conteo de alertas - solo cuando pestaña visible
   useEffect(() => {
     const fetchAlertCount = async () => {
       try {
@@ -132,9 +132,15 @@ export function AppSidebar({ user, ...props }: React.ComponentProps<typeof Sideb
       }
     }
     fetchAlertCount()
-    // Refetch every 5 minutes
-    const interval = setInterval(fetchAlertCount, 5 * 60 * 1000)
-    return () => clearInterval(interval)
+
+    // Solo refetch cuando la pestaña vuelve a estar activa
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchAlertCount()
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
   }, [])
 
   return (

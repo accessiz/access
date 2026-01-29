@@ -11,7 +11,8 @@ export const SUPABASE_PUBLIC_URL = ((): string => {
 })();
 
 // URL pública del bucket de R2, para construir las URLs de las imágenes
-export const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL || '';
+// Usa NEXT_PUBLIC_ para que esté disponible en componentes client-side
+export const R2_PUBLIC_URL = process.env.NEXT_PUBLIC_R2_PUBLIC_URL || process.env.R2_PUBLIC_URL || '';
 
 
 // Límite de subida de 5 MB

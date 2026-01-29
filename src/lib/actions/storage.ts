@@ -287,3 +287,78 @@ export async function deleteModelImage(modelId: string, filePath: string, catego
     return { success: false, error: errorMessage };
   }
 }
+
+
+/**
+ * Limpia paths de galería huérfanos que ya no existen en R2.
+ * Útil para sincronizar la DB cuando hay imágenes rotas.
+ */
+export async function cleanupOrphanedGalleryPaths(modelId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return { success: false, error: "Usuario no autenticado." };
+  }
+
+  try {
+    // Verificar que el usuario tiene acceso al modelo
+    const { error: ownerError } = await supabase.from('models').select('id').eq('id', modelId).single();
+    if (ownerError) {
+      return { success: false, error: "No tienes permiso para modificar este modelo." };
+    }
+
+    // Obtener paths actuales
+    const { data: currentModel, error: fetchError } = await supabaseAdmin
+      .from('models')
+      .select('gallery_paths')
+      .eq('id', modelId)
+      .single();
+
+    if (fetchError) throw new Error('No se pudo obtener la galería actual.');
+
+    const currentPaths: string[] = currentModel?.gallery_paths || [];
+    if (currentPaths.length === 0) {
+      return { success: true, removed: 0 };
+    }
+
+    // Verificar cuáles existen en R2 usando ListObjectsV2Command
+    // En vez de HEAD cada uno (más lento), listamos la carpeta de galería
+    const prefix = `${modelId}/PortfolioGallery/`;
+    const listCommand = new ListObjectsV2Command({
+      Bucket: R2_BUCKET_NAME,
+      Prefix: prefix,
+      MaxKeys: 1000,
+    });
+    const listedObjects = await r2.send(listCommand);
+
+    // Crear un Set de paths que existen en R2
+    const existingPaths = new Set(
+      (listedObjects.Contents || [])
+        .map(obj => obj.Key)
+        .filter((key): key is string => key !== undefined)
+    );
+
+    // Filtrar solo los paths que realmente existen
+    const validPaths = currentPaths.filter(p => existingPaths.has(p));
+    const removedCount = currentPaths.length - validPaths.length;
+
+    if (removedCount > 0) {
+      // Actualizar la DB solo con paths válidos
+      const { error: updateError } = await supabaseAdmin
+        .from('models')
+        .update({ gallery_paths: validPaths })
+        .eq('id', modelId);
+
+      if (updateError) throw updateError;
+
+      revalidatePath(`/dashboard/models/${modelId}`);
+    }
+
+    return { success: true, removed: removedCount };
+
+  } catch (err: unknown) {
+    logError(err, { action: 'cleanupOrphanedGalleryPaths', modelId });
+    const errorMessage = err instanceof Error ? err.message : 'Error al limpiar paths huérfanos.';
+    return { success: false, error: errorMessage };
+  }
+}

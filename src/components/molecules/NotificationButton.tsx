@@ -92,7 +92,7 @@ export function NotificationButton() {
         }
     }, [isOpen, hasLoaded, fetchAll])
 
-    // Cargar al montar y refrescar cada 60 segundos
+    // Cargar al montar y refrescar SOLO cuando la pestaña está visible
     useEffect(() => {
         fetchAll()
 
@@ -101,12 +101,19 @@ export function NotificationButton() {
             fetchAll();
         };
 
-        window.addEventListener('alerts-updated', handleAlertsUpdate);
+        // Solo hacer fetch cuando la pestaña vuelve a estar activa
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') {
+                fetchAll();
+            }
+        };
 
-        const interval = setInterval(fetchAll, 60000)
+        window.addEventListener('alerts-updated', handleAlertsUpdate);
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
         return () => {
-            clearInterval(interval);
             window.removeEventListener('alerts-updated', handleAlertsUpdate);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])

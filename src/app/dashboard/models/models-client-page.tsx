@@ -1,11 +1,11 @@
 'use client';
 
-import { useMemo, useCallback } from 'react';
+import { useMemo, useCallback, useTransition } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { Model } from '@/lib/types';
 import { toast } from "sonner";
-import { ArrowUp, ArrowDown, Download, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowUp, ArrowDown, Download, ExternalLink, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 // CORRECCIÓN: Importar la constante directamente
 import { R2_PUBLIC_URL } from '@/lib/constants';
@@ -35,6 +35,9 @@ export default function ModelsClientPage({ initialData }: { initialData: Initial
   const searchParams = useSearchParams();
   const pathname = usePathname();
 
+  // useTransition for non-blocking UI updates during navigation
+  const [isPending, startTransition] = useTransition();
+
   const view = searchParams.get('view') || 'list';
   const currentPage = Number(searchParams.get('page')) || 1;
   const totalPages = Math.ceil(count / PAGE_SIZE);
@@ -44,6 +47,7 @@ export default function ModelsClientPage({ initialData }: { initialData: Initial
     direction: (searchParams.get('dir') as 'asc' | 'desc') || 'asc',
   }), [searchParams]);
 
+  // Wrap navigation in startTransition for non-blocking updates
   const handleSort = useCallback((key: keyof Model) => {
     const params = new URLSearchParams(searchParams);
     let direction: 'asc' | 'desc' = 'asc';
@@ -53,7 +57,9 @@ export default function ModelsClientPage({ initialData }: { initialData: Initial
     params.set('sort', key);
     params.set('dir', direction);
     params.set('page', '1');
-    router.replace(`${pathname}?${params.toString()}`);
+    startTransition(() => {
+      router.replace(`${pathname}?${params.toString()}`);
+    });
   }, [searchParams, sortConfig, pathname, router]);
 
   const handleRowClick = (modelId: string) => router.push(`/dashboard/models/${modelId}`);
@@ -168,7 +174,7 @@ export default function ModelsClientPage({ initialData }: { initialData: Initial
           </TableHeader>
           <TableBody>
             {models.map((model) => (
-              <TableRow key={model.id} onClick={() => handleRowClick(model.id)} className="cursor-pointer">
+              <TableRow key={model.id} onClick={() => handleRowClick(model.id)} className="cursor-pointer cv-auto-sm">
                 {/* CORRECCIÓN: Usar la constante R2_PUBLIC_URL para el fallback */}
                 <TableCell><Avatar><AvatarImage src={model.coverUrl || `${R2_PUBLIC_URL}/${model.id}/Portada/cover.webp`} /><AvatarFallback>{model.alias?.substring(0, 2) || 'IZ'}</AvatarFallback></Avatar></TableCell>
                 <TableCell className="font-medium">{model.alias}</TableCell>
@@ -196,7 +202,14 @@ export default function ModelsClientPage({ initialData }: { initialData: Initial
   };
 
   return (
-    <div className="space-y-6">
+    <div className={cn("space-y-6", isPending && "opacity-70 pointer-events-none")}>
+      {/* Loading indicator for pending transitions */}
+      {isPending && (
+        <div className="fixed top-4 right-4 z-50 flex items-center gap-2 bg-background/80 backdrop-blur-sm px-3 py-2 rounded-md border shadow-sm">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span className="text-label">Actualizando...</span>
+        </div>
+      )}
       <ModelsToolbar countries={countries} />
 
       <div className="pb-6 min-h-125">

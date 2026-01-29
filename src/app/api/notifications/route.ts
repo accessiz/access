@@ -35,6 +35,11 @@ export async function GET() {
                 when: log.created_at,
                 meta: log.message || undefined,
             })) || []
+        }, {
+            headers: {
+                // Cache por 60s, permite servir stale mientras revalida
+                'Cache-Control': 'private, max-age=60, stale-while-revalidate=120',
+            }
         });
     } catch (err) {
         logError(err, { route: '/api/notifications' });

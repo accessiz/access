@@ -1,4 +1,5 @@
-import { getModelsEnriched, getBusyModelsToday, getModelById, getModelWorkHistory } from '@/lib/api/models';
+import { getModelsEnriched, getBusyModelsToday } from '@/lib/api/models';
+import { getModelByIdCached, getModelWorkHistoryCached } from '@/lib/api/cached';
 import { ModelsPageContent } from '@/components/models';
 import { Model } from '@/lib/types';
 import ModelProfilePageClient from './[id]/page-client';
@@ -49,12 +50,12 @@ export default async function ModelsPage({ searchParams }: PageProps) {
 
   // If a model is selected, fetch its full data for the right column
   let selectedModel = null;
-  let workHistory: Awaited<ReturnType<typeof getModelWorkHistory>> = [];
+  let workHistory: Awaited<ReturnType<typeof getModelWorkHistoryCached>> = [];
 
   if (selectedModelId) {
     [selectedModel, workHistory] = await Promise.all([
-      getModelById(selectedModelId),
-      getModelWorkHistory(selectedModelId),
+      getModelByIdCached(selectedModelId),
+      getModelWorkHistoryCached(selectedModelId),
     ]);
   }
 

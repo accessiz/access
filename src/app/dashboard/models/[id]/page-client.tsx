@@ -194,6 +194,11 @@ export default function ModelProfilePageClient({ initialModel, workHistory = [],
       // Requisito 2: Debe haber pasado la fecha de producción
       if (!item.lastWorkDate) return false;
 
+      // Requisito 3: Excluir trabajos con $0 (sin tarifa en efectivo ni trade)
+      const totalCash = item.totalAmount || (item.agreedFee * (item.daysWorked || 1));
+      const totalTrade = item.totalTradeAmount || ((item.tradeFee || 0) * (item.daysWorked || 1));
+      if (totalCash + totalTrade <= 0) return false;
+
       const workDate = new Date(item.lastWorkDate + 'T00:00:00');
       const nextDay = new Date(workDate);
       nextDay.setDate(nextDay.getDate() + 1);

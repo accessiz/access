@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input'
 import { getFeaturedModels, addFeaturedModel, removeFeaturedModel, FeaturedModel } from '@/lib/actions/featured-models'
 import { cn } from '@/lib/utils'
 import { SegmentedControl } from '@/components/molecules/SegmentedControl'
+import { R2_PUBLIC_URL } from '@/lib/constants'
 
 type Model = {
     id: string
@@ -31,9 +32,10 @@ interface FeaturedModelsPanelProps {
     className?: string
 }
 
+// CORS habilitado en R2 - servir directamente sin proxy
 function mediaUrl(path: string | null): string | null {
-    if (!path) return null
-    return `/api/media/${path}`
+    if (!path || !R2_PUBLIC_URL) return null
+    return `${R2_PUBLIC_URL}/${path}`
 }
 
 export function FeaturedModelsPanel({ allModels, topApprovedModelIds = [], className }: FeaturedModelsPanelProps) {

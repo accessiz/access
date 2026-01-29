@@ -33,11 +33,14 @@ export function PhoneInputField({
             searchPlaceholder="Buscar país..."
             searchNotFound="País no encontrado"
             preferredCountries={['gt', 'mx', 'us', 'sv', 'hn', 'ni', 'cr', 'pa']}
-            containerClass={cn('phone-input-container', className)}
-            inputClass="phone-input-field"
-            buttonClass="phone-input-button"
-            dropdownClass="phone-input-dropdown"
-            searchClass="phone-input-search"
+            containerClass={cn('phone-input-container !w-full', className)}
+            inputClass={cn(
+                "flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-body transition-colors placeholder:text-muted-foreground focus:outline-none focus:border-purple disabled:cursor-not-allowed disabled:opacity-50",
+                "!pl-12 !bg-transparent !border !border-input !text-body !w-full !h-10 !rounded-md" // Override for flag spacing and force styles
+            )}
+            buttonClass="!bg-transparent !border-0 !rounded-l-md"
+            dropdownClass="!bg-card !text-popover-foreground !border-border"
+            searchClass="!bg-background !text-foreground"
             inputProps={{
                 required: true,
             }}

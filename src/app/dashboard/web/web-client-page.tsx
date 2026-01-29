@@ -14,6 +14,7 @@ import { getAllModelsForWeb } from '@/lib/actions/web'
 import { getTopApprovedModelIds } from '@/lib/actions/rankings'
 import { SegmentedControl } from '@/components/molecules/SegmentedControl'
 import { FeaturedModelsPanel } from '@/components/organisms/FeaturedModelsPanel'
+import { R2_PUBLIC_URL } from '@/lib/constants'
 
 type Model = {
     id: string
@@ -27,9 +28,10 @@ type Model = {
 type GenderFilter = 'all' | 'female' | 'male'
 type VisibilityFilter = 'all' | 'visible' | 'hidden'
 
+// CORS habilitado en R2 - servir directamente sin proxy
 function mediaUrl(path: string | null): string | null {
-    if (!path) return null
-    return `/api/media/${path}`
+    if (!path || !R2_PUBLIC_URL) return null
+    return `${R2_PUBLIC_URL}/${path}`
 }
 
 export default function WebVisibilityClientPage() {

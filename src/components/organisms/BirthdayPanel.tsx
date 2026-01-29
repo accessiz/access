@@ -16,6 +16,7 @@ import { MonthSelect, type MonthValue } from '@/components/molecules/MonthSelect
 import { getBirthdaysByMonth, getTodayBirthdays, BirthdayModel } from '@/lib/actions/birthdays'
 import Link from 'next/link'
 import { SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar'
+import { R2_PUBLIC_URL } from '@/lib/constants'
 
 const MONTHS = [
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -34,10 +35,10 @@ function getCurrentMonthInGuatemala(): number {
     return month >= 1 && month <= 12 ? month : new Date().getMonth() + 1
 }
 
-// Helper para generar URL de imagen
+// CORS habilitado en R2 - servir directamente sin proxy
 const mediaUrl = (path: string | null): string | null => {
-    if (!path) return null
-    return `/api/media/${path}`
+    if (!path || !R2_PUBLIC_URL) return null
+    return `${R2_PUBLIC_URL}/${path}`
 }
 
 // Helper para calcular edad
