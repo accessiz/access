@@ -7,6 +7,10 @@ export const runtime = 'edge';
  * Correcciones aplicadas:
  * - Soporte para Next.js 15+ / 16+ donde params es una Promise.
  * - Validación de path para evitar errores de 'join' on undefined.
+ * 
+ * @deprecated
+ * ESTA RUTA DEBE EVITARSE SI ES POSIBLE.
+ * Usar URLs directas de R2 (configuradas en utils.ts) para ahorrar CPU y prevenir "Fast Origin Transfer" en Vercel.
  */
 export async function GET(
     req: NextRequest,

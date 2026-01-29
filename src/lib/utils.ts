@@ -44,9 +44,23 @@ export function toTitleCase(str: string | null | undefined): string {
     .join(' ');
 }
 
+import { R2_PUBLIC_URL } from '@/lib/constants';
+
 export function mediaUrl(url: string | null | undefined): string | undefined {
   if (!url) return undefined;
-  // CORS habilitado en R2 - servir directamente sin proxy
-  // Esto elimina el overhead de Fast Origin Transfer (~5GB/mes)
-  return url;
+
+  // Si ya es una URL absoluta (http/https), la devolvemos tal cual
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+
+  // Si no hay R2_PUBLIC_URL configurada, devolvemos la url tal cual (fallback)
+  if (!R2_PUBLIC_URL) return url;
+
+  // Si es un path relativo, le pegamos la URL de R2
+  // Aseguramos que no haya doble slash
+  const baseUrl = R2_PUBLIC_URL.replace(/\/$/, '');
+  const cleanPath = url.replace(/^\//, '');
+
+  return `${baseUrl}/${cleanPath}`;
 }

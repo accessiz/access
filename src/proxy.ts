@@ -55,8 +55,13 @@ export async function proxy(request: NextRequest) {
 // Esto DEJA LIBRES las rutas públicas (como '/c/...')
 export const config = {
   matcher: [
-    '/dashboard/:path*', // Todas las rutas del admin
-    '/api/:path*',       // Todas las rutas de tu API
-    '/auth/:path*'       // Tus rutas de /auth/signout, etc.
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public (public folder)
+     */
+    '/((?!_next/static|_next/image|favicon.ico|public).*)',
   ],
 }

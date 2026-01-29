@@ -26,6 +26,14 @@
         /* #EBEBF0 */
         --sys-bg-tertiary: var(--tertiary);
 
+        /* Overlay Action Buttons */
+        --overlay-btn-bg: 0 0 0 / 0.6;
+        /* Black 60% */
+        --overlay-btn-hover: 0 0 0 / 0.8;
+        /* Black 80% */
+        --overlay-btn-text: 255 255 255;
+        /* White */
+
         --login-card-bg: 185 76 201;
         /* #B94CC9 */
 
@@ -104,6 +112,11 @@
         --sys-bg-secondary: 12 11 11;
         /* #101011 */
         --sys-bg-tertiary: var(--tertiary);
+
+        /* Overlay Action Buttons (Same for Dark mode as images are usually colorful) */
+        --overlay-btn-bg: 0 0 0 / 0.6;
+        --overlay-btn-hover: 0 0 0 / 0.8;
+        --overlay-btn-text: 255 255 255;
 
         --login-card-bg: 15 5 16;
         /* #0F0510 */

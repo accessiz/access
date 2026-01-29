@@ -62,9 +62,9 @@ interface GalleryUploadItem {
 }
 
 // Componente reutilizable para cada slot de foto
-const PhotoSlot = ({ className, imageUrl, onFileSelect, onDelete, label, isUploading }: {
+const PhotoSlot = ({ className, imageUrl, onFileSelect, onDelete, onDownload, label, isUploading }: {
     className?: string; imageUrl: string | null; onFileSelect: (file: File) => void;
-    onDelete: () => void; label: string; isUploading: boolean;
+    onDelete: () => void; onDownload?: () => void; label: string; isUploading: boolean;
 }) => {
     const inputRef = useRef<HTMLInputElement>(null);
     const [isDragging, setIsDragging] = useState(false); // Estado para el drag & drop
@@ -122,11 +122,30 @@ const PhotoSlot = ({ className, imageUrl, onFileSelect, onDelete, label, isUploa
                         loading="lazy"
                         decoding="async"
                     />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                        <Button variant="destructive" size="icon" onClick={onDelete} disabled={isUploading}>
-                            <Trash2 />
+                    <div className="absolute inset-0 bg-black/20 md:bg-black/40 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                        <Button
+                            variant="secondary"
+                            size="icon"
+                            onClick={onDelete}
+                            disabled={isUploading}
+                            className="overlay-action-btn delete"
+                            title="Eliminar"
+                        >
+                            <Trash2 className="h-4 w-4" />
                             <span className="sr-only">Borrar {label}</span>
                         </Button>
+                        {onDownload && (
+                            <Button
+                                variant="secondary"
+                                size="icon"
+                                onClick={onDownload}
+                                className="overlay-action-btn"
+                                title="Descargar"
+                            >
+                                <Download className="h-4 w-4" />
+                                <span className="sr-only">Descargar {label}</span>
+                            </Button>
+                        )}
                     </div>
                 </>
             ) : (
@@ -462,6 +481,44 @@ export function CompCardManager({
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : 'Ocurrió un error.';
             toast.error('Error al eliminar la imagen', { description: message });
+        }
+    };
+
+    // --- MANEJADOR DE DESCARGA INDIVIDUAL ---
+    const handleSingleDownload = async (url: string | null, nameSuffix: string) => {
+        if (!url) return;
+        try {
+            const response = await fetch(url);
+            const blob = await response.blob();
+            // Determinar extensión del blob o usar jpg por defecto
+            const mimeType = blob.type;
+            let ext = 'jpg';
+            if (mimeType === 'image/png') ext = 'png';
+            else if (mimeType === 'image/webp') ext = 'webp';
+
+            // Sanitize filename base
+            let fileNameBase = (model.alias || model.full_name || 'download')
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .replace(/[^a-zA-Z0-9]/g, '_')
+                .toLowerCase();
+
+            const finalFileName = `${fileNameBase}_${nameSuffix}.${ext}`;
+
+            const objectUrl = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = objectUrl;
+            link.download = finalFileName;
+            document.body.appendChild(link);
+            link.click();
+            setTimeout(() => {
+                document.body.removeChild(link);
+                URL.revokeObjectURL(objectUrl);
+            }, 100);
+            toast.success('Descarga iniciada');
+        } catch (error) {
+            console.error('Error downloading image:', error);
+            toast.error('Error al descargar la imagen');
         }
     };
 
@@ -980,6 +1037,7 @@ export function CompCardManager({
                                     onDelete={() => handleDelete('cover')}
                                     label="Subir Portada"
                                     isUploading={uploadingState.cover}
+                                    onDownload={() => handleSingleDownload(coverUrl, 'portada')}
                                 />
                             </div>
                             <div>
@@ -1011,6 +1069,7 @@ export function CompCardManager({
                                                 onDelete={() => handleDelete('comp-card', index)}
                                                 label={`Foto ${index + 1}`}
                                                 isUploading={uploadingState.compCards[index]}
+                                                onDownload={() => handleSingleDownload(compCardUrls[index], `contraportada_${index + 1}`)}
                                             />
                                         );
                                     })}
@@ -1025,7 +1084,9 @@ export function CompCardManager({
                                 onFileSelect={(file) => handleFileSelect(file, 'portfolio', 11 / 8.5)}
                                 onDelete={() => handleDelete('portfolio')}
                                 label="Subir Imagen de Portafolio"
+                                label="Subir Imagen de Portafolio"
                                 isUploading={uploadingState.portfolio}
+                                onDownload={() => handleSingleDownload(portfolioUrl, 'portfolio_main')}
                             />
                         </div>
 
@@ -1175,26 +1236,42 @@ export function CompCardManager({
                                                 }}
                                             />
 
-                                            {/* Overlay con acciones */}
-                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-2">
+                                            {/* Overlay con acciones - Mobile: Visible, Desktop: Hover */}
+                                            <div className="absolute inset-0 bg-black/20 md:bg-black/40 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-2 pointer-events-auto">
                                                 <Button
                                                     variant="secondary"
                                                     size="icon"
-                                                    className="h-9 w-9 bg-background/90 hover:bg-background text-destructive backdrop-blur-sm"
+                                                    className="overlay-action-btn delete"
                                                     onClick={() => handleDelete('gallery', i, galleryPaths[i] || undefined)}
                                                     title="Eliminar foto"
                                                 >
                                                     <Trash2 className="h-4 w-4" />
                                                 </Button>
-                                                <a
-                                                    href={url}
-                                                    target="_blank"
-                                                    rel="noreferrer"
-                                                    className="inline-flex items-center justify-center h-9 w-9 rounded-md bg-background/90 hover:bg-background text-foreground backdrop-blur-sm transition-colors"
+                                                <Button
+                                                    asChild
+                                                    variant="secondary"
+                                                    size="icon"
+                                                    className="overlay-action-btn"
                                                     title="Ver original"
                                                 >
-                                                    <ExternalLink className="h-4 w-4" />
-                                                </a>
+                                                    <a
+                                                        href={url}
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                        style={{ textDecoration: 'none' }}
+                                                    >
+                                                        <ExternalLink className="h-4 w-4" />
+                                                    </a>
+                                                </Button>
+                                                <Button
+                                                    variant="secondary"
+                                                    size="icon"
+                                                    className="overlay-action-btn"
+                                                    onClick={() => handleSingleDownload(url, `gallery_${i + 1}`)}
+                                                    title="Descargar imagen"
+                                                >
+                                                    <Download className="h-4 w-4" />
+                                                </Button>
                                             </div>
                                         </div>
                                     );
