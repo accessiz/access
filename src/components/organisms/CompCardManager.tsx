@@ -1084,7 +1084,7 @@ export function CompCardManager({
                                 onFileSelect={(file) => handleFileSelect(file, 'portfolio', 11 / 8.5)}
                                 onDelete={() => handleDelete('portfolio')}
                                 label="Subir Imagen de Portafolio"
-                                label="Subir Imagen de Portafolio"
+
                                 isUploading={uploadingState.portfolio}
                                 onDownload={() => handleSingleDownload(portfolioUrl, 'portfolio_main')}
                             />
