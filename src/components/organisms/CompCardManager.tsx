@@ -12,6 +12,7 @@ import { uploadModelImage, deleteModelImage, cleanupOrphanedGalleryPaths } from 
 import { ImageCropDialog } from './ImageCropDialog';
 import { Model } from '@/lib/types';
 import { CompCardPrintTemplate } from '@/app/dashboard/models/[id]/_components/CompCardPrintTemplate';
+import { R2_PUBLIC_URL } from '@/lib/constants';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -488,7 +489,17 @@ export function CompCardManager({
     const handleSingleDownload = async (url: string | null, nameSuffix: string) => {
         if (!url) return;
         try {
-            const response = await fetch(url);
+            // FIX: Usar el proxy para evitar problemas de CORS con imágenes de R2 en producción
+            let fetchUrl = url;
+            if (R2_PUBLIC_URL && url.startsWith(R2_PUBLIC_URL)) {
+                // Reemplazamos el dominio de R2 por nuestra ruta proxy local
+                // url: https://r2.dev/path/to/image -> /api/media/path/to/image
+                const relativePath = url.replace(R2_PUBLIC_URL, '');
+                fetchUrl = `/api/media${relativePath}`;
+                console.log(`[Download] Proxy landing for URL: ${url} -> ${fetchUrl}`);
+            }
+
+            const response = await fetch(fetchUrl);
             const blob = await response.blob();
             // Determinar extensión del blob o usar jpg por defecto
             const mimeType = blob.type;
