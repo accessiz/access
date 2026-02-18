@@ -38,7 +38,7 @@ export default async function DashboardLayout({
         </header>
 
         {/* Área de contenido fluida */}
-        <main className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-4 md:px-12 pb-6">
+        <main className="flex-1 min-h-0 overflow-hidden flex flex-col px-4 md:px-12">
           {children}
         </main>
       </SidebarInset>

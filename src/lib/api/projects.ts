@@ -14,6 +14,26 @@ const toPublicUrl = (path: string | null | undefined): string | null => {
   return `${R2_PUBLIC_URL}/${path}`;
 };
 // --- FIN DE LA CORRECCIÓN ---
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000; // 1s
+
+async function withRetry<T>(fn: () => T | PromiseLike<T>, retries = MAX_RETRIES): Promise<T> {
+  try {
+    return await fn();
+  } catch (error) {
+    if (retries > 0) {
+      const isNetworkError = error instanceof Error &&
+        (error.message.includes('fetch failed') || error.message.includes('timeout'));
+
+      if (isNetworkError) {
+        console.warn(`[Retry] Fetch failed, retrying in ${RETRY_DELAY}ms... (${retries} left)`);
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+        return withRetry(fn, retries - 1);
+      }
+    }
+    throw error;
+  }
+}
 
 const ITEMS_PER_PAGE = 25;
 
@@ -298,7 +318,7 @@ export async function getProjectById(idOrPublicId: string): Promise<Project | nu
     query = query.eq('public_id', idOrPublicId);
   }
 
-  const { data, error } = await query.maybeSingle();
+  const { data, error } = await withRetry(async () => await query.maybeSingle());
 
   if (error) {
     if (error.code !== 'PGRST116') {

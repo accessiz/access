@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { ClientNavbar } from '../../../_components/ClientNavbar';
 import { ClientFooter } from '../../../_components/ClientFooter';
 import { cn } from '@/lib/utils';
+import { SmartCroppedImage } from '@/components/atoms/SmartCroppedImage';
 
 interface PortfolioViewProps {
   project: Project;
@@ -122,12 +123,12 @@ export default function PortfolioView({ project, model: initialModel }: Portfoli
           >
             {model.portfolioUrl ? (
               <>
-                <img
+                <SmartCroppedImage
                   src={model.portfolioUrl}
                   alt={`Portafolio de ${model.alias}`}
                   className="absolute inset-0 h-full w-full object-contain transition-opacity group-hover:opacity-90"
                   loading="eager"
-                  decoding="async"
+                  fetchPriority="high"
                 />
                 <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                   <Button variant="secondary" size="sm" className="pointer-events-none bg-background/80 backdrop-blur-sm">
@@ -152,12 +153,12 @@ export default function PortfolioView({ project, model: initialModel }: Portfoli
                     className="break-inside-avoid mb-1 relative group overflow-hidden bg-muted cursor-pointer"
                     onClick={() => setLightboxIndex(index + (model.portfolioUrl ? 1 : 0))}
                   >
-                    <img
+                    <SmartCroppedImage
                       src={url}
                       alt={`${model.alias} - Foto ${index + 1}`}
                       className="w-full h-auto block transform transition-transform duration-500 group-hover:scale-105"
                       loading="lazy"
-                      onError={(e) => {
+                      onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
                         const target = e.target as HTMLImageElement;
                         // Ocultar el contenedor padre (div.break-inside-avoid)
                         const parent = target.closest('.break-inside-avoid') as HTMLElement;
@@ -221,10 +222,12 @@ export default function PortfolioView({ project, model: initialModel }: Portfoli
           </footer>
         ) : (
           /* 6. MODO SOLO LECTURA (Solo si está completado/archivado) */
-          <footer className="sticky bottom-0 z-10 p-4 sm:p-8 text-center">
-            <p className="text-muted-foreground bg-muted inline-block px-4 py-2 rounded-full border border-border">
-              Estado final: <strong>{model.client_selection === 'approved' ? 'Aprobado' : 'Rechazado'}</strong>
-            </p>
+          <footer className="sticky bottom-0 z-10 p-6 flex justify-center">
+            <div className="bg-background/80 backdrop-blur-md px-6 py-2 rounded-full border border-separator text-muted-foreground text-sm font-medium">
+              Selección: <span className={cn(model.client_selection === 'approved' ? "text-success" : "text-destructive")}>
+                {model.client_selection === 'approved' ? 'Aprobado' : 'Rechazado'}
+              </span>
+            </div>
           </footer>
         )}
 

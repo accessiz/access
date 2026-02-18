@@ -220,7 +220,7 @@ export default function ProjectsClientPage({ initialProjects, initialCount, avai
     };
 
     return (
-        <div className={cn("space-y-4", isPending && "opacity-70 pointer-events-none")}>
+        <div className={cn("h-full flex flex-col overflow-hidden pt-4 pb-6", isPending && "opacity-70 pointer-events-none")}>
             {/* Loading indicator for pending transitions */}
             {isPending && (
                 <div className="fixed top-4 right-4 z-50 flex items-center gap-2 bg-background/80 backdrop-blur-sm px-3 py-2 rounded-md border shadow-sm">
@@ -229,7 +229,7 @@ export default function ProjectsClientPage({ initialProjects, initialCount, avai
                 </div>
             )}
             {/* DS §0: Simplified header - less cognitive load for María */}
-            <header className="flex flex-col gap-x-4 gap-y-4 pb-4 border-b sm:flex-row sm:items-center sm:justify-between">
+            <header className="shrink-0 flex flex-col gap-x-4 gap-y-4 pb-4 border-b sm:flex-row sm:items-center sm:justify-between mb-4">
                 <div className="flex items-center gap-x-4 gap-y-4">
                     <div>
                         <div className="flex items-center gap-3">
@@ -315,35 +315,37 @@ export default function ProjectsClientPage({ initialProjects, initialCount, avai
             </header>
 
             {/* Content */}
-            <main className="space-y-4">
-                {viewMode === 'list' ? (
-                    <>
-                        {renderContent()}
-                        {totalPages > 1 && (
-                            <footer className="flex justify-between items-center pt-4 w-full">
-                                <div className="flex-1">
-                                    <Pagination>
-                                        <PaginationContent className="justify-start">
-                                            <PaginationItem><PaginationPrevious href={createPageURL(currentPage - 1)} className={currentPage <= 1 ? "pointer-events-none opacity-50" : ""} /></PaginationItem>
-                                            {paginationItems.map((page, index) => (
-                                                <PaginationItem key={index}>
-                                                    {page === "..." ? <PaginationEllipsis /> : <PaginationLink href={createPageURL(page as number)} isActive={currentPage === page}>{page}</PaginationLink>}
-                                                </PaginationItem>
-                                            ))}
-                                            <PaginationItem><PaginationNext href={createPageURL(currentPage + 1)} className={currentPage >= totalPages ? "pointer-events-none opacity-50" : ""} /></PaginationItem>
-                                        </PaginationContent>
-                                    </Pagination>
-                                </div>
-                                <div className="text-label text-muted-foreground whitespace-nowrap ml-4">
-                                    Página {currentPage} de {totalPages}
-                                </div>
-                            </footer>
-                        )}
-                    </>
-                ) : (
-                    <ProjectCalendarView projects={projects} />
-                )}
-            </main>
+            <div className="flex-1 min-h-0 overflow-y-auto pr-1">
+                <main className="space-y-4 pb-6">
+                    {viewMode === 'list' ? (
+                        <>
+                            {renderContent()}
+                            {totalPages > 1 && (
+                                <footer className="flex justify-between items-center pt-4 border-t mt-4 w-full">
+                                    <div className="flex-1">
+                                        <Pagination>
+                                            <PaginationContent className="justify-start">
+                                                <PaginationItem><PaginationPrevious href={createPageURL(currentPage - 1)} className={currentPage <= 1 ? "pointer-events-none opacity-50" : ""} /></PaginationItem>
+                                                {paginationItems.map((page, index) => (
+                                                    <PaginationItem key={index}>
+                                                        {page === "..." ? <PaginationEllipsis /> : <PaginationLink href={createPageURL(page as number)} isActive={currentPage === page}>{page}</PaginationLink>}
+                                                    </PaginationItem>
+                                                ))}
+                                                <PaginationItem><PaginationNext href={createPageURL(currentPage + 1)} className={currentPage >= totalPages ? "pointer-events-none opacity-50" : ""} /></PaginationItem>
+                                            </PaginationContent>
+                                        </Pagination>
+                                    </div>
+                                    <div className="text-label text-muted-foreground whitespace-nowrap ml-4">
+                                        Página {currentPage} de {totalPages}
+                                    </div>
+                                </footer>
+                            )}
+                        </>
+                    ) : (
+                        <ProjectCalendarView projects={projects} />
+                    )}
+                </main>
+            </div>
         </div >
     );
 }

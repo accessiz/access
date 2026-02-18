@@ -10,7 +10,7 @@ import { useClientAnimation } from './ClientAnimationContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
-import { Lock, Loader2 } from 'lucide-react';
+import { Lock, Loader2, Eye, EyeOff } from 'lucide-react';
 
 interface PasswordProtectProps {
   projectId: string;
@@ -21,6 +21,7 @@ export default function PasswordProtect({ projectId }: PasswordProtectProps) {
   const [password, setPassword] = useState('');
   const [isPending, startTransition] = useTransition();
   const [showCard, setShowCard] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
 
   const cardRef = useRef<HTMLDivElement>(null);
@@ -115,7 +116,7 @@ export default function PasswordProtect({ projectId }: PasswordProtectProps) {
         style={{ visibility: 'hidden' }}
       >
         {/* Card con borde animado magenta */}
-        <div className="client-wow-progress dark-solid !rounded-2xl !bg-[#0a0510] px-8 py-10 flex flex-col items-center text-center">
+        <div className="client-wow-progress dark-solid rounded-2xl! bg-[#0a0510]! px-8 py-10 flex flex-col items-center text-center">
 
           {/* Icono Candado */}
           <div className="mb-6 flex items-center justify-center w-16 h-16 rounded-full border border-[#87189D]/50 bg-[#87189D]/10">
@@ -130,24 +131,36 @@ export default function PasswordProtect({ projectId }: PasswordProtectProps) {
 
           {/* Formulario */}
           <form onSubmit={handleSubmit} className="w-full space-y-5">
-            <div>
+            <div className="relative group">
               <Input
                 id="password"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 disabled={isPending}
                 autoFocus
-                className="w-full h-12 bg-[#1a0f1e] border-[#87189D]/30 text-center text-white placeholder:text-white/30 focus:border-[#B94CC9] focus:ring-[#B94CC9]/20 rounded-2xl"
+                className="w-full h-12 bg-[#1a0f1e] border-[#87189D]/30 text-center text-white placeholder:text-white/30 focus:border-[#B94CC9] focus:ring-[#B94CC9]/20 rounded-2xl pr-12"
                 placeholder="••••••••"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 hover:text-[#B94CC9] transition-colors focus:outline-none cursor-pointer"
+                tabIndex={-1}
+              >
+                {showPassword ? (
+                  <EyeOff className="w-5 h-5" />
+                ) : (
+                  <Eye className="w-5 h-5" />
+                )}
+              </button>
             </div>
 
             <Button
               ref={buttonRef}
               type="submit"
-              className="w-full h-12 rounded-full bg-gradient-to-r from-[#87189D] via-[#A020A0] to-[#B94CC9] hover:from-[#9F46B0] hover:via-[#B830B8] hover:to-[#CB5CD9] text-white font-medium transition-all duration-300 shadow-[0_4px_20px_rgba(135,24,157,0.4)] hover:shadow-[0_4px_30px_rgba(135,24,157,0.6)] border-0"
+              className="w-full h-12 rounded-full bg-linear-to-r from-[#87189D] via-[#A020A0] to-[#B94CC9] hover:from-[#9F46B0] hover:via-[#B830B8] hover:to-[#CB5CD9] text-white font-medium transition-all duration-300 shadow-[0_4px_20px_rgba(135,24,157,0.4)] hover:shadow-[0_4px_30px_rgba(135,24,157,0.6)] border-0 cursor-pointer"
               disabled={isPending}
             >
               {isPending ? (

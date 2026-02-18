@@ -202,7 +202,7 @@ export default function ModelsClientPage({ initialData }: { initialData: Initial
   };
 
   return (
-    <div className={cn("space-y-6", isPending && "opacity-70 pointer-events-none")}>
+    <div className={cn("h-full flex flex-col overflow-hidden pt-4 pb-6", isPending && "opacity-70 pointer-events-none")}>
       {/* Loading indicator for pending transitions */}
       {isPending && (
         <div className="fixed top-4 right-4 z-50 flex items-center gap-2 bg-background/80 backdrop-blur-sm px-3 py-2 rounded-md border shadow-sm">
@@ -210,14 +210,19 @@ export default function ModelsClientPage({ initialData }: { initialData: Initial
           <span className="text-label">Actualizando...</span>
         </div>
       )}
-      <ModelsToolbar countries={countries} />
 
-      <div className="pb-6 min-h-125">
-        {renderContent()}
+      <div className="shrink-0 mb-6">
+        <ModelsToolbar countries={countries} />
+      </div>
+
+      <div className="flex-1 min-h-0 overflow-y-auto pr-1">
+        <div className="pb-6">
+          {renderContent()}
+        </div>
       </div>
 
       {totalPages > 1 && (
-        <footer className="flex flex-col items-center gap-x-4 gap-y-4 pt-4 w-full sm:flex-row sm:justify-between">
+        <footer className="shrink-0 flex flex-col items-center gap-x-4 gap-y-4 pt-4 border-t w-full sm:flex-row sm:justify-between">
           <div className="w-full sm:flex-1">
             <Pagination>
               <PaginationContent className="flex justify-center sm:justify-start w-full">

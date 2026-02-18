@@ -64,7 +64,7 @@ export default async function ModelsPage({ searchParams }: PageProps) {
   const currentRate = rateResult.success && rateResult.rate ? rateResult.rate : 7.70;
 
   return (
-    <div className="flex flex-1 min-h-0 flex-col gap-6">
+    <div className="flex flex-1 h-full min-h-0 flex-col gap-6">
       <header className="flex flex-col gap-x-4 gap-y-4 pb-4 border-b sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-3">

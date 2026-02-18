@@ -71,6 +71,8 @@ export default function ClientSummaryView({ project, models }: SummaryProps) {
                     key={model.id}
                     title={model.alias || 'Sin Alias'}
                     coverUrl={model.coverUrl}
+                    imageHref={`/c/${project.public_id}/${model.id}`}
+                    showMobilePeekIcon
                   />
                 ))}
               </div>

@@ -5,10 +5,11 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Model } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { MapPin, ChevronRight, FolderKanban } from 'lucide-react';
+import { MapPin, ChevronRight, FolderKanban, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SearchBar } from '@/components/molecules/SearchBar';
 import { SegmentedControl } from '@/components/molecules/SegmentedControl';
+import { ModelProfileSkeleton } from './ModelProfileSkeleton';
 
 /**
  * ModelsPageContent
@@ -34,6 +35,7 @@ export function ModelsPageContent({
     const router = useRouter();
     const searchParams = useSearchParams();
     const [searchQuery, setSearchQuery] = React.useState('');
+    const [isPending, startTransition] = React.useTransition();
 
     type GenderFilter = 'all' | 'male' | 'female';
     type BusyFilter = 'all' | 'busy';
@@ -89,7 +91,9 @@ export function ModelsPageContent({
             // Desktop: Update URL param to show in right column
             const params = new URLSearchParams(searchParams.toString());
             params.set('selected', modelId);
-            router.push(`/dashboard/models?${params.toString()}`);
+            startTransition(() => {
+                router.push(`${window.location.pathname}?${params.toString()}`);
+            });
         }
     }, [router, searchParams]);
 
@@ -104,14 +108,14 @@ export function ModelsPageContent({
     }, [filteredModels, busyModelMap]);
 
     return (
-        <div className="flex flex-1 min-h-0">
+        <div className="flex flex-1 h-full min-h-0">
             {/* LEFT COLUMN - Full on mobile, 30% on desktop */}
             <div className={cn(
                 'flex flex-col bg-background border-r border-border',
                 // Mobile: full width
                 'w-full',
                 // Desktop (md+): fixed width side panel (más angosto)
-                'md:w-70 md:min-w-65 md:max-w-75'
+                'md:w-70 md:min-w-65 md:max-w-75 md:min-h-0'
             )}>
                 {/* Search Header - DS: p-6 for containers */}
                 <div className="sticky top-0 z-10 bg-background border-b border-border p-4 sm:p-6 space-y-4">
@@ -196,7 +200,11 @@ export function ModelsPageContent({
                                         )}
                                     >
                                         <Avatar className="h-10 w-10 shrink-0">
-                                            <AvatarImage src={model.coverUrl || undefined} alt={model.alias || ''} />
+                                            <AvatarImage
+                                                src={model.coverUrl || undefined}
+                                                alt={model.alias || ''}
+                                                loading="lazy"
+                                            />
                                             <AvatarFallback className="text-label bg-muted">{initials}</AvatarFallback>
                                         </Avatar>
 
@@ -243,9 +251,20 @@ export function ModelsPageContent({
             </div>
 
             {/* RIGHT COLUMN - Hidden on mobile, visible on desktop */}
-            <div className="hidden md:flex flex-1 overflow-y-auto bg-background">
-                {children ? (
-                    <div className="flex-1 p-6">
+            <div className="hidden md:flex flex-col flex-1 min-h-0 overflow-y-auto bg-background border-l border-border relative">
+                {isPending && (
+                    <div className="absolute top-4 right-4 z-50 animate-in fade-in zoom-in duration-300">
+                        <div className="bg-background/80 backdrop-blur-sm border border-border shadow-sm px-3 py-1.5 rounded-full flex items-center gap-2">
+                            <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+                            <span className="text-label font-medium">Cargando...</span>
+                        </div>
+                    </div>
+                )}
+
+                {isPending ? (
+                    <ModelProfileSkeleton />
+                ) : children ? (
+                    <div className="flex-1">
                         {children}
                     </div>
                 ) : (

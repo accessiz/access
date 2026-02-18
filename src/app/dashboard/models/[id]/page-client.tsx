@@ -286,7 +286,7 @@ export default function ModelProfilePageClient({ initialModel, workHistory = [],
   }, [workHistory, appStatusFilter, appSearchQuery]);
 
   return (
-    <div className="space-y-8">
+    <div className="p-6 space-y-8">
       <header className="flex flex-col items-start gap-x-4 gap-y-4 pb-6 border-b md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-display">
@@ -457,307 +457,317 @@ export default function ModelProfilePageClient({ initialModel, workHistory = [],
         </TabsContent>
 
         <TabsContent value="media" className="space-y-6 outline-none">
-          <CompCardManager
-            model={initialModel}
-            modelId={initialModel.id}
-            initialCoverUrl={initialModel.coverUrl}
-            initialPortfolioUrl={initialModel.portfolioUrl}
-            initialCompCardUrls={initialModel.compCardUrls}
-            initialCoverPath={initialModel.cover_path}
-            initialPortfolioPath={initialModel.portfolio_path}
-            initialCompCardPaths={initialModel.comp_card_paths ?? undefined}
-            initialGalleryUrls={initialModel.galleryUrls ?? []}
-            initialGalleryPaths={initialModel.galleryPaths ?? []}
-          />
+          {activeTab === 'media' && (
+            <CompCardManager
+              model={initialModel}
+              modelId={initialModel.id}
+              initialCoverUrl={initialModel.coverUrl}
+              initialPortfolioUrl={initialModel.portfolioUrl}
+              initialCompCardUrls={initialModel.compCardUrls}
+              initialCoverPath={initialModel.cover_path}
+              initialPortfolioPath={initialModel.portfolio_path}
+              initialCompCardPaths={initialModel.comp_card_paths ?? undefined}
+              initialGalleryUrls={initialModel.galleryUrls ?? []}
+              initialGalleryPaths={initialModel.galleryPaths ?? []}
+            />
+          )}
         </TabsContent>
 
         <TabsContent value="work" className="space-y-6 outline-none">
-          {/* KPI Cards - Secuencia lógica: Trabajos → Ganado → Pagado → Pendiente */}
-          <div className="grid gap-x-4 gap-y-4 md:grid-cols-2 lg:grid-cols-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-body font-medium text-muted-foreground">Proyectos</CardTitle>
-                <Briefcase className="h-5 w-5 text-info" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-display font-bold">{completedWork.length}</div>
-                <p className="text-label text-muted-foreground">Trabajos completados</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-body font-medium text-muted-foreground">Total Generado</CardTitle>
-                <TrendingUp className="h-5 w-5 text-success" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-display font-bold">Q{workStats.totalEarned.toLocaleString()}</div>
-                <p className="text-label text-muted-foreground">Ganancias históricas</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-body font-medium text-muted-foreground">Pagados</CardTitle>
-                <CheckCircle2 className="h-5 w-5 text-success" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-display font-bold text-success">{workStats.paidCount}</div>
-                <p className="text-label text-muted-foreground">Trabajos completados</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-body font-medium text-muted-foreground">Por Cobrar</CardTitle>
-                <Wallet className="h-5 w-5 text-warning" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-display font-bold text-warning">Q{workStats.totalPending.toLocaleString()}</div>
-                <p className="text-label text-muted-foreground">{workStats.pendingCount} pendientes</p>
-              </CardContent>
-            </Card>
-          </div>
+          {activeTab === 'work' && (
+            <>
+              {/* KPI Cards - Secuencia lógica: Trabajos → Ganado → Pagado → Pendiente */}
+              <div className="grid gap-x-4 gap-y-4 md:grid-cols-2 lg:grid-cols-4">
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-body font-medium text-muted-foreground">Proyectos</CardTitle>
+                    <Briefcase className="h-5 w-5 text-info" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-display font-bold">{completedWork.length}</div>
+                    <p className="text-label text-muted-foreground">Trabajos completados</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-body font-medium text-muted-foreground">Total Generado</CardTitle>
+                    <TrendingUp className="h-5 w-5 text-success" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-display font-bold">Q{workStats.totalEarned.toLocaleString()}</div>
+                    <p className="text-label text-muted-foreground">Ganancias históricas</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-body font-medium text-muted-foreground">Pagados</CardTitle>
+                    <CheckCircle2 className="h-5 w-5 text-success" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-display font-bold text-success">{workStats.paidCount}</div>
+                    <p className="text-label text-muted-foreground">Trabajos completados</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-body font-medium text-muted-foreground">Por Cobrar</CardTitle>
+                    <Wallet className="h-5 w-5 text-warning" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-display font-bold text-warning">Q{workStats.totalPending.toLocaleString()}</div>
+                    <p className="text-label text-muted-foreground">{workStats.pendingCount} pendientes</p>
+                  </CardContent>
+                </Card>
+              </div>
 
-          {/* Filtros y búsqueda */}
-          <div className="flex flex-col gap-x-4 gap-y-4 sm:flex-row sm:items-center sm:justify-between">
-            <SegmentedControl
-              value={workStatusFilter}
-              onValueChange={setWorkStatusFilter}
-              ariaLabel="Filtrar trabajos por estado de pago"
-              options={[
-                { value: 'all', label: `Todos (${completedWork.length})` },
-                { value: 'pending', label: `Pendientes (${workStats.pendingCount})` },
-                { value: 'paid', label: `Pagados (${workStats.paidCount})` },
-              ]}
-              className="w-full sm:w-fit"
-            />
-            <SearchBar
-              value={workSearchQuery}
-              onValueChange={setWorkSearchQuery}
-              onClear={() => setWorkSearchQuery('')}
-              placeholder="Buscar proyecto..."
-              ariaLabel="Buscar proyecto"
-              className="w-full sm:w-62.5"
-              expand={false}
-            />
-          </div>
+              {/* Filtros y búsqueda */}
+              <div className="flex flex-col gap-x-4 gap-y-4 sm:flex-row sm:items-center sm:justify-between">
+                <SegmentedControl
+                  value={workStatusFilter}
+                  onValueChange={setWorkStatusFilter}
+                  ariaLabel="Filtrar trabajos por estado de pago"
+                  options={[
+                    { value: 'all', label: `Todos (${completedWork.length})` },
+                    { value: 'pending', label: `Pendientes (${workStats.pendingCount})` },
+                    { value: 'paid', label: `Pagados (${workStats.paidCount})` },
+                  ]}
+                  className="w-full sm:w-fit"
+                />
+                <SearchBar
+                  value={workSearchQuery}
+                  onValueChange={setWorkSearchQuery}
+                  onClear={() => setWorkSearchQuery('')}
+                  placeholder="Buscar proyecto..."
+                  ariaLabel="Buscar proyecto"
+                  className="w-full sm:w-62.5"
+                  expand={false}
+                />
+              </div>
 
-          {/* Lista de trabajos */}
-          <div className="space-y-3">
-            {filteredWorkHistory.length > 0 ? (
-              filteredWorkHistory.map((job) => {
-                const paymentStatusMap = {
-                  paid: { label: 'Pagado', icon: CheckCircle2, color: 'text-success', variant: 'success' as const },
-                  partial: { label: 'Parcial', icon: AlertCircle, color: 'text-info', variant: 'info' as const },
-                  pending: { label: 'Pendiente', icon: Clock, color: 'text-warning', variant: 'warning' as const },
-                };
-                const statusKey = (job.paymentStatus as 'paid' | 'partial' | 'pending') || 'pending';
-                const paymentStatusConfig = paymentStatusMap[statusKey] || paymentStatusMap.pending;
+              {/* Lista de trabajos */}
+              <div className="space-y-3">
+                {filteredWorkHistory.length > 0 ? (
+                  filteredWorkHistory.map((job) => {
+                    const paymentStatusMap = {
+                      paid: { label: 'Pagado', icon: CheckCircle2, color: 'text-success', variant: 'success' as const },
+                      partial: { label: 'Parcial', icon: AlertCircle, color: 'text-info', variant: 'info' as const },
+                      pending: { label: 'Pendiente', icon: Clock, color: 'text-warning', variant: 'warning' as const },
+                    };
+                    const statusKey = (job.paymentStatus as 'paid' | 'partial' | 'pending') || 'pending';
+                    const paymentStatusConfig = paymentStatusMap[statusKey] || paymentStatusMap.pending;
 
-                const StatusIcon = paymentStatusConfig.icon;
-                const daysText = job.daysWorked === 1 ? '1 día' : `${job.daysWorked} días`;
-                const totalAmount = job.totalAmount || (job.agreedFee * (job.daysWorked || 1));
-                const hasCash = job.agreedFee > 0;
-                const hasTrade = (job.tradeFee ?? 0) > 0;
+                    const StatusIcon = paymentStatusConfig.icon;
+                    const daysText = job.daysWorked === 1 ? '1 día' : `${job.daysWorked} días`;
+                    const totalAmount = job.totalAmount || (job.agreedFee * (job.daysWorked || 1));
+                    const hasCash = job.agreedFee > 0;
+                    const hasTrade = (job.tradeFee ?? 0) > 0;
 
-                return (
-                  <Card key={job.projectId} className="hover:bg-hover-overlay transition-colors">
-                    <CardContent className="p-4">
-                      {/* Main container: vertical on mobile, horizontal on desktop */}
-                      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    return (
+                      <Card key={job.projectId} className="hover:bg-hover-overlay transition-colors">
+                        <CardContent className="p-4">
+                          {/* Main container: vertical on mobile, horizontal on desktop */}
+                          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 
-                        {/* Left section: Badge + Info */}
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4 flex-1 min-w-0">
+                            {/* Left section: Badge + Info */}
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4 flex-1 min-w-0">
 
-                          {/* Top Row Mobile / First item Desktop: Status Badge */}
-                          <div className="flex items-center justify-between sm:contents">
-                            {/* Status Badge */}
-                            <Badge variant={paymentStatusConfig.variant} className="gap-1 shrink-0">
-                              <StatusIcon className={`h-3 w-3`} />
-                              {paymentStatusConfig.label}
-                            </Badge>
-                          </div>
+                              {/* Top Row Mobile / First item Desktop: Status Badge */}
+                              <div className="flex items-center justify-between sm:contents">
+                                {/* Status Badge */}
+                                <Badge variant={paymentStatusConfig.variant} className="gap-1 shrink-0">
+                                  <StatusIcon className={`h-3 w-3`} />
+                                  {paymentStatusConfig.label}
+                                </Badge>
+                              </div>
 
-                          {/* Info Section */}
-                          <div className="flex-1 min-w-0 space-y-1">
-                            {/* Project Name */}
-                            <Link
-                              href={`/dashboard/projects/${job.projectId}`}
-                              className="font-semibold text-title sm:text-body text-foreground hover:text-primary hover:underline transition-colors block"
-                            >
-                              {job.projectName}
-                            </Link>
+                              {/* Info Section */}
+                              <div className="flex-1 min-w-0 space-y-1">
+                                {/* Project Name */}
+                                <Link
+                                  href={`/dashboard/projects/${job.projectId}`}
+                                  className="font-semibold text-title sm:text-body text-foreground hover:text-primary hover:underline transition-colors block"
+                                >
+                                  {job.projectName}
+                                </Link>
 
-                            {/* Client */}
-                            <div className="flex items-center gap-2 text-body text-muted-foreground">
-                              <Building2 className="h-4 w-4 sm:h-3 sm:w-3 shrink-0" />
-                              <span className="truncate">{job.brandName || job.clientName || 'Sin cliente'}</span>
-                            </div>
-
-                            {/* Days worked */}
-                            <div className="text-label text-muted-foreground">
-                              {daysText}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Right section: Amounts + Status */}
-                        <div className="flex items-end justify-between sm:items-center sm:gap-4 sm:shrink-0">
-
-                          {/* Amounts with circular icons */}
-                          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-                            {hasCash && (
-                              <div className="flex flex-col items-end">
-                                <div className="flex items-center gap-2">
-                                  <div className="w-7 h-7 rounded-full border-2 border-success bg-success/20 flex items-center justify-center">
-                                    <Banknote className="w-4 h-4 text-success" />
-                                  </div>
-                                  <span className="text-body font-medium text-foreground">
-                                    {formatCurrency(job.totalPaidGTQ || (job.currency === 'USD' ? totalAmount * currentRate : totalAmount), 'GTQ')}
-                                  </span>
-                                  <AdjustmentInfo
-                                    amount={job.adjustmentAmount || 0}
-                                    reason={job.adjustmentReason || null}
-                                    currency={job.currency}
-                                  />
+                                {/* Client */}
+                                <div className="flex items-center gap-2 text-body text-muted-foreground">
+                                  <Building2 className="h-4 w-4 sm:h-3 sm:w-3 shrink-0" />
+                                  <span className="truncate">{job.brandName || job.clientName || 'Sin cliente'}</span>
                                 </div>
-                                {job.currency === 'USD' && (
-                                  <span className="text-xs text-muted-foreground mr-1">
-                                    ({formatCurrency(totalAmount, 'USD')})
+
+                                {/* Days worked */}
+                                <div className="text-label text-muted-foreground">
+                                  {daysText}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Right section: Amounts + Status */}
+                            <div className="flex items-end justify-between sm:items-center sm:gap-4 sm:shrink-0">
+
+                              {/* Amounts with circular icons */}
+                              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+                                {hasCash && (
+                                  <div className="flex flex-col items-end">
+                                    <div className="flex items-center gap-2">
+                                      <div className="w-7 h-7 rounded-full border-2 border-success bg-success/20 flex items-center justify-center">
+                                        <Banknote className="w-4 h-4 text-success" />
+                                      </div>
+                                      <span className="text-body font-medium text-foreground">
+                                        {formatCurrency(job.totalPaidGTQ || (job.currency === 'USD' ? totalAmount * currentRate : totalAmount), 'GTQ')}
+                                      </span>
+                                      <AdjustmentInfo
+                                        amount={job.adjustmentAmount || 0}
+                                        reason={job.adjustmentReason || null}
+                                        currency={job.currency}
+                                      />
+                                    </div>
+                                    {job.currency === 'USD' && (
+                                      <span className="text-xs text-muted-foreground mr-1">
+                                        ({formatCurrency(totalAmount, 'USD')})
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                                {hasTrade && (
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-7 h-7 rounded-full border-2 border-blue bg-blue/20 flex items-center justify-center">
+                                      <RefreshCw className="w-4 h-4 text-blue" />
+                                    </div>
+                                    <span className="text-body font-medium text-foreground">
+                                      {formatCurrency(job.totalTradeAmount || (job.tradeFee || 0) * job.daysWorked, job.currency)}
+                                    </span>
+                                    <AdjustmentInfo
+                                      amount={job.adjustmentAmountTrade || 0}
+                                      reason={job.adjustmentReasonTrade || null}
+                                      currency={job.currency}
+                                    />
+                                  </div>
+                                )}
+                                {!hasCash && !hasTrade && (
+                                  <span className="text-body text-muted-foreground">
+                                    Sin tarifa definida
                                   </span>
                                 )}
                               </div>
-                            )}
-                            {hasTrade && (
-                              <div className="flex items-center gap-2">
-                                <div className="w-7 h-7 rounded-full border-2 border-blue bg-blue/20 flex items-center justify-center">
-                                  <RefreshCw className="w-4 h-4 text-blue" />
-                                </div>
-                                <span className="text-body font-medium text-foreground">
-                                  {formatCurrency(job.totalTradeAmount || (job.tradeFee || 0) * job.daysWorked, job.currency)}
-                                </span>
-                                <AdjustmentInfo
-                                  amount={job.adjustmentAmountTrade || 0}
-                                  reason={job.adjustmentReasonTrade || null}
-                                  currency={job.currency}
-                                />
-                              </div>
-                            )}
-                            {!hasCash && !hasTrade && (
-                              <span className="text-body text-muted-foreground">
-                                Sin tarifa definida
-                              </span>
-                            )}
+                            </div>
                           </div>
-                        </div>
-                      </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })
+                ) : (
+                  <Card>
+                    <CardContent className="flex flex-col items-center justify-center py-16">
+                      <Briefcase className="h-12 w-12 text-muted-foreground/30 mb-4" />
+                      <h3 className="text-title font-medium mb-2">
+                        {workSearchQuery || workStatusFilter !== 'all'
+                          ? 'No hay resultados'
+                          : 'Sin trabajos completados'}
+                      </h3>
+                      <p className="text-body text-muted-foreground text-center max-w-sm">
+                        {workSearchQuery || workStatusFilter !== 'all'
+                          ? 'Intenta con otros filtros de búsqueda.'
+                          : 'Los trabajos aparecen aquí después de ser aprobados y haber pasado la fecha de producción.'}
+                      </p>
                     </CardContent>
                   </Card>
-                );
-              })
-            ) : (
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center py-16">
-                  <Briefcase className="h-12 w-12 text-muted-foreground/30 mb-4" />
-                  <h3 className="text-title font-medium mb-2">
-                    {workSearchQuery || workStatusFilter !== 'all'
-                      ? 'No hay resultados'
-                      : 'Sin trabajos completados'}
-                  </h3>
-                  <p className="text-body text-muted-foreground text-center max-w-sm">
-                    {workSearchQuery || workStatusFilter !== 'all'
-                      ? 'Intenta con otros filtros de búsqueda.'
-                      : 'Los trabajos aparecen aquí después de ser aprobados y haber pasado la fecha de producción.'}
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+                )}
+              </div>
+            </>
+          )}
         </TabsContent>
 
         {/* Pestaña de Postulaciones */}
         <TabsContent value="applications" className="space-y-6 outline-none">
-          {/* Filtros y búsqueda */}
-          <div className="flex flex-col gap-x-4 gap-y-4 sm:flex-row sm:items-center sm:justify-between">
-            <SegmentedControl
-              value={appStatusFilter}
-              onValueChange={setAppStatusFilter}
-              ariaLabel="Filtrar postulaciones por estado"
-              options={[
-                { value: 'all', label: `Todas (${appStats.total})` },
-                { value: 'pending', label: `En revisión (${appStats.pending})` },
-                { value: 'approved', label: `Aprobadas (${appStats.approved})` },
-                { value: 'rejected', label: `Rechazadas (${appStats.rejected})` },
-              ]}
-              className="w-full sm:w-fit"
-            />
-            <SearchBar
-              value={appSearchQuery}
-              onValueChange={setAppSearchQuery}
-              onClear={() => setAppSearchQuery('')}
-              placeholder="Buscar proyecto..."
-              ariaLabel="Buscar proyecto"
-              className="w-full sm:w-64"
-              expand={false}
-            />
-          </div>
+          {activeTab === 'applications' && (
+            <>
+              {/* Filtros y búsqueda */}
+              <div className="flex flex-col gap-x-4 gap-y-4 sm:flex-row sm:items-center sm:justify-between">
+                <SegmentedControl
+                  value={appStatusFilter}
+                  onValueChange={setAppStatusFilter}
+                  ariaLabel="Filtrar postulaciones por estado"
+                  options={[
+                    { value: 'all', label: `Todas (${appStats.total})` },
+                    { value: 'pending', label: `En revisión (${appStats.pending})` },
+                    { value: 'approved', label: `Aprobadas (${appStats.approved})` },
+                    { value: 'rejected', label: `Rechazadas (${appStats.rejected})` },
+                  ]}
+                  className="w-full sm:w-fit"
+                />
+                <SearchBar
+                  value={appSearchQuery}
+                  onValueChange={setAppSearchQuery}
+                  onClear={() => setAppSearchQuery('')}
+                  placeholder="Buscar proyecto..."
+                  ariaLabel="Buscar proyecto"
+                  className="w-full sm:w-64"
+                  expand={false}
+                />
+              </div>
 
-          {/* Lista de postulaciones */}
-          <div className="space-y-3">
-            {filteredApplications.length > 0 ? (
-              filteredApplications.map((app, index) => {
-                return (
-                  <Card key={app.projectId} className="hover:bg-hover-overlay transition-colors">
-                    <CardContent className="p-4">
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        {/* Left: Number + Project info */}
-                        <div className="flex items-start gap-3 min-w-0 flex-1">
-                          <span className="text-muted-foreground text-label font-medium shrink-0 w-6 text-center pt-0.5">
-                            {index + 1}.
-                          </span>
-                          <div className="min-w-0 flex-1">
-                            <Link
-                              href={`/dashboard/projects/${app.projectId}`}
-                              className="text-body font-semibold hover:underline block wrap-break-word sm:truncate"
-                            >
-                              {app.projectName}
-                            </Link>
-                            <div className="flex items-center gap-x-2 gap-y-2 text-label text-muted-foreground mt-1">
-                              <Building2 className="h-3 w-3 shrink-0" />
-                              <span>{app.brandName || app.clientName || 'Sin cliente'}</span>
-                              {app.firstWorkDate && (
-                                <>
-                                  <span>•</span>
-                                  <span>{new Date(app.firstWorkDate + 'T00:00:00').toLocaleDateString('es-GT', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-                                </>
-                              )}
+              {/* Lista de postulaciones */}
+              <div className="space-y-3">
+                {filteredApplications.length > 0 ? (
+                  filteredApplications.map((app, index) => {
+                    return (
+                      <Card key={app.projectId} className="hover:bg-hover-overlay transition-colors">
+                        <CardContent className="p-4">
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            {/* Left: Number + Project info */}
+                            <div className="flex items-start gap-3 min-w-0 flex-1">
+                              <span className="text-muted-foreground text-label font-medium shrink-0 w-6 text-center pt-0.5">
+                                {index + 1}.
+                              </span>
+                              <div className="min-w-0 flex-1">
+                                <Link
+                                  href={`/dashboard/projects/${app.projectId}`}
+                                  className="text-body font-semibold hover:underline block wrap-break-word sm:truncate"
+                                >
+                                  {app.projectName}
+                                </Link>
+                                <div className="flex items-center gap-x-2 gap-y-2 text-label text-muted-foreground mt-1">
+                                  <Building2 className="h-3 w-3 shrink-0" />
+                                  <span>{app.brandName || app.clientName || 'Sin cliente'}</span>
+                                  {app.firstWorkDate && (
+                                    <>
+                                      <span>•</span>
+                                      <span>{new Date(app.firstWorkDate + 'T00:00:00').toLocaleDateString('es-GT', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        </div>
 
-                        {/* Right: Status badge */}
-                        <ProjectStatusBadge status={app.clientSelection} className="self-start sm:self-auto ml-9 sm:ml-0" />
-                      </div>
+                            {/* Right: Status badge */}
+                            <ProjectStatusBadge status={app.clientSelection} className="self-start sm:self-auto ml-9 sm:ml-0" />
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })
+                ) : (
+                  <Card>
+                    <CardContent className="flex flex-col items-center justify-center py-16">
+                      <Send className="h-12 w-12 text-muted-foreground/30 mb-4" />
+                      <h3 className="text-title font-medium mb-2">
+                        {appSearchQuery || appStatusFilter !== 'all'
+                          ? 'No hay resultados'
+                          : 'Sin postulaciones'}
+                      </h3>
+                      <p className="text-body text-muted-foreground text-center max-w-sm">
+                        {appSearchQuery || appStatusFilter !== 'all'
+                          ? 'Intenta con otros filtros de búsqueda.'
+                          : 'Este talento aún no ha sido postulado a ningún proyecto.'}
+                      </p>
                     </CardContent>
                   </Card>
-                );
-              })
-            ) : (
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center py-16">
-                  <Send className="h-12 w-12 text-muted-foreground/30 mb-4" />
-                  <h3 className="text-title font-medium mb-2">
-                    {appSearchQuery || appStatusFilter !== 'all'
-                      ? 'No hay resultados'
-                      : 'Sin postulaciones'}
-                  </h3>
-                  <p className="text-body text-muted-foreground text-center max-w-sm">
-                    {appSearchQuery || appStatusFilter !== 'all'
-                      ? 'Intenta con otros filtros de búsqueda.'
-                      : 'Este talento aún no ha sido postulado a ningún proyecto.'}
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+                )}
+              </div>
+            </>
+          )}
         </TabsContent>
       </Tabs>
     </div>

@@ -156,49 +156,51 @@ function CardSkeleton() {
 
 export default function DashboardPage() {
   return (
-    <div className="grid gap-6">
-      <header className="flex flex-col gap-x-4 gap-y-4 pb-4 border-b sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-display font-semibold">Dashboard</h1>
-        </div>
-
-        <div className="flex w-full sm:w-auto sm:ml-auto flex-col gap-3 sm:flex-row sm:items-center sm:justify-end sm:flex-wrap">
-          <div className="w-full sm:w-95 order-1 sm:order-0">
-            <DashboardQuickSearch />
+    <div className="flex-1 overflow-y-auto py-6 pr-1">
+      <div className="grid gap-6">
+        <header className="flex flex-col gap-x-4 gap-y-4 pb-4 border-b sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-display font-semibold">Dashboard</h1>
           </div>
 
-          <div className="w-full flex items-stretch gap-3 order-2 sm:order-0 sm:w-auto">
-            <Button asChild className="flex-1 sm:flex-none">
-              <Link href="/dashboard/models/new">Añadir Talento</Link>
-            </Button>
-            <Button variant="outline" asChild className="flex-1 sm:flex-none">
-              <Link href="/dashboard/projects/new">Crear Proyecto</Link>
-            </Button>
+          <div className="flex w-full sm:w-auto sm:ml-auto flex-col gap-3 sm:flex-row sm:items-center sm:justify-end sm:flex-wrap">
+            <div className="w-full sm:w-95 order-1 sm:order-0">
+              <DashboardQuickSearch />
+            </div>
+
+            <div className="w-full flex items-stretch gap-3 order-2 sm:order-0 sm:w-auto">
+              <Button asChild className="flex-1 sm:flex-none">
+                <Link href="/dashboard/models/new">Añadir Talento</Link>
+              </Button>
+              <Button variant="outline" asChild className="flex-1 sm:flex-none">
+                <Link href="/dashboard/projects/new">Crear Proyecto</Link>
+              </Button>
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      {/* KPI Cards with Suspense for streaming */}
-      <Suspense fallback={<KPICardsSkeleton />}>
-        <KPICards />
-      </Suspense>
-
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* Actividad Reciente with Suspense */}
-        <Suspense fallback={<CardSkeleton />}>
-          <RecentActivityCard />
+        {/* KPI Cards with Suspense for streaming */}
+        <Suspense fallback={<KPICardsSkeleton />}>
+          <KPICards />
         </Suspense>
 
-        {/* Perfiles incompletos with Suspense */}
-        <Suspense fallback={<CardSkeleton />}>
-          <IncompleteProfilesCard />
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* Actividad Reciente with Suspense */}
+          <Suspense fallback={<CardSkeleton />}>
+            <RecentActivityCard />
+          </Suspense>
+
+          {/* Perfiles incompletos with Suspense */}
+          <Suspense fallback={<CardSkeleton />}>
+            <IncompleteProfilesCard />
+          </Suspense>
+        </div>
+
+        {/* Rankings de Modelos with Suspense */}
+        <Suspense fallback={<Skeleton className="h-96 w-full" />}>
+          <ModelRankingsSection />
         </Suspense>
       </div>
-
-      {/* Rankings de Modelos with Suspense */}
-      <Suspense fallback={<Skeleton className="h-96 w-full" />}>
-        <ModelRankingsSection />
-      </Suspense>
     </div>
   );
 }

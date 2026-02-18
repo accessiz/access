@@ -66,6 +66,9 @@ export function CompCardPrintTemplate({ model, containerId }: Props) {
                             src={coverUrl}
                             alt="Cover"
                             className="w-full h-full object-cover"
+                            loading="eager"
+                            fetchPriority="high"
+                            disableAnimation
                         />
                     )}
                 </div>
@@ -112,7 +115,7 @@ export function CompCardPrintTemplate({ model, containerId }: Props) {
 
                     {/* NUEVO ITEM 1: FOTO 1 (Antes estaba en la posición 2) */}
                     <div style={{ backgroundColor: 'rgb(242, 242, 242)', width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
-                        {backPhotos[0] && <SmartCroppedImage src={backPhotos[0]} alt="P1" className="w-full h-full object-cover" />}
+                        {backPhotos[0] && <SmartCroppedImage src={backPhotos[0]} alt="P1" className="w-full h-full object-cover" loading="eager" disableAnimation />}
                     </div>
 
                     {/* NUEVO ITEM 2: INFO PANEL (Antes estaba en la posición 1) */}
@@ -145,12 +148,12 @@ export function CompCardPrintTemplate({ model, containerId }: Props) {
 
                     {/* ITEM 3: FOTO 2 (Abajo Izquierda) */}
                     <div style={{ backgroundColor: 'rgb(242, 242, 242)', width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
-                        {backPhotos[2] && <SmartCroppedImage src={backPhotos[2]} alt="P2" className="w-full h-full object-cover" />}
+                        {backPhotos[2] && <SmartCroppedImage src={backPhotos[2]} alt="P2" className="w-full h-full object-cover" loading="eager" disableAnimation />}
                     </div>
 
                     {/* ITEM 4: FOTO 3 (Abajo Derecha) */}
                     <div style={{ backgroundColor: 'rgb(242, 242, 242)', width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
-                        {backPhotos[3] && <SmartCroppedImage src={backPhotos[3]} alt="P3" className="w-full h-full object-cover" />}
+                        {backPhotos[3] && <SmartCroppedImage src={backPhotos[3]} alt="P3" className="w-full h-full object-cover" loading="eager" disableAnimation />}
                     </div>
 
                 </div>
