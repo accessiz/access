@@ -209,10 +209,10 @@ export async function getFirstFileInFolder(modelId: string, category: 'Portada' 
       }
     }
 
-    console.log('[getFirstFileInFolder] No se encontraron archivos');
+    console.log('[getFirstFileInFolder] No se encontraron archivos para prefix:', prefix);
     return null;
   } catch (err) {
-    console.error('[getFirstFileInFolder] Error:', err);
+    console.error('[getFirstFileInFolder] Error crítico en listOperation:', err);
     logError(err, {
       action: 'getFirstFileInFolder',
       modelId,

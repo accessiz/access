@@ -138,10 +138,15 @@ export async function getModelById(id: string): Promise<(Model & {
   // puede no coincidir con el nombre real del archivo en R2
   const { getFirstFileInFolder } = await import('@/lib/actions/storage');
 
-  // Buscar cover en R2 (siempre, ignorando el valor de la DB)
+  // Buscar cover en R2 (siempre para asegurar frescura, pero con fallback)
   console.log('[getModelById] Buscando cover en R2...');
-  const finalCoverPath = await getFirstFileInFolder(id, 'Portada');
+  let finalCoverPath = await getFirstFileInFolder(id, 'Portada');
   console.log('[getModelById] Resultado cover R2:', finalCoverPath);
+
+  if (!finalCoverPath && model.cover_path) {
+    console.log('[getModelById] Fallback: Usando cover_path de la DB:', model.cover_path);
+    finalCoverPath = model.cover_path;
+  }
 
   // Buscar portfolio en R2 solo si no hay valor en la DB
   let finalPortfolioPath = model.portfolio_path;
@@ -154,6 +159,7 @@ export async function getModelById(id: string): Promise<(Model & {
 
   // Se construyen las URLs públicas de R2
   const coverUrl = toPublicUrl(finalCoverPath);
+  console.log('[getModelById] coverUrl generado:', coverUrl, 'desde path:', finalCoverPath);
   const portfolioUrl = toPublicUrl(finalPortfolioPath);
   const compCardUrls = (model.comp_card_paths || []).slice(0, 4).map(p => toPublicUrl(p));
   const galleryPaths = model.gallery_paths || [];
