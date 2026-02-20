@@ -96,7 +96,7 @@ export default function WebVisibilityClientPage() {
     const publicCount = models.filter(m => m.is_public).length
 
     return (
-        <div className="grid gap-8">
+        <div className="flex-1 min-h-0 overflow-y-auto grid gap-8 pb-6">
             {/* Header */}
             <header className="flex flex-col gap-x-4 gap-y-4 pb-4 border-b sm:flex-row sm:items-center sm:justify-between">
                 <div>
@@ -165,7 +165,7 @@ export default function WebVisibilityClientPage() {
                 <CardContent className="p-4">
 
                     {/* Model grid with scroll */}
-                    <ScrollArea className="h-[400px]">
+                    <ScrollArea className="h-100">
                         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 pr-4">
                             {loading ? (
                                 Array.from({ length: 9 }).map((_, i) => (

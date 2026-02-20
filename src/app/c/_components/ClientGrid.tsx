@@ -150,6 +150,7 @@ export function ClientGrid({ models, projectId, realProjectId, onSelectionChange
           <ClientTalentCard
             key={model.id}
             title={model.alias || 'Sin Alias'}
+            modelId={model.id}
             coverUrl={model.coverUrl}
             imageHref={`/c/${projectId}/${model.id}`}
             onImageClick={saveScrollPosition}

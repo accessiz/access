@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
+import { Loader2 } from 'lucide-react';
 
 interface SmartCroppedImageProps {
     src: string;
@@ -34,22 +35,29 @@ export function SmartCroppedImage({
     if (!src) return null;
 
     return (
-        <img
-            src={src}
-            alt={alt}
-            loading={loading}
-            // @ts-ignore - fetchPriority is supported in modern browsers
-            fetchPriority={fetchPriority}
-            decoding="async"
-            onLoad={() => setIsLoaded(true)}
-            onError={onError}
-            className={cn(
-                "w-full h-full object-cover transition-opacity duration-700",
-                isLoaded ? "opacity-100" : "opacity-0",
-                className
+        <>
+            {!isLoaded && (
+                <div className="absolute inset-0 z-0 flex items-center justify-center bg-muted/10">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground/30" />
+                </div>
             )}
-            style={style}
-            crossOrigin="anonymous"
-        />
+            <img
+                src={src}
+                alt={alt}
+                loading={loading}
+                // @ts-ignore - fetchPriority is supported in modern browsers
+                fetchPriority={fetchPriority}
+                decoding="async"
+                onLoad={() => setIsLoaded(true)}
+                onError={onError}
+                className={cn(
+                    "w-full h-full object-cover transition-opacity duration-700",
+                    isLoaded ? "opacity-100" : "opacity-0",
+                    className
+                )}
+                style={style}
+                crossOrigin="anonymous"
+            />
+        </>
     );
 }

@@ -202,7 +202,7 @@ export default function ModelsClientPage({ initialData }: { initialData: Initial
   };
 
   return (
-    <div className={cn("h-full flex flex-col overflow-hidden pt-4 pb-6", isPending && "opacity-70 pointer-events-none")}>
+    <div className={cn("flex flex-col pt-4 pb-6 md:h-full md:overflow-hidden", isPending && "opacity-70 pointer-events-none")}>
       {/* Loading indicator for pending transitions */}
       {isPending && (
         <div className="fixed top-4 right-4 z-50 flex items-center gap-2 bg-background/80 backdrop-blur-sm px-3 py-2 rounded-md border shadow-sm">

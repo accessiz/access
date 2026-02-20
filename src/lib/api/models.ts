@@ -130,42 +130,20 @@ export async function getModelById(id: string): Promise<(Model & {
     comp_card_paths?: (string | null)[];
   };
 
-  console.log('[getModelById] Model ID:', id);
-  console.log('[getModelById] cover_path en DB:', model.cover_path);
-
-  // --- INICIO: BÚSQUEDA DINÁMICA EN R2 ---
-  // SIEMPRE buscamos en R2 para cover y portfolio porque el cover_path de la DB
-  // puede no coincidir con el nombre real del archivo en R2
-  const { getFirstFileInFolder } = await import('@/lib/actions/storage');
-
-  // Buscar cover en R2 (siempre para asegurar frescura, pero con fallback)
-  console.log('[getModelById] Buscando cover en R2...');
-  let finalCoverPath = await getFirstFileInFolder(id, 'Portada');
-  console.log('[getModelById] Resultado cover R2:', finalCoverPath);
-
-  if (!finalCoverPath && model.cover_path) {
-    console.log('[getModelById] Fallback: Usando cover_path de la DB:', model.cover_path);
-    finalCoverPath = model.cover_path;
-  }
-
-  // Buscar portfolio en R2 solo si no hay valor en la DB
-  let finalPortfolioPath = model.portfolio_path;
-  if (!finalPortfolioPath) {
-    console.log('[getModelById] Buscando portfolio en R2...');
-    finalPortfolioPath = await getFirstFileInFolder(id, 'Portfolio');
-    console.log('[getModelById] Resultado portfolio R2:', finalPortfolioPath);
-  }
-  // --- FIN: BÚSQUEDA DINÁMICA EN R2 ---
+  // --- FUENTE DE VERDAD: Supabase ---
+  // La DB es la fuente de verdad para los paths. uploadModelImage() ya actualiza
+  // cover_path en la DB después de cada subida, así que no necesitamos buscar en R2.
+  // Buscar en R2 en cada request era lento, costoso, y podía devolver archivos
+  // obsoletos si la eliminación del archivo anterior fallaba silenciosamente.
+  const finalCoverPath = model.cover_path ?? null;
+  const finalPortfolioPath = model.portfolio_path ?? null;
 
   // Se construyen las URLs públicas de R2
   const coverUrl = toPublicUrl(finalCoverPath);
-  console.log('[getModelById] coverUrl generado:', coverUrl, 'desde path:', finalCoverPath);
   const portfolioUrl = toPublicUrl(finalPortfolioPath);
   const compCardUrls = (model.comp_card_paths || []).slice(0, 4).map(p => toPublicUrl(p));
   const galleryPaths = model.gallery_paths || [];
   const galleryUrls = galleryPaths.map(p => toPublicUrl(p)).filter((url): url is string => url !== null);
-
-  console.log('[getModelById] coverUrl final:', coverUrl);
 
   return {
     ...model,

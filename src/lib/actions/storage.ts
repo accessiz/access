@@ -65,7 +65,9 @@ async function deleteOldFileFromCategory(modelId: string, category: 'Portada' | 
       category,
       searchPrefix
     });
-    // No lanzamos un error aquí para no detener la subida, solo lo registramos.
+    // Relanzamos el error para que la subida falle limpiamente y no queden
+    // archivos duplicados en R2 (la causa raíz de que se "reviertan" photos).
+    throw new Error(`No se pudo eliminar el archivo anterior en ${category}. Intenta de nuevo.`);
   }
 }
 

@@ -58,7 +58,7 @@ export function ModelRankingsCard({ initialData, className }: ModelRankingsCardP
                     <CardTitle className="text-lg">Rankings de Talentos</CardTitle>
                 </div>
                 <Select value={view} onValueChange={(v) => setView(v as RankingType)}>
-                    <SelectTrigger className="w-full sm:w-[200px] h-9 text-body bg-quaternary border-none">
+                    <SelectTrigger className="w-full sm:w-50 h-9 text-body bg-quaternary border-none">
                         <SelectValue placeholder="Seleccionar vista" />
                     </SelectTrigger>
                     <SelectContent>
@@ -76,7 +76,7 @@ export function ModelRankingsCard({ initialData, className }: ModelRankingsCardP
                         No hay datos disponibles para esta categoría.
                     </div>
                 ) : (
-                    <ScrollArea className="h-[400px]">
+                    <ScrollArea className="h-100">
                         <div className="divide-y divide-separator">
                             {data.map((model, index) => (
                                 <NextLink
@@ -106,7 +106,7 @@ export function ModelRankingsCard({ initialData, className }: ModelRankingsCardP
                                     </div>
 
                                     <div className="pl-4 shrink-0">
-                                        <Badge variant={badgeVariant} className="gap-1.5 h-7 px-2.5 min-w-[3rem] justify-center text-sm">
+                                        <Badge variant={badgeVariant} className="gap-1.5 h-7 px-2.5 min-w-12 justify-center text-sm">
                                             {view === 'approved' && model.approved_count}
                                             {view === 'refused' && model.rejected_count}
                                             {view === 'applied' && model.total_count}

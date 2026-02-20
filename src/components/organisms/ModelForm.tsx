@@ -303,7 +303,7 @@ export const ModelForm = ({ isSubmitting }: ModelFormProps) => {
             <FieldError name="email" />
           </FormField>
 
-          <FormField label="Teléfono*" htmlFor="phone_e164">
+          <FormField label="Teléfono" htmlFor="phone_e164">
             <Controller name="phone_e164" control={control} render={({ field }) => (
               <PhoneInputField
                 value={field.value?.replace('+', '') ?? ''}

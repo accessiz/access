@@ -46,7 +46,7 @@ export function IncompleteProfilesList({ models }: IncompleteProfilesListProps) 
                                         </TooltipTrigger>
                                         <TooltipContent
                                             side="top"
-                                            className="max-w-[200px] bg-[rgb(var(--purple))] border-none text-white shadow-lg p-3"
+                                            className="max-w-50 bg-[rgb(var(--purple))] border-none text-white shadow-lg p-3"
                                         >
                                             <p className="text-label font-bold mb-1 font-display">Falta:</p>
                                             <ul className="text-label list-disc list-inside opacity-90 leading-relaxed">

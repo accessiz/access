@@ -108,7 +108,7 @@ export function ModelsPageContent({
     }, [filteredModels, busyModelMap]);
 
     return (
-        <div className="flex flex-1 h-full min-h-0">
+        <div className="flex flex-1 md:h-full min-h-0">
             {/* LEFT COLUMN - Full on mobile, 30% on desktop */}
             <div className={cn(
                 'flex flex-col bg-background border-r border-border',

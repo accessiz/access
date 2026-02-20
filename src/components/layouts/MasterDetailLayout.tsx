@@ -91,7 +91,7 @@ function MasterDetailLayout({
     return (
         <MasterDetailContext.Provider value={contextValue}>
             <div
-                className={cn('layout-master-detail h-full', className)}
+                className={cn('layout-master-detail lg:h-full', className)}
                 style={style}
             >
                 {children}

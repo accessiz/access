@@ -70,6 +70,7 @@ export default function ClientSummaryView({ project, models }: SummaryProps) {
                   <ClientTalentCard
                     key={model.id}
                     title={model.alias || 'Sin Alias'}
+                    modelId={model.id}
                     coverUrl={model.coverUrl}
                     imageHref={`/c/${project.public_id}/${model.id}`}
                     showMobilePeekIcon

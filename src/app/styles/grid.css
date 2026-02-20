@@ -77,7 +77,7 @@
         .master-panel {
             border-right: none;
             border-bottom: 1px solid rgb(var(--sys-bg-secondary));
-            max-height: 50vh;
+            max-height: none;
         }
     }
 

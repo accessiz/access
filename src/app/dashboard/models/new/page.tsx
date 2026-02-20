@@ -70,7 +70,7 @@ export default function NewModelPage() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="flex-1 min-h-0 overflow-y-auto space-y-8 pb-6">
       <header className="flex items-center justify-between gap-x-4 gap-y-4 pb-6 border-b">
         <div>
           <h1 className="text-display">Añadir Nuevo Talento</h1>

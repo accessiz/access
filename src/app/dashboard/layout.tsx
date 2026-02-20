@@ -37,8 +37,8 @@ export default async function DashboardLayout({
           <HeaderActions />
         </header>
 
-        {/* Área de contenido fluida */}
-        <main className="flex-1 min-h-0 overflow-hidden flex flex-col px-4 md:px-12">
+        {/* Área de contenido fluida - Mobile: scrollable, Desktop: fixed/hidden (handled by children) */}
+        <main className="flex-1 min-h-0 overflow-y-auto md:overflow-hidden flex flex-col px-4 md:px-12">
           {children}
         </main>
       </SidebarInset>

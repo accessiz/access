@@ -1,5 +1,7 @@
 'use client'
 
+import { R2_PUBLIC_URL } from '@/lib/constants'
+
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { ArrowUpRight } from 'lucide-react'
@@ -7,6 +9,7 @@ import { SmartCroppedImage } from '@/components/atoms/SmartCroppedImage'
 
 type Props = {
   title: string
+  modelId?: string
   heightCm?: number | null
   coverUrl?: string | null
   imageHref?: string
@@ -18,6 +21,7 @@ type Props = {
 
 export function ClientTalentCard({
   title,
+  modelId,
   coverUrl,
   imageHref,
   onImageClick,
@@ -27,9 +31,9 @@ export function ClientTalentCard({
 }: Props) {
   const image = (
     <div className="relative aspect-3/4 overflow-hidden rounded-md">
-      {coverUrl ? (
+      {coverUrl || modelId ? (
         <SmartCroppedImage
-          src={coverUrl}
+          src={coverUrl || `${R2_PUBLIC_URL}/${modelId}/Portada/cover.webp`}
           alt={title}
           className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
           loading="lazy"
@@ -58,7 +62,7 @@ export function ClientTalentCard({
   return (
     <div
       className={cn(
-        'group rounded-lg text-card-foreground overflow-hidden border border-[rgb(var(--separator))]',
+        'group rounded-lg text-card-foreground overflow-hidden border border-[rgb(var(--separator))] h-full flex flex-col',
         className
       )}
     >
@@ -72,7 +76,7 @@ export function ClientTalentCard({
         )}
       </div>
 
-      <div className="px-3 pb-3">
+      <div className="px-3 pb-3 flex-1">
         <div className="space-y-1">
           <div className="text-body sm:text-title font-medium text-foreground leading-tight line-clamp-2 sm:line-clamp-1">{title}</div>
           {children ? <div className="w-full">{children}</div> : null}

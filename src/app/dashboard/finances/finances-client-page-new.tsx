@@ -1078,11 +1078,11 @@ function PaymentCard({
                     <div className="space-y-1">
                         <div className="flex items-center gap-2 text-label text-muted-foreground">
                             <Wallet className="h-3.5 w-3.5" />
-                            <span className="truncate max-w-[200px]">{item.project_name}</span>
+                            <span className="truncate max-w-50">{item.project_name}</span>
                         </div>
                         <div className="flex items-center gap-2 text-label text-muted-foreground">
                             <Building2 className="h-3.5 w-3.5" />
-                            <span className="truncate max-w-[200px]">{clientDisplay}</span>
+                            <span className="truncate max-w-50">{clientDisplay}</span>
                         </div>
                     </div>
 
@@ -1092,7 +1092,7 @@ function PaymentCard({
                             <Calendar className="h-3.5 w-3.5" />
                             <span>{formatDateRange(item.first_work_date, item.last_work_date)}</span>
                         </div>
-                        <div className="text-label text-muted-foreground pl-[22px]">
+                        <div className="text-label text-muted-foreground pl-5.5">
                             ({breakdownText})
                         </div>
                     </div>
@@ -1155,7 +1155,7 @@ function PaymentCard({
                         <div className="flex items-center gap-2">
                             <h3 className="font-semibold text-body truncate">{modelDisplay}</h3>
                             {item.model_alias && (
-                                <span className="text-label text-muted-foreground truncate max-w-[150px]">
+                                <span className="text-label text-muted-foreground truncate max-w-37.5">
                                     {item.model_name}
                                 </span>
                             )}

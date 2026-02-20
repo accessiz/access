@@ -40,9 +40,11 @@
     /* --- GRID RESPONSIVO PARA CLIENTES (GAP más compacto) --- */
     .client-grid {
         /* Menos espacio horizontal para fotos más grandes */
-        @apply grid gap-x-2 gap-y-4;
+        @apply grid gap-x-2 gap-y-4 w-full;
         /* gap-x-2 = 0.5rem / 8px, gap-y-4 = 1rem / 16px */
         grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-auto-rows: 1fr;
+        align-items: start;
         /* Mobile Portrait (2) */
     }
 
