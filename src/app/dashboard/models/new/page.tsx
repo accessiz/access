@@ -13,6 +13,7 @@ import { modelFormSchema, ModelFormData } from '@/lib/schemas';
 import { createModel } from '@/lib/actions/models';
 import { Button } from '@/components/ui/button';
 import { ModelForm } from '@/components/organisms/ModelForm';
+import { Loader2 } from 'lucide-react';
 
 export default function NewModelPage() {
   const router = useRouter();
@@ -69,6 +70,12 @@ export default function NewModelPage() {
     }
   };
 
+  const handleInvalid = () => {
+    toast.error('Faltan campos obligatorios', {
+      description: 'Revisa los campos marcados en rojo antes de continuar.',
+    });
+  };
+
   return (
     <div className="flex-1 min-h-0 overflow-y-auto space-y-8 pb-6">
       <header className="flex items-center justify-between gap-x-4 gap-y-4 pb-6 border-b">
@@ -82,8 +89,12 @@ export default function NewModelPage() {
               Cancelar
             </Link>
           </Button>
-          <Button form="model-create-form" type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Creando...' : 'Crear Perfil'}
+          <Button form="model-create-form" type="submit" disabled={isSubmitting} className="cursor-pointer">
+            {isSubmitting ? (
+              <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creando...</>
+            ) : (
+              'Crear Perfil'
+            )}
           </Button>
         </div>
       </header>
@@ -91,7 +102,7 @@ export default function NewModelPage() {
       <div className="mx-auto">
         {/* 4. ENVOLVEMOS 'ModelForm' CON 'FormProvider' Y '<form>' */}
         <FormProvider {...form}>
-          <form id="model-create-form" onSubmit={form.handleSubmit(handleSubmit)}>
+          <form id="model-create-form" onSubmit={form.handleSubmit(handleSubmit, handleInvalid)}>
             <ModelForm
               // No pasamos 'model' (porque es nuevo)
               isSubmitting={isSubmitting}

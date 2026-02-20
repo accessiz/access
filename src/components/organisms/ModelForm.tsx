@@ -76,11 +76,11 @@ export const ModelForm = ({ isSubmitting }: ModelFormProps) => {
       <div className="space-y-4">
         <h2 className="text-title">Información Básica</h2>
         <div className="border bg-card rounded-lg p-8 grid md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-6">
-          <FormField label="Nombre Completo *" htmlFor="full_name">
+          <FormField label="Nombre Completo *" htmlFor="full_name" hasError={!!errors.full_name}>
             <Input id="full_name" {...register("full_name")} onKeyDown={preventNumericInput} disabled={isSubmitting} placeholder="Nombre y apellidos legales" />
             <FieldError name="full_name" />
           </FormField>
-          <FormField label="Alias *" htmlFor="alias">
+          <FormField label="Alias *" htmlFor="alias" hasError={!!errors.alias}>
             <Input id="alias" {...register("alias")} onKeyDown={preventNumericInput} disabled={isSubmitting} placeholder="Nombre más conocido" />
             <FieldError name="alias" />
           </FormField>
