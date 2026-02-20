@@ -80,7 +80,7 @@ export const ModelForm = ({ isSubmitting }: ModelFormProps) => {
             <Input id="full_name" {...register("full_name")} onKeyDown={preventNumericInput} disabled={isSubmitting} placeholder="Nombre y apellidos legales" />
             <FieldError name="full_name" />
           </FormField>
-          <FormField label="Alias" htmlFor="alias">
+          <FormField label="Alias *" htmlFor="alias">
             <Input id="alias" {...register("alias")} onKeyDown={preventNumericInput} disabled={isSubmitting} placeholder="Nombre más conocido" />
             <FieldError name="alias" />
           </FormField>

@@ -68,6 +68,7 @@ const optionalEnum = <T extends [string, ...string[]]>(values: T) =>
 export const modelFormSchema = z.object({
   // --- CAMPOS OBLIGATORIOS ---
   full_name: z.string().min(3, "El nombre completo es obligatorio. Ej: Juan Pérez"),
+  alias: z.string().min(2, "El alias es obligatorio (min. 2 letras).").regex(nameRegex, "El alias solo puede contener letras, espacios y apóstrofes. Ej: Ana María"),
 
   // Teléfono: preprocess para limpiar formato visual (espacios, guiones, paréntesis)
   // y convertir a formato E.164 puro antes de validar. AHORA ES OPCIONAL.
@@ -94,7 +95,6 @@ export const modelFormSchema = z.object({
     z.string().email("El formato del correo no es válido. Ej: usuario@dominio.com").nullable()
   ),
 
-  alias: optionalStringWithRegex(nameRegex, "El alias solo puede contener letras, espacios y apóstrofes. Ej: Ana María"),
   national_id: optionalString,
   passport_number: optionalString,
   gender: optionalEnum(['Male', 'Female']),

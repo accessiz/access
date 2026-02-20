@@ -286,7 +286,7 @@ export default function ModelProfilePageClient({ initialModel, workHistory = [],
   }, [workHistory, appStatusFilter, appSearchQuery]);
 
   return (
-    <div className="p-6 space-y-8">
+    <div className="flex flex-col h-full min-h-0 overflow-y-auto p-6 space-y-8 pb-6">
       <header className="flex flex-col items-start gap-x-4 gap-y-4 pb-6 border-b md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-display">
