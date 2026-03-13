@@ -145,61 +145,62 @@ export default function PortfolioView({ project, model: initialModel }: Portfoli
           </section>
         </main>
 
-        {/* 5. FOOTER DE ACCIONES (Sin Fade, Botones Glassmorphism) */}
-        {isEditable ? (
-          <footer className="sticky bottom-0 z-10 p-4 sm:p-8">
-            <div className="max-w-md mx-auto flex justify-center gap-4">
+        {/* 5. FOOTER DE ACCIONES */}
+        <footer className="sticky bottom-0 z-10 p-4 sm:p-8">
+          <div className="max-w-md mx-auto flex flex-col items-center gap-2">
+            {isEditable ? (
+              <>
+                <div className="w-full flex justify-center gap-4">
+                  {/* Botón RECHAZAR */}
+                  <Button
+                    size="lg"
+                    className={cn(
+                      "w-full backdrop-blur-md transition-all duration-300 border",
+                      model.client_selection === 'rejected'
+                        ? "bg-destructive/90 text-destructive-foreground border-destructive/50 hover:bg-destructive"
+                        : "bg-background/60 text-destructive border-destructive/30 hover:bg-destructive/20 hover:border-destructive/50"
+                    )}
+                    onClick={() => handleSelection('rejected')}
+                    disabled={isPending}
+                  >
+                    {isPending ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <CloseIcon className="mr-2 h-4 w-4" />}
+                    {model.client_selection === 'rejected' ? 'Descartado' : 'Rechazar'}
+                  </Button>
 
-              {/* Botón RECHAZAR - Glassmorphism Style */}
-              <Button
-                size="lg"
-                className={cn(
-                  "w-full backdrop-blur-md transition-all duration-300 border",
-                  model.client_selection === 'rejected'
-                    ? "bg-destructive/90 text-destructive-foreground border-destructive/50 hover:bg-destructive"
-                    : "bg-background/60 text-destructive border-destructive/30 hover:bg-destructive/20 hover:border-destructive/50"
+                  {/* Botón APROBAR */}
+                  <Button
+                    size="lg"
+                    className={cn(
+                      "w-full backdrop-blur-md transition-all duration-300 border",
+                      model.client_selection === 'approved'
+                        ? "bg-success/90 text-success-foreground border-success/50 hover:bg-success"
+                        : "bg-background/60 text-success border-success/30 hover:bg-success/20 hover:border-success/50"
+                    )}
+                    onClick={() => handleSelection('approved')}
+                    disabled={isPending}
+                  >
+                    {isPending ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Check className="mr-2 h-4 w-4" />}
+                    {model.client_selection === 'approved' ? 'Aprobado' : 'Aprobar'}
+                  </Button>
+                </div>
+                {/* Texto de ayuda */}
+                {model.client_selection && model.client_selection !== 'pending' && (
+                  <p className="text-center text-label text-muted-foreground animate-in fade-in">
+                    Puedes cambiar tu selección pulsando el otro botón.
+                  </p>
                 )}
-                onClick={() => handleSelection('rejected')}
-                disabled={isPending}
-              >
-                {isPending ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <CloseIcon className="mr-2 h-4 w-4" />}
-                {model.client_selection === 'rejected' ? 'Descartado' : 'Rechazar'}
-              </Button>
-
-              {/* Botón APROBAR - Glassmorphism Style */}
-              <Button
-                size="lg"
-                className={cn(
-                  "w-full backdrop-blur-md transition-all duration-300 border",
-                  model.client_selection === 'approved'
-                    ? "bg-success/90 text-success-foreground border-success/50 hover:bg-success"
-                    : "bg-background/60 text-success border-success/30 hover:bg-success/20 hover:border-success/50"
-                )}
-                onClick={() => handleSelection('approved')}
-                disabled={isPending}
-              >
-                {isPending ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Check className="mr-2 h-4 w-4" />}
-                {model.client_selection === 'approved' ? 'Aprobado' : 'Aprobar'}
-              </Button>
-
-            </div>
-            {/* Pequeño texto de ayuda si ya votó */}
-            {model.client_selection && model.client_selection !== 'pending' && (
-              <p className="text-center text-label text-muted-foreground mt-2 animate-in fade-in">
-                Puedes cambiar tu selección pulsando el otro botón.
-              </p>
+              </>
+            ) : (
+              /* PÍLDORA DE ESTADO (Cuando ya se envió la selección) */
+              <div className="bg-background/80 backdrop-blur-md px-6 py-2 rounded-full border border-border/50 text-sm font-medium shadow-lg">
+                <span className="text-muted-foreground mr-2">Estado:</span>
+                {model.client_selection === 'approved' && <span className="text-success">Aprobado</span>}
+                {model.client_selection === 'rejected' && <span className="text-destructive">Descartado</span>}
+                {(!model.client_selection || model.client_selection === 'pending') && <span className="text-muted-foreground">Sin definir</span>}
+              </div>
             )}
-          </footer>
-        ) : (
-          /* 6. MODO SOLO LECTURA (Solo si está completado/archivado) */
-          <footer className="sticky bottom-0 z-10 p-6 flex justify-center">
-            <div className="bg-background/80 backdrop-blur-md px-6 py-2 rounded-full border border-separator text-muted-foreground text-sm font-medium">
-              Selección: <span className={cn(model.client_selection === 'approved' ? "text-success" : "text-destructive")}>
-                {model.client_selection === 'approved' ? 'Aprobado' : 'Rechazado'}
-              </span>
-            </div>
-          </footer>
-        )}
+          </div>
+        </footer>
 
         <ClientFooter />
 
