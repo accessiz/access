@@ -2,18 +2,12 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { unstable_noStore as noStore } from 'next/cache';
-import { Model, Project } from "@/lib/types"; // Asegúrate que Model incluye client_selection?
+import { Model, Project } from "@/lib/types";
 import { logError } from '@/lib/utils/errors';
+import { toPublicUrl } from '@/lib/utils';
+import { logger } from '@/lib/logger';
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
-// --- INICIO DE LA CORRECCIÓN ---
-// Se elimina BUCKET_NAME y se añade el helper para construir la URL de R2
-const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL?.replace(/\/$/, '') || '';
-
-const toPublicUrl = (path: string | null | undefined): string | null => {
-  if (!path || !R2_PUBLIC_URL) return null;
-  return `${R2_PUBLIC_URL}/${path}`;
-};
-// --- FIN DE LA CORRECCIÓN ---
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000; // 1s
 
@@ -26,7 +20,7 @@ async function withRetry<T>(fn: () => T | PromiseLike<T>, retries = MAX_RETRIES)
         (error.message.includes('fetch failed') || error.message.includes('timeout'));
 
       if (isNetworkError) {
-        console.warn(`[Retry] Fetch failed, retrying in ${RETRY_DELAY}ms... (${retries} left)`);
+        logger.warn('Fetch failed, retrying', { delay: RETRY_DELAY, retries });
         await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
         return withRetry(fn, retries - 1);
       }
@@ -227,7 +221,7 @@ export async function getProjectsForUser(searchParams: SearchParams = {}) {
   }
 
   const sortKey = searchParams.sortKey || 'created_at';
-  const sortDir = searchParams.sortDir || 'desc';
+  const sortDir = searchParams.sortDir || 'asc';
   queryBuilder = queryBuilder.order(sortKey, { ascending: sortDir === 'asc' });
 
   const from = (currentPage - 1) * limit;
@@ -276,7 +270,6 @@ export async function getProjectsForUser(searchParams: SearchParams = {}) {
 }
 
 // Helper para formatear hora de DB (UTC) a 12h AM/PM
-// IMPORTANTE: Usamos UTC porque los timestamps se guardan en UTC y queremos mostrarlos tal cual
 const formatTimeTo12h = (isoString: string) => {
   const date = new Date(isoString);
   let hours = date.getUTCHours();
@@ -284,7 +277,7 @@ const formatTimeTo12h = (isoString: string) => {
   const period = hours >= 12 ? 'PM' : 'AM';
 
   hours = hours % 12;
-  hours = hours ? hours : 12; // la hora '0' deberia ser '12'
+  hours = hours ? hours : 12;
 
   return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${period}`;
 };
@@ -298,23 +291,19 @@ const extractDateFromTimestampUTC = (isoString: string) => {
   return `${year}-${month}-${day}`;
 };
 
-// Función para obtener un proyecto por ID (MODIFICADA para usar project_schedule)
+// Función para obtener un proyecto por ID
 export async function getProjectById(idOrPublicId: string): Promise<Project | null> {
   noStore();
-  const supabase = await createClient();
-
-  // Determinar si parece un UUID (36 caracteres con guiones) o un public_id corto
+  // Usamos supabaseAdmin para saltar RLS en la vista pública
   const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrPublicId);
 
-  let query = supabase
+  let query = supabaseAdmin
     .from('projects')
     .select('*, project_schedule(*)');
 
   if (isUUID) {
-    // Si es UUID, buscar en ambos campos
     query = query.or(`id.eq.${idOrPublicId},public_id.eq.${idOrPublicId}`);
   } else {
-    // Si no es UUID, solo buscar en public_id para evitar errores de formato
     query = query.eq('public_id', idOrPublicId);
   }
 
@@ -329,7 +318,6 @@ export async function getProjectById(idOrPublicId: string): Promise<Project | nu
 
   if (!data) return null;
 
-  // Define proper type for project_schedule row
   interface ProjectScheduleRow {
     id: string;
     start_time: string;
@@ -342,7 +330,6 @@ export async function getProjectById(idOrPublicId: string): Promise<Project | nu
     project_schedule?: ProjectScheduleRow[];
   };
 
-  // Si tenemos datos en la tabla project_schedule, los usamos para poblar el campo schedule
   if (project.project_schedule && project.project_schedule.length > 0) {
     project.schedule = project.project_schedule.map((ps: ProjectScheduleRow) => ({
       id: ps.id,
@@ -355,20 +342,17 @@ export async function getProjectById(idOrPublicId: string): Promise<Project | nu
   return project as Project;
 }
 
-
-// Función para obtener modelos de un proyecto (OPTIMIZADA)
+// Función para obtener modelos de un proyecto
 export async function getModelsForProject(projectId: string): Promise<Model[]> {
   noStore();
-  const supabase = await createClient();
-
-  const { data: projectModelsData, error } = await supabase
+  
+  const { data: projectModelsData, error } = await supabaseAdmin
     .from('projects_models')
     .select(`
       *,
       models (
         *,
-        cover_path,
-        portfolio_path
+        cover_path
       )
     `)
     .eq('project_id', projectId);
@@ -388,10 +372,10 @@ export async function getModelsForProject(projectId: string): Promise<Model[]> {
   const modelsWithPaths = projectModelsData.flatMap(item => {
     const modelData = item.models;
     if (!modelData || Array.isArray(modelData) || typeof modelData !== 'object') {
-      console.warn(`Invalid model data found for project ${projectId}:`, item);
+      logger.warn('Invalid model data in project', { projectId, item });
       return [];
     }
-    const model = modelData as unknown as (Model & { cover_path?: string; portfolio_path?: string });
+    const model = modelData as unknown as (Model & { cover_path?: string });
     const validatedSelection = isValidClientSelectionInner(item.client_selection)
       ? item.client_selection
       : null;
@@ -401,79 +385,60 @@ export async function getModelsForProject(projectId: string): Promise<Model[]> {
       client_selection: validatedSelection,
       internal_status: item.internal_status,
       agreed_fee: item.agreed_fee,
-      trade_fee: item.trade_fee, // Mapear trade_fee
+      trade_fee: item.trade_fee,
       fee_type: item.fee_type,
       currency: item.currency,
       notes: item.notes,
     }];
   });
 
-  // Fetch model assignments for this project's schedules
-  const { data: projectSchedules } = await supabase
+  const { data: projectSchedules } = await supabaseAdmin
     .from('project_schedule')
     .select('id')
     .eq('project_id', projectId);
 
-  const scheduleIds = projectSchedules?.map(ps => ps.id) || [];
+  const scheduleIds = projectSchedules?.map((ps: { id: string }) => ps.id) || [];
 
   if (scheduleIds.length > 0) {
-    const { data: assignments } = await supabase
+    const { data: assignments } = await supabaseAdmin
       .from('model_assignments')
       .select('*')
       .in('schedule_id', scheduleIds);
 
     if (assignments) {
       modelsWithPaths.forEach(m => {
-        m.assignments = assignments.filter(a => a.model_id === m.id);
+        m.assignments = assignments.filter((a: { model_id: string }) => a.model_id === m.id);
       });
     }
   }
 
-  // --- INICIO DE LA CORRECCIÓN ---
-  // Se elimina toda la lógica de `createSignedUrls`.
-  // Se mapean los resultados para construir la `coverUrl` y `portfolioUrl` públicas de R2.
   const enriched = modelsWithPaths.map(model => ({
     ...model,
     coverUrl: toPublicUrl(model.cover_path),
-    portfolioUrl: toPublicUrl(model.portfolio_path),
   }));
-  // --- FIN DE LA CORRECCIÓN ---
 
   return enriched;
 }
 
-
-// --- INICIO: Type Guard para client_selection ---
 const VALID_CLIENT_SELECTIONS = ['pending', 'approved', 'rejected'] as const;
 type ClientSelection = typeof VALID_CLIENT_SELECTIONS[number];
 
-/**
- * Type Guard para validar el valor de client_selection de la DB.
- */
 function isValidClientSelection(selection: unknown): selection is ClientSelection {
-  if (typeof selection !== 'string') {
-    return false; // No es válido si no es string
-  }
+  if (typeof selection !== 'string') return false;
   return VALID_CLIENT_SELECTIONS.includes(selection as ClientSelection);
 }
-// --- FIN: Type Guard para client_selection ---
 
-
-// Función para obtener UN modelo específico para un proyecto
+// Función para obtener UN modelo específico para un proyecto (Versión Cliente - Bypasses RLS)
 export async function getModelForProject(projectId: string, modelId: string): Promise<Model | null> {
   noStore();
-  const supabase = await createClient();
-
-  const { data, error } = await supabase
+  
+  // Usamos supabaseAdmin para saltar RLS en la vista cliente si es necesario
+  // pero aseguramos que la consulta sea lo más completa posible.
+  const { data, error } = await supabaseAdmin
     .from('projects_models')
     .select(`
-      client_selection,
-      models (
-        *,
-        cover_path,
-        portfolio_path,
-        gallery_paths
-      )
+      *,
+      models (*)
     `)
     .eq('project_id', projectId)
     .eq('model_id', modelId)
@@ -486,29 +451,48 @@ export async function getModelForProject(projectId: string, modelId: string): Pr
     return null;
   }
 
-  const modelData = data.models;
-  if (!modelData || Array.isArray(modelData) || typeof modelData !== 'object') {
-    console.warn(`Invalid specific model data for project ${projectId}, model ${modelId}:`, data);
+  // Supabase devuelve el registro unido bajo la clave del nombre de la tabla
+  // Si por alguna razón es un array, tomamos el primer elemento
+  const rawModelData = data.models;
+  const rawModel = Array.isArray(rawModelData) ? rawModelData[0] : rawModelData;
+
+  if (!rawModel) {
+    logger.warn('No model data found for the project-model link after join', { projectId, modelId });
     return null;
   }
 
-  const modelWithPaths = modelData as unknown as (Model & { cover_path?: string; portfolio_path?: string; gallery_paths?: string[] | null });
+  // Enriquecemos con URLs públicas de R2
+  const galleryPaths = (rawModel.gallery_paths as string[]) || [];
+  const galleryUrls = galleryPaths
+    .map((path: string) => toPublicUrl(path))
+    .filter((url: string | null): url is string => url !== null);
 
-  // Se construyen las URLs públicas de R2 directamente.
+  const compCardPaths = (rawModel.comp_card_paths as (string | null)[]) || [null, null, null, null];
+  const compCardUrls = compCardPaths.map((path: string | null) => path ? toPublicUrl(path) : null);
+
   const validatedSelection = isValidClientSelection(data.client_selection)
     ? data.client_selection
     : null;
 
-  // Convertir gallery_paths a URLs públicas
-  const galleryUrls = (modelWithPaths.gallery_paths || [])
-    .map(path => toPublicUrl(path))
-    .filter((url): url is string => url !== null);
-
-  return {
-    ...modelWithPaths,
+  // Devolvemos el objeto aplanado que espera la interfaz Model
+  const model: Model = {
+    ...rawModel, // Campos de la tabla 'models' (height_cm, chest_cm, etc.)
+    id: modelId,
     client_selection: validatedSelection,
-    coverUrl: toPublicUrl(modelWithPaths.cover_path),
-    portfolioUrl: toPublicUrl(modelWithPaths.portfolio_path),
+    internal_status: data.internal_status,
+    agreed_fee: data.agreed_fee,
+    trade_fee: data.trade_fee,
+    fee_type: data.fee_type,
+    currency: data.currency,
+    notes: data.notes,
+    coverUrl: toPublicUrl(rawModel.cover_path),
     galleryUrls,
+    compCardUrls,
+    // Preservamos los paths originales por si se necesitan
+    cover_path: rawModel.cover_path,
+    gallery_paths: galleryPaths,
+    comp_card_paths: compCardPaths,
   };
+
+  return model;
 }

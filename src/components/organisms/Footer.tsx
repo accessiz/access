@@ -9,7 +9,7 @@ const Footer = () => {
     <footer className="site-footer flex flex-col items-center gap-10 p-8
                    md:grid md:grid-cols-4 md:grid-rows-2 md:items-start md:gap-y-6 md:p-12 lg:p-16
                    md:mt-[20vh] // <-- ¡Aquí está el cambio!
-                   uppercase bg-background text-on-background">
+                   uppercase bg-background text-foreground">
 
       {/* GRUPO 1: Slogan & CTA (¡Ahora es el primero!) */}
       {/* Móvil: Centrado por defecto gracias al 'items-center' del 'footer'. */}

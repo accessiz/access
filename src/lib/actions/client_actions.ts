@@ -7,6 +7,7 @@ import { z } from 'zod'
 import { logError } from '@/lib/utils/errors'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { ActivityTitles } from '@/lib/activity-titles'
+import { verifyCookie, getCookieSecret } from '@/lib/utils/cookie-signature'
 
 // Helper para loguear acciones del cliente (no autenticado)
 // Obtiene el user_id del proyecto para saber a quién notificar
@@ -17,8 +18,6 @@ async function logClientActivity(params: {
   metadata?: Record<string, unknown>;
 }) {
   try {
-    console.log('[logClientActivity] Starting with projectId:', params.projectId);
-
     // Obtener el user_id del proyecto
     const { data: project, error: projectError } = await supabaseAdmin
       .from('projects')
@@ -27,16 +26,13 @@ async function logClientActivity(params: {
       .single();
 
     if (projectError) {
-      console.error('[logClientActivity] Error fetching project:', projectError);
+      logError(projectError, { action: 'logClientActivity', projectId: params.projectId });
       return;
     }
 
     if (!project?.user_id) {
-      console.warn('[logClientActivity] No user_id found for project:', params.projectId);
       return;
     }
-
-    console.log('[logClientActivity] Found user_id:', project.user_id, 'Inserting log...');
 
     // Insertar en activity_logs con is_urgent=true (para campanita)
     // Usamos category='project' porque 'client' no está permitido por el CHECK constraint
@@ -50,12 +46,10 @@ async function logClientActivity(params: {
     });
 
     if (insertError) {
-      console.error('[logClientActivity] Error inserting log:', insertError);
-    } else {
-      console.log('[logClientActivity] Successfully inserted notification:', params.title);
+      logError(insertError, { action: 'logClientActivity.insert', projectId: params.projectId });
     }
   } catch (error) {
-    console.error('[logClientActivity] Unexpected error:', error);
+    logError(error, { action: 'logClientActivity.catch_all', projectId: params.projectId });
   }
 }
 
@@ -78,8 +72,9 @@ async function verifyAccess(projectId: string) {
   const cookieStore = await cookies();
   const accessCookie = cookieStore.get(`project_access_${projectId}`);
 
-  // Si la cookie existe y es válida -> Acceso Permitido.
-  return accessCookie?.value === 'true';
+  // If the cookie exists, verify its HMAC signature.
+  if (!accessCookie?.value) return false;
+  return verifyCookie(accessCookie.value, getCookieSecret());
 }
 // -----------------------------------
 

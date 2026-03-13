@@ -1,13 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import ExcelJS from 'exceljs';
+import { logger } from '@/lib/logger';
+import { applyRateLimit, strictLimiter } from '@/lib/utils/rate-limit';
 
 // Tipos para los parámetros de exportación
 type ExportType = 'models' | 'clients';
 
 export async function GET(request: NextRequest) {
+    const blocked = applyRateLimit(request, strictLimiter);
+    if (blocked) return blocked;
+
     const searchParams = request.nextUrl.searchParams;
-    const type = searchParams.get('type') as ExportType || 'models';
+    const rawType = searchParams.get('type');
+    const VALID_EXPORT_TYPES: ExportType[] = ['models', 'clients'];
+    const type: ExportType = (rawType && VALID_EXPORT_TYPES.includes(rawType as ExportType))
+        ? rawType as ExportType
+        : 'models';
     const month = searchParams.get('month');
     const year = searchParams.get('year');
     const startDay = searchParams.get('startDay');
@@ -32,7 +41,7 @@ export async function GET(request: NextRequest) {
 
         return NextResponse.json({ error: 'Tipo de exportación inválido' }, { status: 400 });
     } catch (error) {
-        console.error('[Export] Error:', error);
+        logger.fromError(error, { route: 'finances/export', action: 'GET' });
         return NextResponse.json({ error: 'Error al generar el archivo' }, { status: 500 });
     }
 }

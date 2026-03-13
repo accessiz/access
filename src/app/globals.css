@@ -12,8 +12,8 @@
  * - components.css → Glass controls, client grids, calendar, phone input
  */
 
-@config "../../tailwind.config.ts";
 @import "tailwindcss";
+@config "../../tailwind.config.ts";
 
 /* Design Tokens */
 @import "./styles/tokens.css";

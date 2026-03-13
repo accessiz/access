@@ -97,6 +97,23 @@
         }
     }
 
+    /* --- MASONRY GALLERY (auto-adapta columnas al contenedor) ------- */
+    /* Componente template: src/components/ui/masonry-gallery.tsx        */
+    /* Usa column-width para llenar el espacio disponible               */
+    /* automáticamente (dashboard con sidebar O cliente full-width).    */
+    .masonry-gallery {
+        columns: 2;            /* Fallback: 2 columnas mínimo en mobile */
+        column-gap: 4px;
+        width: 100%;
+    }
+
+    @media (min-width: 480px) {
+        .masonry-gallery {
+            column-count: unset;
+            column-width: 180px; /* Auto-calcula columnas según espacio real */
+        }
+    }
+
     /* --- EFECTO GLOW PARA NAVBAR ACTIVO --- */
     .active-nav-glow::after {
         content: '';

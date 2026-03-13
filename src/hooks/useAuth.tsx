@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 // ¡Importante! Usamos el nuevo cliente unificado para el navegador
-import { createClient } from '@/lib/supabase/client'; 
+import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import type { User, SupabaseClient } from '@supabase/supabase-js';
 
@@ -9,6 +9,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   supabase: SupabaseClient; // Mantenemos la instancia de supabase en el contexto
+  isSigningIn: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -20,6 +21,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [supabase] = useState(() => createClient());
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isSigningIn, setIsSigningIn] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -31,25 +33,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     getSession();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
       setLoading(false);
-      // Cuando la sesión cambia (ej. SIGNED_IN), refrescamos la página.
-      // Esto fuerza a los Componentes de Servidor a re-evaluarse con la cookie actualizada.
-      router.refresh(); 
+
+      if (event === 'SIGNED_IN') {
+        router.refresh();
+      } else if (event === 'SIGNED_OUT') {
+        router.push('/login');
+      } else if (event === 'TOKEN_REFRESHED') {
+        router.refresh();
+      }
     });
 
     return () => subscription.unsubscribe();
   }, [supabase, router]);
 
   const signIn = async (email: string, password: string) => {
-    setLoading(true);
+    setIsSigningIn(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      setLoading(false);
+      setIsSigningIn(false);
       throw error;
     }
-    // El router.refresh() en onAuthStateChange se encargará de la redirección
+    // onAuthStateChange con SIGNED_IN hará router.refresh()
+    // El server component de /login detectará la sesión y redirigirá al dashboard
   };
 
   const signOut = async () => {
@@ -59,11 +67,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     router.push('/login');
   };
 
-  const value = { user, loading, supabase, signIn, signOut };
+  const value = { user, loading, isSigningIn, supabase, signIn, signOut };
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 }

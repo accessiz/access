@@ -2,20 +2,10 @@ import { createClient } from "@/lib/supabase/server";
 import { unstable_noStore as noStore } from 'next/cache';
 import { Model } from "@/lib/types";
 import { logError } from '@/lib/utils/errors';
+import { toPublicUrl } from '@/lib/utils';
 
 // const BUCKET_NAME = 'Book_Completo_iZ_Management'; // Ya no se usa para generar URLs
 const ITEMS_PER_PAGE = 24;
-
-// --- INICIO DE LA CORRECCIÓN ---
-// Helper para construir la URL pública de R2
-const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL?.replace(/\/$/, '') || '';
-
-const toPublicUrl = (path: string | null | undefined): string | null => {
-  if (!path || !R2_PUBLIC_URL) return null;
-  // Construye la URL pública. La codificación no es estrictamente necesaria si los nombres de archivo son seguros.
-  return `${R2_PUBLIC_URL}/${path}`;
-};
-// --- FIN DE LA CORRECCIÓN ---
 
 type SearchParams = {
   query?: string;
@@ -100,13 +90,14 @@ export async function getModelsEnriched(searchParams: SearchParams) {
 // getModelById - Ahora busca en R2 si los paths no existen en la DB
 export async function getModelById(id: string): Promise<(Model & {
   coverUrl?: string | null;
-  portfolioUrl?: string | null;
   compCardUrls?: (string | null)[];
   cover_path?: string | null;
-  portfolio_path?: string | null;
   comp_card_paths?: (string | null)[];
+  coverBlurHash?: string | null;
+  compCardBlurHashes?: (string | null)[];
   galleryUrls?: (string | null)[];
   galleryPaths?: string[] | null;
+  galleryBlurHashes?: (string | null)[];
 }) | null> {
   noStore();
   const supabase = await createClient();
@@ -126,7 +117,6 @@ export async function getModelById(id: string): Promise<(Model & {
 
   const model = data as Model & {
     cover_path?: string | null;
-    portfolio_path?: string | null;
     comp_card_paths?: (string | null)[];
   };
 
@@ -136,24 +126,29 @@ export async function getModelById(id: string): Promise<(Model & {
   // Buscar en R2 en cada request era lento, costoso, y podía devolver archivos
   // obsoletos si la eliminación del archivo anterior fallaba silenciosamente.
   const finalCoverPath = model.cover_path ?? null;
-  const finalPortfolioPath = model.portfolio_path ?? null;
 
   // Se construyen las URLs públicas de R2
   const coverUrl = toPublicUrl(finalCoverPath);
-  const portfolioUrl = toPublicUrl(finalPortfolioPath);
   const compCardUrls = (model.comp_card_paths || []).slice(0, 4).map(p => toPublicUrl(p));
   const galleryPaths = model.gallery_paths || [];
   const galleryUrls = galleryPaths.map(p => toPublicUrl(p)).filter((url): url is string => url !== null);
 
+  // Blur hashes (parallel arrays — may be null if images were uploaded before blur support)
+  const coverBlurHash = model.cover_blur_hash ?? null;
+  const compCardBlurHashes: (string | null)[] = (model.comp_card_blur_hashes || []).slice(0, 4);
+  while (compCardBlurHashes.length < 4) compCardBlurHashes.push(null);
+  const galleryBlurHashes = model.gallery_blur_hashes || [];
+
   return {
     ...model,
     cover_path: finalCoverPath,
-    portfolio_path: finalPortfolioPath,
     coverUrl,
-    portfolioUrl,
+    coverBlurHash,
     compCardUrls,
+    compCardBlurHashes,
     galleryUrls,
     galleryPaths,
+    galleryBlurHashes,
   };
 }
 

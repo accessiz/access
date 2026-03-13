@@ -3,7 +3,6 @@
 
 import { useState, useCallback } from 'react'
 import Cropper, { Area } from 'react-easy-crop'
-import imageCompression from 'browser-image-compression';
 
 import {
   Dialog,
@@ -17,7 +16,6 @@ import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
 import { Label } from '@/components/ui/label'
 import { Crop, Loader2 } from 'lucide-react'
-import { MAX_UPLOAD_BYTES } from '@/lib/constants'
 
 interface ImageCropDialogProps {
   imageSrc: string | null
@@ -27,10 +25,13 @@ interface ImageCropDialogProps {
 }
 
 /**
- * Crea una imagen recortada a partir de un canvas.
- * @param image - El elemento de imagen original.
- * @param croppedAreaPixels - El área de recorte en píxeles.
- * @returns Una promesa que resuelve a un objeto File o null.
+ * Crops the visible area from the source image into a WebP file.
+ *
+ * Design decision: output at NATIVE crop resolution — no downscale here.
+ * Compression happens in the caller via compressForPrint / compressForDisplay
+ * to avoid double-lossy encoding (canvas→WebP→browser-image-compression→WebP).
+ *
+ * WebP at quality 0.92 keeps crop near-lossless while smaller than PNG.
  */
 async function getCroppedImg(
   image: HTMLImageElement,
@@ -39,16 +40,11 @@ async function getCroppedImg(
 ): Promise<File | null> {
   const canvas = document.createElement('canvas')
   const ctx = canvas.getContext('2d')
+  if (!ctx) return null
 
-  if (!ctx) {
-    return null
-  }
-
-  // Define el tamaño del canvas al del recorte
   canvas.width = croppedAreaPixels.width
   canvas.height = croppedAreaPixels.height
 
-  // Dibuja la imagen recortada en el canvas
   ctx.drawImage(
     image,
     croppedAreaPixels.x,
@@ -61,28 +57,15 @@ async function getCroppedImg(
     croppedAreaPixels.height
   )
 
-  // Obtiene el blob del canvas
   return new Promise((resolve) => {
-    canvas.toBlob(async (blob) => {
-      if (!blob) {
-        resolve(null)
-        return
-      }
-      // Comprime la imagen antes de devolverla
-      const options = {
-        maxSizeMB: (MAX_UPLOAD_BYTES / 1024 / 1024) - 0.5, // Deja un margen
-        maxWidthOrHeight: 1920,
-        useWebWorker: true,
-      }
-      try {
-        const compressedFile = await imageCompression(new File([blob], fileName, { type: 'image/webp' }), options);
-        resolve(compressedFile);
-      } catch (error) {
-        console.error('Error en la compresión:', error);
-        // Si la compresión falla, devuelve el original
-        resolve(new File([blob], fileName, { type: 'image/webp' }));
-      }
-    }, 'image/webp', 0.9)
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) { resolve(null); return }
+        resolve(new File([blob], fileName, { type: 'image/webp' }))
+      },
+      'image/webp',
+      0.92
+    )
   })
 }
 
@@ -108,22 +91,29 @@ export function ImageCropDialog({
     if (!croppedAreaPixels || !imageSrc) return
     setIsLoading(true)
 
-    const image = new Image()
-    image.src = imageSrc
-    image.onload = async () => {
-      const croppedImageFile = await getCroppedImg(
+    try {
+      const image = new Image()
+
+      await new Promise<void>((resolve, reject) => {
+        image.onload = () => resolve()
+        image.onerror = () => reject(new Error('Failed to load image for crop'))
+        image.src = imageSrc
+      })
+
+      const croppedFile = await getCroppedImg(
         image,
         croppedAreaPixels,
         'cropped_image.webp'
       )
-      if (croppedImageFile) {
-        onCropComplete(croppedImageFile)
+
+      if (croppedFile) {
+        onCropComplete(croppedFile)
       }
-      onClose()
-    }
-    image.onerror = () => {
+    } catch {
+      // Silently handle — dialog will close
+    } finally {
       setIsLoading(false)
-      onClose();
+      onClose()
     }
   }, [croppedAreaPixels, imageSrc, onCropComplete, onClose])
 

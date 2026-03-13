@@ -3,27 +3,38 @@
 
 import { S3Client, PutObjectCommand, DeleteObjectCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
 import { supabaseAdmin } from '@/lib/supabase/admin';
-import { createClient } from '@/lib/supabase/server'; // Para verificar al usuario
+import { createClient } from '@/lib/supabase/server';
 import { z } from 'zod';
 import { logError } from "../utils/errors";
 import { revalidatePath } from "next/cache";
+import { generateBlurDataURL } from "../utils/blur-hash";
+import { serverEnv } from '@/lib/env';
+import { logger } from '@/lib/logger';
 
-// Configuración del cliente R2
-const r2 = new S3Client({
-  region: "auto",
-  endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-  credentials: {
-    accessKeyId: process.env.R2_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
-  },
-});
+// R2 client — lazy singleton to avoid cold-start penalty on every import
+let _r2: S3Client | null = null;
+function getR2(): S3Client {
+  if (!_r2) {
+    _r2 = new S3Client({
+      region: "auto",
+      endpoint: `https://${serverEnv.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+      credentials: {
+        accessKeyId: serverEnv.R2_ACCESS_KEY_ID,
+        secretAccessKey: serverEnv.R2_SECRET_ACCESS_KEY,
+      },
+    });
+  }
+  return _r2;
+}
 
-const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME!;
+function getR2BucketName(): string {
+  return serverEnv.R2_BUCKET_NAME;
+}
 
 const uploadSchema = z.object({
   file: z.instanceof(File),
   modelId: z.string().uuid(),
-  category: z.enum(['Portada', 'Portfolio', 'Contraportada', 'PortfolioGallery']),
+  category: z.enum(['Portada', 'Contraportada', 'PortfolioGallery']),
   slotIndex: z.coerce.number().optional(),
 });
 
@@ -31,7 +42,7 @@ const uploadSchema = z.object({
 /**
  * Helper para eliminar el archivo antiguo de una categoría antes de subir uno nuevo.
  */
-async function deleteOldFileFromCategory(modelId: string, category: 'Portada' | 'Portfolio' | 'Contraportada', slotIndex?: number) {
+async function deleteOldFileFromCategory(modelId: string, category: 'Portada' | 'Contraportada', slotIndex?: number) {
   const prefix = `${modelId}/${category}/`;
 
   // Para 'Contraportada', el prefijo es más específico si hay slotIndex
@@ -41,20 +52,20 @@ async function deleteOldFileFromCategory(modelId: string, category: 'Portada' | 
 
   try {
     const listCommand = new ListObjectsV2Command({
-      Bucket: R2_BUCKET_NAME,
+      Bucket: getR2BucketName(),
       Prefix: searchPrefix,
     });
 
-    const listedObjects = await r2.send(listCommand);
+    const listedObjects = await getR2().send(listCommand);
 
     if (listedObjects.Contents && listedObjects.Contents.length > 0) {
       for (const obj of listedObjects.Contents) {
         if (obj.Key) {
           const deleteCommand = new DeleteObjectCommand({
-            Bucket: R2_BUCKET_NAME,
+            Bucket: getR2BucketName(),
             Key: obj.Key,
           });
-          await r2.send(deleteCommand);
+          await getR2().send(deleteCommand);
         }
       }
     }
@@ -94,6 +105,13 @@ export async function uploadModelImage(formData: FormData) {
 
   const { file, modelId, category, slotIndex } = validation.data;
 
+  // ─── Server-side file size enforcement ───
+  // Client compresses to ~200KB-2MB typically, but we enforce a hard ceiling.
+  const MAX_SERVER_FILE_SIZE = 8 * 1024 * 1024; // 8MB (below bodySizeLimit of 10MB)
+  if (file.size > MAX_SERVER_FILE_SIZE) {
+    return { success: false, error: `Archivo demasiado grande (${(file.size / 1024 / 1024).toFixed(1)}MB). Máximo: ${MAX_SERVER_FILE_SIZE / 1024 / 1024}MB.` };
+  }
+
   try {
     const { error: ownerError } = await supabase.from('models').select('id').eq('id', modelId).single();
     if (ownerError) {
@@ -113,50 +131,77 @@ export async function uploadModelImage(formData: FormData) {
     // 2. Crear nombre de archivo único con timestamp.
     let fileName = `${timestamp}-${baseFileName}`;
     if (category === 'Portada') fileName = `${timestamp}-cover.webp`;
-    else if (category === 'Portfolio') fileName = `${timestamp}-portfolio.webp`;
     else if (category === 'Contraportada' && slotIndex !== undefined) fileName = `${timestamp}-comp_${slotIndex}.webp`;
     else if (category === 'PortfolioGallery') fileName = `${timestamp}-gallery.webp`;
 
     const fullPath = `${modelId}/${category}/${fileName}`;
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    // 3. Subir el nuevo archivo a R2
-    await r2.send(new PutObjectCommand({
-      Bucket: R2_BUCKET_NAME,
+    // 3. Generate blur hash placeholder (non-blocking — failures don't halt upload)
+    let blurDataURL: string | null = null;
+    try {
+      blurDataURL = await generateBlurDataURL(buffer);
+    } catch (blurErr) {
+      // Blur generation is best-effort; log but continue
+      logError(blurErr, { action: 'uploadModelImage.blurHash', modelId, category });
+    }
+
+    // 4. Subir el nuevo archivo a R2
+    await getR2().send(new PutObjectCommand({
+      Bucket: getR2BucketName(),
       Key: fullPath,
       Body: buffer,
       ContentType: file.type,
       ACL: 'public-read',
     }));
 
-    const publicUrl = `${process.env.R2_PUBLIC_URL}/${fullPath}`;
+    const publicUrl = `${serverEnv.R2_PUBLIC_URL}/${fullPath}`;
 
-    // 4. Actualizar Supabase con el nuevo path
+    // 5. Actualizar Supabase con el nuevo path + blur hash
     let dbError;
     if (category === 'Portada') {
-      const { error } = await supabaseAdmin.from('models').update({ cover_path: fullPath }).eq('id', modelId);
-      dbError = error;
-    } else if (category === 'Portfolio') {
-      const { error } = await supabaseAdmin.from('models').update({ portfolio_path: fullPath }).eq('id', modelId);
+      const { error } = await supabaseAdmin.from('models').update({
+        cover_path: fullPath,
+        cover_blur_hash: blurDataURL,
+      }).eq('id', modelId);
       dbError = error;
     } else if (category === 'Contraportada' && slotIndex !== undefined) {
-      const { data: currentModel, error: fetchError } = await supabaseAdmin.from('models').select('comp_card_paths').eq('id', modelId).single();
+      const { data: currentModel, error: fetchError } = await supabaseAdmin
+        .from('models')
+        .select('comp_card_paths, comp_card_blur_hashes')
+        .eq('id', modelId)
+        .single();
       if (fetchError) throw new Error('No se pudo obtener la galería actual del modelo para actualizar.');
 
       const currentPaths = currentModel?.comp_card_paths || [];
+      const currentBlurs: (string | null)[] = currentModel?.comp_card_blur_hashes || [];
       while (currentPaths.length <= slotIndex) { currentPaths.push(null); }
+      while (currentBlurs.length <= slotIndex) { currentBlurs.push(null); }
       currentPaths[slotIndex] = fullPath;
+      currentBlurs[slotIndex] = blurDataURL;
 
-      const { error } = await supabaseAdmin.from('models').update({ comp_card_paths: currentPaths }).eq('id', modelId);
+      const { error } = await supabaseAdmin.from('models').update({
+        comp_card_paths: currentPaths,
+        comp_card_blur_hashes: currentBlurs,
+      }).eq('id', modelId);
       dbError = error;
     } else if (category === 'PortfolioGallery') {
-      const { data: currentModel, error: fetchError } = await supabaseAdmin.from('models').select('gallery_paths').eq('id', modelId).single();
+      const { data: currentModel, error: fetchError } = await supabaseAdmin
+        .from('models')
+        .select('gallery_paths, gallery_blur_hashes')
+        .eq('id', modelId)
+        .single();
       if (fetchError) throw new Error('No se pudo obtener la galería actual.');
 
       const currentPaths = currentModel?.gallery_paths || [];
+      const currentBlurs: (string | null)[] = currentModel?.gallery_blur_hashes || [];
       currentPaths.push(fullPath);
+      currentBlurs.push(blurDataURL);
 
-      const { error } = await supabaseAdmin.from('models').update({ gallery_paths: currentPaths }).eq('id', modelId);
+      const { error } = await supabaseAdmin.from('models').update({
+        gallery_paths: currentPaths,
+        gallery_blur_hashes: currentBlurs,
+      }).eq('id', modelId);
       dbError = error;
     }
 
@@ -179,21 +224,21 @@ export async function uploadModelImage(formData: FormData) {
  * Lista los archivos de una carpeta en R2 y devuelve el path del primer archivo encontrado.
  * Útil para encontrar imágenes cuando el nombre exacto no se conoce.
  */
-export async function getFirstFileInFolder(modelId: string, category: 'Portada' | 'Portfolio' | 'Contraportada'): Promise<string | null> {
+export async function getFirstFileInFolder(modelId: string, category: 'Portada' | 'Contraportada'): Promise<string | null> {
   const prefix = `${modelId}/${category}/`;
 
-  console.log('[getFirstFileInFolder] Buscando en:', prefix);
+  logger.info('Looking for files in R2', { action: 'getFirstFileInFolder', prefix });
 
   try {
     const listCommand = new ListObjectsV2Command({
-      Bucket: R2_BUCKET_NAME,
+      Bucket: getR2BucketName(),
       Prefix: prefix,
       MaxKeys: 10, // Solo necesitamos los primeros archivos
     });
 
-    const listedObjects = await r2.send(listCommand);
+    const listedObjects = await getR2().send(listCommand);
 
-    console.log('[getFirstFileInFolder] Objetos encontrados:', listedObjects.Contents?.length || 0);
+    logger.info('R2 listing', { action: 'getFirstFileInFolder', prefix, found: listedObjects.Contents?.length ?? 0 });
 
     if (listedObjects.Contents && listedObjects.Contents.length > 0) {
       // Ordenar por LastModified descendente para obtener el más reciente
@@ -206,15 +251,15 @@ export async function getFirstFileInFolder(modelId: string, category: 'Portada' 
         });
 
       if (sortedObjects.length > 0 && sortedObjects[0].Key) {
-        console.log('[getFirstFileInFolder] Archivo encontrado:', sortedObjects[0].Key);
+        logger.info('File found in R2', { action: 'getFirstFileInFolder', key: sortedObjects[0].Key });
         return sortedObjects[0].Key;
       }
     }
 
-    console.log('[getFirstFileInFolder] No se encontraron archivos para prefix:', prefix);
+    logger.info('No files found in R2', { action: 'getFirstFileInFolder', prefix });
     return null;
   } catch (err) {
-    console.error('[getFirstFileInFolder] Error crítico en listOperation:', err);
+    logger.fromError(err, { action: 'getFirstFileInFolder', modelId, category, prefix });
     logError(err, {
       action: 'getFirstFileInFolder',
       modelId,
@@ -226,7 +271,7 @@ export async function getFirstFileInFolder(modelId: string, category: 'Portada' 
 }
 
 
-export async function deleteModelImage(modelId: string, filePath: string, category: 'Portada' | 'Portfolio' | 'Contraportada' | 'PortfolioGallery', slotIndex?: number) {
+export async function deleteModelImage(modelId: string, filePath: string, category: 'Portada' | 'Contraportada' | 'PortfolioGallery', slotIndex?: number) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
@@ -243,38 +288,62 @@ export async function deleteModelImage(modelId: string, filePath: string, catego
     // --- Lógica de borrado ---
 
     // 1. Eliminar de R2
-    await r2.send(new DeleteObjectCommand({
-      Bucket: R2_BUCKET_NAME,
+    await getR2().send(new DeleteObjectCommand({
+      Bucket: getR2BucketName(),
       Key: filePath,
     }));
 
-    // 2. Eliminar referencia de Supabase
+    // 2. Eliminar referencia de Supabase (including blur hashes)
     let error;
     if (category === 'Portada') {
-      const { error: updateError } = await supabaseAdmin.from('models').update({ cover_path: null }).eq('id', modelId);
-      error = updateError;
-    } else if (category === 'Portfolio') {
-      const { error: updateError } = await supabaseAdmin.from('models').update({ portfolio_path: null }).eq('id', modelId);
+      const { error: updateError } = await supabaseAdmin.from('models').update({
+        cover_path: null,
+        cover_blur_hash: null,
+      }).eq('id', modelId);
       error = updateError;
     } else if (category === 'Contraportada' && slotIndex !== undefined) {
-      const { data: currentModel, error: fetchError } = await supabaseAdmin.from('models').select('comp_card_paths').eq('id', modelId).single();
+      const { data: currentModel, error: fetchError } = await supabaseAdmin
+        .from('models')
+        .select('comp_card_paths, comp_card_blur_hashes')
+        .eq('id', modelId)
+        .single();
       if (fetchError) throw new Error('No se pudo obtener la galería actual del modelo para eliminar');
 
       const currentPaths = currentModel?.comp_card_paths || [];
+      const currentBlurs: (string | null)[] = currentModel?.comp_card_blur_hashes || [];
       if (slotIndex >= 0 && slotIndex < currentPaths.length) {
         currentPaths[slotIndex] = null;
       }
+      if (slotIndex >= 0 && slotIndex < currentBlurs.length) {
+        currentBlurs[slotIndex] = null;
+      }
 
-      const { error: updateError } = await supabaseAdmin.from('models').update({ comp_card_paths: currentPaths }).eq('id', modelId);
+      const { error: updateError } = await supabaseAdmin.from('models').update({
+        comp_card_paths: currentPaths,
+        comp_card_blur_hashes: currentBlurs,
+      }).eq('id', modelId);
       error = updateError;
     } else if (category === 'PortfolioGallery') {
-      const { data: currentModel, error: fetchError } = await supabaseAdmin.from('models').select('gallery_paths').eq('id', modelId).single();
+      const { data: currentModel, error: fetchError } = await supabaseAdmin
+        .from('models')
+        .select('gallery_paths, gallery_blur_hashes')
+        .eq('id', modelId)
+        .single();
       if (fetchError) throw new Error('No se pudo obtener la galería actual.');
 
-      let currentPaths: string[] = currentModel?.gallery_paths || [];
-      currentPaths = currentPaths.filter(p => p !== filePath);
+      const currentPaths: string[] = currentModel?.gallery_paths || [];
+      const currentBlurs: (string | null)[] = currentModel?.gallery_blur_hashes || [];
+      // Find index of the path being deleted to remove its blur hash too
+      const deleteIdx = currentPaths.indexOf(filePath);
+      const filteredPaths = currentPaths.filter(p => p !== filePath);
+      const filteredBlurs = deleteIdx >= 0
+        ? currentBlurs.filter((_, i) => i !== deleteIdx)
+        : currentBlurs;
 
-      const { error: updateError } = await supabaseAdmin.from('models').update({ gallery_paths: currentPaths }).eq('id', modelId);
+      const { error: updateError } = await supabaseAdmin.from('models').update({
+        gallery_paths: filteredPaths,
+        gallery_blur_hashes: filteredBlurs,
+      }).eq('id', modelId);
       error = updateError;
     }
 
@@ -327,11 +396,11 @@ export async function cleanupOrphanedGalleryPaths(modelId: string) {
     // En vez de HEAD cada uno (más lento), listamos la carpeta de galería
     const prefix = `${modelId}/PortfolioGallery/`;
     const listCommand = new ListObjectsV2Command({
-      Bucket: R2_BUCKET_NAME,
+      Bucket: getR2BucketName(),
       Prefix: prefix,
       MaxKeys: 1000,
     });
-    const listedObjects = await r2.send(listCommand);
+    const listedObjects = await getR2().send(listCommand);
 
     // Crear un Set de paths que existen en R2
     const existingPaths = new Set(

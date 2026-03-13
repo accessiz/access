@@ -1,4 +1,4 @@
-import type { FinanceSummaryItem } from '@/app/dashboard/finances/page';
+import type { FinanceSummaryItem } from '@/app/(dashboard)/dashboard/finances/page';
 
 export interface ProjectGroup {
     project_id: string;

@@ -69,10 +69,12 @@ export const PROJECT_TYPES: { value: ProjectType; label: string }[] = [
 export interface Model extends DbModel {
   id: string;
   coverUrl?: string | null;
-  portfolioUrl?: string | null;
+  coverBlurHash?: string | null;
   compCardUrls?: (string | null)[];
+  compCardBlurHashes?: (string | null)[];
   galleryPaths?: string[] | null;
   galleryUrls?: string[];
+  galleryBlurHashes?: (string | null)[];
 
 
   // Campos de la relación projects_models

@@ -1,5 +1,5 @@
 import { Clock, CheckCircle2, AlertCircle, XCircle, Receipt } from 'lucide-react';
-import type { PaymentStatus, ClientPaymentStatus } from '@/app/dashboard/finances/page';
+import type { PaymentStatus, ClientPaymentStatus } from '@/app/(dashboard)/dashboard/finances/page';
 
 export type PaymentStatusConfig = {
     label: string;

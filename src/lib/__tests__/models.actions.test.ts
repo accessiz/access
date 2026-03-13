@@ -73,11 +73,13 @@ describe('Model Server Actions', () => {
         it('should accept valid gender values', () => {
             const validMale = {
                 full_name: 'Test Model',
+                alias: 'TestM',
                 phone_e164: '+15551234567',
                 gender: 'Male',
             };
             const validFemale = {
                 full_name: 'Test Model',
+                alias: 'TestF',
                 phone_e164: '+15551234567',
                 gender: 'Female',
             };
@@ -101,6 +103,7 @@ describe('Model Server Actions', () => {
         it('should allow optional fields to be null or empty', () => {
             const minimalData = {
                 full_name: 'Test Model',
+                alias: 'TestMin',
                 phone_e164: '+15551234567',
                 email: null,
                 country: null,

@@ -1,3 +1,12 @@
+/**
+ * @module utils
+ *
+ * Core utility functions used across the application.
+ * - `cn()` — Tailwind class merging (clsx + tailwind-merge)
+ * - `toTitleCase()` — Spanish-aware title casing
+ * - `toPublicUrl()` — R2 relative path → full public URL
+ * - `mediaUrl()` — Legacy alias (returns `undefined` instead of `null`)
+ */
 import { clsx, type ClassValue } from "clsx"
 import { extendTailwindMerge } from "tailwind-merge"
 
@@ -46,21 +55,35 @@ export function toTitleCase(str: string | null | undefined): string {
 
 import { R2_PUBLIC_URL } from '@/lib/constants';
 
-export function mediaUrl(url: string | null | undefined): string | undefined {
-  if (!url) return undefined;
+/**
+ * Converts a relative R2 storage path to its full public URL.
+ * Returns `null` if no path is provided.
+ */
+export function toPublicUrl(path: string | null | undefined): string | null {
+  if (!path) return null;
 
-  // Si ya es una URL absoluta (http/https), la devolvemos tal cual
-  if (url.startsWith('http://') || url.startsWith('https://')) {
-    return url;
+  // Si ya es una URL completa de R2 o externa, la devolvemos tal cual
+  if (path.startsWith('http://') || path.startsWith('https://')) return path;
+
+  // Si no hay R2_PUBLIC_URL definido, estamos en problemas para descargas directas
+  if (!R2_PUBLIC_URL) {
+    console.warn('[toPublicUrl] R2_PUBLIC_URL is not defined. Falling back to relative path:', path);
+    return path.startsWith('/') ? path : `/${path}`;
   }
 
-  // Si no hay R2_PUBLIC_URL configurada, devolvemos la url tal cual (fallback)
-  if (!R2_PUBLIC_URL) return url;
+  // Limpiar el path: si viene con el prefijo del proxy antiguo o el bucket de supabase, lo quitamos
+  let cleanPath = path.toString()
+    .replace(/^\/?api\/media\//, '')
+    .replace(/^\/?storage\/v1\/object\/public\/[^\/]+\//, '')
+    .replace(/^\//, '');
+  
+  const base = R2_PUBLIC_URL.replace(/\/$/, '');
+  const finalUrl = `${base}/${cleanPath}`;
+  
+  return finalUrl;
+}
 
-  // Si es un path relativo, le pegamos la URL de R2
-  // Aseguramos que no haya doble slash
-  const baseUrl = R2_PUBLIC_URL.replace(/\/$/, '');
-  const cleanPath = url.replace(/^\//, '');
-
-  return `${baseUrl}/${cleanPath}`;
+/** @deprecated Use `toPublicUrl()` instead. Thin wrapper kept for backward-compat. */
+export function mediaUrl(url: string | null | undefined): string | undefined {
+  return toPublicUrl(url) ?? undefined;
 }

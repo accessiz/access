@@ -30,7 +30,7 @@ import {
 
 import { createClient } from '@/lib/supabase/client';
 import { Brand } from '@/lib/types';
-import { ClientWithBrands } from '@/app/dashboard/clients/page';
+import { ClientWithBrands } from '@/app/(dashboard)/dashboard/clients/page';
 import { toTitleCase } from '@/lib/utils';
 
 // Schema de validación con Zod

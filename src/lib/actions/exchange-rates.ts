@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { fetchCurrentRate } from '@/lib/utils/currency';
+import { logError } from '@/lib/utils/errors';
 
 /**
  * Get today's exchange rate, caching it in the database
@@ -45,7 +46,7 @@ export async function getExchangeRate(): Promise<{
 
         return { success: true, rate };
     } catch (error) {
-        console.error('Error getting exchange rate:', error);
+        logError(error, { action: 'getExchangeRate' });
         return {
             success: false,
             error: 'No se pudo obtener la tasa de cambio'
@@ -78,7 +79,7 @@ export async function updateTodayRate(): Promise<{
 
         return { success: true, rate };
     } catch (error) {
-        console.error('Error updating exchange rate:', error);
+        logError(error, { action: 'updateTodayRate' });
         return {
             success: false,
             error: error instanceof Error ? error.message : 'Unknown error'
@@ -124,7 +125,7 @@ export async function getHistoricalRate(date: string): Promise<{
         // No historical data, return current rate
         return await getExchangeRate();
     } catch (error) {
-        console.error('Error getting historical rate:', error);
+        logError(error, { action: 'getHistoricalRate', date });
         return {
             success: false,
             error: 'No se encontró tasa histórica'

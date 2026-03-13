@@ -4,10 +4,10 @@ import Link from 'next/link';
 
 // ✅ INICIO DEL CAMBIO
 const headerStyles = {
-    header: "relative flex flex-col gap-[var(--md-sys-spacing-md)] w-full",
+    header: "relative flex flex-col gap-4 w-full",
     // Aplicamos clases de Tailwind directamente para la responsividad
-    nav: "w-full flex flex-col items-center gap-4 text-label uppercase sm:flex-row sm:justify-between",
-    line: "w-full h-[1px] bg-[var(--md-sys-color-on-background)] origin-left",
+    nav: "w-full flex flex-col items-center gap-4 text-label uppercase sm:flex-row sm:justify-between z-10",
+    line: "w-full h-[1px] bg-current origin-left z-10",
 };
 // ✅ FIN DEL CAMBIO
 

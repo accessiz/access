@@ -16,7 +16,7 @@ import { MonthSelect, type MonthValue } from '@/components/molecules/MonthSelect
 import { getBirthdaysByMonth, getTodayBirthdays, BirthdayModel } from '@/lib/actions/birthdays'
 import Link from 'next/link'
 import { SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar'
-import { R2_PUBLIC_URL } from '@/lib/constants'
+import { toPublicUrl } from '@/lib/utils'
 
 const MONTHS = [
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -33,12 +33,6 @@ function getCurrentMonthInGuatemala(): number {
 
     const month = Number(monthStr)
     return month >= 1 && month <= 12 ? month : new Date().getMonth() + 1
-}
-
-// CORS habilitado en R2 - servir directamente sin proxy
-const mediaUrl = (path: string | null): string | null => {
-    if (!path || !R2_PUBLIC_URL) return null
-    return `${R2_PUBLIC_URL}/${path}`
 }
 
 // Helper para calcular edad
@@ -74,7 +68,7 @@ function BirthdayCard({ model, isToday }: BirthdayCardProps) {
             className={`flex items-center gap-3 p-3 rounded-lg transition-colors hover:bg-hover-overlay ${isToday ? 'bg-primary/10 border border-primary/20' : ''}`}
         >
             <Avatar className="h-10 w-10">
-                <AvatarImage src={mediaUrl(model.cover_path) || undefined} alt={name} />
+                <AvatarImage src={toPublicUrl(model.cover_path) || undefined} alt={name} />
                 <AvatarFallback>
                     <User className="h-4 w-4" />
                 </AvatarFallback>

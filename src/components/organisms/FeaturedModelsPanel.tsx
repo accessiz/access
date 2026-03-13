@@ -10,9 +10,8 @@ import { toast } from 'sonner'
 import { Plus, X, Star, Search, Loader2, User, Layers, Venus, Mars, VenusAndMars } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { getFeaturedModels, addFeaturedModel, removeFeaturedModel, FeaturedModel } from '@/lib/actions/featured-models'
-import { cn } from '@/lib/utils'
+import { cn, toPublicUrl } from '@/lib/utils'
 import { SegmentedControl } from '@/components/molecules/SegmentedControl'
-import { R2_PUBLIC_URL } from '@/lib/constants'
 
 type Model = {
     id: string
@@ -30,12 +29,6 @@ interface FeaturedModelsPanelProps {
     allModels: Model[]
     topApprovedModelIds?: string[]
     className?: string
-}
-
-// CORS habilitado en R2 - servir directamente sin proxy
-function mediaUrl(path: string | null): string | null {
-    if (!path || !R2_PUBLIC_URL) return null
-    return `${R2_PUBLIC_URL}/${path}`
 }
 
 export function FeaturedModelsPanel({ allModels, topApprovedModelIds = [], className }: FeaturedModelsPanelProps) {
@@ -185,7 +178,7 @@ export function FeaturedModelsPanel({ allModels, topApprovedModelIds = [], class
                                         className="flex items-center gap-3 p-4 hover:bg-hover-overlay transition-colors w-full"
                                     >
                                         <Avatar className="h-10 w-10 shrink-0">
-                                            <AvatarImage src={mediaUrl(model.cover_path) || undefined} />
+                                            <AvatarImage src={toPublicUrl(model.cover_path) || undefined} />
                                             <AvatarFallback>
                                                 <User className="h-5 w-5" />
                                             </AvatarFallback>
@@ -261,7 +254,7 @@ export function FeaturedModelsPanel({ allModels, topApprovedModelIds = [], class
                                         </span>
 
                                         <Avatar className="h-10 w-10 shrink-0">
-                                            <AvatarImage src={mediaUrl(item.models?.cover_path) || undefined} />
+                                            <AvatarImage src={toPublicUrl(item.models?.cover_path) || undefined} />
                                             <AvatarFallback>
                                                 <User className="h-5 w-5" />
                                             </AvatarFallback>

@@ -3,18 +3,8 @@ import { es } from 'date-fns/locale';
 
 export const GUATEMALA_TIME_ZONE = 'America/Guatemala';
 
-/**
- * Formats a number as currency (GTQ or USD)
- */
-export function formatCurrency(amount: number | null, currency: string = 'GTQ'): string {
-    if (amount === null || amount === undefined) return '-';
-    return new Intl.NumberFormat('es-GT', {
-        style: 'currency',
-        currency: currency,
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 2,
-    }).format(amount);
-}
+// Re-export the canonical formatCurrency so existing imports keep working
+export { formatCurrency } from '@/lib/utils/currency';
 
 /**
  * Formats a date range for display

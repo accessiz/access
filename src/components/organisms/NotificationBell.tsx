@@ -43,20 +43,28 @@ export default function NotificationBell({ showDotOnly = true }: { showDotOnly?:
   return (
     <Popover onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon">
-          <Bell />
-          {unseen > 0 && showDotOnly && <span className="absolute -top-0.5 -right-0.5 inline-block h-2 w-2 rounded-full bg-destructive animate-pulse" />}
-          {unseen > 0 && !showDotOnly && <span className="absolute -top-0.5 -right-0.5 inline-flex items-center justify-center rounded-full bg-destructive text-label text-white px-1">{unseen}</span>}
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label={unseen > 0 ? `${unseen} notificaciones nuevas` : "Notificaciones"}
+        >
+          <Bell aria-hidden="true" />
+          {unseen > 0 && showDotOnly && <span className="absolute -top-0.5 -right-0.5 inline-block h-2 w-2 rounded-full bg-destructive animate-pulse" aria-hidden="true" />}
+          {unseen > 0 && !showDotOnly && <span className="absolute -top-0.5 -right-0.5 inline-flex items-center justify-center rounded-full bg-destructive text-label text-white px-1" aria-hidden="true">{unseen}</span>}
+          {/* Screen-reader live region for notification count */}
+          <span className="sr-only" role="status" aria-live="polite">
+            {unseen > 0 ? `${unseen} notificaciones sin leer` : "Sin notificaciones nuevas"}
+          </span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent side="bottom" align="end" className="w-80" onOpenAutoFocus={() => { }}>
+      <PopoverContent side="bottom" align="end" className="w-80" aria-labelledby="notifications-title">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-body font-medium">Notificaciones</h3>
+          <h3 id="notifications-title" className="text-body font-medium">Notificaciones</h3>
           {notifications.length > 0 && (
-            <Button variant="ghost" size="sm" onClick={markAllSeen}><Check className="mr-2 h-3 w-3" />Marcar vistas</Button>
+            <Button variant="ghost" size="sm" onClick={markAllSeen} aria-label="Marcar todas las notificaciones como vistas"><Check className="mr-2 h-3 w-3" aria-hidden="true" />Marcar vistas</Button>
           )}
         </div>
-        <ul className="space-y-2 max-h-64 overflow-auto">
+        <ul className="space-y-2 max-h-64 overflow-auto" aria-label="Lista de notificaciones" aria-live="polite">
           {notifications.slice(0, 20).map(n => (
             <li key={n.id} className="text-body py-2 border-b last:border-0">
               <div className="font-medium">{n.title}</div>

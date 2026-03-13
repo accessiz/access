@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
+import Image from 'next/image';
 import { gsap } from 'gsap';
 import Header from '@/components/organisms/Header';
 import InfoFooter from '@/components/molecules/InfoFooter';
@@ -11,7 +12,6 @@ interface HeroProps {
 const Hero: React.FC<HeroProps> = ({ onAnimationComplete }) => {
   const [time, setTime] = useState('');
   const heroRef = useRef<HTMLElement>(null);
-  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     const updateClock = () => {
@@ -27,47 +27,71 @@ const Hero: React.FC<HeroProps> = ({ onAnimationComplete }) => {
   }, []);
 
   useLayoutEffect(() => {
-    setIsReady(true);
-    const ctx = gsap.context(() => {
-      const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let fallbackTimer: ReturnType<typeof setTimeout> | undefined;
+    let ctx: ReturnType<typeof gsap.context> | undefined;
 
-      if (prefersReducedMotion) {
-        gsap.set(['.imageMask', '.centerText', '.header-anim', '.footer-anim', '.line'], { autoAlpha: 1 });
-        onAnimationComplete();
-        return;
-      }
+    const revealEverything = () => {
+      gsap.set(['.centerText', '.header-anim', '.footer-anim', '.line'], {
+        autoAlpha: 1,
+        clearProps: 'all',
+      });
+      onAnimationComplete();
+    };
 
-      gsap.set('.imageMask', { clipPath: 'inset(0% 0% 100% 0%)' });
-      gsap.set('.centerText', { autoAlpha: 0, y: 30 });
-      gsap.set(['.header-anim', '.footer-anim'], { autoAlpha: 0, y: -20 });
-      gsap.set('.line', { scaleX: 0 });
+    try {
+      ctx = gsap.context(() => {
+        const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-      const tl = gsap.timeline({ delay: 0.5, onComplete: onAnimationComplete });
+        if (prefersReducedMotion) {
+          revealEverything();
+          return;
+        }
 
-      tl.to(".imageMask", { clipPath: 'inset(0% 0% 0% 0%)', duration: 1.5, ease: 'power3.inOut' })
-        .to(".centerText", { autoAlpha: 1, y: 0, duration: 1.2, ease: 'power3.out' }, "-=0.2")
-        .to(".header-anim", { autoAlpha: 1, y: 0, duration: 0.8, ease: 'power2.out' }, ">-0.4")
-        .to(".line", { scaleX: 1, duration: 1, ease: 'power2.out' }, "<")
-        .to(".footer-anim", { autoAlpha: 1, y: 0, duration: 0.8, ease: 'power2.out' }, ">-0.6");
-    }, heroRef);
+        gsap.set('.centerText', { autoAlpha: 0, y: 30 });
+        gsap.set(['.header-anim', '.footer-anim'], { autoAlpha: 0, y: -20 });
+        gsap.set('.line', { scaleX: 0 });
 
-    return () => ctx.revert();
+        const tl = gsap.timeline({
+          delay: 0.5,
+          onComplete: () => {
+            if (fallbackTimer) clearTimeout(fallbackTimer);
+            onAnimationComplete();
+          },
+        });
+
+        tl.to(".centerText", { autoAlpha: 1, y: 0, duration: 1.2, ease: 'power3.out' })
+          .to(".header-anim", { autoAlpha: 1, y: 0, duration: 0.8, ease: 'power2.out' }, ">-0.4")
+          .to(".line", { scaleX: 1, duration: 1, ease: 'power2.out' }, "<")
+          .to(".footer-anim", { autoAlpha: 1, y: 0, duration: 0.8, ease: 'power2.out' }, ">-0.6");
+      }, heroRef);
+
+      // El timer se acorta ligeramente ya que la imagen no espera 1.5s
+      fallbackTimer = setTimeout(() => {
+        revealEverything();
+      }, 3500);
+    } catch {
+      revealEverything();
+    }
+
+    return () => {
+      if (fallbackTimer) clearTimeout(fallbackTimer);
+      if (ctx) ctx.revert();
+    };
   }, [onAnimationComplete]);
 
   return (
     <section
-      className="h-screen w-full relative overflow-hidden bg-background"
+      className="h-screen w-full relative overflow-hidden bg-[#040404] text-white"
       ref={heroRef}
-      style={{ visibility: isReady ? 'visible' : 'hidden' }}
     >
-      <div className="absolute inset-0 z-1">
-        <img
+      <div className="absolute inset-0 z-0 bg-[#040404]">
+        <Image
           src="/images/hero-photo-cover.jpg"
           alt="Modelo albina con fondo oscuro"
-          className="w-full h-full object-cover object-center will-change-transform opacity-50 imageMask"
-          loading="eager"
-          // @ts-ignore
-          fetchPriority="high"
+          fill
+          sizes="100vw"
+          priority
+          className="object-cover object-center opacity-[0.45] pointer-events-none"
         />
       </div>
 
@@ -75,7 +99,7 @@ const Hero: React.FC<HeroProps> = ({ onAnimationComplete }) => {
         <div className="header-anim"><Header /></div>
 
         <div className="grid place-items-center">
-          <h1 className="text-display font-normal tracking-tighter whitespace-nowrap leading-none text-on-background z-12 mix-blend-difference centerText">
+          <h1 className="text-display font-normal tracking-tighter whitespace-nowrap leading-none text-white z-12 mix-blend-difference centerText">
             IZ ACCESS
           </h1>
         </div>

@@ -1,16 +1,12 @@
 {
   "servers": {
-    "supabase": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@supabase/mcp-server-supabase@latest",
-        "--project-ref",
-        "zfrmsomlfhfahcxlvykz"
-      ],
-      "env": {
-        "SUPABASE_ACCESS_TOKEN": "sbp_7a79c678b0682df16b92fbee9281fda04439cb46"
-      }
+    "supabase_new": {
+      "type": "http",
+      "url": "https://mcp.supabase.com/mcp?project_ref=wsxheefrjomkmhykyoxv"
+    },
+    "supabase_old": {
+      "type": "http",
+      "url": "https://mcp.supabase.com/mcp?project_ref=zfrmsomlfhfahcxlvykz"
     },
     "cloudflare": {
       "type": "sse",

@@ -1,0 +1,297 @@
+'use client';
+
+import { useMemo, useCallback, useTransition } from 'react';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+import Link from 'next/link';
+import Image from 'next/image';
+import { Model } from '@/lib/types';
+import { toast } from "sonner";
+import { ArrowUp, ArrowDown, Download, ExternalLink, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+// CORRECCIÓN: Importar la constante directamente
+import { R2_PUBLIC_URL } from '@/lib/constants';
+
+import { Card } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ModelsToolbar } from '@/components/organisms/ModelsToolbar';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from "@/components/ui/pagination";
+import { Progress } from "@/components/ui/progress";
+
+const PAGE_SIZE = 24;
+
+type ModelWithCover = Model & { coverUrl?: string | null };
+
+type InitialData = {
+  models: ModelWithCover[];
+  count: number;
+  countries: string[];
+};
+
+// El cliente recibe los datos listos para renderizar
+export default function ModelsClientPage({ initialData }: { initialData: InitialData }) {
+  const { models, count, countries } = initialData;
+
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+
+  // useTransition for non-blocking UI updates during navigation
+  const [isPending, startTransition] = useTransition();
+
+  const view = searchParams.get('view') || 'list';
+  const currentPage = Number(searchParams.get('page')) || 1;
+  const totalPages = Math.ceil(count / PAGE_SIZE);
+
+  const sortConfig = useMemo(() => ({
+    key: (searchParams.get('sort') as keyof Model) || 'alias',
+    direction: (searchParams.get('dir') as 'asc' | 'desc') || 'asc',
+  }), [searchParams]);
+
+  // Wrap navigation in startTransition for non-blocking updates
+  const handleSort = useCallback((key: keyof Model) => {
+    const params = new URLSearchParams(searchParams);
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    params.set('sort', key);
+    params.set('dir', direction);
+    params.set('page', '1');
+    startTransition(() => {
+      router.replace(`${pathname}?${params.toString()}`);
+    });
+  }, [searchParams, sortConfig, pathname, router]);
+
+  const handleRowClick = (modelId: string) => router.push(`/dashboard/models/${modelId}`);
+
+  const createPageURL = (pageNumber: number | string) => {
+    const params = new URLSearchParams(searchParams);
+    params.set('page', pageNumber.toString());
+    return `${pathname}?${params.toString()}`;
+  };
+
+  const paginationItems = useMemo(() => {
+    type PageItem = number | '...' | 'skip';
+    const items: PageItem[] = [];
+    const pagesToShow = 3;
+    const halfPages = Math.floor(pagesToShow / 2);
+
+    if (totalPages <= pagesToShow + 2) {
+      for (let i = 1; i <= totalPages; i++) items.push(i);
+    } else {
+      items.push(1);
+      if (currentPage > halfPages + 2) items.push('...');
+      let startPage = Math.max(2, currentPage - halfPages);
+      let endPage = Math.min(totalPages - 1, currentPage + halfPages);
+      if (currentPage < halfPages + 2) {
+        endPage = Math.min(totalPages - 1, pagesToShow + 1);
+      }
+      if (currentPage > totalPages - halfPages - 1) {
+        startPage = Math.max(2, totalPages - pagesToShow);
+      }
+      for (let i = startPage; i <= endPage; i++) items.push(i);
+      if (currentPage < totalPages - halfPages - 1) items.push('...');
+      items.push(totalPages);
+    }
+
+    const cleanedItems: PageItem[] = [];
+    items.forEach((item, index) => {
+      if (item === '...' && items[index - 1] === '...') return;
+      else if (item === '...') {
+        const prevItem = items[index - 1];
+        const nextItem = items[index + 1];
+        if (typeof prevItem === 'number' && typeof nextItem === 'number' && nextItem === prevItem + 1) {
+          cleanedItems.push(nextItem);
+          items[index + 1] = 'skip';
+        } else {
+          cleanedItems.push(item);
+        }
+      } else if (item !== 'skip') {
+        cleanedItems.push(item);
+      }
+    });
+
+    return cleanedItems;
+  }, [currentPage, totalPages]);
+
+  const SortableHeader = ({ tkey, label }: { tkey: keyof Model; label: string; }) => (
+    <TableHead onClick={() => handleSort(tkey)} className="cursor-pointer hover:text-foreground transition-colors">
+      <div className="flex items-center gap-x-2 gap-y-2">
+        {label}
+        {sortConfig.key === tkey && (
+          sortConfig.direction === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+        )}
+      </div>
+    </TableHead>
+  );
+
+  const renderContent = () => {
+    if (models.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center text-center h-full py-20 rounded-lg border border-dashed">
+          <p className="text-title">No se encontraron modelos</p>
+          <p className="text-body text-muted-foreground">Intenta ajustar los filtros o la búsqueda.</p>
+        </div>
+      );
+    }
+
+    if (view === 'grid') {
+      return (
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-x-4 gap-y-4">
+          {models.map((model) => (
+            <Card key={model.id} onClick={() => handleRowClick(model.id)} className="cursor-pointer hover:border-primary transition-colors group overflow-hidden">
+              <div className="aspect-3/4 relative bg-muted">
+                {/* Usamos next/image para que Next rescaele la imagen automáticamente al tamaño del grid */}
+                <Image 
+                  src={model.coverUrl || `${R2_PUBLIC_URL}/${model.id}/Portada/cover.webp`}
+                  alt={model.alias || 'Model'}
+                  fill
+                  sizes="(max-width: 640px) 33vw, (max-width: 1024px) 25vw, 12vw"
+                  className="object-cover group-hover:scale-105 transition-transform duration-300"
+                  priority={models.indexOf(model) < 8} // Priorizar las primeras imágenes
+                />
+              </div>
+              <div className="p-3">
+                <p className="text-body font-semibold truncate">{model.alias}</p>
+                <p className="text-body text-muted-foreground">{model.country}</p>
+              </div>
+            </Card>
+          ))}
+        </div>
+      );
+    }
+
+    return (
+      <div className="border rounded-lg">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-20"></TableHead>
+              <SortableHeader tkey="alias" label="Alias" />
+              <SortableHeader tkey="country" label="País" />
+              <SortableHeader tkey="height_cm" label="Estatura" />
+              <TableHead>Instagram</TableHead>
+              <TableHead>TikTok</TableHead>
+              <TableHead>Perfil</TableHead>
+              <TableHead className="text-right">Acciones</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {models.map((model) => (
+              <TableRow key={model.id} onClick={() => handleRowClick(model.id)} className="cursor-pointer cv-auto-sm">
+                {/* CORRECCIÓN: Usar la constante R2_PUBLIC_URL para el fallback */}
+                <TableCell>
+                  <div className="h-10 w-10 relative overflow-hidden rounded-full bg-muted">
+                    <Image 
+                      src={model.coverUrl || `${R2_PUBLIC_URL}/${model.id}/Portada/cover.webp`}
+                      alt={model.alias || ''}
+                      width={40}
+                      height={40}
+                      className="object-cover h-full w-full"
+                    />
+                  </div>
+                </TableCell>
+                <TableCell className="font-medium">{model.alias}</TableCell>
+                <TableCell>{model.country}</TableCell>
+                <TableCell>{model.height_cm ? `${model.height_cm} cm` : '-'}</TableCell>
+                <TableCell>{model.instagram ? <Link href={`https://instagram.com/${model.instagram}`} target="_blank" onClick={(e) => e.stopPropagation()} className="flex items-center gap-x-1.5 gap-y-1.5 hover:underline text-muted-foreground hover:text-foreground">@{model.instagram} <ExternalLink className="h-3.5 w-3.5" /></Link> : '-'}</TableCell>
+                <TableCell>{model.tiktok ? <Link href={`https://tiktok.com/@${model.tiktok}`} target="_blank" onClick={(e) => e.stopPropagation()} className="flex items-center gap-x-1.5 gap-y-1.5 hover:underline text-muted-foreground hover:text-foreground">@{model.tiktok} <ExternalLink className="h-3.5 w-3.5" /></Link> : '-'}</TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-x-2 gap-y-2">
+                    <Progress value={model.profile_completeness || 0} className="w-20 h-1.5" />
+                    <span className="text-label text-muted-foreground">{`${Math.round(model.profile_completeness || 0)}%`}</span>
+                  </div>
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end">
+                    <Download className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" onClick={(e) => { e.stopPropagation(); toast.info('Próximamente'); }} />
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    );
+  };
+
+  return (
+    <div className={cn("flex flex-col pt-4 pb-6 md:h-full md:overflow-hidden", isPending && "opacity-70 pointer-events-none")}>
+      {/* Loading indicator for pending transitions */}
+      {isPending && (
+        <div className="fixed top-4 right-4 z-50 flex items-center gap-2 bg-background/80 backdrop-blur-sm px-3 py-2 rounded-md border shadow-sm">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span className="text-label">Actualizando...</span>
+        </div>
+      )}
+
+      <div className="shrink-0 mb-6">
+        <ModelsToolbar countries={countries} />
+      </div>
+
+      <div className="flex-1 min-h-0 overflow-y-auto pr-1">
+        <div className="pb-6">
+          {renderContent()}
+        </div>
+      </div>
+
+      {totalPages > 1 && (
+        <footer className="shrink-0 flex flex-col items-center gap-x-4 gap-y-4 pt-4 border-t w-full sm:flex-row sm:justify-between">
+          <div className="w-full sm:flex-1">
+            <Pagination>
+              <PaginationContent className="flex justify-center sm:justify-start w-full">
+                <PaginationItem>
+                  <PaginationPrevious
+                    href={createPageURL(currentPage - 1)}
+                    className={cn(
+                      currentPage <= 1 ? "pointer-events-none opacity-50" : "",
+                      "px-2.5"
+                    )}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    <span className="hidden sm:inline">Anterior</span>
+                  </PaginationPrevious>
+                </PaginationItem>
+
+                <div className="hidden sm:flex">
+                  {paginationItems.map((page, index) => (
+                    <PaginationItem key={index}>
+                      {page === "..." ? (
+                        <PaginationEllipsis />
+                      ) : (
+                        <PaginationLink
+                          href={createPageURL(page as number)}
+                          isActive={currentPage === page}
+                        >
+                          {page}
+                        </PaginationLink>
+                      )}
+                    </PaginationItem>
+                  ))}
+                </div>
+
+                <PaginationItem>
+                  <PaginationNext
+                    href={createPageURL(currentPage + 1)}
+                    className={cn(
+                      currentPage >= totalPages ? "pointer-events-none opacity-50" : "",
+                      "px-2.5"
+                    )}
+                  >
+                    <span className="hidden sm:inline">Siguiente</span>
+                    <ChevronRight className="h-4 w-4" />
+                  </PaginationNext>
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
+
+          <div className="text-body text-muted-foreground whitespace-nowrap sm:ml-4">
+            Página {currentPage} de {totalPages}
+          </div>
+        </footer>
+      )}
+    </div>
+  );
+}

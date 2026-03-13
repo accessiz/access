@@ -1,8 +1,12 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { logError } from '@/lib/utils/errors';
+import { applyRateLimit, apiLimiter, strictLimiter } from '@/lib/utils/rate-limit';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+    const blocked = applyRateLimit(req, apiLimiter);
+    if (blocked) return blocked;
+
     try {
         const supabase = await createClient();
         const { data: { user } } = await supabase.auth.getUser();
@@ -48,7 +52,10 @@ export async function GET() {
 }
 
 // DELETE: Mark all notifications as read
-export async function DELETE() {
+export async function DELETE(req: NextRequest) {
+    const blocked = applyRateLimit(req, strictLimiter);
+    if (blocked) return blocked;
+
     try {
         const supabase = await createClient();
         const { data: { user } } = await supabase.auth.getUser();

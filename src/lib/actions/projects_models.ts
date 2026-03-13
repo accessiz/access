@@ -1,17 +1,12 @@
 'use server'
 
-// --- ¡CAMBIOS IMPORTANTES DE IMPORTACIÓN! ---
-// Usamos el nuevo paquete 'ssr' y 'cookies'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
-// -------------------------------------------
-
 import { revalidatePath } from "next/cache"
 import { z } from 'zod';
 import { logError } from '@/lib/utils/errors';
 import { PostgrestError } from '@supabase/supabase-js';
 import { logActivity } from '@/lib/activity-logger';
 import { ActivityTitles } from '@/lib/activity-titles';
+import { createSupabaseServerActionClient } from '@/lib/supabase/server-action';
 
 // --- Tus helpers de errores (Estos están perfectos) ---
 const isPostgrestError = (error: unknown): error is PostgrestError => {
@@ -27,30 +22,6 @@ const mapProjectModelDbError = (error: PostgrestError): { message: string } => {
   }
   return { message: 'Ocurrió un error inesperado en la base de datos al gestionar la relación.' };
 };
-
-// --- Función Helper para crear el cliente (LA PARTE CLAVE CORREGIDA) ---
-// 1. La función ahora es 'async'
-const createSupabaseServerActionClient = async () => {
-  // 2. Usamos 'await' para obtener las cookies
-  const cookieStore = await cookies()
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value
-        },
-        set(name: string, value: string, options) {
-          cookieStore.set({ name, value, ...options })
-        },
-        remove(name: string, options) {
-          cookieStore.set({ name, value: '', ...options })
-        },
-      },
-    }
-  )
-}
 
 
 // --- Acción: addModelToProject (Actualizada) ---

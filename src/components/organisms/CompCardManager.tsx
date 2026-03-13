@@ -1,17 +1,18 @@
 
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { UploadCloud, Trash2, Loader2 } from 'lucide-react';
-import { cn, mediaUrl } from '@/lib/utils';
+import { cn, toPublicUrl } from '@/lib/utils';
 import { toast } from 'sonner';
 import { Label } from '@/components/ui/label';
 import { uploadModelImage, deleteModelImage, cleanupOrphanedGalleryPaths } from '@/lib/actions/storage';
+import { compressForDisplay, compressForPrint } from '@/lib/utils/image';
 import { ImageCropDialog } from './ImageCropDialog';
 import { Model } from '@/lib/types';
-import { CompCardPrintTemplate } from '@/app/dashboard/models/[id]/_components/CompCardPrintTemplate';
+import { CompCardPrintTemplate } from '@/app/(dashboard)/dashboard/models/[id]/_components/CompCardPrintTemplate';
 import { R2_PUBLIC_URL } from '@/lib/constants';
 import {
     DropdownMenu,
@@ -19,10 +20,9 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { toJpeg, toPng } from 'html-to-image';
-import { jsPDF } from 'jspdf';
-import JSZip from 'jszip';
-import { AlertCircle, ChevronDown, Download, ExternalLink, FileType, Layers, RefreshCw } from 'lucide-react';
+// Dynamic imports — loaded only when user clicks Download (~430KB saved from initial bundle)
+// html-to-image, jspdf, jszip are imported lazily in handleDownloadCompCard()
+import { AlertCircle, ChevronDown, ChevronLeft, ChevronRight, Download, FileType, Layers, RefreshCw, X as CloseIcon } from 'lucide-react';
 import {
     Select,
     SelectContent,
@@ -36,10 +36,8 @@ interface CompCardManagerProps {
     model: Model;
     modelId: string;
     initialCoverUrl?: string | null;
-    initialPortfolioUrl?: string | null;
     initialCompCardUrls?: (string | null)[];
     initialCoverPath?: string | null;
-    initialPortfolioPath?: string | null;
     initialCompCardPaths?: (string | null)[];
     initialGalleryUrls?: (string | null)[];
     initialGalleryPaths?: (string | null)[];
@@ -49,7 +47,7 @@ interface CompCardManagerProps {
 interface CropState {
     imageSrc: string | null;
     aspect: number;
-    uploadType: 'cover' | 'comp-card' | 'portfolio' | 'gallery';
+    uploadType: 'cover' | 'comp-card' | 'gallery';
     slotIndex?: number;
 }
 
@@ -122,6 +120,7 @@ const PhotoSlot = ({ className, imageUrl, onFileSelect, onDelete, onDownload, la
                         className="absolute inset-0 h-full w-full object-cover"
                         loading="lazy"
                         decoding="async"
+                        crossOrigin="anonymous"
                     />
                     <div className="absolute inset-0 bg-black/20 md:bg-black/40 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                         <Button
@@ -172,26 +171,22 @@ export function CompCardManager({
     model,
     modelId,
     initialCoverUrl = null,
-    initialPortfolioUrl = null,
     initialCompCardUrls = [null, null, null, null],
     initialCoverPath = null,
-    initialPortfolioPath = null,
     initialCompCardPaths = [null, null, null, null],
     initialGalleryUrls = [],
     initialGalleryPaths = [],
 }: CompCardManagerProps) {
     const [coverUrl, setCoverUrl] = useState<string | null>(initialCoverUrl);
     const [compCardUrls, setCompCardUrls] = useState<(string | null)[]>(Array(4).fill(null).map((_, i) => initialCompCardUrls[i] || null));
-    const [portfolioUrl, setPortfolioUrl] = useState<string | null>(initialPortfolioUrl);
     const [galleryUrls, setGalleryUrls] = useState<(string | null)[]>(initialGalleryUrls);
 
     const [coverPath, setCoverPath] = useState<string | null>(initialCoverPath);
     const [compCardPaths, setCompCardPaths] = useState<(string | null)[]>(Array(4).fill(null).map((_, i) => initialCompCardPaths[i] || null));
-    const [portfolioPath, setPortfolioPath] = useState<string | null>(initialPortfolioPath);
     const [galleryPaths, setGalleryPaths] = useState<(string | null)[]>(initialGalleryPaths);
 
     // --- NUEVOS ESTADOS ---
-    const [uploadingState, setUploadingState] = useState({ cover: false, compCards: [false, false, false, false], portfolio: false, gallery: false });
+    const [uploadingState, setUploadingState] = useState({ cover: false, compCards: [false, false, false, false], gallery: false });
     const [cropState, setCropState] = useState<CropState | null>(null);
 
     // --- ESTADOS DE GALERÍA CON MULTI-UPLOAD ---
@@ -206,61 +201,55 @@ export function CompCardManager({
     const [fileType, setFileType] = useState<'jpg' | 'png' | 'zip' | 'pdf'>('png');
     const printContainerId = 'compcard-print-container';
 
-    // --- FUNCIÓN DE COMPRESIÓN EN EL CLIENTE ---
-    const compressImage = async (file: File, maxWidth = 3000, maxHeight = 3000, quality = 0.85): Promise<File> => {
-        return new Promise((resolve, reject) => {
-            const img = new window.Image();
-            img.onload = () => {
-                // Calcular nuevas dimensiones manteniendo aspect ratio
-                let { width, height } = img;
-                if (width > maxWidth) {
-                    height = (height * maxWidth) / width;
-                    width = maxWidth;
-                }
-                if (height > maxHeight) {
-                    width = (width * maxHeight) / height;
-                    height = maxHeight;
-                }
+    // --- LIGHTBOX DE GALERÍA ---
+    const [galleryLightboxIndex, setGalleryLightboxIndex] = useState<number | null>(null);
+    const validGalleryUrls = galleryUrls.filter((url): url is string => !!url);
 
-                // Crear canvas y dibujar imagen redimensionada
-                const canvas = document.createElement('canvas');
-                canvas.width = width;
-                canvas.height = height;
-                const ctx = canvas.getContext('2d');
-                if (!ctx) {
-                    reject(new Error('No se pudo crear el contexto del canvas'));
-                    return;
-                }
-                ctx.drawImage(img, 0, 0, width, height);
+    const navigateGalleryLightbox = useCallback((direction: 'next' | 'prev') => {
+        if (galleryLightboxIndex === null) return;
+        if (direction === 'next') {
+            setGalleryLightboxIndex((prev) => (prev === null || prev === validGalleryUrls.length - 1 ? 0 : prev + 1));
+        } else {
+            setGalleryLightboxIndex((prev) => (prev === null || prev === 0 ? validGalleryUrls.length - 1 : prev - 1));
+        }
+    }, [galleryLightboxIndex, validGalleryUrls.length]);
 
-                // Convertir a WebP blob
-                canvas.toBlob(
-                    (blob) => {
-                        if (!blob) {
-                            reject(new Error('No se pudo comprimir la imagen'));
-                            return;
-                        }
-                        const compressedFile = new File([blob], file.name.replace(/\.[^.]+$/, '.webp'), {
-                            type: 'image/webp',
-                            lastModified: Date.now(),
-                        });
-                        resolve(compressedFile);
-                    },
-                    'image/webp',
-                    quality
-                );
-            };
-            img.onerror = () => reject(new Error('No se pudo cargar la imagen'));
-            img.src = URL.createObjectURL(file);
-        });
+    // Keyboard navigation
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (galleryLightboxIndex === null) return;
+            if (e.key === 'ArrowRight') navigateGalleryLightbox('next');
+            if (e.key === 'ArrowLeft') navigateGalleryLightbox('prev');
+            if (e.key === 'Escape') setGalleryLightboxIndex(null);
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [galleryLightboxIndex, navigateGalleryLightbox]);
+
+    // Swipe navigation (mobile)
+    const [touchStart, setTouchStart] = useState<number | null>(null);
+    const [touchEnd, setTouchEnd] = useState<number | null>(null);
+    const minSwipeDistance = 50;
+
+    const onTouchStart = (e: React.TouchEvent) => { setTouchEnd(null); setTouchStart(e.targetTouches[0].clientX); };
+    const onTouchMove = (e: React.TouchEvent) => { setTouchEnd(e.targetTouches[0].clientX); };
+    const onTouchEnd = () => {
+        if (!touchStart || !touchEnd) return;
+        const distance = touchStart - touchEnd;
+        if (distance > minSwipeDistance) navigateGalleryLightbox('next');
+        if (distance < -minSwipeDistance) navigateGalleryLightbox('prev');
     };
+
+    // Compression uses the unified two-tier pipeline from @/lib/utils/image.
+    // Cover + CompCard slots → compressForPrint (high DPI for print output)
+    // Portfolio + Gallery   → compressForDisplay (fast browsing)
+    // See src/lib/utils/image.ts for quality presets.
 
     // --- SUBIDA DIRECTA (para Portfolio y Gallery, sin recorte) ---
     const handleDirectUpload = async (file: File, uploadType: CropState['uploadType'], slotIndex?: number) => {
-        const category = uploadType === 'comp-card' ? 'Contraportada' : (uploadType === 'cover' ? 'Portada' : (uploadType === 'gallery' ? 'PortfolioGallery' : 'Portfolio'));
+        const category = uploadType === 'comp-card' ? 'Contraportada' : (uploadType === 'cover' ? 'Portada' : 'PortfolioGallery');
 
         if (uploadType === 'cover') setUploadingState(p => ({ ...p, cover: true }));
-        else if (uploadType === 'portfolio') setUploadingState(p => ({ ...p, portfolio: true }));
         else if (uploadType === 'gallery') setUploadingState(p => ({ ...p, gallery: true }));
         else if (slotIndex !== undefined) setUploadingState(p => {
             const newCompCards = [...p.compCards]; newCompCards[slotIndex] = true;
@@ -268,9 +257,10 @@ export function CompCardManager({
         });
 
         try {
-            // Comprimir imagen en el cliente antes de subir
-            const compressedFile = await compressImage(file);
-            console.log(`[Portfolio] Imagen original: ${(file.size / 1024 / 1024).toFixed(2)}MB → Comprimida: ${(compressedFile.size / 1024 / 1024).toFixed(2)}MB`);
+            // Use display-quality compression for portfolio/gallery (fast browsing)
+            // Use print-quality for cover/comp-card (high-res for CompCard PDF)
+            const isPrint = uploadType === 'cover' || uploadType === 'comp-card';
+            const compressedFile = await (isPrint ? compressForPrint(file) : compressForDisplay(file));
 
             const formData = new FormData();
             formData.append('file', compressedFile);
@@ -293,15 +283,9 @@ export function CompCardManager({
             if (category === 'Portada') {
                 if (publicUrl) setCoverUrl(publicUrl);
                 if (returnedPath) setCoverPath(returnedPath);
-            } else if (category === 'Portfolio') {
-                if (publicUrl) setPortfolioUrl(publicUrl);
-                if (returnedPath) setPortfolioPath(returnedPath);
             } else if (category === 'Contraportada' && slotIndex !== undefined) {
                 if (publicUrl) setCompCardUrls(prev => {
                     const copy = [...prev]; copy[slotIndex] = publicUrl; return copy;
-                });
-                if (returnedPath) setCompCardPaths(prev => {
-                    const copy = [...prev]; copy[slotIndex] = returnedPath; return copy;
                 });
                 if (returnedPath) setCompCardPaths(prev => {
                     const copy = [...prev]; copy[slotIndex] = returnedPath; return copy;
@@ -316,7 +300,6 @@ export function CompCardManager({
             toast.error('Error al subir la imagen', { description: message });
         } finally {
             if (uploadType === 'cover') setUploadingState(p => ({ ...p, cover: false }));
-            else if (uploadType === 'portfolio') setUploadingState(p => ({ ...p, portfolio: false }));
             else if (uploadType === 'gallery') setUploadingState(p => ({ ...p, gallery: false }));
             else if (slotIndex !== undefined) setUploadingState(p => {
                 const newCompCards = [...p.compCards]; newCompCards[slotIndex] = false;
@@ -327,8 +310,8 @@ export function CompCardManager({
 
     // Abre el diálogo de recorte cuando se selecciona un archivo (excepto Portfolio)
     const handleFileSelect = (file: File, uploadType: CropState['uploadType'], aspect: number, slotIndex?: number) => {
-        // Portfolio y Gallery: subir directamente sin recorte
-        if (uploadType === 'portfolio' || uploadType === 'gallery') {
+        // Gallery: subir directamente sin recorte
+        if (uploadType === 'gallery') {
             handleDirectUpload(file, uploadType, slotIndex);
             return;
         }
@@ -357,18 +340,20 @@ export function CompCardManager({
         if (!cropState) return;
 
         const { uploadType, slotIndex } = cropState;
-        const category = uploadType === 'comp-card' ? 'Contraportada' : (uploadType === 'cover' ? 'Portada' : 'Portfolio');
+        const category = uploadType === 'comp-card' ? 'Contraportada' : 'Portada';
 
         if (uploadType === 'cover') setUploadingState(p => ({ ...p, cover: true }));
-        else if (uploadType === 'portfolio') setUploadingState(p => ({ ...p, portfolio: true }));
         else if (slotIndex !== undefined) setUploadingState(p => {
             const newCompCards = [...p.compCards]; newCompCards[slotIndex] = true;
             return { ...p, compCards: newCompCards };
         });
 
         try {
+            // Post-crop files go through print-quality compression (cover + comp-card)
+            const compressed = await compressForPrint(file);
+
             const formData = new FormData();
-            formData.append('file', file);
+            formData.append('file', compressed);
             formData.append('modelId', modelId);
             formData.append('category', category);
             if (slotIndex !== undefined) {
@@ -389,9 +374,6 @@ export function CompCardManager({
             if (category === 'Portada') {
                 if (publicUrl) setCoverUrl(publicUrl);
                 if (returnedPath) setCoverPath(returnedPath);
-            } else if (category === 'Portfolio') {
-                if (publicUrl) setPortfolioUrl(publicUrl);
-                if (returnedPath) setPortfolioPath(returnedPath);
             } else if (category === 'Contraportada' && slotIndex !== undefined) {
                 if (publicUrl) setCompCardUrls(prev => {
                     const copy = [...prev]; copy[slotIndex] = publicUrl; return copy;
@@ -406,7 +388,6 @@ export function CompCardManager({
             toast.error('Error al subir la imagen', { description: message });
         } finally {
             if (uploadType === 'cover') setUploadingState(p => ({ ...p, cover: false }));
-            else if (uploadType === 'portfolio') setUploadingState(p => ({ ...p, portfolio: false }));
             else if (slotIndex !== undefined) setUploadingState(p => {
                 const newCompCards = [...p.compCards]; newCompCards[slotIndex] = false;
                 return { ...p, compCards: newCompCards };
@@ -416,14 +397,12 @@ export function CompCardManager({
         }
     };
 
-    const handleDelete = async (type: 'cover' | 'comp-card' | 'portfolio' | 'gallery', slotIndex?: number, path?: string) => {
+    const handleDelete = async (type: 'cover' | 'comp-card' | 'gallery', slotIndex?: number, path?: string) => {
         let filePathToDelete: string | null = null;
-        const category = type === 'comp-card' ? 'Contraportada' : (type === 'cover' ? 'Portada' : (type === 'gallery' ? 'PortfolioGallery' : 'Portfolio'));
+        const category = type === 'comp-card' ? 'Contraportada' : (type === 'cover' ? 'Portada' : 'PortfolioGallery');
 
         if (category === 'Portada') {
             filePathToDelete = coverPath;
-        } else if (category === 'Portfolio') {
-            filePathToDelete = portfolioPath;
         } else if (category === 'Contraportada' && slotIndex !== undefined && slotIndex >= 0 && slotIndex < 4) {
             filePathToDelete = compCardPaths[slotIndex];
         } else if (category === 'PortfolioGallery') {
@@ -460,10 +439,7 @@ export function CompCardManager({
                 toast.success('Imagen eliminada.');
                 if (category === 'Portada') {
                     setCoverUrl(null); setCoverPath(null);
-                } else if (category === 'Portfolio') {
-                    setPortfolioUrl(null); setPortfolioPath(null);
                 } else if (category === 'Contraportada' && slotIndex !== undefined) {
-                    setCompCardUrls(prev => { const copy = [...prev]; copy[slotIndex] = null; return copy; });
                     setCompCardUrls(prev => { const copy = [...prev]; copy[slotIndex] = null; return copy; });
                     setCompCardPaths(prev => { const copy = [...prev]; copy[slotIndex] = null; return copy; });
                 } else if (category === 'PortfolioGallery') {
@@ -489,17 +465,13 @@ export function CompCardManager({
     const handleSingleDownload = async (url: string | null, nameSuffix: string) => {
         if (!url) return;
         try {
-            // FIX: Usar el proxy para evitar problemas de CORS con imágenes de R2 en producción
-            let fetchUrl = url;
-            if (R2_PUBLIC_URL && url.startsWith(R2_PUBLIC_URL)) {
-                // Reemplazamos el dominio de R2 por nuestra ruta proxy local
-                // url: https://r2.dev/path/to/image -> /api/media/path/to/image
-                const relativePath = url.replace(R2_PUBLIC_URL, '');
-                fetchUrl = `/api/media${relativePath}`;
-                console.log(`[Download] Proxy landing for URL: ${url} -> ${fetchUrl}`);
-            }
+            // Se usa la URL directa (R2 con dominio público), siguiendo la recomendación de no usar proxies.
+            // Asegurarse de que R2 tenga configurado CORS para permitir GET desde el dominio de la app.
+            const fetchUrl = url;
+            console.log(`[Download] Iniciando descarga directa: ${fetchUrl}`);
 
             const response = await fetch(fetchUrl);
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             const blob = await response.blob();
             // Determinar extensión del blob o usar jpg por defecto
             const mimeType = blob.type;
@@ -508,7 +480,7 @@ export function CompCardManager({
             else if (mimeType === 'image/webp') ext = 'webp';
 
             // Sanitize filename base
-            let fileNameBase = (model.alias || model.full_name || 'download')
+            const fileNameBase = (model.alias || model.full_name || 'download')
                 .normalize("NFD")
                 .replace(/[\u0300-\u036f]/g, "")
                 .replace(/[^a-zA-Z0-9]/g, '_')
@@ -564,11 +536,11 @@ export function CompCardManager({
             );
 
             try {
-                // Comprimir imagen
+                // Compress with display preset (gallery = fast browsing)
                 setGalleryUploadQueue(prev =>
                     prev.map(q => q.id === item.id ? { ...q, progress: 30 } : q)
                 );
-                const compressedFile = await compressImage(item.file);
+                const compressedFile = await compressForDisplay(item.file);
 
                 // Preparar FormData
                 setGalleryUploadQueue(prev =>
@@ -666,6 +638,9 @@ export function CompCardManager({
         let originalWrapperStyle: Record<string, string> | null = null;
 
         try {
+            // DEBUG: Verificar si R2_PUBLIC_URL está disponible en el cliente
+            console.log('[Download] NEXT_PUBLIC_R2_PUBLIC_URL:', process.env.NEXT_PUBLIC_R2_PUBLIC_URL);
+            
             // Definir qué elementos capturar según el formato elegido
             const targets: { id: string; suffix: string; label: string }[] = [];
 
@@ -722,8 +697,6 @@ export function CompCardManager({
                 if (el) allImages.push(...Array.from(el.getElementsByTagName('img')));
             });
 
-            console.log(`[Download] Validando ${allImages.length} imágenes...`);
-
             await Promise.all(allImages.map(img => {
                 if (img.complete && img.naturalHeight > 0) return Promise.resolve();
                 if (!img.src) return Promise.resolve();
@@ -760,11 +733,13 @@ export function CompCardManager({
             const captureOptions = {
                 quality: 0.95,
                 pixelRatio: 2,
-                cacheBust: true,
                 // FIX Firefox: skipFonts evita error "font is undefined"
                 skipFonts: true,
                 // Fix para Firefox: evita error "can't access property 'trim', e is undefined"
-                // causado por estilos computados que devuelven undefined en Firefox
+                fontEmbedCSS: '',
+                style: {
+                    visibility: 'visible',
+                },
                 filter: (node: HTMLElement | Node): boolean => {
                     // Excluir elementos que no son relevantes para la captura
                     if (node instanceof HTMLElement) {
@@ -780,27 +755,21 @@ export function CompCardManager({
                 skipAutoScale: true,
             };
 
-            console.log('[CompCard Download] Opciones de captura:', JSON.stringify({
-                quality: captureOptions.quality,
-                pixelRatio: captureOptions.pixelRatio,
-                skipFonts: captureOptions.skipFonts,
-                skipAutoScale: captureOptions.skipAutoScale,
-                downloadFormat,
-                fileType,
-                targetsCount: targets.length
-            }));
-
             const validateDataUrl = (data: string, type: 'png' | 'jpeg') => {
                 const header = type === 'png' ? 'data:image/png' : 'data:image/jpeg';
                 return data && data.startsWith(header) && data.length > 1000;
             };
 
             // 5. Generar contenido y Descargar
+            // Dynamic imports: only loaded when Download is triggered
+            const { toJpeg, toPng } = await import('html-to-image');
+
             if (fileType === 'zip') {
                 if (downloadFormat !== 'todos') {
                     throw new Error('La descarga ZIP solo está disponible para "Todos los formatos".');
                 }
 
+                const JSZip = (await import('jszip')).default;
                 const zip = new JSZip();
 
                 for (const t of targets) {
@@ -845,7 +814,7 @@ export function CompCardManager({
                 // Si el usuario elige "Todos" y "PDF", podríamos hacer un PDF de 3 páginas.
                 // IMPLEMENTACIÓN MEJORADA: PDF Multipágina para "Todos"
                 if (downloadFormat === 'todos' && fileType === 'pdf') {
-                    console.log('[Download] Generando PDF multipágina...');
+                    const { jsPDF } = await import('jspdf');
                     const pdf = new jsPDF({
                         orientation: 'landscape',
                         unit: 'in',
@@ -891,6 +860,7 @@ export function CompCardManager({
                     }
 
                     if (fileType === 'pdf') {
+                        const { jsPDF } = await import('jspdf');
                         const isLandscape = finalSuffix === 'hoja_completa';
                         const pdf = new jsPDF({
                             orientation: isLandscape ? 'l' : 'p',
@@ -902,22 +872,15 @@ export function CompCardManager({
                         pdf.addImage(dataUrl, 'JPEG', 0, 0, w, h);
                         pdf.save(`${fileName}_${finalSuffix}.pdf`);
                     } else {
-                        // Descarga de imagen convirtiendo dataUrl a Blob para asegurar MIME type
-                        const response = await fetch(dataUrl);
-                        const blob = await response.blob();
-                        const blobWithMime = new Blob([blob], { type: fileType === 'png' ? 'image/png' : 'image/jpeg' });
-                        const url = URL.createObjectURL(blobWithMime);
-
+                        // Descarga de imagen directa usando el dataUrl generado
                         const link = document.createElement('a');
-                        link.download = `${fileName}_${finalSuffix}.${fileType}`; // Set download BEFORE href
-                        link.href = url;
+                        link.download = `${fileName}_${finalSuffix}.${fileType}`;
+                        link.href = dataUrl;
                         link.style.display = 'none';
                         document.body.appendChild(link);
                         link.click();
-                        // Clean up immediately after click
                         setTimeout(() => {
                             document.body.removeChild(link);
-                            URL.revokeObjectURL(url);
                         }, 100);
                     }
                 }
@@ -926,10 +889,23 @@ export function CompCardManager({
             toast.success('Descarga completada con éxito.');
 
         } catch (error: unknown) {
-            console.error('Error en descarga:', error);
-            const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
-            if (errorMessage?.includes('tainted') || errorMessage?.includes('CORS')) {
-                toast.error('Error de CORS', { description: 'Recarga la página e intenta de nuevo.' });
+            // html-to-image lanza objetos planos (no Error), por eso {} aparece vacío con console.error
+            let errorMessage = 'Error desconocido';
+            if (error instanceof Error) {
+                errorMessage = error.message;
+            } else if (typeof error === 'string') {
+                errorMessage = error;
+            } else if (error && typeof error === 'object') {
+                if ('isTrusted' in error) {
+                    errorMessage = 'Error de red o CORS al procesar imágenes. Asegúrate de que las imágenes estén disponibles.';
+                } else {
+                    errorMessage = JSON.stringify(error, null, 2);
+                    if (errorMessage === '{}') errorMessage = 'Error de red o CORS al cargar imágenes para la captura';
+                }
+            }
+            console.error('Error en descarga:', errorMessage, error);
+            if (errorMessage?.includes('tainted') || errorMessage?.includes('CORS') || errorMessage?.includes('red')) {
+                toast.error('Error de CORS', { description: 'Las imágenes no pudieron cargarse para la captura. Recarga la página e intenta de nuevo.' });
             } else {
                 toast.error('Error al generar', { description: errorMessage });
             }
@@ -1087,19 +1063,6 @@ export function CompCardManager({
                                 </div>
                             </div>
                         </div>
-                        <div>
-                            <span className="text-body text-muted-foreground mb-2 block">Portafolio (Imagen Principal Horizontal)</span>
-                            <PhotoSlot
-                                className="aspect-[11/8.5] max-h-64"
-                                imageUrl={portfolioUrl}
-                                onFileSelect={(file) => handleFileSelect(file, 'portfolio', 11 / 8.5)}
-                                onDelete={() => handleDelete('portfolio')}
-                                label="Subir Imagen de Portafolio"
-
-                                isUploading={uploadingState.portfolio}
-                                onDownload={() => handleSingleDownload(portfolioUrl, 'portfolio_main')}
-                            />
-                        </div>
 
                     </div>
                 </CardContent>
@@ -1188,7 +1151,7 @@ export function CompCardManager({
 
                         {/* 2. MASONRY GRID (Pinterest Style) - Vertical Columns */}
                         {(galleryUrls.length > 0 || galleryUploadQueue.length > 0) && (
-                            <div className="columns-2 md:columns-3 lg:columns-4 gap-1">
+                            <div className="masonry-gallery">
                                 {/* Items de la cola de subida (aparecen primero visualmente si queremos, o mezclados) */}
                                 {galleryUploadQueue.map((item) => (
                                     <div
@@ -1228,18 +1191,19 @@ export function CompCardManager({
                                     return (
                                         <div
                                             key={`gallery-img-${i}`}
-                                            className="break-inside-avoid mb-1 relative group overflow-hidden bg-muted"
+                                            className="break-inside-avoid mb-1 relative group overflow-hidden bg-muted cursor-pointer"
+                                            onClick={() => setGalleryLightboxIndex(i)}
                                         >
                                             <img
                                                 src={url}
                                                 alt={`Galería ${i + 1}`}
                                                 className="w-full h-auto block transform transition-transform duration-500 group-hover:scale-105"
                                                 loading="lazy"
+                                                crossOrigin="anonymous"
                                                 onError={(e) => {
                                                     const target = e.target as HTMLImageElement;
                                                     target.style.display = 'none';
                                                     target.parentElement?.classList.add('bg-destructive/10', 'flex', 'items-center', 'justify-center', 'min-h-[200px]');
-                                                    // Agregar texto de error al padre
                                                     const errorText = document.createElement('div');
                                                     errorText.className = 'text-destructive text-sm font-medium flex flex-col items-center gap-2';
                                                     errorText.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>Imagen Rota';
@@ -1248,37 +1212,21 @@ export function CompCardManager({
                                             />
 
                                             {/* Overlay con acciones - Mobile: Visible, Desktop: Hover */}
-                                            <div className="absolute inset-0 bg-black/20 md:bg-black/40 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-2 pointer-events-auto">
+                                            <div className="absolute inset-0 bg-black/20 md:bg-black/40 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-2 pointer-events-none">
                                                 <Button
                                                     variant="secondary"
                                                     size="icon"
-                                                    className="overlay-action-btn delete"
-                                                    onClick={() => handleDelete('gallery', i, galleryPaths[i] || undefined)}
+                                                    className="overlay-action-btn delete pointer-events-auto"
+                                                    onClick={(e) => { e.stopPropagation(); handleDelete('gallery', i, galleryPaths[i] || undefined); }}
                                                     title="Eliminar foto"
                                                 >
                                                     <Trash2 className="h-4 w-4" />
                                                 </Button>
                                                 <Button
-                                                    asChild
                                                     variant="secondary"
                                                     size="icon"
-                                                    className="overlay-action-btn"
-                                                    title="Ver original"
-                                                >
-                                                    <a
-                                                        href={url}
-                                                        target="_blank"
-                                                        rel="noreferrer"
-                                                        style={{ textDecoration: 'none' }}
-                                                    >
-                                                        <ExternalLink className="h-4 w-4" />
-                                                    </a>
-                                                </Button>
-                                                <Button
-                                                    variant="secondary"
-                                                    size="icon"
-                                                    className="overlay-action-btn"
-                                                    onClick={() => handleSingleDownload(url, `gallery_${i + 1}`)}
+                                                    className="overlay-action-btn pointer-events-auto"
+                                                    onClick={(e) => { e.stopPropagation(); handleSingleDownload(url, `gallery_${i + 1}`); }}
                                                     title="Descargar imagen"
                                                 >
                                                     <Download className="h-4 w-4" />
@@ -1318,17 +1266,84 @@ export function CompCardManager({
                     zIndex: -9999
                 }}
             >
-                <div style={{ width: '3300px', height: '2550px', backgroundColor: 'rgb(var(--background) / 1)' }}>
+                <div style={{ width: '3300px', height: '2550px', backgroundColor: 'rgb(255, 255, 255)' }}>
                     <CompCardPrintTemplate
                         model={{
                             ...model,
-                            coverUrl: mediaUrl(coverUrl) ?? null,
-                            compCardUrls: compCardUrls.map(url => mediaUrl(url) ?? null)
+                            // USAMOS EL PROXY SOLO PARA EL TEMPLATE DE IMPRESIÓN
+                            // Esto evita problemas de CORS/Tainted Canvas porque es Same-Origin
+                            coverUrl: coverUrl ? `/api/media/${coverPath || coverUrl.split('/').slice(-3).join('/')}?t=${Date.now()}` : null,
+                            compCardUrls: compCardUrls.map((u, i) => {
+                                const path = compCardPaths[i] || u?.split('/').slice(-3).join('/');
+                                return path ? `/api/media/${path}?t=${Date.now()}` : null;
+                            })
                         }}
                         containerId={printContainerId}
                     />
                 </div>
             </div>
+
+            {/* LIGHTBOX DE GALERÍA */}
+            {galleryLightboxIndex !== null && validGalleryUrls[galleryLightboxIndex] && (
+                <div
+                    className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex items-center justify-center touch-none"
+                >
+                    {/* Close Button */}
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute top-4 right-4 z-50 text-foreground hover:bg-background/50"
+                        onClick={() => setGalleryLightboxIndex(null)}
+                    >
+                        <CloseIcon className="h-6 w-6" />
+                    </Button>
+
+                    {/* Navigation Buttons (Desktop) */}
+                    {validGalleryUrls.length > 1 && (
+                        <>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="absolute left-4 top-1/2 -translate-y-1/2 z-50 text-foreground hidden md:flex hover:bg-background/50 h-10 w-10"
+                                onClick={(e) => { e.stopPropagation(); navigateGalleryLightbox('prev'); }}
+                            >
+                                <ChevronLeft className="h-8 w-8" />
+                            </Button>
+
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="absolute right-4 top-1/2 -translate-y-1/2 z-50 text-foreground hidden md:flex hover:bg-background/50 h-10 w-10"
+                                onClick={(e) => { e.stopPropagation(); navigateGalleryLightbox('next'); }}
+                            >
+                                <ChevronRight className="h-8 w-8" />
+                            </Button>
+                        </>
+                    )}
+
+                    {/* Image Container */}
+                    <div
+                        className="relative w-full h-full flex items-center justify-center p-4"
+                        onClick={() => setGalleryLightboxIndex(null)}
+                        onTouchStart={onTouchStart}
+                        onTouchMove={onTouchMove}
+                        onTouchEnd={onTouchEnd}
+                    >
+                        <img
+                            src={validGalleryUrls[galleryLightboxIndex]}
+                            alt={`Galería ${galleryLightboxIndex + 1}`}
+                            className="max-w-full max-h-[85vh] object-contain select-none"
+                            crossOrigin="anonymous"
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                    </div>
+
+                    {/* Counter */}
+                    <div className="absolute top-4 left-4 z-50 px-3 py-1 bg-background/50 backdrop-blur-md rounded-full text-sm font-medium">
+                        {galleryLightboxIndex + 1} / {validGalleryUrls.length}
+                    </div>
+                </div>
+            )}
         </>
     );
 }

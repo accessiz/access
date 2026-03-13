@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { logger } from '@/lib/logger'
 
 export interface WebModel {
     id: string
@@ -23,11 +24,11 @@ export async function getAllModelsForWeb(): Promise<{ success: boolean; data?: W
         .order('alias', { ascending: true, nullsFirst: false })
 
     if (error) {
-        console.error('Error fetching models for web:', error)
+        logger.fromError(error, { action: 'getAllModelsForWeb' })
         return { success: false, error: 'Error al obtener modelos' }
     }
 
-    console.log(`[Web] Total modelos obtenidos: ${data?.length || 0}`)
+    logger.info('Models fetched for web', { count: data?.length ?? 0 })
 
     return { success: true, data: data as WebModel[] }
 }

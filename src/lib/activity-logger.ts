@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 export type ActivityCategory = 'project' | 'model' | 'client' | 'brand';
 
@@ -38,6 +39,6 @@ export async function logActivity(params: LogActivityParams): Promise<void> {
         });
     } catch (error) {
         // No queremos que un error de logging rompa la operación principal
-        console.error('[logActivity] Error:', error);
+        logger.fromError(error, { action: 'logActivity', category: params.category });
     }
 }

@@ -1,8 +1,12 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { logError } from '@/lib/utils/errors';
+import { applyRateLimit, apiLimiter } from '@/lib/utils/rate-limit';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+    const blocked = applyRateLimit(req, apiLimiter);
+    if (blocked) return blocked;
+
     try {
         const supabase = await createClient();
         const { data: { user } } = await supabase.auth.getUser();

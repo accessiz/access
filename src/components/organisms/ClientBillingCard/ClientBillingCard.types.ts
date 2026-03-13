@@ -1,4 +1,4 @@
-import type { ClientBillingItem, ClientPaymentStatus } from '@/app/dashboard/finances/page';
+import type { ClientBillingItem, ClientPaymentStatus } from '@/app/(dashboard)/dashboard/finances/page';
 
 export interface ClientBillingCardProps {
     item: ClientBillingItem;

@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { unstable_noStore as noStore } from 'next/cache';
 import { logError } from '@/lib/utils/errors';
+import { toPublicUrl } from '@/lib/utils';
 
 type ProjectStatusCounts = Record<string, number>;
 
@@ -12,11 +13,24 @@ export async function getProjectStatusCounts(): Promise<ProjectStatusCounts> {
 
   // Simple in-memory TTL cache (works in long-lived server processes).
   // TTL: 30 seconds to avoid frequent DB calls.
+  // Max entries: 50 to prevent unbounded memory growth.
   const TTL = 30 * 1000;
+  const MAX_CACHE_ENTRIES = 50;
   const cacheKey = user.id;
   type DashboardCache = Record<string, { ts: number; counts: ProjectStatusCounts } | undefined>;
   const g = globalThis as unknown as { __dashboard_counts_cache?: DashboardCache };
   if (!g.__dashboard_counts_cache) g.__dashboard_counts_cache = {};
+
+  // Evict stale entries and cap size
+  const cacheEntries = Object.entries(g.__dashboard_counts_cache);
+  if (cacheEntries.length > MAX_CACHE_ENTRIES) {
+    // Remove oldest entries beyond the limit
+    cacheEntries
+      .sort((a, b) => (a[1]?.ts ?? 0) - (b[1]?.ts ?? 0))
+      .slice(0, cacheEntries.length - MAX_CACHE_ENTRIES)
+      .forEach(([key]) => { delete g.__dashboard_counts_cache![key]; });
+  }
+
   const cache = g.__dashboard_counts_cache[cacheKey];
   if (cache && Date.now() - cache.ts < TTL) {
     return cache.counts;
@@ -25,17 +39,21 @@ export async function getProjectStatusCounts(): Promise<ProjectStatusCounts> {
   const statuses = ['in-review', 'draft', 'sent', 'completed'];
   const counts: ProjectStatusCounts = {};
 
-  for (const status of statuses) {
-    const { count, error } = await supabase
-      .from('projects')
-      .select('id', { count: 'exact' })
-      .eq('user_id', user.id)
-      .eq('status', status);
-    if (error) {
-      logError(error, { action: 'fetch project count', status });
-      counts[status] = 0;
-    } else {
-      counts[status] = count || 0;
+  // Single query with grouping instead of 4 sequential queries
+  const { data, error } = await supabase
+    .from('projects')
+    .select('status')
+    .eq('user_id', user.id)
+    .in('status', statuses);
+
+  if (error) {
+    logError(error, { action: 'fetch project counts' });
+    for (const s of statuses) counts[s] = 0;
+  } else {
+    // Initialize all statuses to 0, then count from results
+    for (const s of statuses) counts[s] = 0;
+    for (const row of data || []) {
+      counts[row.status] = (counts[row.status] || 0) + 1;
     }
   }
 
@@ -101,7 +119,7 @@ export async function getLowCompletenessModels(limit = 5) {
 
   const { data, error } = await supabase
     .from('models')
-    .select('id, alias, profile_completeness, birth_date, cover_path, height_cm, portfolio_path')
+    .select('id, alias, profile_completeness, birth_date, cover_path, height_cm')
     .eq('user_id', user.id)
     .order('profile_completeness', { ascending: true })
     .limit(limit);
@@ -117,7 +135,6 @@ export async function getLowCompletenessModels(limit = 5) {
     if (!m.birth_date) missing.push('Fecha de nacimiento');
     if (!m.cover_path) missing.push('Foto de portada');
     if (!m.height_cm) missing.push('Altura');
-    if (!m.portfolio_path) missing.push('Portfolio');
     return { ...m, missing_fields: missing };
   });
 }
@@ -156,9 +173,6 @@ export async function getModelApplicationStats(limit = 100): Promise<ModelRankin
   }
 
   if (!data || data.length === 0) return { mostApproved: [], mostRefused: [], mostApplied: [], leastApplied: [] };
-
-  const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL?.replace(/\/$/, '') || '';
-  const toPublicUrl = (path: string | null | undefined) => path && R2_PUBLIC_URL ? `${R2_PUBLIC_URL}/${path}` : null;
 
   // Type the response explicitly to include last_project_date
   type StatsRow = {

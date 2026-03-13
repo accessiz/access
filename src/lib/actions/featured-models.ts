@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { logError } from '@/lib/utils/errors'
 
 const MAX_FEATURED_MODELS = 8
 
@@ -37,13 +38,13 @@ export async function getFeaturedModels(): Promise<{ success: boolean; data?: Fe
             .order('position', { ascending: true })
 
         if (error) {
-            console.error('[getFeaturedModels] Error:', error)
+            logError(error, { action: 'getFeaturedModels' })
             return { success: false, error: error.message }
         }
 
         return { success: true, data: data as FeaturedModel[] }
     } catch (err) {
-        console.error('[getFeaturedModels] Exception:', err)
+        logError(err, { action: 'getFeaturedModels.catch_all' })
         return { success: false, error: 'Error al obtener modelos destacados' }
     }
 }
@@ -90,7 +91,7 @@ export async function addFeaturedModel(modelId: string): Promise<{ success: bool
         revalidatePath('/dashboard/web')
         return { success: true }
     } catch (err) {
-        console.error('[addFeaturedModel] Exception:', err)
+        logError(err, { action: 'addFeaturedModel' })
         return { success: false, error: 'Error al agregar modelo destacado' }
     }
 }
@@ -111,7 +112,7 @@ export async function removeFeaturedModel(modelId: string): Promise<{ success: b
         revalidatePath('/dashboard/web')
         return { success: true }
     } catch (err) {
-        console.error('[removeFeaturedModel] Exception:', err)
+        logError(err, { action: 'removeFeaturedModel' })
         return { success: false, error: 'Error al quitar modelo destacado' }
     }
 }
@@ -135,7 +136,7 @@ export async function reorderFeaturedModels(orderedModelIds: string[]): Promise<
         revalidatePath('/dashboard/web')
         return { success: true }
     } catch (err) {
-        console.error('[reorderFeaturedModels] Exception:', err)
+        logError(err, { action: 'reorderFeaturedModels' })
         return { success: false, error: 'Error al reordenar modelos' }
     }
 }

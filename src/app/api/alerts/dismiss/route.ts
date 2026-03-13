@@ -1,9 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { logError } from '@/lib/utils/errors';
+import { applyRateLimit, strictLimiter } from '@/lib/utils/rate-limit';
+import { z } from 'zod';
+
+const dismissSchema = z.object({
+    alert_id: z.string().min(1).max(200),
+});
 
 // Dismiss a single alert (snooze for 24 hours)
 export async function POST(request: NextRequest) {
+    const blocked = applyRateLimit(request, strictLimiter);
+    if (blocked) return blocked;
+
     try {
         const supabase = await createClient();
         const { data: { user } } = await supabase.auth.getUser();
@@ -13,11 +22,13 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json();
-        const { alert_id } = body;
+        const parsed = dismissSchema.safeParse(body);
 
-        if (!alert_id) {
-            return NextResponse.json({ success: false, error: 'alert_id is required' }, { status: 400 });
+        if (!parsed.success) {
+            return NextResponse.json({ success: false, error: 'alert_id is required and must be a valid string' }, { status: 400 });
         }
+
+        const { alert_id } = parsed.data;
 
         // Upsert dismissal (extends if already exists)
         const { error } = await supabase
@@ -45,6 +56,9 @@ export async function POST(request: NextRequest) {
 
 // Delete a dismissal (unsnooze)
 export async function DELETE(request: NextRequest) {
+    const blocked = applyRateLimit(request, strictLimiter);
+    if (blocked) return blocked;
+
     try {
         const supabase = await createClient();
         const { data: { user } } = await supabase.auth.getUser();
@@ -56,7 +70,7 @@ export async function DELETE(request: NextRequest) {
         const { searchParams } = new URL(request.url);
         const alertId = searchParams.get('alert_id');
 
-        if (!alertId) {
+        if (!alertId || alertId.length > 200) {
             return NextResponse.json({ success: false, error: 'alert_id is required' }, { status: 400 });
         }
 
@@ -71,7 +85,7 @@ export async function DELETE(request: NextRequest) {
             return NextResponse.json({ success: false, error: 'Failed to unsnooze alert' }, { status: 500 });
         }
 
-        return NextResponse.json({ success: true, message: 'Alert unssnoozed' });
+        return NextResponse.json({ success: true, message: 'Alert unsnoozed' });
     } catch (err) {
         logError(err, { route: '/api/alerts/dismiss' });
         return NextResponse.json({ success: false, error: 'Could not unsnooze alert' }, { status: 500 });

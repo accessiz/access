@@ -11,13 +11,11 @@ export async function POST(req: NextRequest) {
   // Sin 'await', `supabase` es una Promesa, no el cliente, causando el error.
   const supabase = await createClient();
 
-  // Verificamos si hay una sesión activa
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  // Use getUser() instead of getSession() — server-side code should always
+  // validate the JWT against Supabase Auth rather than reading an unverified JWT.
+  const { data: { user } } = await supabase.auth.getUser();
 
-  if (session) {
-    // Si hay sesión, la cerramos
+  if (user) {
     await supabase.auth.signOut();
   }
 

@@ -92,7 +92,7 @@ export function convertToGTQ(
  */
 export function formatCurrency(
     amount: number | null | undefined,
-    currency: SupportedCurrency = 'GTQ'
+    currency: SupportedCurrency | string = 'GTQ'
 ): string {
     if (amount == null) return '-';
 
@@ -102,7 +102,7 @@ export function formatCurrency(
         EUR: { locale: 'de-DE', currency: 'EUR' },
     };
 
-    const config = currencyConfig[currency] || currencyConfig.GTQ;
+    const config = currencyConfig[currency as SupportedCurrency] || currencyConfig.GTQ;
 
     return new Intl.NumberFormat(config.locale, {
         style: 'currency',

@@ -1,10 +1,14 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { logError } from '@/lib/utils/errors';
 import { getComputedAlerts } from '@/lib/services/alertsService';
+import { applyRateLimit, strictLimiter } from '@/lib/utils/rate-limit';
 
 // Dismiss all current alerts (snooze for 24 hours)
-export async function POST() {
+export async function POST(req: NextRequest) {
+    const blocked = applyRateLimit(req, strictLimiter);
+    if (blocked) return blocked;
+
     try {
         const supabase = await createClient();
         const { data: { user } } = await supabase.auth.getUser();
@@ -51,7 +55,10 @@ export async function POST() {
 }
 
 // Clear all dismissals (show all alerts again)
-export async function DELETE() {
+export async function DELETE(req: NextRequest) {
+    const blocked = applyRateLimit(req, strictLimiter);
+    if (blocked) return blocked;
+
     try {
         const supabase = await createClient();
         const { data: { user } } = await supabase.auth.getUser();

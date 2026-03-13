@@ -13,10 +13,11 @@ const eslintConfig = [
   // Extiende la configuración de Next.js y TypeScript
   ...compat.extends("next/core-web-vitals", "next/typescript"),
 
-  // Mantener <img> para no usar optimización de imágenes de Next/Vercel
+  // Re-enable next/image enforcement — all images should use <Image> for
+  // automatic AVIF/WebP, responsive sizes, and lazy loading optimization.
   {
     rules: {
-      "@next/next/no-img-element": "off",
+      "@next/next/no-img-element": "warn",
     },
   },
 
