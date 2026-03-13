@@ -177,7 +177,7 @@ describe('buildRawProjectData', () => {
       { date: undefined, startTime: undefined, endTime: undefined },
     ];
 
-    const result = buildRawProjectData(fd, schedule as any, []);
+    const result = buildRawProjectData(fd, schedule as { date: string | undefined; startTime: string | undefined; endTime: string | undefined }[], []);
     expect(result.schedule).toHaveLength(1);
   });
 });
@@ -216,7 +216,7 @@ describe('formatZodErrors', () => {
       { path: ['schedule', '0', 'startTime'], message: 'Hora inválida' },
     ];
 
-    const result = formatZodErrors(zodErrors, schedule as any);
+    const result = formatZodErrors(zodErrors, schedule as { date: string; startTime: string; endTime: string }[]);
     expect(result.schedule).toContain('Hora inválida');
     // Should include a formatted date reference
     expect(result.schedule).toContain('abr');
@@ -227,7 +227,7 @@ describe('formatZodErrors', () => {
       { path: ['schedule', '0', 'date'], message: 'Requerido' },
     ];
 
-    const result = formatZodErrors(zodErrors, [{ date: undefined } as any]);
+    const result = formatZodErrors(zodErrors, [{ date: undefined } as { date: string | undefined; startTime: string; endTime: string }]);
     // Without a date, falls through to generic path
     expect(result['schedule.0.date']).toBe('Requerido');
   });

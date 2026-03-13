@@ -12,7 +12,6 @@ import { Button } from '@/components/ui/button';
 import { ClientNavbar } from '../../../_components/ClientNavbar';
 import { ClientFooter } from '../../../_components/ClientFooter';
 import { cn } from '@/lib/utils';
-import { SmartCroppedImage } from '@/components/atoms/SmartCroppedImage';
 import { MasonryGallery } from '@/components/ui/masonry-gallery';
 import { CompCardScreenPreview } from '@/components/organisms/CompCardScreenPreview';
 

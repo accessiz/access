@@ -72,7 +72,7 @@ export function toPublicUrl(path: string | null | undefined): string | null {
   }
 
   // Limpiar el path: si viene con el prefijo del proxy antiguo o el bucket de supabase, lo quitamos
-  let cleanPath = path.toString()
+  const cleanPath = path.toString()
     .replace(/^\/?api\/media\//, '')
     .replace(/^\/?storage\/v1\/object\/public\/[^\/]+\//, '')
     .replace(/^\//, '');

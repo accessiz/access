@@ -119,12 +119,6 @@ export default function PasswordProtect({ projectId }: PasswordProtectProps) {
     });
   };
 
-  // No ocultar el componente por completo si es el que debe estar bloqueando la pantalla.
-  // Solo regresamos null si estamos esperando activamente la intro del logo.
-  if (!showCard && animationState !== 'finished' && animationState !== 'intro') {
-    return null;
-  }
-
   // Si estamos en 'intro' por más de un breve momento, forzamos la visibilidad del card
   // para no dejar al usuario con una pantalla negra.
   useEffect(() => {
@@ -135,6 +129,12 @@ export default function PasswordProtect({ projectId }: PasswordProtectProps) {
       return () => clearTimeout(timer);
     }
   }, [animationState]);
+
+  // No ocultar el componente por completo si es el que debe estar bloqueando la pantalla.
+  // Solo regresamos null si estamos esperando activamente la intro del logo.
+  if (!showCard && animationState !== 'finished' && animationState !== 'intro') {
+    return null;
+  }
 
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-black">
