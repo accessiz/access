@@ -36,6 +36,7 @@ export function CompCardScreenPreview({ model, className }: CompCardScreenPrevie
               className="w-full h-full object-cover"
               loading="eager"
               context="display"
+              sizes="(max-width: 640px) 80vw, (max-width: 1024px) 40vw, 33vw"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-muted-foreground bg-muted/20">
@@ -71,8 +72,9 @@ export function CompCardScreenPreview({ model, className }: CompCardScreenPrevie
                 src={backPhotos[0]}
                 alt="Talent Photo 1"
                 className="w-full h-full object-cover"
-                loading="eager"
+                loading="lazy"
                 context="display"
+                sizes="(max-width: 640px) 40vw, (max-width: 1024px) 20vw, 15vw"
               />
             )}
           </div>
@@ -110,6 +112,7 @@ export function CompCardScreenPreview({ model, className }: CompCardScreenPrevie
                 className="w-full h-full object-cover"
                 loading="lazy"
                 context="display"
+                sizes="(max-width: 640px) 40vw, (max-width: 1024px) 20vw, 15vw"
               />
             )}
           </div>
@@ -123,6 +126,7 @@ export function CompCardScreenPreview({ model, className }: CompCardScreenPrevie
                 className="w-full h-full object-cover"
                 loading="lazy"
                 context="display"
+                sizes="(max-width: 640px) 40vw, (max-width: 1024px) 20vw, 15vw"
               />
             )}
           </div>
