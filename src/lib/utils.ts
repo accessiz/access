@@ -83,6 +83,25 @@ export function toPublicUrl(path: string | null | undefined): string | null {
   return finalUrl;
 }
 
+/**
+ * Returns a URL with a `?cors=1` query parameter appended.
+ * 
+ * **Why this exists:**
+ * When the same R2 image is loaded twice on one page — once without CORS
+ * (e.g. sidebar thumbnail via next/image) and once WITH `crossOrigin="anonymous"`
+ * (e.g. CompCard manager for canvas/download) — the browser reuses the cached
+ * response from the first (non-CORS) request and blocks the second because it
+ * lacks `Access-Control-Allow-Origin`. Adding `?cors=1` makes the browser treat
+ * it as a separate resource, forcing a fresh fetch with CORS headers.
+ * 
+ * Use this wrapper wherever an image is rendered with `crossOrigin="anonymous"`.
+ */
+export function toCorsUrl(url: string | null | undefined): string | null {
+  if (!url) return null;
+  const separator = url.includes('?') ? '&' : '?';
+  return `${url}${separator}cors=1`;
+}
+
 /** @deprecated Use `toPublicUrl()` instead. Thin wrapper kept for backward-compat. */
 export function mediaUrl(url: string | null | undefined): string | undefined {
   return toPublicUrl(url) ?? undefined;

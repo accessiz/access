@@ -45,3 +45,11 @@ next-env.d.ts
 
 # local supabase snippets/exports folder (do not commit)
 /supabase\ 11\ -\ 01/
+
+# local scripts and docs
+/scripts
+/docs
+/backups
+/*.py
+/*.html
+/process_data*.js

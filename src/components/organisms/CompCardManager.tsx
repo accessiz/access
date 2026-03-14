@@ -5,7 +5,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { UploadCloud, Trash2, Loader2 } from 'lucide-react';
-import { cn, toPublicUrl } from '@/lib/utils';
+import { cn, toPublicUrl, toCorsUrl } from '@/lib/utils';
 import { toast } from 'sonner';
 import { Label } from '@/components/ui/label';
 import { uploadModelImage, deleteModelImage, cleanupOrphanedGalleryPaths } from '@/lib/actions/storage';
@@ -1019,7 +1019,7 @@ export function CompCardManager({
                                 <span className="text-body text-muted-foreground mb-2 block">Portada (Slider)</span>
                                 <PhotoSlot
                                     className="aspect-3/4"
-                                    imageUrl={coverUrl}
+                                    imageUrl={toCorsUrl(coverUrl)}
                                     onFileSelect={(file) => handleFileSelect(file, 'cover', 3 / 4)}
                                     onDelete={() => handleDelete('cover')}
                                     label="Subir Portada"
@@ -1051,7 +1051,7 @@ export function CompCardManager({
                                             <PhotoSlot
                                                 key={index}
                                                 className={aspectRatioClass}
-                                                imageUrl={compCardUrls[index]}
+                                                imageUrl={toCorsUrl(compCardUrls[index])}
                                                 onFileSelect={(file) => handleFileSelect(file, 'comp-card', 735 / 1031, index)}
                                                 onDelete={() => handleDelete('comp-card', index)}
                                                 label={`Foto ${index + 1}`}
