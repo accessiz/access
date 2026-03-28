@@ -118,7 +118,7 @@ export default function PortfolioView({ project, model: initialModel }: Portfoli
         <main className="flex-1 flex flex-col items-stretch justify-start pb-32 gap-16">
           {/* Ficha Técnica (CompCard) Section */}
           <section className="w-full space-y-4">
-            <h3 className="text-display-sm font-semibold text-muted-foreground/50 border-b border-border/10 pb-2">Ficha Técnica</h3>
+            <h3 className="text-display-sm font-semibold text-muted-foreground/50 border-b border-border/10 pb-2">Compcard</h3>
             <CompCardScreenPreview model={model} />
           </section>
 
