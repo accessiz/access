@@ -28,6 +28,27 @@ type InitialData = {
   countries: string[];
 };
 
+type ModelSortableHeaderProps = {
+  tkey: keyof Model;
+  label: string;
+  activeKey: keyof Model;
+  direction: 'asc' | 'desc';
+  onSort: (key: keyof Model) => void;
+};
+
+function ModelSortableHeader({ tkey, label, activeKey, direction, onSort }: ModelSortableHeaderProps) {
+  return (
+    <TableHead onClick={() => onSort(tkey)} className="cursor-pointer hover:text-foreground transition-colors">
+      <div className="flex items-center gap-x-2 gap-y-2">
+        {label}
+        {activeKey === tkey && (
+          direction === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+        )}
+      </div>
+    </TableHead>
+  );
+}
+
 // El cliente recibe los datos listos para renderizar
 export default function ModelsClientPage({ initialData }: { initialData: InitialData }) {
   const { models, count, countries } = initialData;
@@ -115,17 +136,6 @@ export default function ModelsClientPage({ initialData }: { initialData: Initial
     return cleanedItems;
   }, [currentPage, totalPages]);
 
-  const SortableHeader = ({ tkey, label }: { tkey: keyof Model; label: string; }) => (
-    <TableHead onClick={() => handleSort(tkey)} className="cursor-pointer hover:text-foreground transition-colors">
-      <div className="flex items-center gap-x-2 gap-y-2">
-        {label}
-        {sortConfig.key === tkey && (
-          sortConfig.direction === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
-        )}
-      </div>
-    </TableHead>
-  );
-
   const renderContent = () => {
     if (models.length === 0) {
       return (
@@ -168,9 +178,9 @@ export default function ModelsClientPage({ initialData }: { initialData: Initial
           <TableHeader>
             <TableRow>
               <TableHead className="w-20"></TableHead>
-              <SortableHeader tkey="alias" label="Alias" />
-              <SortableHeader tkey="country" label="País" />
-              <SortableHeader tkey="height_cm" label="Estatura" />
+              <ModelSortableHeader tkey="alias" label="Alias" activeKey={sortConfig.key} direction={sortConfig.direction} onSort={handleSort} />
+              <ModelSortableHeader tkey="country" label="País" activeKey={sortConfig.key} direction={sortConfig.direction} onSort={handleSort} />
+              <ModelSortableHeader tkey="height_cm" label="Estatura" activeKey={sortConfig.key} direction={sortConfig.direction} onSort={handleSort} />
               <TableHead>Instagram</TableHead>
               <TableHead>TikTok</TableHead>
               <TableHead>Perfil</TableHead>

@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { getModelById } from '@/lib/api/models';
+import { getModelByIdCached, getModelWorkHistoryCached } from '@/lib/api/cached';
 import ModelProfilePageClient from './page-client';
 import { getExchangeRate } from '@/lib/actions/exchange-rates';
 import type { Metadata } from 'next';
@@ -32,9 +32,11 @@ export default async function ModelProfilePage({ params }: PageProps) {
     redirect('/login');
   }
 
-  const model = await getModelById(id);
-  const workHistory = await import('@/lib/api/models').then(m => m.getModelWorkHistory(id));
-  const rateResult = await getExchangeRate();
+  const [model, workHistory, rateResult] = await Promise.all([
+    getModelByIdCached(id),
+    getModelWorkHistoryCached(id),
+    getExchangeRate(),
+  ]);
   const currentRate = rateResult.success && rateResult.rate ? rateResult.rate : 7.70;
 
   if (!model) {

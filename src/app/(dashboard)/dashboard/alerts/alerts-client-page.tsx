@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
     AlertTriangle,
     Users,
@@ -165,14 +165,15 @@ export default function AlertsClientPage() {
         });
     };
 
-    const filteredAlerts = filter === 'all'
-        ? alerts
-        : alerts.filter(a => a.type === filter);
+    const filteredAlerts = useMemo(() => {
+        const nextAlerts = filter === 'all'
+            ? alerts
+            : alerts.filter(a => a.type === filter);
 
-    // Sort: Non-dismissed first, then dismissed
-    filteredAlerts.sort((a, b) => {
-        return (Number(a.is_dismissed || 0) - Number(b.is_dismissed || 0));
-    });
+        return nextAlerts.toSorted((a, b) => {
+            return Number(a.is_dismissed || 0) - Number(b.is_dismissed || 0);
+        });
+    }, [alerts, filter]);
 
     const alertCounts = {
         all: alerts.length,

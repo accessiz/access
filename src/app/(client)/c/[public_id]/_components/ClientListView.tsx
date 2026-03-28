@@ -8,6 +8,9 @@ import { Button } from '@/components/ui/button';
 import { ChevronRight } from 'lucide-react';
 import { CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { writeVersionedStorage } from '@/lib/client-storage';
+
+const CLIENT_VIEW_STORAGE_VERSION = 1;
 import { updateClientModelSelection } from '@/lib/actions/client_actions';
 import { toast } from 'sonner';
 import { useEffect, useState } from 'react';
@@ -103,7 +106,7 @@ function SelectionIconButtons({
 export function ClientListView({ models, projectId, realProjectId, onSelectionChange }: ClientListViewProps) {
   // Guardar posición de scroll antes de navegar (igual que en Grid)
   const saveScrollPosition = () => {
-    sessionStorage.setItem(`client_scroll_${projectId}`, String(window.scrollY));
+    writeVersionedStorage('session', `client:${projectId}:scroll`, CLIENT_VIEW_STORAGE_VERSION, window.scrollY);
   };
 
   const [localSelections, setLocalSelections] = useState<Record<string, GridModel['selection']>>(() => {

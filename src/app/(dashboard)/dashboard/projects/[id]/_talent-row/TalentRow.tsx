@@ -112,7 +112,7 @@ export function TalentRow({
                     {actionType === 'remove' && (
                         <>
                             <ClientStatusBadge status={model.client_selection} />
-                            <PaymentEditorPopover model={model} project={project} onRefresh={onRefresh} onPaymentChange={onPaymentChange} />
+                            <PaymentEditorPopover model={model as Model} project={project} onRefresh={onRefresh} onPaymentChange={onPaymentChange} />
                             <Popover>
                                 <PopoverTrigger asChild>
                                     <Button size="icon" variant="outline" className="h-8 w-8" disabled={isPending || isAssigning || isSyncing}>

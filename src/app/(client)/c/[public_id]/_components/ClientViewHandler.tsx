@@ -18,6 +18,7 @@ import { Send, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useClientAnimation } from './ClientAnimationContext';
+import { readVersionedStorage, removeVersionedStorage, writeVersionedStorage } from '@/lib/client-storage';
 
 type GridModel = Model & {
   selection?: 'pending' | 'approved' | 'rejected' | null
@@ -30,7 +31,8 @@ interface HandlerProps {
   isAdmin: boolean;
 }
 
-const getStorageKey = (id: string, key: string) => `client_${id}_${key}`;
+const CLIENT_VIEW_STORAGE_VERSION = 1;
+const getStorageKey = (id: string, key: string) => `client:${id}:${key}`;
 
 export default function ClientViewHandler({ project, initialModels, hasAccessCookie, isAdmin }: HandlerProps) {
   // 1. ESTADO DE LOS MODELOS (Base)
@@ -69,25 +71,22 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
     // Trigger Exit Animation (Show Content)
     startExitAnimation();
 
-    const savedView = sessionStorage.getItem(getStorageKey(project.public_id, 'view'));
+    const savedView = readVersionedStorage<'list' | 'grid'>('session', getStorageKey(project.public_id, 'view'), CLIENT_VIEW_STORAGE_VERSION);
     if (savedView === 'list' || savedView === 'grid') setViewMode(savedView);
 
-    const savedFilters = sessionStorage.getItem(getStorageKey(project.public_id, 'filters'));
+    const savedFilters = readVersionedStorage<typeof filters>('session', getStorageKey(project.public_id, 'filters'), CLIENT_VIEW_STORAGE_VERSION);
     if (savedFilters) {
-      try {
-        const parsed = JSON.parse(savedFilters);
-        setFilters({
-          query: parsed.query || ''
-        });
-      } catch (e) { console.error("Error parsing filters", e); }
+      setFilters({
+        query: savedFilters.query || ''
+      });
     }
 
-    const scrollKey = `client_scroll_${project.public_id}`;
-    const savedScrollY = sessionStorage.getItem(scrollKey);
-    if (savedScrollY) {
+    const scrollKey = getStorageKey(project.public_id, 'scroll');
+    const savedScrollY = readVersionedStorage<number>('session', scrollKey, CLIENT_VIEW_STORAGE_VERSION);
+    if (typeof savedScrollY === 'number') {
       setTimeout(() => {
-        window.scrollTo(0, parseInt(savedScrollY, 10));
-        sessionStorage.removeItem(scrollKey);
+        window.scrollTo(0, savedScrollY);
+        removeVersionedStorage('session', scrollKey);
       }, 100);
     }
 
@@ -131,8 +130,8 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
   // --- EFECTO: PERSISTENCIA DE ESTADO ---
   useEffect(() => {
     if (!isMounted) return;
-    sessionStorage.setItem(getStorageKey(project.public_id, 'view'), viewMode);
-    sessionStorage.setItem(getStorageKey(project.public_id, 'filters'), JSON.stringify(filters));
+    writeVersionedStorage('session', getStorageKey(project.public_id, 'view'), CLIENT_VIEW_STORAGE_VERSION, viewMode);
+    writeVersionedStorage('session', getStorageKey(project.public_id, 'filters'), CLIENT_VIEW_STORAGE_VERSION, filters);
   }, [viewMode, filters, project.public_id, isMounted]);
 
   // --- LÓGICA DE FILTRADO (useMemo) ---

@@ -10,6 +10,14 @@ import LogoLight from '@/components/LogoLight';
 import LogoDark from '@/components/LogoDark';
 import { ScheduleChips } from '@/components/molecules/ScheduleChips';
 import { Project } from '@/lib/types';
+import { readVersionedStorage, writeVersionedStorage } from '@/lib/client-storage';
+
+const THEME_STORAGE_KEY = 'client-navbar:theme';
+const THEME_STORAGE_VERSION = 1;
+
+function applyTheme(isDark: boolean) {
+  document.documentElement.classList.toggle('dark', isDark);
+}
 
 // ThemeToggle ahora recibe el estado y la función toggle desde el padre
 function ThemeToggle({ isDark, toggle }: { isDark: boolean; toggle: () => void }) {
@@ -32,18 +40,18 @@ export function ClientNavbar({ schedule }: ClientNavbarProps) {
 
   useEffect(() => {
     setMounted(true);
-    const stored = localStorage.getItem('theme');
+    const stored = readVersionedStorage<'dark' | 'light'>('local', THEME_STORAGE_KEY, THEME_STORAGE_VERSION);
     const prefersDark = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
     const initialIsDark = stored === 'dark' || (!stored && prefersDark);
     setIsDark(initialIsDark);
-    document.documentElement.classList.toggle('dark', initialIsDark);
+    applyTheme(initialIsDark);
   }, []);
 
   const toggle = () => {
     const next = !isDark;
     setIsDark(next);
-    document.documentElement.classList.toggle('dark', next);
-    localStorage.setItem('theme', next ? 'dark' : 'light');
+    applyTheme(next);
+    writeVersionedStorage('local', THEME_STORAGE_KEY, THEME_STORAGE_VERSION, next ? 'dark' : 'light');
   };
 
   return (

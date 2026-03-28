@@ -1,82 +1,108 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Skeleton } from '@/components/ui/skeleton'
 import { toast } from 'sonner'
-import { Plus, X, Star, Search, Loader2, User, Layers, Venus, Mars, VenusAndMars } from 'lucide-react'
-import { Input } from '@/components/ui/input'
+import { Plus, X, Star, Search, Loader2, User, Layers, Venus, Mars, VenusAndMars, ChevronLeft, ChevronRight } from 'lucide-react'
 import { getFeaturedModels, addFeaturedModel, removeFeaturedModel, FeaturedModel } from '@/lib/actions/featured-models'
 import { cn, toPublicUrl } from '@/lib/utils'
 import { SegmentedControl } from '@/components/molecules/SegmentedControl'
-
-type Model = {
-    id: string
-    alias: string | null
-    full_name: string
-    cover_path: string | null
-    is_public: boolean
-    gender: string | null
-}
+import { SearchBar } from '@/components/molecules/SearchBar'
+import type { WebModel } from '@/lib/actions/web'
 
 type ModelFilter = 'all' | 'starred'
 type GenderFilter = 'all' | 'female' | 'male'
 
 interface FeaturedModelsPanelProps {
-    allModels: Model[]
+    initialFeatured: FeaturedModel[]
+    candidateModels: WebModel[]
+    candidateCount: number
+    currentPage: number
+    totalPages: number
+    initialQuery: string
+    initialGender: GenderFilter
+    initialType: ModelFilter
     topApprovedModelIds?: string[]
     className?: string
 }
 
-export function FeaturedModelsPanel({ allModels, topApprovedModelIds = [], className }: FeaturedModelsPanelProps) {
-    const [featured, setFeatured] = useState<FeaturedModel[]>([])
-    const [loading, setLoading] = useState(true)
-    const [search, setSearch] = useState('')
-    const [modelFilter, setModelFilter] = useState<ModelFilter>('all')
-    const [genderFilter, setGenderFilter] = useState<GenderFilter>('all')
+export function FeaturedModelsPanel({
+    initialFeatured,
+    candidateModels,
+    candidateCount,
+    currentPage,
+    totalPages,
+    initialQuery,
+    initialGender,
+    initialType,
+    topApprovedModelIds = [],
+    className,
+}: FeaturedModelsPanelProps) {
+    const router = useRouter()
+    const pathname = usePathname()
+    const searchParams = useSearchParams()
+    const [featured, setFeatured] = useState<FeaturedModel[]>(initialFeatured)
+    const [search, setSearch] = useState(initialQuery)
+    const [modelFilter, setModelFilter] = useState<ModelFilter>(initialType)
+    const [genderFilter, setGenderFilter] = useState<GenderFilter>(initialGender)
     const [adding, setAdding] = useState<string | null>(null)
     const [removing, setRemoving] = useState<string | null>(null)
 
     const topApprovedSet = useMemo(() => new Set(topApprovedModelIds), [topApprovedModelIds])
 
     useEffect(() => {
-        const fetchFeatured = async () => {
-            const result = await getFeaturedModels()
-            if (result.success && result.data) {
-                setFeatured(result.data)
+        setFeatured(initialFeatured)
+    }, [initialFeatured])
+
+    useEffect(() => {
+        setSearch(initialQuery)
+    }, [initialQuery])
+
+    useEffect(() => {
+        setGenderFilter(initialGender)
+    }, [initialGender])
+
+    useEffect(() => {
+        setModelFilter(initialType)
+    }, [initialType])
+
+    const navigateWithParams = useCallback((update: (params: URLSearchParams) => void) => {
+        const params = new URLSearchParams(searchParams.toString())
+        update(params)
+        router.push(`${pathname}?${params.toString()}`)
+    }, [pathname, router, searchParams])
+
+    const updateFeaturedParams = useCallback((next: { q?: string; gender?: GenderFilter; type?: ModelFilter; page?: number }) => {
+        navigateWithParams((params) => {
+            if (next.q !== undefined) {
+                if (next.q.trim()) params.set('fq', next.q.trim())
+                else params.delete('fq')
             }
-            setLoading(false)
-        }
-        fetchFeatured()
-    }, [])
+
+            if (next.gender !== undefined) {
+                if (next.gender === 'all') params.delete('fg')
+                else params.set('fg', next.gender)
+            }
+
+            if (next.type !== undefined) {
+                if (next.type === 'all') params.delete('ft')
+                else params.set('ft', next.type)
+            }
+
+            if (next.page !== undefined) {
+                if (next.page <= 1) params.delete('fp')
+                else params.set('fp', String(next.page))
+            }
+        })
+    }, [navigateWithParams])
 
     const featuredIds = useMemo(() => new Set(featured.map(f => f.model_id)), [featured])
 
-    // Only show public models (is_public = true) that are not already featured
-    const availableModels = useMemo(() => {
-        return allModels
-            .filter(m => m.is_public) // Only public models can be featured
-            .filter(m => !featuredIds.has(m.id))
-            .filter(m => {
-                if (modelFilter === 'starred') {
-                    return topApprovedSet.has(m.id)
-                }
-                return true
-            })
-            .filter(m => {
-                if (genderFilter === 'female') return m.gender?.toLowerCase() === 'female'
-                if (genderFilter === 'male') return m.gender?.toLowerCase() === 'male'
-                return true
-            })
-            .filter(m => {
-                if (!search.trim()) return true
-                const name = (m.alias || m.full_name).toLowerCase()
-                return name.includes(search.toLowerCase())
-            })
-    }, [allModels, featuredIds, search, modelFilter, genderFilter, topApprovedSet])
+    const availableModels = candidateModels
 
     const handleAdd = async (modelId: string) => {
         if (featured.length >= 8) {
@@ -125,23 +151,28 @@ export function FeaturedModelsPanel({ allModels, topApprovedModelIds = [], class
 
                         {/* Search and filters */}
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                            {/* Search */}
-                            <div className="relative w-full sm:w-64 shrink-0">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    placeholder="Buscar talento..."
-                                    value={search}
-                                    onChange={(e) => setSearch(e.target.value)}
-                                    className="pl-9"
-                                />
-                            </div>
+                            <SearchBar
+                                value={search}
+                                onValueChange={setSearch}
+                                onClear={() => {
+                                    setSearch('')
+                                    updateFeaturedParams({ q: '', page: 1 })
+                                }}
+                                onSubmit={(value) => updateFeaturedParams({ q: value, page: 1 })}
+                                placeholder="Buscar talento..."
+                                ariaLabel="Buscar talento para destacados"
+                                className="w-full sm:w-64 shrink-0"
+                            />
 
                             {/* Filters - Gender + Star */}
                             <div className="flex items-center gap-2">
                                 <SegmentedControl<GenderFilter>
                                     ariaLabel="Filtrar por género"
                                     value={genderFilter}
-                                    onValueChange={setGenderFilter}
+                                    onValueChange={(value) => {
+                                        setGenderFilter(value)
+                                        updateFeaturedParams({ gender: value, page: 1 })
+                                    }}
                                     className="w-fit shrink-0"
                                     options={[
                                         { value: 'all', label: 'Todos', iconOnly: true, icon: <VenusAndMars className="h-4 w-4" aria-hidden="true" /> },
@@ -152,7 +183,10 @@ export function FeaturedModelsPanel({ allModels, topApprovedModelIds = [], class
                                 <SegmentedControl<ModelFilter>
                                     ariaLabel="Filtrar top"
                                     value={modelFilter}
-                                    onValueChange={setModelFilter}
+                                    onValueChange={(value) => {
+                                        setModelFilter(value)
+                                        updateFeaturedParams({ type: value, page: 1 })
+                                    }}
                                     className="w-fit shrink-0"
                                     options={[
                                         { value: 'all', label: 'Todos', iconOnly: true, icon: <Layers className="h-4 w-4" aria-hidden="true" /> },
@@ -164,7 +198,7 @@ export function FeaturedModelsPanel({ allModels, topApprovedModelIds = [], class
                     </div>
                 </CardHeader>
                 <CardContent className="p-0">
-                    <ScrollArea className="h-[350px]">
+                    <ScrollArea className="h-87.5">
                         <div className="divide-y divide-separator">
                             {availableModels.length === 0 ? (
                                 <div className="py-8 text-center text-muted-foreground">
@@ -191,24 +225,62 @@ export function FeaturedModelsPanel({ allModels, topApprovedModelIds = [], class
                                             <Star className="h-4 w-4 text-warning fill-warning shrink-0" />
                                         )}
 
-                                        <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            onClick={() => handleAdd(model.id)}
-                                            disabled={adding === model.id || featured.length >= 8}
-                                            className="shrink-0 h-8 w-8 p-0 hover:bg-success/20 hover:text-success"
-                                        >
-                                            {adding === model.id ? (
-                                                <Loader2 className="h-4 w-4 animate-spin" />
-                                            ) : (
-                                                <Plus className="h-4 w-4" />
-                                            )}
-                                        </Button>
+                                        {featuredIds.has(model.id) ? (
+                                            <div className="h-8 w-8 rounded-full bg-purple flex items-center justify-center shrink-0">
+                                                <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                                </svg>
+                                            </div>
+                                        ) : (
+                                            <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                onClick={() => handleAdd(model.id)}
+                                                disabled={adding === model.id || featured.length >= 8}
+                                                className="shrink-0 h-8 w-8 p-0 hover:bg-success/20 hover:text-success"
+                                            >
+                                                {adding === model.id ? (
+                                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                                ) : (
+                                                    <Plus className="h-4 w-4" />
+                                                )}
+                                            </Button>
+                                        )}
                                     </div>
                                 ))
                             )}
                         </div>
                     </ScrollArea>
+
+                    {totalPages > 1 && (
+                        <div className="border-t border-separator p-4">
+                            <div className="flex items-center justify-between gap-3">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={currentPage <= 1}
+                                    onClick={() => updateFeaturedParams({ page: currentPage - 1 })}
+                                >
+                                    <ChevronLeft className="h-4 w-4" />
+                                    Anterior
+                                </Button>
+                                <span className="text-label text-muted-foreground text-center">
+                                    Página {currentPage} de {totalPages} · {candidateCount} resultados
+                                </span>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={currentPage >= totalPages}
+                                    onClick={() => updateFeaturedParams({ page: currentPage + 1 })}
+                                >
+                                    Siguiente
+                                    <ChevronRight className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
 
@@ -224,25 +296,14 @@ export function FeaturedModelsPanel({ allModels, topApprovedModelIds = [], class
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
-                    {loading ? (
-                        <div className="divide-y divide-separator">
-                            {Array.from({ length: 4 }).map((_, i) => (
-                                <div key={i} className="flex items-center gap-3 p-4 w-full">
-                                    <Skeleton className="h-4 w-4" />
-                                    <Skeleton className="h-10 w-10 rounded-full" />
-                                    <Skeleton className="h-4 flex-1" />
-                                    <Skeleton className="h-8 w-8" />
-                                </div>
-                            ))}
-                        </div>
-                    ) : featured.length === 0 ? (
+                    {featured.length === 0 ? (
                         <div className="py-12 text-center text-muted-foreground">
                             <Star className="h-12 w-12 mx-auto mb-3 opacity-30" />
                             <p className="text-body">No hay modelos destacados</p>
                             <p className="text-label mt-1">Agrega modelos desde la búsqueda</p>
                         </div>
                     ) : (
-                        <ScrollArea className="h-[350px]">
+                        <ScrollArea className="h-87.5">
                             <div className="divide-y divide-separator">
                                 {featured.map((item, index) => (
                                     <div

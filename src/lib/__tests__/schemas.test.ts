@@ -262,6 +262,18 @@ describe('modelFormSchema', () => {
       if (result.success) expect(result.data.pants_size).toBeNull();
     });
 
+    it('converts 0 to null', () => {
+      const result = modelFormSchema.safeParse({ ...validModel, pants_size: 0 });
+      expect(result.success).toBe(true);
+      if (result.success) expect(result.data.pants_size).toBeNull();
+    });
+
+    it('converts string 0 to null', () => {
+      const result = modelFormSchema.safeParse({ ...validModel, pants_size: '0' });
+      expect(result.success).toBe(true);
+      if (result.success) expect(result.data.pants_size).toBeNull();
+    });
+
     it('converts undefined to null', () => {
       const result = modelFormSchema.safeParse({ ...validModel, pants_size: undefined });
       expect(result.success).toBe(true);

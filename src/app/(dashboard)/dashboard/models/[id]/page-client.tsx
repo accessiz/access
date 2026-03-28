@@ -101,10 +101,10 @@ export default function ModelProfilePageClient({ initialModel, workHistory = [],
     toast.success('UUID copiado al portapapeles');
   };
 
-  const safeParseInt = (value: string | number | null | undefined): number | null => {
+  const normalizePantsSize = (value: string | number | null | undefined): number | null => {
     if (value === null || value === undefined || value === '') return null;
     const parsed = parseInt(String(value), 10);
-    return isNaN(parsed) ? null : parsed;
+    return isNaN(parsed) || parsed <= 0 ? null : parsed;
   };
 
   const normalizeShoeSize = (value: number | string | null | undefined): number | null => {
@@ -134,7 +134,7 @@ export default function ModelProfilePageClient({ initialModel, workHistory = [],
       waist_cm: initialModel.waist_cm ?? null,
       hips_cm: initialModel.hips_cm ?? null,
       top_size: initialModel.top_size ?? null,
-      pants_size: safeParseInt(initialModel.pants_size),
+      pants_size: normalizePantsSize(initialModel.pants_size),
       shoe_size_us: normalizeShoeSize(initialModel.shoe_size_us),
       instagram: initialModel.instagram ?? '',
       tiktok: initialModel.tiktok ?? '',

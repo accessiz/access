@@ -6,6 +6,23 @@ import { toPublicUrl } from '@/lib/utils';
 
 // const BUCKET_NAME = 'Book_Completo_iZ_Management'; // Ya no se usa para generar URLs
 const ITEMS_PER_PAGE = 24;
+export const MODELS_DIRECTORY_PAGE_SIZE = 40;
+
+export type ModelDirectoryItem = Pick<
+  Model,
+  'id' | 'alias' | 'full_name' | 'country' | 'instagram' | 'gender' | 'cover_path'
+> & {
+  coverUrl: string | null;
+};
+
+export type ModelPickerItem = Pick<
+  Model,
+  'id' | 'alias' | 'full_name' | 'country' | 'cover_path'
+> & {
+  coverUrl: string | null;
+};
+
+export const MODEL_PICKER_PAGE_SIZE = 24;
 
 type SearchParams = {
   query?: string;
@@ -18,6 +35,146 @@ type SearchParams = {
   limit?: number;
 };
 
+type ModelDirectorySearchParams = {
+  query?: string;
+  gender?: 'all' | 'male' | 'female';
+  currentPage?: number;
+  limit?: number;
+  busyModelIds?: string[];
+};
+
+type ModelPickerSearchParams = {
+  query?: string;
+  currentPage?: number;
+  limit?: number;
+  excludeIds?: string[];
+};
+
+function applyModelSearch(
+  queryBuilder: any,
+  query?: string
+) {
+  if (!query) return queryBuilder;
+
+  const searchQuery = query
+    .trim()
+    .split(/\s+/)
+    .filter((term) => term.length > 0)
+    .map((term) => `${term}:*`)
+    .join(' & ');
+
+  if (!searchQuery) return queryBuilder;
+
+  return queryBuilder.textSearch('fts_search_vector', searchQuery, {
+    config: 'spanish_unaccent',
+  });
+}
+
+export async function getModelsDirectoryPage(searchParams: ModelDirectorySearchParams) {
+  noStore();
+  const supabase = await createClient();
+  const currentPage = Math.max(searchParams.currentPage || 1, 1);
+  const limit = searchParams.limit || MODELS_DIRECTORY_PAGE_SIZE;
+
+  let queryBuilder = supabase
+    .from('models')
+    .select('id, alias, full_name, country, instagram, gender, cover_path', { count: 'exact' });
+
+  queryBuilder = applyModelSearch(queryBuilder, searchParams.query);
+
+  if (searchParams.gender && searchParams.gender !== 'all') {
+    queryBuilder = queryBuilder.eq('gender', searchParams.gender);
+  }
+
+  if (searchParams.busyModelIds) {
+    if (searchParams.busyModelIds.length === 0) {
+      return { data: [] as ModelDirectoryItem[], count: 0 };
+    }
+
+    queryBuilder = queryBuilder.in('id', searchParams.busyModelIds);
+  }
+
+  const from = (currentPage - 1) * limit;
+  const to = from + limit - 1;
+
+  const { data, error, count } = await queryBuilder
+    .order('alias', { ascending: true })
+    .range(from, to);
+
+  if (error) {
+    logError(error, { action: 'getModelsDirectoryPage.query', searchParams });
+    return { data: [] as ModelDirectoryItem[], count: 0 };
+  }
+
+  const rows = (data || []) as Array<ModelDirectoryItem & { cover_path?: string | null }>;
+
+  return {
+    data: rows.map((model) => ({
+      ...model,
+      coverUrl: toPublicUrl(model.cover_path),
+    })),
+    count: count || 0,
+  };
+}
+
+export async function getModelPickerItems(limit = 1000): Promise<ModelPickerItem[]> {
+  noStore();
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from('models')
+    .select('id, alias, full_name, country, cover_path')
+    .order('alias', { ascending: true })
+    .limit(limit);
+
+  if (error) {
+    logError(error, { action: 'getModelPickerItems.query', limit });
+    return [];
+  }
+
+  return ((data || []) as Array<ModelPickerItem & { cover_path?: string | null }>).map((model) => ({
+    ...model,
+    coverUrl: toPublicUrl(model.cover_path),
+  }));
+}
+
+export async function getModelPickerPage(searchParams: ModelPickerSearchParams) {
+  noStore();
+  const supabase = await createClient();
+  const currentPage = Math.max(searchParams.currentPage || 1, 1);
+  const limit = searchParams.limit || MODEL_PICKER_PAGE_SIZE;
+
+  let queryBuilder = supabase
+    .from('models')
+    .select('id, alias, full_name, country, cover_path', { count: 'exact' });
+
+  queryBuilder = applyModelSearch(queryBuilder, searchParams.query);
+
+  if (searchParams.excludeIds && searchParams.excludeIds.length > 0) {
+    queryBuilder = queryBuilder.not('id', 'in', `(${searchParams.excludeIds.join(',')})`);
+  }
+
+  const from = (currentPage - 1) * limit;
+  const to = from + limit - 1;
+
+  const { data, error, count } = await queryBuilder
+    .order('alias', { ascending: true, nullsFirst: false })
+    .range(from, to);
+
+  if (error) {
+    logError(error, { action: 'getModelPickerPage.query', searchParams });
+    return { data: [] as ModelPickerItem[], count: 0 };
+  }
+
+  return {
+    data: ((data || []) as Array<ModelPickerItem & { cover_path?: string | null }>).map((model) => ({
+      ...model,
+      coverUrl: toPublicUrl(model.cover_path),
+    })),
+    count: count || 0,
+  };
+}
+
 export async function getModelsEnriched(searchParams: SearchParams) {
   noStore();
   const supabase = await createClient();
@@ -29,23 +186,7 @@ export async function getModelsEnriched(searchParams: SearchParams) {
     .select('*, cover_path', { count: 'exact' });
 
   // --- BLOQUE DE BÚSQUEDA FTS ---
-  if (searchParams.query) {
-    const searchQuery = searchParams.query.trim()
-      .split(/\s+/)
-      .filter(term => term.length > 0)
-      .map(term => term + ':*')
-      .join(' & ');
-
-    if (searchQuery) {
-      queryBuilder = queryBuilder.textSearch(
-        'fts_search_vector',
-        searchQuery,
-        {
-          config: 'spanish_unaccent'
-        }
-      );
-    }
-  }
+  queryBuilder = applyModelSearch(queryBuilder, searchParams.query);
   // --- FIN BLOQUE DE BÚSQUEDA FTS ---
 
   if (searchParams.country) {

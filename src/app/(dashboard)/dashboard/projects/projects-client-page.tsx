@@ -23,6 +23,28 @@ type InitialData = {
     availableYears: number[];
 };
 
+type ProjectSortableHeaderProps = {
+    tkey: keyof Project;
+    label: string;
+    className?: string;
+    activeKey: keyof Project;
+    direction: 'asc' | 'desc';
+    onSort: (key: keyof Project) => void;
+};
+
+function ProjectSortableHeader({ tkey, label, className, activeKey, direction, onSort }: ProjectSortableHeaderProps) {
+    return (
+        <TableHead onClick={() => onSort(tkey)} className={cn("cursor-pointer hover:text-foreground transition-colors", className)}>
+            <div className="flex items-center gap-x-2 gap-y-2">
+                {label}
+                {activeKey === tkey && (
+                    direction === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                )}
+            </div>
+        </TableHead>
+    );
+}
+
 // Formatear fecha evitando problemas de zona horaria (Guatemala GMT-6)
 // Al parsear YYYY-MM-DD como UTC y formatear en UTC, evitamos el desfase de un día
 const formatDate = (dateString: string) => {
@@ -100,17 +122,6 @@ export default function ProjectsClientPage({ initialProjects, initialCount, avai
         return items;
     }, [currentPage, totalPages]);
 
-    const SortableHeader = ({ tkey, label, className }: { tkey: keyof Project; label: string; className?: string }) => (
-        <TableHead onClick={() => handleSort(tkey)} className={cn("cursor-pointer hover:text-foreground transition-colors", className)}>
-            <div className="flex items-center gap-x-2 gap-y-2">
-                {label}
-                {sortConfig.key === tkey && (
-                    sortConfig.direction === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
-                )}
-            </div>
-        </TableHead>
-    );
-
     const renderContent = () => {
         if (projects.length === 0) {
             return (
@@ -176,11 +187,11 @@ export default function ProjectsClientPage({ initialProjects, initialCount, avai
                             <TableHeader>
                                 <TableRow className="bg-quaternary hover:bg-quaternary">
                                     <TableHead className="w-12">#</TableHead>
-                                    <SortableHeader tkey="project_name" label="Proyecto" />
-                                    <SortableHeader tkey="client_name" label="Cliente" />
-                                    <SortableHeader tkey="status" label="Estado" />
+                                    <ProjectSortableHeader tkey="project_name" label="Proyecto" activeKey={sortConfig.key} direction={sortConfig.direction} onSort={handleSort} />
+                                    <ProjectSortableHeader tkey="client_name" label="Cliente" activeKey={sortConfig.key} direction={sortConfig.direction} onSort={handleSort} />
+                                    <ProjectSortableHeader tkey="status" label="Estado" activeKey={sortConfig.key} direction={sortConfig.direction} onSort={handleSort} />
                                     <TableHead>Talento Aprobado</TableHead>
-                                    <SortableHeader tkey="created_at" label="Fecha" />
+                                    <ProjectSortableHeader tkey="created_at" label="Fecha" activeKey={sortConfig.key} direction={sortConfig.direction} onSort={handleSort} />
                                 </TableRow>
                             </TableHeader>
                             <TableBody>

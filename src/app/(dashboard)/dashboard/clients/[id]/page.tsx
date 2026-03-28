@@ -63,8 +63,7 @@ export default async function ClientPage({ params }: PageProps) {
         redirect('/login');
     }
 
-    // Obtener datos del cliente con marcas
-    const { data: clientData, error: clientError } = await supabase
+    const clientQuery = supabase
         .from('clients')
         .select(`
             *,
@@ -74,18 +73,7 @@ export default async function ClientPage({ params }: PageProps) {
         .eq('user_id', user.id)
         .single();
 
-    if (clientError || !clientData) {
-        return (
-            <div className="text-center">
-                <h1 className="text-display">Cliente no encontrado</h1>
-                <p className="text-muted-foreground">El cliente que buscas no existe o no tienes permiso para verlo.</p>
-            </div>
-        );
-    }
-
-    // Obtener proyectos del cliente (por client_id o por client_name)
-    // Primero intentamos por client_id
-    const { data: projectsDataById } = await supabase
+    const projectsByIdQuery = supabase
         .from('projects')
         .select(`
             id,
@@ -102,6 +90,19 @@ export default async function ClientPage({ params }: PageProps) {
         .order('created_at', { ascending: false })
         .limit(10);
 
+    const [
+        { data: clientData, error: clientError },
+        { data: projectsDataById },
+    ] = await Promise.all([clientQuery, projectsByIdQuery]);
+
+    if (clientError || !clientData) {
+        return (
+            <div className="text-center">
+                <h1 className="text-display">Cliente no encontrado</h1>
+                <p className="text-muted-foreground">El cliente que buscas no existe o no tienes permiso para verlo.</p>
+            </div>
+        );
+    }
 
     // Si no encontramos por client_id, buscamos por client_name
     let projectsData = projectsDataById;
@@ -179,7 +180,7 @@ export default async function ClientPage({ params }: PageProps) {
 
     // Obtener datos de los modelos más usados (top 10)
     const topModelIds = Array.from(modelUsageCount.entries())
-        .sort((a, b) => b[1] - a[1])
+        .toSorted((a, b) => b[1] - a[1])
         .slice(0, 10)
         .map(([modelId]) => modelId);
 
@@ -198,7 +199,7 @@ export default async function ClientPage({ params }: PageProps) {
                 cover_path: m.cover_path,
                 gender: m.gender,
                 usage_count: modelUsageCount.get(m.id) || 0,
-            })).sort((a, b) => b.usage_count - a.usage_count);
+            })).toSorted((a, b) => b.usage_count - a.usage_count);
         }
     }
 

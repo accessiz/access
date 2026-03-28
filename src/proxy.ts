@@ -158,6 +158,6 @@ export async function proxy(request: NextRequest) {
 // Matcher: ejecuta en todas las rutas excepto assets estáticos
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|images/).*)',
+    '/((?!api|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|images/).*)',
   ],
 }

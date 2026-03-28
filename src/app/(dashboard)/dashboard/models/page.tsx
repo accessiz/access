@@ -1,7 +1,6 @@
-import { getModelsEnriched, getBusyModelsToday } from '@/lib/api/models';
+import { getModelsDirectoryPage, getBusyModelsToday, MODELS_DIRECTORY_PAGE_SIZE } from '@/lib/api/models';
 import { getModelByIdCached, getModelWorkHistoryCached } from '@/lib/api/cached';
 import { ModelsPageContent } from '@/components/models';
-import { Model } from '@/lib/types';
 import ModelProfilePageClient from './[id]/page-client';
 import Link from 'next/link';
 import { Plus } from 'lucide-react';
@@ -29,41 +28,39 @@ type PageProps = {
  */
 export default async function ModelsPage({ searchParams }: PageProps) {
   const resolvedSearchParams = await searchParams;
+  const selectedModelId = typeof resolvedSearchParams.selected === 'string' ? resolvedSearchParams.selected : undefined;
+  const query = typeof resolvedSearchParams.q === 'string' ? resolvedSearchParams.q : undefined;
+  const gender = resolvedSearchParams.gender === 'male' || resolvedSearchParams.gender === 'female'
+    ? resolvedSearchParams.gender
+    : 'all';
+  const busy = resolvedSearchParams.busy === 'busy' ? 'busy' : 'all';
+  const pageParam = typeof resolvedSearchParams.page === 'string' ? Number(resolvedSearchParams.page) : 1;
+  const currentPage = Number.isFinite(pageParam) && pageParam > 0 ? pageParam : 1;
 
-  // Get selected model ID from URL params
-  const selectedModelId = resolvedSearchParams.selected as string | undefined;
-
-  // Fetch params for models list
-  const params = {
-    query: resolvedSearchParams.q as string | undefined,
-    country: resolvedSearchParams.country as string | undefined,
-    minHeight: resolvedSearchParams.minHeight as string | undefined,
-    maxHeight: resolvedSearchParams.maxHeight as string | undefined,
-    sortKey: (resolvedSearchParams.sort as keyof Model) || 'alias',
-    sortDir: (resolvedSearchParams.dir as 'asc' | 'desc') || 'asc',
-    currentPage: 1,
-    limit: 500,
-  };
-
-  // Fetch models list, busy status, and exchange rate in parallel
-  const [modelsResult, busyModelMap, rateResult] = await Promise.all([
-    getModelsEnriched(params),
-    getBusyModelsToday(),
-    getExchangeRate(),
-  ]);
-
-  const models = (modelsResult.data as Model[]) ?? [];
-
-  // If a model is selected, fetch its full data for the right column
-  let selectedModel = null;
-  let workHistory: Awaited<ReturnType<typeof getModelWorkHistoryCached>> = [];
-
-  if (selectedModelId) {
-    [selectedModel, workHistory] = await Promise.all([
+  const selectedModelPromise = selectedModelId
+    ? Promise.all([
       getModelByIdCached(selectedModelId),
       getModelWorkHistoryCached(selectedModelId),
-    ]);
-  }
+    ])
+    : Promise.resolve([null, []] as const);
+
+  const [busyModelMap, rateResult, [selectedModel, workHistory]] = await Promise.all([
+    getBusyModelsToday(),
+    getExchangeRate(),
+    selectedModelPromise,
+  ]);
+
+  const modelsResult = await getModelsDirectoryPage({
+    query,
+    gender,
+    currentPage,
+    limit: MODELS_DIRECTORY_PAGE_SIZE,
+    busyModelIds: busy === 'busy' ? Array.from(busyModelMap.keys()) : undefined,
+  });
+
+  const models = modelsResult.data ?? [];
+  const totalCount = modelsResult.count ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalCount / MODELS_DIRECTORY_PAGE_SIZE));
 
   const currentRate = rateResult.success && rateResult.rate ? rateResult.rate : 7.70;
 
@@ -74,7 +71,7 @@ export default async function ModelsPage({ searchParams }: PageProps) {
           <div className="flex items-center gap-3">
             <h1 className="text-display font-semibold">Talento</h1>
             <span aria-hidden className="h-5 w-px bg-border" />
-            <p className="text-label text-muted-foreground whitespace-nowrap">{models.length} talentos</p>
+            <p className="text-label text-muted-foreground whitespace-nowrap">{totalCount} talentos</p>
           </div>
         </div>
 
@@ -91,6 +88,12 @@ export default async function ModelsPage({ searchParams }: PageProps) {
       <ModelsPageContent
         initialModels={models}
         busyModelMap={busyModelMap}
+        currentPage={Math.min(currentPage, totalPages)}
+        totalPages={totalPages}
+        totalCount={totalCount}
+        initialQuery={query ?? ''}
+        initialGender={gender}
+        initialBusy={busy}
       >
         {/* Right column: Full profile of selected model */}
         {selectedModel && (

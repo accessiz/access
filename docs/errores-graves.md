@@ -240,7 +240,39 @@ supabase.auth.onAuthStateChange((event, session) => {
 
 ---
 
-*Última actualización: 2026-03-12*
+## 8. Imágenes rotas por colisión de caché CORS (Sidebar vs. Manager)
+
+**Fecha:** 2026-03-14  
+**Síntoma:** Las portadas de los modelos se ven bien en la lista de la izquierda (miniaturas) pero aparecen **rotas** en el panel central (Manager). Al recargar la página (F5) a veces se arregla, pero vuelve a fallar aleatoriamente.  
+**Tiempo perdido:** ~2 horas.
+
+### ❌ El Error (La "Doble Identidad")
+
+El problema es un conflicto de cómo el navegador guarda las imágenes en su memoria interna:
+
+1.  **Sidebar (Sin permisos):** La lista de talentos carga la foto como una imagen normal. Cloudflare la entrega y el navegador la guarda en caché diciendo: *"Esta foto NO tiene permisos CORS"*.
+2.  **Manager (Con permisos):** El panel central pide la **MISMA URL** pero usa `crossOrigin="anonymous"` porque necesita leer los píxeles (para el recorte/crop y descargas).
+3.  **Colisión:** El navegador ve que ya tiene la foto en caché, la intenta usar, pero como la versión guardada no tiene la cabecera `Access-Control-Allow-Origin`, la bloquea por seguridad.
+
+### ✅ La Solución (Cache-Busting para CORS)
+
+No basta con configurar el CORS en R2. Hay que obligar al navegador a tratar la petición del Manager como algo distinto:
+
+1.  **Utility `toCorsUrl`:** Se creó una función en `lib/utils.ts` que añade un parámetro invisible a la URL.
+    ```typescript
+    export function toCorsUrl(url: string) {
+      return `${url}?cors=1`; // Engaña al navegador para que pida una copia fresca
+    }
+    ```
+2.  **Uso en Componentes:** Todos los sitios que usen `crossOrigin="anonymous"` o procesen la imagen (Manager, Print Templates) deben envolver la URL con esta función.
+
+### Regla general
+
+> **Si una imagen se carga dos veces en la misma página con distintas necesidades de seguridad (una visual y otra para proceso/píxeles), la segunda DEBE llevar un parámetro de URL (como `?cors=1`) para evitar que el navegador use una copia de caché sin permisos.**
+
+---
+
+*Última actualización: 2026-03-14*
 
 ---
 

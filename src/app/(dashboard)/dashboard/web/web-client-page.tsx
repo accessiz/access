@@ -1,93 +1,151 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Eye, EyeOff, Globe, Layers, Loader2, Mars, Search, User, Venus, VenusAndMars } from 'lucide-react'
-import { Input } from '@/components/ui/input'
+import { useEffect, useState, useCallback } from 'react'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { Eye, EyeOff, Globe, Layers, Loader2, Mars, Search, User, Venus, VenusAndMars, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Switch } from '@/components/ui/switch'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import { toggleModelVisibility } from '@/lib/actions/models'
-import { getAllModelsForWeb } from '@/lib/actions/web'
-import { getTopApprovedModelIds } from '@/lib/actions/rankings'
 import { SegmentedControl } from '@/components/molecules/SegmentedControl'
 import { FeaturedModelsPanel } from '@/components/organisms/FeaturedModelsPanel'
 import { toPublicUrl } from '@/lib/utils'
-
-type Model = {
-    id: string
-    alias: string | null
-    full_name: string
-    cover_path: string | null
-    is_public: boolean
-    gender: string | null
-}
+import { SearchBar } from '@/components/molecules/SearchBar'
+import type { WebModel } from '@/lib/actions/web'
+import type { FeaturedModel } from '@/lib/actions/featured-models'
 
 type GenderFilter = 'all' | 'female' | 'male'
 type VisibilityFilter = 'all' | 'visible' | 'hidden'
 
-export default function WebVisibilityClientPage() {
-    const [models, setModels] = useState<Model[]>([])
-    const [loading, setLoading] = useState(true)
-    const [search, setSearch] = useState('')
-    const [genderFilter, setGenderFilter] = useState<GenderFilter>('all')
-    const [visibilityFilter, setVisibilityFilter] = useState<VisibilityFilter>('all')
+interface WebVisibilityClientPageProps {
+    initialModels: WebModel[]
+    totalCount: number
+    summary: {
+        totalCount: number
+        publicCount: number
+    }
+    currentPage: number
+    totalPages: number
+    initialQuery: string
+    initialGender: GenderFilter
+    initialVisibility: VisibilityFilter
+    initialTopApprovedIds: string[]
+    initialFeatured: FeaturedModel[]
+    featuredCandidates: WebModel[]
+    featuredCandidatesCount: number
+    featuredCurrentPage: number
+    featuredTotalPages: number
+    initialFeaturedQuery: string
+    initialFeaturedGender: GenderFilter
+    initialFeaturedType: 'all' | 'starred'
+    initialError: string | null
+}
+
+export default function WebVisibilityClientPage({
+    initialModels,
+    totalCount,
+    summary,
+    currentPage,
+    totalPages,
+    initialQuery,
+    initialGender,
+    initialVisibility,
+    initialTopApprovedIds,
+    initialFeatured,
+    featuredCandidates,
+    featuredCandidatesCount,
+    featuredCurrentPage,
+    featuredTotalPages,
+    initialFeaturedQuery,
+    initialFeaturedGender,
+    initialFeaturedType,
+    initialError,
+}: WebVisibilityClientPageProps) {
+    const router = useRouter()
+    const pathname = usePathname()
+    const searchParams = useSearchParams()
+
+    const [models, setModels] = useState<WebModel[]>(initialModels)
+    const [summaryState, setSummaryState] = useState(summary)
+    const [search, setSearch] = useState(initialQuery)
+    const [genderFilter, setGenderFilter] = useState<GenderFilter>(initialGender)
+    const [visibilityFilter, setVisibilityFilter] = useState<VisibilityFilter>(initialVisibility)
     const [updating, setUpdating] = useState<string | null>(null)
-    const [topApprovedIds, setTopApprovedIds] = useState<string[]>([])
 
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                // Fetch models
-                const result = await getAllModelsForWeb()
-                if (result.success && result.data) {
-                    setModels(result.data)
-                } else {
-                    toast.error(result.error || 'Error al cargar modelos')
-                }
+        setModels(initialModels)
+    }, [initialModels])
 
-                // Fetch top approved models
-                const topIds = await getTopApprovedModelIds(20)
-                setTopApprovedIds(topIds)
-            } catch (err) {
-                console.error(err)
-                toast.error('Error al cargar modelos')
-            } finally {
-                setLoading(false)
-            }
+    useEffect(() => {
+        setSummaryState(summary)
+    }, [summary])
+
+    useEffect(() => {
+        setSearch(initialQuery)
+    }, [initialQuery])
+
+    useEffect(() => {
+        setGenderFilter(initialGender)
+    }, [initialGender])
+
+    useEffect(() => {
+        setVisibilityFilter(initialVisibility)
+    }, [initialVisibility])
+
+    useEffect(() => {
+        if (initialError) {
+            toast.error(initialError)
         }
-        fetchData()
-    }, [])
+    }, [initialError])
+
+    const navigateWithParams = useCallback((update: (params: URLSearchParams) => void) => {
+        const params = new URLSearchParams(searchParams.toString())
+        update(params)
+        router.push(`${pathname}?${params.toString()}`)
+    }, [pathname, router, searchParams])
+
+    const updateListParams = useCallback((next: { q?: string; gender?: GenderFilter; visibility?: VisibilityFilter; page?: number }) => {
+        navigateWithParams((params) => {
+            if (next.q !== undefined) {
+                if (next.q.trim()) params.set('q', next.q.trim())
+                else params.delete('q')
+            }
+
+            if (next.gender !== undefined) {
+                if (next.gender === 'all') params.delete('gender')
+                else params.set('gender', next.gender)
+            }
+
+            if (next.visibility !== undefined) {
+                if (next.visibility === 'all') params.delete('visibility')
+                else params.set('visibility', next.visibility)
+            }
+
+            if (next.page !== undefined) {
+                if (next.page <= 1) params.delete('page')
+                else params.set('page', String(next.page))
+            }
+        })
+    }, [navigateWithParams])
 
     const handleToggle = async (modelId: string, newValue: boolean) => {
         setUpdating(modelId)
         const result = await toggleModelVisibility(modelId, newValue)
         if (result.success) {
-            setModels(prev => prev.map(m =>
-                m.id === modelId ? { ...m, is_public: newValue } : m
-            ))
+            setModels(prev => prev.map(m => m.id === modelId ? { ...m, is_public: newValue } : m))
+            setSummaryState(prev => ({
+                ...prev,
+                publicCount: prev.publicCount + (newValue ? 1 : -1),
+            }))
             toast.success(newValue ? 'Visible en web' : 'Oculto de web')
         } else {
             toast.error(result.error || 'Error al actualizar')
         }
         setUpdating(null)
     }
-
-    const filteredModels = models.filter(m => {
-        const name = (m.alias || m.full_name).toLowerCase()
-        const matchesSearch = name.includes(search.toLowerCase())
-        const matchesGender = genderFilter === 'all' ||
-            (genderFilter === 'female' && m.gender?.toLowerCase() === 'female') ||
-            (genderFilter === 'male' && m.gender?.toLowerCase() === 'male')
-        const matchesVisibility = visibilityFilter === 'all' ||
-            (visibilityFilter === 'visible' && m.is_public) ||
-            (visibilityFilter === 'hidden' && !m.is_public)
-        return matchesSearch && matchesGender && matchesVisibility
-    })
-
-    const publicCount = models.filter(m => m.is_public).length
 
     return (
         <div className="flex-1 min-h-0 overflow-y-auto grid gap-8 pb-6">
@@ -98,7 +156,7 @@ export default function WebVisibilityClientPage() {
                         <h1 className="text-display font-semibold">Visibilidad Web</h1>
                         <span aria-hidden className="h-5 w-px bg-border" />
                         <p className="text-label text-muted-foreground whitespace-nowrap">
-                            {publicCount} de {models.length} talentos visibles
+                            {summaryState.publicCount} de {summaryState.totalCount} talentos visibles
                         </p>
                     </div>
                 </div>
@@ -116,23 +174,28 @@ export default function WebVisibilityClientPage() {
 
                         {/* Search and Filters - Mobile: search top, filters bottom. Desktop: side by side */}
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                            {/* Search */}
-                            <div className="relative w-full sm:w-64 shrink-0">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    placeholder="Buscar talento..."
-                                    value={search}
-                                    onChange={(e) => setSearch(e.target.value)}
-                                    className="pl-9"
-                                />
-                            </div>
+                            <SearchBar
+                                value={search}
+                                onValueChange={setSearch}
+                                onClear={() => {
+                                    setSearch('')
+                                    updateListParams({ q: '', page: 1 })
+                                }}
+                                onSubmit={(value) => updateListParams({ q: value, page: 1 })}
+                                placeholder="Buscar talento..."
+                                ariaLabel="Buscar talento"
+                                className="w-full sm:w-64 shrink-0"
+                            />
 
                             {/* Filters - Mobile: stack, Desktop: row */}
                             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
                                 <SegmentedControl<GenderFilter>
                                     ariaLabel="Filtrar por género"
                                     value={genderFilter}
-                                    onValueChange={setGenderFilter}
+                                    onValueChange={(value) => {
+                                        setGenderFilter(value)
+                                        updateListParams({ gender: value, page: 1 })
+                                    }}
                                     className="w-fit shrink-0"
                                     options={[
                                         { value: 'all', label: 'Todos', iconOnly: true, icon: <VenusAndMars className="h-4 w-4" aria-hidden="true" /> },
@@ -143,7 +206,10 @@ export default function WebVisibilityClientPage() {
                                 <SegmentedControl<VisibilityFilter>
                                     ariaLabel="Filtrar por visibilidad"
                                     value={visibilityFilter}
-                                    onValueChange={setVisibilityFilter}
+                                    onValueChange={(value) => {
+                                        setVisibilityFilter(value)
+                                        updateListParams({ visibility: value, page: 1 })
+                                    }}
                                     className="w-fit shrink-0"
                                     options={[
                                         { value: 'all', label: 'Todos', iconOnly: true, icon: <Layers className="h-4 w-4" aria-hidden="true" /> },
@@ -161,21 +227,13 @@ export default function WebVisibilityClientPage() {
                     {/* Model grid with scroll */}
                     <ScrollArea className="h-100">
                         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 pr-4">
-                            {loading ? (
-                                Array.from({ length: 9 }).map((_, i) => (
-                                    <div key={i} className="flex items-center gap-4 p-3 rounded-lg border">
-                                        <Skeleton className="h-10 w-10 rounded-full" />
-                                        <Skeleton className="h-4 w-24 flex-1" />
-                                        <Skeleton className="h-6 w-10" />
-                                    </div>
-                                ))
-                            ) : filteredModels.length === 0 ? (
+                            {models.length === 0 ? (
                                 <div className="col-span-full flex flex-col items-center justify-center py-12 text-muted-foreground">
                                     <Globe className="h-12 w-12 mb-4 opacity-50" />
                                     <p className="text-body">No se encontraron talentos</p>
                                 </div>
                             ) : (
-                                filteredModels.map(model => (
+                                models.map(model => (
                                     <div
                                         key={model.id}
                                         className="flex items-center gap-3 p-3 rounded-lg border-transparent bg-sys-bg-tertiary hover:bg-hover-overlay transition-colors"
@@ -205,11 +263,49 @@ export default function WebVisibilityClientPage() {
                             )}
                         </div>
                     </ScrollArea>
+
+                    {totalPages > 1 && (
+                        <div className="mt-4 flex items-center justify-between gap-3 border-t border-separator pt-4">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                disabled={currentPage <= 1}
+                                onClick={() => updateListParams({ page: currentPage - 1 })}
+                            >
+                                <ChevronLeft className="h-4 w-4" />
+                                Anterior
+                            </Button>
+                            <span className="text-label text-muted-foreground text-center">
+                                Página {currentPage} de {totalPages} · {totalCount} resultados
+                            </span>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                disabled={currentPage >= totalPages}
+                                onClick={() => updateListParams({ page: currentPage + 1 })}
+                            >
+                                Siguiente
+                                <ChevronRight className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
 
             {/* Featured Models Section */}
-            <FeaturedModelsPanel allModels={models} topApprovedModelIds={topApprovedIds} />
+            <FeaturedModelsPanel
+                initialFeatured={initialFeatured}
+                candidateModels={featuredCandidates}
+                candidateCount={featuredCandidatesCount}
+                currentPage={featuredCurrentPage}
+                totalPages={featuredTotalPages}
+                initialQuery={initialFeaturedQuery}
+                initialGender={initialFeaturedGender}
+                initialType={initialFeaturedType}
+                topApprovedModelIds={initialTopApprovedIds}
+            />
         </div>
     )
 }

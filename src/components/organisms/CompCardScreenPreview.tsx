@@ -3,7 +3,7 @@
 import React from 'react';
 import { Model } from '@/lib/types';
 import { SmartCroppedImage } from '@/components/atoms/SmartCroppedImage';
-import { cn } from '@/lib/utils';
+import { cn, toCorsUrl } from '@/lib/utils';
 
 interface CompCardScreenPreviewProps {
   model: Model;
@@ -28,10 +28,10 @@ export function CompCardScreenPreview({ model, className }: CompCardScreenPrevie
     <div className={cn("flex flex-row gap-4 sm:gap-8 w-full max-w-[1280px] mx-auto items-stretch bg-white p-2 sm:p-8 shadow-2xl overflow-x-auto", className)}>
       {/* Front Side (Portada) */}
       <div className="flex-1 min-w-0 flex flex-col bg-white">
-        <div className="aspect-[3/4] relative w-full overflow-hidden bg-[#fafafa]">
+        <div className="aspect-3/4 relative w-full overflow-hidden bg-[#fafafa]">
           {coverUrl ? (
             <SmartCroppedImage
-              src={coverUrl}
+              src={toCorsUrl(coverUrl)!}
               alt={`${model.alias} - Cover`}
               className="w-full h-full object-cover"
               loading="eager"
@@ -66,10 +66,10 @@ export function CompCardScreenPreview({ model, className }: CompCardScreenPrevie
       <div className="flex-1 min-w-0 flex flex-col bg-white">
         <div className="grid grid-cols-2 gap-4 flex-1">
           {/* Slot 1: Photo (Top Left) */}
-          <div className="aspect-[3/4] relative overflow-hidden bg-[#fafafa]">
+          <div className="aspect-3/4 relative overflow-hidden bg-[#fafafa]">
             {backPhotos[0] && (
               <SmartCroppedImage
-                src={backPhotos[0]}
+                src={toCorsUrl(backPhotos[0])!}
                 alt="Talent Photo 1"
                 className="w-full h-full object-cover"
                 loading="lazy"
@@ -80,7 +80,7 @@ export function CompCardScreenPreview({ model, className }: CompCardScreenPrevie
           </div>
 
           {/* Slot 2: Stats Info (Top Right) */}
-          <div className="flex flex-col justify-between aspect-[3/4] p-2">
+          <div className="flex flex-col justify-between aspect-3/4 p-2">
             {/* Logo top right */}
             <div className="flex justify-end h-10 sm:h-16 pr-2">
               <img
@@ -104,10 +104,10 @@ export function CompCardScreenPreview({ model, className }: CompCardScreenPrevie
           </div>
 
           {/* Slot 3: Photo (Bottom Left) */}
-          <div className="aspect-[3/4] relative overflow-hidden bg-[#fafafa]">
+          <div className="aspect-3/4 relative overflow-hidden bg-[#fafafa]">
             {backPhotos[2] && (
               <SmartCroppedImage
-                src={backPhotos[2]}
+                src={toCorsUrl(backPhotos[2])!}
                 alt="Talent Photo 2"
                 className="w-full h-full object-cover"
                 loading="lazy"
@@ -118,10 +118,10 @@ export function CompCardScreenPreview({ model, className }: CompCardScreenPrevie
           </div>
 
           {/* Slot 4: Photo (Bottom Right) */}
-          <div className="aspect-[3/4] relative overflow-hidden bg-[#fafafa]">
+          <div className="aspect-3/4 relative overflow-hidden bg-[#fafafa]">
             {backPhotos[3] && (
               <SmartCroppedImage
-                src={backPhotos[3]}
+                src={toCorsUrl(backPhotos[3])!}
                 alt="Talent Photo 3"
                 className="w-full h-full object-cover"
                 loading="lazy"

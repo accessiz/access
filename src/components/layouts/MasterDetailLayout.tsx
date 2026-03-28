@@ -63,7 +63,7 @@ interface MasterDetailContextValue {
 const MasterDetailContext = React.createContext<MasterDetailContextValue | null>(null);
 
 function useMasterDetail() {
-    const context = React.useContext(MasterDetailContext);
+    const context = React.use(MasterDetailContext);
     if (!context) {
         throw new Error('MasterDetailLayout compound components must be used within MasterDetailLayout');
     }

@@ -3,6 +3,10 @@ import { useEffect, useState } from 'react';
 import { Bell, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { readVersionedStorage, writeVersionedStorage } from '@/lib/client-storage';
+
+const NOTIFICATIONS_SEEN_KEY = 'notifications:seen-ts';
+const NOTIFICATIONS_STORAGE_VERSION = 1;
 
 type Notification = { id: string; type: string; title: string; when: string; meta?: string };
 
@@ -12,25 +16,34 @@ export default function NotificationBell({ showDotOnly = true }: { showDotOnly?:
 
   useEffect(() => {
     let mounted = true;
+    const controller = new AbortController();
+
     // Solo traer notificaciones urgentes (acciones del cliente)
-    fetch('/api/notifications')
+    fetch('/api/notifications', { signal: controller.signal, cache: 'no-store' })
       .then(r => r.json())
       .then(res => {
         if (!mounted) return;
         if (res.success && Array.isArray(res.data)) {
           setNotifications(res.data);
-          const seenKey = 'notifications_seen_ts';
-          const seenTs = Number(localStorage.getItem(seenKey) || 0);
+          const seenTs = readVersionedStorage<number>('local', NOTIFICATIONS_SEEN_KEY, NOTIFICATIONS_STORAGE_VERSION) ?? 0;
           const unseenCount = res.data.filter((a: Notification) => new Date(a.when).getTime() > seenTs).length;
           setUnseen(unseenCount);
         }
       })
-      .catch(err => console.error(err));
-    return () => { mounted = false; };
+      .catch(err => {
+        if (err instanceof DOMException && err.name === 'AbortError') {
+          return;
+        }
+        console.error(err);
+      });
+    return () => {
+      mounted = false;
+      controller.abort();
+    };
   }, []);
 
   const markAllSeen = () => {
-    localStorage.setItem('notifications_seen_ts', String(Date.now()));
+    writeVersionedStorage('local', NOTIFICATIONS_SEEN_KEY, NOTIFICATIONS_STORAGE_VERSION, Date.now());
     setUnseen(0);
   };
 

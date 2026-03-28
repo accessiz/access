@@ -160,32 +160,52 @@ function BirthdayCard({ model, isToday, showDownload }: BirthdayCardProps) {
     )
 }
 
-export function BirthdaysClientPage() {
-    const [currentMonth, setCurrentMonth] = useState(() => getCurrentMonthInGuatemala())
-    const [birthdays, setBirthdays] = useState<BirthdayModel[]>([])
-    const [todayBirthdays, setTodayBirthdays] = useState<BirthdayModel[]>([])
-    const [loading, setLoading] = useState(true)
+interface BirthdaysClientPageProps {
+    initialMonth: number
+    initialBirthdays: BirthdayModel[]
+    initialTodayBirthdays: BirthdayModel[]
+}
 
-    // Cargar cumpleaños de hoy y del mes actual
+export function BirthdaysClientPage({
+    initialMonth,
+    initialBirthdays,
+    initialTodayBirthdays,
+}: BirthdaysClientPageProps) {
+    const [currentMonth, setCurrentMonth] = useState(initialMonth)
+    const [birthdays, setBirthdays] = useState<BirthdayModel[]>(initialBirthdays)
+    const [todayBirthdays] = useState<BirthdayModel[]>(initialTodayBirthdays)
+    const [loading, setLoading] = useState(false)
+
     useEffect(() => {
-        const fetchData = async () => {
-            setLoading(true)
-            const [monthResult, todayResult] = await Promise.all([
-                getBirthdaysByMonth(currentMonth),
-                getTodayBirthdays()
-            ])
+        setBirthdays(initialBirthdays)
+    }, [initialBirthdays])
 
-            if (monthResult.success && monthResult.data) {
-                setBirthdays(monthResult.data)
-            }
-            if (todayResult.success && todayResult.data) {
-                setTodayBirthdays(todayResult.data)
-            }
-            setLoading(false)
+    useEffect(() => {
+        if (currentMonth === initialMonth) {
+            return
         }
 
-        fetchData()
-    }, [currentMonth])
+        let cancelled = false
+
+        const fetchMonth = async () => {
+            setLoading(true)
+            const monthResult = await getBirthdaysByMonth(currentMonth)
+
+            if (!cancelled && monthResult.success && monthResult.data) {
+                setBirthdays(monthResult.data)
+            }
+
+            if (!cancelled) {
+                setLoading(false)
+            }
+        }
+
+        fetchMonth()
+
+        return () => {
+            cancelled = true
+        }
+    }, [currentMonth, initialMonth])
 
     const goToCurrentMonth = () => {
         setCurrentMonth(getCurrentMonthInGuatemala())

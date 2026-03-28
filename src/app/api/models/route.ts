@@ -27,7 +27,14 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ success: false, error: 'Could not fetch models' }, { status: 500 });
         }
 
-        return NextResponse.json({ success: true, data: data || [] });
+        return NextResponse.json(
+            { success: true, data: data || [] },
+            {
+                headers: {
+                    'Cache-Control': 'private, max-age=120, stale-while-revalidate=300',
+                },
+            }
+        );
     } catch (err) {
         logError(err, { route: '/api/models' });
         return NextResponse.json({ success: false, error: 'Could not fetch models' }, { status: 500 });

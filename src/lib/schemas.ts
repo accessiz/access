@@ -118,7 +118,11 @@ export const modelFormSchema = z.object({
     }
     if (typeof val === 'string') {
       const num = parseInt(val, 10);
-      return isNaN(num) ? null : num;
+      if (isNaN(num) || num <= 0) return null;
+      return num;
+    }
+    if (typeof val === 'number' && val <= 0) {
+      return null;
     }
     return val;
   }, z.number().positive().nullable()),

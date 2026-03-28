@@ -5,12 +5,15 @@ import dynamic from 'next/dynamic';
 import { Project } from '@/lib/types';
 
 // Lazy load Lottie (~50KB) — only loaded when wave animation data is ready
-const Lottie = dynamic(() => import('lottie-react').then(mod => mod.default ? { default: mod.default } : mod), {
+const Lottie = dynamic(() => import('lottie-react'), {
   ssr: false,
 });
 
 // Wave emoji Lottie animation URL
 const WAVE_EMOJI_URL = 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f44b/lottie.json';
+const waveAnimationDataPromise: Promise<object | null> = fetch(WAVE_EMOJI_URL)
+  .then(res => res.json())
+  .catch(() => null);
 
 interface ClientHeaderProps {
   project: Project;
@@ -21,10 +24,17 @@ export function ClientHeader({ project, clientName }: ClientHeaderProps) {
   const [waveData, setWaveData] = useState<object | null>(null);
 
   useEffect(() => {
-    fetch(WAVE_EMOJI_URL)
-      .then(res => res.json())
-      .then(data => setWaveData(data))
-      .catch(() => { });
+    let isActive = true;
+
+    waveAnimationDataPromise.then(data => {
+      if (isActive && data) {
+        setWaveData(data);
+      }
+    });
+
+    return () => {
+      isActive = false;
+    };
   }, []);
 
   return (

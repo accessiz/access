@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
+import { useState, useEffect, createContext, use, type ReactNode } from 'react';
 // ¡Importante! Usamos el nuevo cliente unificado para el navegador
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
@@ -77,7 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext);
+  const context = use(AuthContext);
   if (context === undefined) {
     throw new Error('useAuth debe ser usado dentro de un AuthProvider');
   }

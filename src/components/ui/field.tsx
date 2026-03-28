@@ -11,9 +11,7 @@ interface FieldContextValue {
   name: FieldPath<FieldValues>
 }
 
-const FieldContext = React.createContext<FieldContextValue>(
-  {} as FieldContextValue
-)
+const FieldContext = React.createContext<FieldContextValue | null>(null)
 
 const Field = <
   TFieldValues extends FieldValues = FieldValues,
@@ -29,15 +27,19 @@ const Field = <
 }
 
 const useFormField = () => {
-  const fieldContext = React.useContext(FieldContext)
-  const itemContext = React.useContext(FormItemContext)
+  const fieldContext = React.use(FieldContext)
+  const itemContext = React.use(FormItemContext)
   const { getFieldState, formState } = useFormContext()
-
-  const fieldState = getFieldState(fieldContext.name, formState)
 
   if (!fieldContext) {
     throw new Error("useFormField should be used within <Field>")
   }
+
+  if (!itemContext) {
+    throw new Error("useFormField should be used within <FieldItem>")
+  }
+
+  const fieldState = getFieldState(fieldContext.name, formState)
 
   const { id } = itemContext
 
@@ -55,14 +57,9 @@ interface FormItemContextValue {
   id: string
 }
 
-const FormItemContext = React.createContext<FormItemContextValue>(
-  {} as FormItemContextValue
-)
+const FormItemContext = React.createContext<FormItemContextValue | null>(null)
 
-const FieldItem = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => {
+function FieldItem({ className, ref, ...props }: React.ComponentPropsWithRef<"div">) {
   const id = React.useId()
 
   return (
@@ -70,13 +67,16 @@ const FieldItem = React.forwardRef<
       <div ref={ref} className={cn("space-y-2", className)} {...props} />
     </FormItemContext.Provider>
   )
-})
+}
 FieldItem.displayName = "FieldItem"
 
-const FieldLabel = React.forwardRef<
-  React.ElementRef<typeof Label>,
-  React.ComponentPropsWithoutRef<typeof Label>
->(({ className, ...props }, ref) => {
+function FieldLabel({
+  className,
+  ref,
+  ...props
+}: React.ComponentPropsWithoutRef<typeof Label> & {
+  ref?: React.Ref<React.ElementRef<typeof Label>>
+}) {
   const { error, formItemId } = useFormField()
 
   return (
@@ -87,14 +87,11 @@ const FieldLabel = React.forwardRef<
       {...props}
     />
   )
-})
+}
 FieldLabel.displayName = "FieldLabel"
 
 
-const FieldDescription = React.forwardRef<
-  HTMLParagraphElement,
-  React.HTMLAttributes<HTMLParagraphElement>
->(({ className, ...props }, ref) => {
+function FieldDescription({ className, ref, ...props }: React.ComponentPropsWithRef<"p">) {
   const { formDescriptionId } = useFormField()
 
   return (
@@ -105,13 +102,10 @@ const FieldDescription = React.forwardRef<
       {...props}
     />
   )
-})
+}
 FieldDescription.displayName = "FieldDescription"
 
-const FieldMessage = React.forwardRef<
-  HTMLParagraphElement,
-  React.HTMLAttributes<HTMLParagraphElement>
->(({ className, children, ...props }, ref) => {
+function FieldMessage({ className, children, ref, ...props }: React.ComponentPropsWithRef<"p">) {
   const { error, formMessageId } = useFormField()
   const body = error ? String(error?.message) : children
 
@@ -129,7 +123,7 @@ const FieldMessage = React.forwardRef<
       {body}
     </p>
   )
-})
+}
 FieldMessage.displayName = "FieldMessage"
 
 export { Field, useFormField, FieldItem, FieldLabel, FieldDescription, FieldMessage }

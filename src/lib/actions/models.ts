@@ -1,6 +1,5 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { modelFormSchema, ModelFormData } from '@/lib/schemas'
 import { z } from 'zod'
@@ -9,6 +8,7 @@ import { logError } from '@/lib/utils/errors';
 import { PostgrestError } from '@supabase/supabase-js';
 import { logActivity } from '@/lib/activity-logger';
 import { ActivityTitles } from '@/lib/activity-titles';
+import { requireAuthenticatedAction } from '@/lib/actions/server-action-auth'
 
 // Helper function to check for Supabase errors
 const isPostgrestError = (error: unknown): error is PostgrestError => {
@@ -37,8 +37,6 @@ const mapDbError = (error: PostgrestError): { message: string; fieldErrors?: Rec
 
 // --- createModel function ---
 export async function createModel(data: ModelFormData) {
-  const supabase = await createClient(); //
-
   // 1. Validate input data with Zod
   const validation = modelFormSchema.safeParse(data); //
   if (!validation.success) {
@@ -47,8 +45,12 @@ export async function createModel(data: ModelFormData) {
   }
 
   // 2. Get authenticated user
-  const { data: { user } } = await supabase.auth.getUser(); //
-  if (!user) { return { success: false, error: 'No se pudo autenticar al usuario.' }; } //
+  const auth = await requireAuthenticatedAction('No se pudo autenticar al usuario.')
+  if (!auth.user) {
+    return { success: false, error: auth.error }
+  }
+
+  const { supabase, user } = auth
 
   // 3. Try inserting into the database
   try {
@@ -90,14 +92,19 @@ export async function createModel(data: ModelFormData) {
 
 // --- updateModel function ---
 export async function updateModel(modelId: string, data: ModelFormData) {
-  const supabase = await createClient(); //
-
   // 1. Validate input data
   const validation = modelFormSchema.safeParse(data); //
   if (!validation.success) {
     logError(validation.error, { action: 'updateModel.validation', modelId }); //
     return { success: false, error: 'Los datos enviados no son válidos.', errors: zodErrorToFieldErrors(validation.error) }; //
   }
+
+  const auth = await requireAuthenticatedAction()
+  if (!auth.user) {
+    return { success: false, error: auth.error }
+  }
+
+  const { supabase } = auth
 
   // 2. Try updating the database
   try {
@@ -137,12 +144,17 @@ export async function updateModel(modelId: string, data: ModelFormData) {
 
 // --- deleteModel function ---
 export async function deleteModel(modelId: string) {
-  const supabase = await createClient(); //
-
   // 1. Validate ID format (basic check)
   if (!z.string().uuid().safeParse(modelId).success) {
     return { success: false, error: 'ID de modelo inválido.' }; //
   }
+
+  const auth = await requireAuthenticatedAction()
+  if (!auth.user) {
+    return { success: false, error: auth.error }
+  }
+
+  const { supabase } = auth
 
   // 2. Try deleting from the database
   try {
@@ -173,11 +185,16 @@ export async function deleteModel(modelId: string) {
 
 // --- toggleModelVisibility ---
 export async function toggleModelVisibility(modelId: string, isPublic: boolean) {
-  const supabase = await createClient();
-
   if (!z.string().uuid().safeParse(modelId).success) {
     return { success: false, error: 'ID de modelo inválido.' };
   }
+
+  const auth = await requireAuthenticatedAction()
+  if (!auth.user) {
+    return { success: false, error: auth.error }
+  }
+
+  const { supabase } = auth
 
   try {
     const { error } = await supabase

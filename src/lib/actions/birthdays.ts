@@ -3,6 +3,25 @@
 import { createClient } from '@/lib/supabase/server'
 import { logError } from '@/lib/utils/errors'
 
+const TODAY_BIRTHDAYS_TTL_MS = 5 * 60 * 1000
+
+type TodayBirthdaysCacheEntry = {
+    expiresAt: number
+    value: { success: boolean; data?: BirthdayModel[]; error?: string }
+}
+
+const getTodayCacheStore = () => {
+    const globalScope = globalThis as typeof globalThis & {
+        __todayBirthdaysCache?: Record<string, TodayBirthdaysCacheEntry>
+    }
+
+    if (!globalScope.__todayBirthdaysCache) {
+        globalScope.__todayBirthdaysCache = {}
+    }
+
+    return globalScope.__todayBirthdaysCache
+}
+
 export interface BirthdayModel {
     id: string
     alias: string | null
@@ -75,6 +94,13 @@ export async function getTodayBirthdays(): Promise<{ success: boolean; data?: Bi
         const parts = formatter.formatToParts(today)
         const currentDay = parseInt(parts.find(p => p.type === 'day')?.value || '0')
         const currentMonth = parseInt(parts.find(p => p.type === 'month')?.value || '0')
+        const cacheKey = `${currentMonth}-${currentDay}`
+        const cacheStore = getTodayCacheStore()
+        const cached = cacheStore[cacheKey]
+
+        if (cached && cached.expiresAt > Date.now()) {
+            return cached.value
+        }
 
         const { data, error } = await supabase
             .from('models')
@@ -89,7 +115,13 @@ export async function getTodayBirthdays(): Promise<{ success: boolean; data?: Bi
             return month === currentMonth && day === currentDay
         })
 
-        return { success: true, data: todayBirthdays }
+        const result = { success: true, data: todayBirthdays }
+        cacheStore[cacheKey] = {
+            expiresAt: Date.now() + TODAY_BIRTHDAYS_TTL_MS,
+            value: result,
+        }
+
+        return result
     } catch (error) {
         logError(error, { action: 'getTodayBirthdays' })
         return { success: false, error: 'Error al obtener cumpleaños de hoy' }

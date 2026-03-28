@@ -9,7 +9,7 @@ export function GET() {
     { status: 'ok', timestamp: new Date().toISOString() },
     {
       headers: {
-        'Cache-Control': 'no-store',
+        'Cache-Control': 'public, max-age=30, s-maxage=60, stale-while-revalidate=300',
       },
     }
   );

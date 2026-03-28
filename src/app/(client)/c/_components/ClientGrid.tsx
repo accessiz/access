@@ -108,6 +108,10 @@ function QuickApprovalButtons({
 }
 
 // --- Componente ClientGrid ---
+import { writeVersionedStorage } from '@/lib/client-storage';
+
+const CLIENT_VIEW_STORAGE_VERSION = 1;
+
 export function ClientGrid({ models, projectId, realProjectId, onSelectionChange, viewMode = 'grid' }: ClientGridProps) {
   // Estado local para selecciones (para feedback optimista)
   const [localSelections, setLocalSelections] = useState<Record<string, GridModel['selection']>>(() => {
@@ -134,7 +138,7 @@ export function ClientGrid({ models, projectId, realProjectId, onSelectionChange
 
   // 🔄 FUNCIÓN ACTUALIZADA: Guarda la posición de scroll antes de navegar.
   const saveScrollPosition = () => {
-    sessionStorage.setItem(`client_scroll_${projectId}`, String(window.scrollY));
+    writeVersionedStorage('session', `client:${projectId}:scroll`, CLIENT_VIEW_STORAGE_VERSION, window.scrollY);
   };
 
   // Grid class based on viewMode

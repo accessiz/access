@@ -5,9 +5,10 @@ import * as React from 'react';
 import { useState, useTransition, useMemo, useEffect } from 'react';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { Model, Project } from '@/lib/types';
+import type { ModelPickerItem } from '@/lib/api/models';
 import { addModelToProject } from '@/lib/actions/projects_models';
 import { autoCloseExpiredProject } from '@/lib/actions/projects';
 
@@ -21,10 +22,11 @@ import { SearchBar } from '@/components/molecules/SearchBar';
 
 import { ShareProjectDialog } from '@/components/organisms/ShareProjectDialog';
 import { ProjectStatusUpdater } from '@/components/organisms/ProjectStatusUpdater';
-import { Share2, Eye, Pencil, ChevronDown } from 'lucide-react';
+import { Share2, Eye, Pencil, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ProjectForm } from '@/components/organisms/ProjectForm';
 import { TalentAssignmentPanel } from '@/components/organisms/TalentAssignmentPanel';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 
 // Co-located sections (conventions.md pattern)
 import { BudgetSummaryCard } from './_budget-summary/BudgetSummary';
@@ -35,15 +37,29 @@ import { DangerZone } from './_danger-zone/DangerZone';
 interface ProjectDetailClientProps {
     project: Project;
     initialSelectedModels: Model[];
-    allModels: Model[];
+    availableModels: ModelPickerItem[];
+    availableModelsCount: number;
+    availableModelsCurrentPage: number;
+    availableModelsTotalPages: number;
+    initialTalentQuery: string;
 }
 
 
-export default function ProjectDetailClient({ project: initialProject, initialSelectedModels, allModels }: ProjectDetailClientProps) {
+export default function ProjectDetailClient({
+    project: initialProject,
+    initialSelectedModels,
+    availableModels,
+    availableModelsCount,
+    availableModelsCurrentPage,
+    availableModelsTotalPages,
+    initialTalentQuery,
+}: ProjectDetailClientProps) {
     const router = useRouter();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
     const [project, setProject] = useState(initialProject);
     const [selectedModels, setSelectedModels] = useState(initialSelectedModels);
-    const [searchQuery, setSearchQuery] = useState('');
+    const [searchQuery, setSearchQuery] = useState(initialTalentQuery);
     const [isPending, startTransition] = useTransition();
     const [isEditing, setIsEditing] = useState(false);
     const [scheduleOpen, setScheduleOpen] = useState(false);
@@ -53,6 +69,10 @@ export default function ProjectDetailClient({ project: initialProject, initialSe
         setProject(initialProject);
         setSelectedModels(initialSelectedModels);
     }, [initialProject, initialSelectedModels]);
+
+    useEffect(() => {
+        setSearchQuery(initialTalentQuery);
+    }, [initialTalentQuery]);
 
     const handleRefresh = () => {
         router.refresh();
@@ -88,23 +108,36 @@ export default function ProjectDetailClient({ project: initialProject, initialSe
     const hasSchedule = Array.isArray(project.schedule) && project.schedule.length > 0;
 
 
-    const availableModels = useMemo(() => {
+    const visibleAvailableModels = useMemo(() => {
         const selectedIds = new Set(selectedModels.map(m => m.id));
-        return allModels
-            .filter(model => !selectedIds.has(model.id))
-            .filter(model =>
-                model.alias?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                model.full_name?.toLowerCase().includes(searchQuery.toLowerCase())
-            );
-    }, [allModels, selectedModels, searchQuery]);
+        return availableModels.filter(model => !selectedIds.has(model.id));
+    }, [availableModels, selectedModels]);
+
+    const updateTalentPickerParams = React.useCallback((next: { query?: string; page?: number }) => {
+        const params = new URLSearchParams(searchParams.toString());
+
+        if (next.query !== undefined) {
+            if (next.query.trim()) params.set('talentQ', next.query.trim());
+            else params.delete('talentQ');
+        }
+
+        if (next.page !== undefined) {
+            if (next.page <= 1) params.delete('talentPage');
+            else params.set('talentPage', String(next.page));
+        }
+
+        startTransition(() => {
+            router.replace(`${pathname}?${params.toString()}`);
+        });
+    }, [pathname, router, searchParams]);
 
     const handleAddModel = (modelId: string) => {
         startTransition(async () => {
             // Optimistic update ANTES de la llamada al servidor
-            const modelToAdd = allModels.find(m => m.id === modelId);
+            const modelToAdd = availableModels.find(m => m.id === modelId);
             if (modelToAdd) {
                 setSelectedModels(prev => [...prev, {
-                    ...modelToAdd,
+                    ...(modelToAdd as unknown as Model),
                     client_selection: 'pending',
                     agreed_fee: project.default_model_fee || 0,
                     trade_fee: project.default_model_trade_fee || 0, // Init trade fee
@@ -261,15 +294,19 @@ export default function ProjectDetailClient({ project: initialProject, initialSe
                         <SearchBar
                             value={searchQuery}
                             onValueChange={setSearchQuery}
-                            onClear={() => setSearchQuery('')}
+                            onClear={() => {
+                                setSearchQuery('')
+                                updateTalentPickerParams({ query: '', page: 1 })
+                            }}
+                            onSubmit={(value) => updateTalentPickerParams({ query: value, page: 1 })}
                             placeholder="Buscar talento por nombre o alias..."
                             ariaLabel="Buscar talento"
                             inputClassName="h-9"
                         />
                         <Separator />
-                        <ScrollArea className="h-[500px]">
+                        <ScrollArea className="h-125">
                             <div className="space-y-2 pr-4">
-                                {availableModels.length > 0 ? availableModels.map(model => (
+                                {visibleAvailableModels.length > 0 ? visibleAvailableModels.map(model => (
                                     <TalentRow
                                         key={model.id}
                                         model={model}
@@ -284,6 +321,51 @@ export default function ProjectDetailClient({ project: initialProject, initialSe
                                 )}
                             </div>
                         </ScrollArea>
+
+                        {availableModelsTotalPages > 1 && (
+                            <div className="pt-2 border-t">
+                                <Pagination>
+                                    <PaginationContent className="flex justify-between w-full">
+                                        <PaginationItem>
+                                            <PaginationPrevious
+                                                href="#"
+                                                className={availableModelsCurrentPage <= 1 ? 'pointer-events-none opacity-50' : ''}
+                                                onClick={(event) => {
+                                                    event.preventDefault();
+                                                    if (availableModelsCurrentPage > 1) {
+                                                        updateTalentPickerParams({ page: availableModelsCurrentPage - 1 });
+                                                    }
+                                                }}
+                                            >
+                                                <ChevronLeft className="h-4 w-4" />
+                                                <span>Anterior</span>
+                                            </PaginationPrevious>
+                                        </PaginationItem>
+
+                                        <div className="text-body text-muted-foreground whitespace-nowrap self-center px-2">
+                                            Página {availableModelsCurrentPage} de {availableModelsTotalPages}
+                                            <span className="hidden sm:inline"> · {availableModelsCount} talentos</span>
+                                        </div>
+
+                                        <PaginationItem>
+                                            <PaginationNext
+                                                href="#"
+                                                className={availableModelsCurrentPage >= availableModelsTotalPages ? 'pointer-events-none opacity-50' : ''}
+                                                onClick={(event) => {
+                                                    event.preventDefault();
+                                                    if (availableModelsCurrentPage < availableModelsTotalPages) {
+                                                        updateTalentPickerParams({ page: availableModelsCurrentPage + 1 });
+                                                    }
+                                                }}
+                                            >
+                                                <span>Siguiente</span>
+                                                <ChevronRight className="h-4 w-4" />
+                                            </PaginationNext>
+                                        </PaginationItem>
+                                    </PaginationContent>
+                                </Pagination>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
 

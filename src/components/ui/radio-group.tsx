@@ -6,10 +6,11 @@ import { Circle } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
-const RadioGroup = React.forwardRef<
-  React.ElementRef<typeof RadioGroupPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof RadioGroupPrimitive.Root>
->(({ className, ...props }, ref) => {
+type RadioGroupProps = React.ComponentPropsWithoutRef<typeof RadioGroupPrimitive.Root> & {
+  ref?: React.Ref<React.ElementRef<typeof RadioGroupPrimitive.Root>>
+}
+
+const RadioGroup = ({ className, ref, ...props }: RadioGroupProps) => {
   return (
     <RadioGroupPrimitive.Root
       className={cn("grid gap-2", className)}
@@ -17,13 +18,14 @@ const RadioGroup = React.forwardRef<
       ref={ref}
     />
   )
-})
+}
 RadioGroup.displayName = RadioGroupPrimitive.Root.displayName
 
-const RadioGroupItem = React.forwardRef<
-  React.ElementRef<typeof RadioGroupPrimitive.Item>,
-  React.ComponentPropsWithoutRef<typeof RadioGroupPrimitive.Item>
->(({ className, ...props }, ref) => {
+type RadioGroupItemProps = React.ComponentPropsWithoutRef<typeof RadioGroupPrimitive.Item> & {
+  ref?: React.Ref<React.ElementRef<typeof RadioGroupPrimitive.Item>>
+}
+
+const RadioGroupItem = ({ className, ref, ...props }: RadioGroupItemProps) => {
   return (
     <RadioGroupPrimitive.Item
       ref={ref}
@@ -38,7 +40,7 @@ const RadioGroupItem = React.forwardRef<
       </RadioGroupPrimitive.Indicator>
     </RadioGroupPrimitive.Item>
   )
-})
+}
 RadioGroupItem.displayName = RadioGroupPrimitive.Item.displayName
 
 export { RadioGroup, RadioGroupItem }

@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, use, useState, type ReactNode } from 'react';
 
 type AnimationState = 'intro' | 'logo-to-nav' | 'login' | 'transition' | 'finished';
 
@@ -36,7 +36,7 @@ export function ClientAnimationProvider({ children }: { children: ReactNode }) {
 }
 
 export const useClientAnimation = () => {
-    const context = useContext(ClientAnimationContext);
+    const context = use(ClientAnimationContext);
     if (!context) {
         throw new Error('useClientAnimation must be used within a ClientAnimationProvider');
     }

@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { getProjectByIdCached, getModelsForProjectCached } from '@/lib/api/cached';
-import { getModelsEnriched } from '@/lib/api/models';
+import { MODEL_PICKER_PAGE_SIZE, getModelPickerPage } from '@/lib/api/models';
 import { syncProjectSchedule } from '@/lib/actions/projects';
 import ProjectDetailClient from './project-detail-client';
 import type { Metadata } from 'next';
@@ -14,10 +14,15 @@ export const dynamic = 'force-dynamic';
 
 type PageProps = {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
-export default async function ProjectDetailPage({ params }: PageProps) {
+export default async function ProjectDetailPage({ params, searchParams }: PageProps) {
   const { id } = await params;
+  const resolvedSearchParams = await searchParams;
+  const pickerQuery = typeof resolvedSearchParams.talentQ === 'string' ? resolvedSearchParams.talentQ : undefined;
+  const pickerPageParam = typeof resolvedSearchParams.talentPage === 'string' ? Number(resolvedSearchParams.talentPage) : 1;
+  const pickerCurrentPage = Number.isFinite(pickerPageParam) && pickerPageParam > 0 ? pickerPageParam : 1;
 
   const supabase = await createClient();
 
@@ -26,11 +31,21 @@ export default async function ProjectDetailPage({ params }: PageProps) {
     redirect('/login');
   }
 
-  const [project, selectedModels, { data: allModels }] = await Promise.all([
+  const [project, selectedModels] = await Promise.all([
     getProjectByIdCached(id),
     getModelsForProjectCached(id),
-    getModelsEnriched({ limit: 1000 })
   ]);
+
+  const pickerResult = await getModelPickerPage({
+    query: pickerQuery,
+    currentPage: pickerCurrentPage,
+    limit: MODEL_PICKER_PAGE_SIZE,
+    excludeIds: selectedModels.map((model) => model.id),
+  });
+
+  const availableModels = pickerResult.data ?? [];
+  const availableModelsCount = pickerResult.count ?? 0;
+  const availableModelsTotalPages = Math.max(1, Math.ceil(availableModelsCount / MODEL_PICKER_PAGE_SIZE));
 
   if (!project) {
     return (
@@ -51,7 +66,11 @@ export default async function ProjectDetailPage({ params }: PageProps) {
         <ProjectDetailClient
           project={updatedProject}
           initialSelectedModels={selectedModels}
-          allModels={allModels ?? []}
+          availableModels={availableModels}
+          availableModelsCount={availableModelsCount}
+          availableModelsCurrentPage={Math.min(pickerCurrentPage, availableModelsTotalPages)}
+          availableModelsTotalPages={availableModelsTotalPages}
+          initialTalentQuery={pickerQuery ?? ''}
         />
       );
     }
@@ -61,7 +80,11 @@ export default async function ProjectDetailPage({ params }: PageProps) {
     <ProjectDetailClient
       project={project}
       initialSelectedModels={selectedModels}
-      allModels={allModels ?? []}
+      availableModels={availableModels}
+      availableModelsCount={availableModelsCount}
+      availableModelsCurrentPage={Math.min(pickerCurrentPage, availableModelsTotalPages)}
+      availableModelsTotalPages={availableModelsTotalPages}
+      initialTalentQuery={pickerQuery ?? ''}
     />
   );
 }

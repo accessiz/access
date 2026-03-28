@@ -33,6 +33,43 @@ import LogoDark from "@/components/LogoDark"
 import LogoIcon from "@/components/LogoIcon"
 import { getTodayBirthdays } from "@/lib/actions/birthdays"
 
+const SIDEBAR_CACHE_TTL_MS = 5 * 60 * 1000
+
+type SidebarCacheValue<T> = {
+  value: T
+  expiresAt: number
+}
+
+function readSidebarCache<T>(key: string): T | null {
+  if (typeof window === 'undefined') return null
+
+  const raw = window.sessionStorage.getItem(key)
+  if (!raw) return null
+
+  try {
+    const parsed = JSON.parse(raw) as SidebarCacheValue<T>
+    if (parsed.expiresAt <= Date.now()) {
+      window.sessionStorage.removeItem(key)
+      return null
+    }
+    return parsed.value
+  } catch {
+    window.sessionStorage.removeItem(key)
+    return null
+  }
+}
+
+function writeSidebarCache<T>(key: string, value: T) {
+  if (typeof window === 'undefined') return
+
+  const payload: SidebarCacheValue<T> = {
+    value,
+    expiresAt: Date.now() + SIDEBAR_CACHE_TTL_MS,
+  }
+
+  window.sessionStorage.setItem(key, JSON.stringify(payload))
+}
+
 // Definición de tus rutas reales
 const navMain = [
   {
@@ -110,9 +147,17 @@ export function AppSidebar({ user, ...props }: React.ComponentProps<typeof Sideb
   // Cargar si hay cumpleaños hoy
   useEffect(() => {
     const checkBirthdays = async () => {
+      const cached = readSidebarCache<boolean>('sidebar:today-birthdays')
+      if (cached !== null) {
+        setHasTodayBirthdays(cached)
+        return
+      }
+
       const result = await getTodayBirthdays()
       if (result.success && result.data) {
-        setHasTodayBirthdays(result.data.length > 0)
+        const hasBirthdays = result.data.length > 0
+        setHasTodayBirthdays(hasBirthdays)
+        writeSidebarCache('sidebar:today-birthdays', hasBirthdays)
       }
     }
     checkBirthdays()
@@ -121,11 +166,19 @@ export function AppSidebar({ user, ...props }: React.ComponentProps<typeof Sideb
   // Cargar conteo de alertas - solo cuando pestaña visible
   useEffect(() => {
     const fetchAlertCount = async () => {
+      const cached = readSidebarCache<number>('sidebar:alert-count')
+      if (cached !== null) {
+        setAlertCount(cached)
+        return
+      }
+
       try {
-        const response = await fetch('/api/alerts')
+        const response = await fetch('/api/alerts', { cache: 'force-cache' })
         if (response.ok) {
           const data = await response.json()
-          setAlertCount(data.count || 0)
+          const nextCount = data.count || 0
+          setAlertCount(nextCount)
+          writeSidebarCache('sidebar:alert-count', nextCount)
         }
       } catch {
         // Silently fail - alerts are not critical

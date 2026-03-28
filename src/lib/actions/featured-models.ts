@@ -1,8 +1,8 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { logError } from '@/lib/utils/errors'
+import { requireAuthenticatedAction } from '@/lib/actions/server-action-auth'
 
 const MAX_FEATURED_MODELS = 8
 
@@ -18,9 +18,21 @@ export type FeaturedModel = {
     }
 }
 
+type FeaturedModelRow = {
+    id: string
+    model_id: string
+    position: number
+    models: FeaturedModel['models'] | FeaturedModel['models'][] | null
+}
+
 export async function getFeaturedModels(): Promise<{ success: boolean; data?: FeaturedModel[]; error?: string }> {
     try {
-        const supabase = await createClient()
+        const auth = await requireAuthenticatedAction()
+        if (!auth.user) {
+            return { success: false, error: auth.error }
+        }
+
+        const { supabase } = auth
 
         const { data, error } = await supabase
             .from('featured_web_models')
@@ -42,7 +54,21 @@ export async function getFeaturedModels(): Promise<{ success: boolean; data?: Fe
             return { success: false, error: error.message }
         }
 
-        return { success: true, data: data as FeaturedModel[] }
+        const normalizedData = ((data ?? []) as FeaturedModelRow[]).flatMap((item) => {
+            const model = Array.isArray(item.models) ? item.models[0] : item.models
+            if (!model) {
+                return []
+            }
+
+            return [{
+                id: item.id,
+                model_id: item.model_id,
+                position: item.position,
+                models: model,
+            }]
+        })
+
+        return { success: true, data: normalizedData }
     } catch (err) {
         logError(err, { action: 'getFeaturedModels.catch_all' })
         return { success: false, error: 'Error al obtener modelos destacados' }
@@ -51,7 +77,12 @@ export async function getFeaturedModels(): Promise<{ success: boolean; data?: Fe
 
 export async function addFeaturedModel(modelId: string): Promise<{ success: boolean; error?: string }> {
     try {
-        const supabase = await createClient()
+        const auth = await requireAuthenticatedAction()
+        if (!auth.user) {
+            return { success: false, error: auth.error }
+        }
+
+        const { supabase } = auth
 
         // Check current count
         const { count, error: countError } = await supabase
@@ -98,7 +129,12 @@ export async function addFeaturedModel(modelId: string): Promise<{ success: bool
 
 export async function removeFeaturedModel(modelId: string): Promise<{ success: boolean; error?: string }> {
     try {
-        const supabase = await createClient()
+        const auth = await requireAuthenticatedAction()
+        if (!auth.user) {
+            return { success: false, error: auth.error }
+        }
+
+        const { supabase } = auth
 
         const { error } = await supabase
             .from('featured_web_models')
@@ -119,18 +155,24 @@ export async function removeFeaturedModel(modelId: string): Promise<{ success: b
 
 export async function reorderFeaturedModels(orderedModelIds: string[]): Promise<{ success: boolean; error?: string }> {
     try {
-        const supabase = await createClient()
+        const auth = await requireAuthenticatedAction()
+        if (!auth.user) {
+            return { success: false, error: auth.error }
+        }
 
-        // Update positions in a transaction-like manner
-        for (let i = 0; i < orderedModelIds.length; i++) {
-            const { error } = await supabase
+        const { supabase } = auth
+
+        const updates = orderedModelIds.map((modelId, index) =>
+            supabase
                 .from('featured_web_models')
-                .update({ position: i })
-                .eq('model_id', orderedModelIds[i])
+                .update({ position: index })
+                .eq('model_id', modelId)
+        )
 
-            if (error) {
-                return { success: false, error: error.message }
-            }
+        const results = await Promise.all(updates)
+        const failedUpdate = results.find(result => result.error)
+        if (failedUpdate?.error) {
+            return { success: false, error: failedUpdate.error.message }
         }
 
         revalidatePath('/dashboard/web')

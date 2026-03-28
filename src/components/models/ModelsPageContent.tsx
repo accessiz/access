@@ -1,15 +1,16 @@
 'use client';
 
 import * as React from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Model } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { MapPin, ChevronRight, FolderKanban, Loader2 } from 'lucide-react';
+import { MapPin, ChevronRight, ChevronLeft, FolderKanban, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SearchBar } from '@/components/molecules/SearchBar';
 import { SegmentedControl } from '@/components/molecules/SegmentedControl';
 import { ModelProfileSkeleton } from './ModelProfileSkeleton';
+import { Button } from '@/components/ui/button';
+import type { ModelDirectoryItem } from '@/lib/api/models';
 
 /**
  * ModelsPageContent
@@ -22,61 +23,89 @@ import { ModelProfileSkeleton } from './ModelProfileSkeleton';
  */
 
 interface ModelsPageContentProps {
-    initialModels: Model[];
+    initialModels: ModelDirectoryItem[];
     busyModelMap?: Map<string, string>; // modelId -> projectId
+    currentPage: number;
+    totalPages: number;
+    totalCount: number;
+    initialQuery: string;
+    initialGender: GenderFilter;
+    initialBusy: BusyFilter;
     children?: React.ReactNode; // Profile content passed from server (desktop only)
 }
+
+type GenderFilter = 'all' | 'male' | 'female';
+type BusyFilter = 'all' | 'busy';
 
 export function ModelsPageContent({
     initialModels,
     busyModelMap = new Map(),
+    currentPage,
+    totalPages,
+    totalCount,
+    initialQuery,
+    initialGender,
+    initialBusy,
     children,
 }: ModelsPageContentProps) {
     const router = useRouter();
+    const pathname = usePathname();
     const searchParams = useSearchParams();
-    const [searchQuery, setSearchQuery] = React.useState('');
+    const [searchQuery, setSearchQuery] = React.useState(initialQuery);
     const [isPending, startTransition] = React.useTransition();
-
-    type GenderFilter = 'all' | 'male' | 'female';
-    type BusyFilter = 'all' | 'busy';
-
-    const [genderFilter, setGenderFilter] = React.useState<GenderFilter>('all');
-    const [busyFilter, setBusyFilter] = React.useState<BusyFilter>('all');
+    const [genderFilter, setGenderFilter] = React.useState<GenderFilter>(initialGender);
+    const [busyFilter, setBusyFilter] = React.useState<BusyFilter>(initialBusy);
 
     // Get selected model from URL (desktop mode)
     const selectedModelId = searchParams.get('selected');
 
-    // Filter models based on search query
-    const filteredModels = React.useMemo(() => {
-        const query = searchQuery.trim().toLowerCase();
+    React.useEffect(() => {
+        setSearchQuery(initialQuery);
+    }, [initialQuery]);
 
-        return initialModels.filter((model) => {
-            if (query) {
-                const matchesQuery =
-                    model.alias?.toLowerCase().includes(query) ||
-                    model.country?.toLowerCase().includes(query) ||
-                    model.instagram?.toLowerCase().includes(query);
+    React.useEffect(() => {
+        setGenderFilter(initialGender);
+    }, [initialGender]);
 
-                if (!matchesQuery) return false;
-            }
+    React.useEffect(() => {
+        setBusyFilter(initialBusy);
+    }, [initialBusy]);
 
-            if (genderFilter !== 'all') {
-                const rawGender = (model.gender ?? '').trim().toLowerCase();
-                const normalizedGender: GenderFilter | 'all' =
-                    rawGender === 'male' || rawGender === 'm'
-                        ? 'male'
-                        : rawGender === 'female' || rawGender === 'f'
-                            ? 'female'
-                            : 'all';
+    const filteredModels = initialModels;
 
-                if (normalizedGender !== genderFilter) return false;
-            }
-
-            if (busyFilter === 'busy' && !busyModelMap.has(model.id)) return false;
-
-            return true;
+    const navigateWithParams = React.useCallback((update: (params: URLSearchParams) => void) => {
+        const params = new URLSearchParams(searchParams.toString());
+        update(params);
+        startTransition(() => {
+            router.push(`${pathname}?${params.toString()}`);
         });
-    }, [initialModels, searchQuery, genderFilter, busyFilter, busyModelMap]);
+    }, [pathname, router, searchParams]);
+
+    const updateListParams = React.useCallback((next: { q?: string; gender?: GenderFilter; busy?: BusyFilter; page?: number }) => {
+        navigateWithParams((params) => {
+            if (next.q !== undefined) {
+                if (next.q.trim()) params.set('q', next.q.trim());
+                else params.delete('q');
+            }
+
+            if (next.gender !== undefined) {
+                if (next.gender === 'all') params.delete('gender');
+                else params.set('gender', next.gender);
+            }
+
+            if (next.busy !== undefined) {
+                if (next.busy === 'all') params.delete('busy');
+                else params.set('busy', next.busy);
+            }
+
+            if (next.page !== undefined) {
+                if (next.page <= 1) params.delete('page');
+                else params.set('page', String(next.page));
+            }
+
+            params.delete('selected');
+        });
+    }, [navigateWithParams]);
 
     // Handle model click - different behavior for mobile vs desktop
     const handleModelClick = React.useCallback((modelId: string) => {
@@ -89,18 +118,17 @@ export function ModelsPageContent({
             router.push(`/dashboard/models/${modelId}`);
         } else {
             // Desktop: Update URL param to show in right column
-            const params = new URLSearchParams(searchParams.toString());
-            params.set('selected', modelId);
-            startTransition(() => {
-                router.push(`${window.location.pathname}?${params.toString()}`);
+            navigateWithParams((params) => {
+                params.set('selected', modelId);
             });
         }
-    }, [router, searchParams]);
+    }, [navigateWithParams, router]);
 
     // Clear search
     const clearSearch = React.useCallback(() => {
         setSearchQuery('');
-    }, []);
+        updateListParams({ q: '', page: 1 });
+    }, [updateListParams]);
 
     // Count busy models
     const busyCount = React.useMemo(() => {
@@ -123,6 +151,7 @@ export function ModelsPageContent({
                         value={searchQuery}
                         onValueChange={setSearchQuery}
                         onClear={clearSearch}
+                        onSubmit={(value) => updateListParams({ q: value, page: 1 })}
                         placeholder="Buscar modelo..."
                         ariaLabel="Buscar modelo"
                         inputClassName="h-10"
@@ -133,7 +162,10 @@ export function ModelsPageContent({
                         <SegmentedControl
                             ariaLabel="Género"
                             value={genderFilter}
-                            onValueChange={setGenderFilter}
+                            onValueChange={(value) => {
+                                setGenderFilter(value);
+                                updateListParams({ gender: value, page: 1 });
+                            }}
                             mobileColumns={3}
                             options={[
                                 { value: 'all', label: 'Todos' },
@@ -145,7 +177,10 @@ export function ModelsPageContent({
                         <SegmentedControl
                             ariaLabel="Ocupación"
                             value={busyFilter}
-                            onValueChange={setBusyFilter}
+                            onValueChange={(value) => {
+                                setBusyFilter(value);
+                                updateListParams({ busy: value, page: 1 });
+                            }}
                             mobileColumns={2}
                             options={[
                                 { value: 'all', label: 'Todos' },
@@ -156,7 +191,7 @@ export function ModelsPageContent({
 
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3 text-label text-muted-foreground">
-                            <span>{filteredModels.length} modelos</span>
+                            <span>{totalCount} modelos</span>
                             {busyCount > 0 && (
                                 <span className="flex items-center gap-1.5">
                                     <span className="relative flex h-2 w-2">
@@ -248,6 +283,38 @@ export function ModelsPageContent({
                         </div>
                     )}
                 </div>
+
+                {totalPages > 1 && (
+                    <div className="border-t border-border p-4 sm:p-6">
+                        <div className="flex items-center justify-between gap-3">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                disabled={currentPage <= 1 || isPending}
+                                onClick={() => updateListParams({ page: currentPage - 1 })}
+                            >
+                                <ChevronLeft className="h-4 w-4" />
+                                Anterior
+                            </Button>
+
+                            <span className="text-label text-muted-foreground text-center">
+                                Página {currentPage} de {totalPages}
+                            </span>
+
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                disabled={currentPage >= totalPages || isPending}
+                                onClick={() => updateListParams({ page: currentPage + 1 })}
+                            >
+                                Siguiente
+                                <ChevronRight className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* RIGHT COLUMN - Hidden on mobile, visible on desktop */}
