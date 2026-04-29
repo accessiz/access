@@ -90,7 +90,10 @@ export function CompCardScreenPreview({ model, className }: CompCardScreenPrevie
             {/* Stats */}
             <div className="flex flex-col gap-0.5 sm:gap-2">
               <StatRow label="HEIGHT" value={model.height_cm ? `${model.height_cm} CM` : null} />
-              <StatRow label="CHEST" value={model.gender === 'Male' ? (model.chest_cm ? `${model.chest_cm} CM` : (model.bust_cm ? `${model.bust_cm} CM` : null)) : (model.bust_cm ? `${model.bust_cm} CM` : null)} />
+              <StatRow label="CHEST" value={model.chest_cm ? `${model.chest_cm} CM` : null} />
+              {model.gender === 'Female' && (
+                <StatRow label="BUST" value={model.bust_cm ? `${model.bust_cm} CM` : null} />
+              )}
               <StatRow label="WAIST" value={model.waist_cm ? `${model.waist_cm} CM` : null} />
               <StatRow label="HIPS" value={model.hips_cm ? `${model.hips_cm} CM` : null} />
               <StatRow label="EYES" value={model.eye_color} />
