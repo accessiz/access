@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import ClientAnimationWrapper from './_components/ClientAnimationWrapper';
 
 export default function ClientLayout({
@@ -6,8 +7,10 @@ export default function ClientLayout({
     children: React.ReactNode;
 }) {
     return (
-        <ClientAnimationWrapper>
-            {children}
-        </ClientAnimationWrapper>
+        <Suspense fallback={null}>
+            <ClientAnimationWrapper>
+                {children}
+            </ClientAnimationWrapper>
+        </Suspense>
     );
 }

@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 
-export const runtime = 'edge';
-
 /**
  * Proxy para servir imágenes de R2 a través del propio dominio.
  *

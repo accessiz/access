@@ -10,8 +10,6 @@ export const metadata: Metadata = {
 };
 
 // Forzamos el renderizado dinámico para evitar problemas con params
-export const dynamic = 'force-dynamic';
-
 type PageProps = {
   params: Promise<{
     id: string;

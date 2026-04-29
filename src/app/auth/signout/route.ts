@@ -3,8 +3,6 @@ import { NextResponse, type NextRequest } from 'next/server';
 
 // Se añade 'force-dynamic' para asegurar que se ejecute en el entorno de Node.js,
 // evitando advertencias del Edge Runtime con las APIs de Supabase.
-export const dynamic = 'force-dynamic';
-
 export async function POST(req: NextRequest) {
   // --- CORRECCIÓN CLAVE ---
   // La función createClient es asíncrona, por lo que necesita 'await'.

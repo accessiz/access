@@ -106,38 +106,42 @@ function BirthdayCard({ model, isToday, showDownload }: BirthdayCardProps) {
     }
 
     return (
-        <div className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-x-4 gap-y-3 p-4 rounded-lg transition-colors ${isToday ? 'bg-purple/10 border border-purple/50 backdrop-blur-md shadow-[0_0_15px_rgba(var(--purple)/0.3)]' : 'bg-quaternary hover:bg-hover-overlay border-transparent'}`}>
-            <Link href={`/dashboard/models/${model.id}`} className="flex items-center gap-x-4 gap-y-4 w-full sm:w-auto flex-1 min-w-0 hover:opacity-80 transition-opacity">
-                <Avatar className="h-12 w-12 shrink-0">
-                    <AvatarImage src={toPublicUrl(model.cover_path) || undefined} alt={name} />
-                    <AvatarFallback>
-                        <User className="h-5 w-5" />
+        <div className={`relative flex items-center justify-between gap-x-4 gap-y-3 p-4 rounded-xl transition-all duration-300 border ${isToday ? 'bg-purple/10 border-purple/40 shadow-[0_0_20px_rgba(var(--purple)/0.15)]' : 'bg-sys-bg-tertiary hover:bg-hover-overlay border-separator/40 hover:border-separator'}`}>
+            <Link href={`/dashboard/models/${model.id}`} className="flex items-center gap-x-4 gap-y-4 min-w-0 flex-1 hover:opacity-90 transition-opacity">
+                <Avatar className="h-14 w-14 shrink-0 border border-separator/30">
+                    <AvatarImage src={toPublicUrl(model.cover_path) || undefined} alt={name} className="object-cover" />
+                    <AvatarFallback className="bg-quaternary">
+                        <User className="h-6 w-6 text-muted-foreground" />
                     </AvatarFallback>
                 </Avatar>
-                <div className="flex-1 min-w-0">
-                    <p className="font-medium wrap-break-word sm:truncate">{name}</p>
-                    <p className="text-body text-muted-foreground">
-                        {formatBirthday(model.birth_date)} • Cumple {age + 1} años
+                <div className="flex-1 min-w-0 space-y-1">
+                    <p className="font-semibold text-title text-foreground truncate">{name}</p>
+                    <p className="text-body text-muted-foreground flex items-center gap-1.5 flex-wrap">
+                        <span>{formatBirthday(model.birth_date)}</span>
+                        <span className="text-muted-foreground/50">•</span>
+                        <span>Cumple {age + 1} años</span>
                     </p>
+                    {model.instagram && (
+                        <div className="flex items-center pt-1">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 px-2 text-muted-foreground hover:text-foreground text-xs bg-quaternary/40 hover:bg-quaternary gap-1 rounded-md"
+                                onClick={copyInstagram}
+                                title="Copiar Instagram"
+                            >
+                                <span className="truncate max-w-[120px]">@{model.instagram.replace('@', '')}</span>
+                                <Copy className="h-3 w-3 shrink-0 opacity-60" />
+                            </Button>
+                        </div>
+                    )}
                 </div>
             </Link>
 
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-2 w-full sm:w-auto sm:justify-end shrink-0 min-w-0">
-                {model.instagram && (
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-muted-foreground hover:text-foreground max-w-full min-w-0 flex-1 justify-start sm:flex-none"
-                        onClick={copyInstagram}
-                        title="Copiar Instagram"
-                    >
-                        <span className="text-label truncate max-w-35">@{model.instagram.replace('@', '')}</span>
-                        <Copy className="h-3 w-3" />
-                    </Button>
-                )}
+            <div className="flex flex-col items-end gap-y-2 shrink-0 self-center">
                 {isToday && (
-                    <Badge variant="secondary" className="gap-x-1 gap-y-1 bg-primary/20 text-primary border-0">
-                        <PartyPopper className="h-3 w-3" />
+                    <Badge variant="secondary" className="gap-1 bg-purple/20 text-purple border-0 font-medium px-2.5 py-0.5">
+                        <PartyPopper className="h-3.5 w-3.5" />
                         ¡Hoy!
                     </Badge>
                 )}
@@ -145,14 +149,15 @@ function BirthdayCard({ model, isToday, showDownload }: BirthdayCardProps) {
                     <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8"
+                        className="h-8 w-8 hover:bg-quaternary rounded-full mt-auto"
                         onClick={(e) => {
                             e.preventDefault()
+                            e.stopPropagation()
                             downloadCoverImage(model.cover_path, name)
                         }}
                         title="Descargar foto"
                     >
-                        <Download className="h-4 w-4" />
+                        <Download className="h-4.5 w-4.5 text-muted-foreground hover:text-foreground" />
                     </Button>
                 )}
             </div>

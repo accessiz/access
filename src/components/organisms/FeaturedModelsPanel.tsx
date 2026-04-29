@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useDebouncedCallback } from 'use-debounce'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -100,6 +101,10 @@ export function FeaturedModelsPanel({
         })
     }, [navigateWithParams])
 
+    const handleFeaturedSearchDebounced = useDebouncedCallback((value: string) => {
+        updateFeaturedParams({ q: value, page: 1 })
+    }, 300)
+
     const featuredIds = useMemo(() => new Set(featured.map(f => f.model_id)), [featured])
 
     const availableModels = candidateModels
@@ -153,7 +158,10 @@ export function FeaturedModelsPanel({
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                             <SearchBar
                                 value={search}
-                                onValueChange={setSearch}
+                                onValueChange={(val) => {
+                                    setSearch(val);
+                                    handleFeaturedSearchDebounced(val);
+                                }}
                                 onClear={() => {
                                     setSearch('')
                                     updateFeaturedParams({ q: '', page: 1 })

@@ -7,8 +7,6 @@ export const metadata: Metadata = {
   title: 'Detalle de Cliente',
 };
 
-export const dynamic = 'force-dynamic';
-
 type PageProps = {
     params: Promise<{ id: string }>;
 };

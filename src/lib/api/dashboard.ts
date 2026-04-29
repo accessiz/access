@@ -1,40 +1,18 @@
 import { createClient } from '@/lib/supabase/server';
-import { unstable_noStore as noStore } from 'next/cache';
+import { cacheLife, cacheTag } from 'next/cache';
 import { logError } from '@/lib/utils/errors';
 import { toPublicUrl } from '@/lib/utils';
 
 type ProjectStatusCounts = Record<string, number>;
 
 export async function getProjectStatusCounts(): Promise<ProjectStatusCounts> {
-  noStore();
+  'use cache: private';
+  cacheLife('minutes');
+  cacheTag('dashboard', 'project-counts');
+
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return {};
-
-  // Simple in-memory TTL cache (works in long-lived server processes).
-  // TTL: 30 seconds to avoid frequent DB calls.
-  // Max entries: 50 to prevent unbounded memory growth.
-  const TTL = 30 * 1000;
-  const MAX_CACHE_ENTRIES = 50;
-  const cacheKey = user.id;
-  type DashboardCache = Record<string, { ts: number; counts: ProjectStatusCounts } | undefined>;
-  const g = globalThis as unknown as { __dashboard_counts_cache?: DashboardCache };
-  if (!g.__dashboard_counts_cache) g.__dashboard_counts_cache = {};
-
-  // Evict stale entries and cap size
-  const cacheEntries = Object.entries(g.__dashboard_counts_cache);
-  if (cacheEntries.length > MAX_CACHE_ENTRIES) {
-    // Remove oldest entries beyond the limit
-    cacheEntries
-      .sort((a, b) => (a[1]?.ts ?? 0) - (b[1]?.ts ?? 0))
-      .slice(0, cacheEntries.length - MAX_CACHE_ENTRIES)
-      .forEach(([key]) => { delete g.__dashboard_counts_cache![key]; });
-  }
-
-  const cache = g.__dashboard_counts_cache[cacheKey];
-  if (cache && Date.now() - cache.ts < TTL) {
-    return cache.counts;
-  }
 
   const statuses = ['in-review', 'draft', 'sent', 'completed'];
   const counts: ProjectStatusCounts = {};
@@ -57,9 +35,6 @@ export async function getProjectStatusCounts(): Promise<ProjectStatusCounts> {
     }
   }
 
-  // store in cache
-  g.__dashboard_counts_cache[cacheKey] = { ts: Date.now(), counts };
-
   return counts;
 }
 
@@ -78,7 +53,10 @@ export type ActivityItem = {
 };
 
 export async function getRecentActivity(limit = 10): Promise<ActivityItem[]> {
-  noStore();
+  'use cache: private';
+  cacheLife('minutes');
+  cacheTag('dashboard', 'activity');
+
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return [];
@@ -112,7 +90,10 @@ export async function getRecentActivity(limit = 10): Promise<ActivityItem[]> {
 }
 
 export async function getLowCompletenessModels(limit = 5) {
-  noStore();
+  'use cache: private';
+  cacheLife('hours');
+  cacheTag('dashboard', 'low-completeness');
+
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return [];
@@ -157,7 +138,9 @@ export type ModelRankings = {
 };
 
 export async function getModelApplicationStats(limit = 100): Promise<ModelRankings> {
-  noStore();
+  'use cache: private';
+  cacheLife('minutes');
+  cacheTag('dashboard', 'model-stats');
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {

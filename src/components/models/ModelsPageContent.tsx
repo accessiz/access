@@ -11,6 +11,7 @@ import { SegmentedControl } from '@/components/molecules/SegmentedControl';
 import { ModelProfileSkeleton } from './ModelProfileSkeleton';
 import { Button } from '@/components/ui/button';
 import type { ModelDirectoryItem } from '@/lib/api/models';
+import { useDebouncedCallback } from 'use-debounce';
 
 /**
  * ModelsPageContent
@@ -130,6 +131,15 @@ export function ModelsPageContent({
         updateListParams({ q: '', page: 1 });
     }, [updateListParams]);
 
+    const debouncedSearch = useDebouncedCallback((value: string) => {
+        updateListParams({ q: value, page: 1 });
+    }, 300);
+
+    const handleSearchChange = (value: string) => {
+        setSearchQuery(value);
+        debouncedSearch(value);
+    };
+
     // Count busy models
     const busyCount = React.useMemo(() => {
         return filteredModels.filter(m => busyModelMap.has(m.id)).length;
@@ -149,7 +159,7 @@ export function ModelsPageContent({
                 <div className="sticky top-0 z-10 bg-background border-b border-border p-4 sm:p-6 space-y-4">
                     <SearchBar
                         value={searchQuery}
-                        onValueChange={setSearchQuery}
+                        onValueChange={handleSearchChange}
                         onClear={clearSearch}
                         onSubmit={(value) => updateListParams({ q: value, page: 1 })}
                         placeholder="Buscar modelo..."

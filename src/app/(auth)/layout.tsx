@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { AuthProvider } from "@/hooks/useAuth";
 
 export default function AuthLayout({
@@ -7,5 +8,9 @@ export default function AuthLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <AuthProvider>{children}</AuthProvider>;
+  return (
+    <Suspense>
+      <AuthProvider>{children}</AuthProvider>
+    </Suspense>
+  );
 }

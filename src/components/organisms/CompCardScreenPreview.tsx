@@ -15,7 +15,7 @@ export function CompCardScreenPreview({ model, className }: CompCardScreenPrevie
   const backPhotos = model.compCardUrls || [null, null, null, null];
 
   const StatRow = ({ label, value }: { label: string; value: string | number | null | undefined }) => {
-    if (!value) return null;
+    if (value === null || value === undefined || value === '') return null;
     return (
       <div className="flex gap-2 sm:gap-4 items-baseline">
         <span className="text-[9px] sm:text-[13px] uppercase font-bold text-black min-w-[50px] sm:min-w-[70px]">{label}</span>
@@ -101,7 +101,7 @@ export function CompCardScreenPreview({ model, className }: CompCardScreenPrevie
             </div>
           </div>
 
-          {/* Slot 3: Photo (Bottom Left) */}
+          {/* Slot 3: Photo (Bottom Left) — uses backPhotos[2] */}
           <div className="aspect-3/4 relative overflow-hidden bg-[#fafafa]">
             {backPhotos[2] && (
               <SmartCroppedImage
@@ -115,7 +115,7 @@ export function CompCardScreenPreview({ model, className }: CompCardScreenPrevie
             )}
           </div>
 
-          {/* Slot 4: Photo (Bottom Right) */}
+          {/* Slot 4: Photo (Bottom Right) — uses backPhotos[3] */}
           <div className="aspect-3/4 relative overflow-hidden bg-[#fafafa]">
             {backPhotos[3] && (
               <SmartCroppedImage

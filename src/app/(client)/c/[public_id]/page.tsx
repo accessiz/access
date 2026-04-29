@@ -5,13 +5,27 @@ import ClientViewHandler from './_components/ClientViewHandler';
 import ClientSummaryView from './_components/ClientSummaryView';
 import PasswordProtect from './_components/PasswordProtect';
 
-export const dynamic = 'force-dynamic';
-
 type PageProps = {
   params: Promise<{ public_id: string }>;
 };
 
-export default async function ClientViewPage({ params }: PageProps) {
+import { Suspense } from 'react';
+
+export default function ClientViewPage({ params }: PageProps) {
+  return (
+    <Suspense fallback={
+      <div className="flex h-screen w-full items-center justify-center p-4 bg-background text-foreground">
+        <div className="animate-pulse">
+          <p className="text-muted-foreground">Cargando...</p>
+        </div>
+      </div>
+    }>
+      <ClientViewContent params={params} />
+    </Suspense>
+  );
+}
+
+async function ClientViewContent({ params }: PageProps) {
   const { public_id: publicId } = await params;
 
   // Verificar si es un admin (usuario logueado) — sin bloquear el render

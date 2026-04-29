@@ -1,6 +1,5 @@
 import React from 'react';
 import { createClient } from '@/lib/supabase/server';
-import { redirect } from 'next/navigation';
 // IMPORTANTE: Estamos importando NUESTRO sidebar, no el generico
 import { AppSidebar } from "@/components/organisms/AppSidebar"
 import { HeaderActions } from "@/components/molecules/HeaderActions"
@@ -10,22 +9,24 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 
-export default async function DashboardLayout({
+async function SidebarWrapper() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null; // Fallback, proxy handles real redirect
+  return <AppSidebar user={user} />;
+}
+
+export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect('/login');
-  }
-
   return (
     <SidebarProvider defaultOpen={false}>
-      {/* Pasamos el usuario real al componente Sidebar */}
-      <AppSidebar user={user} />
+      {/* Sidebar envuelto en Suspense para no bloquear la ruta en PPR */}
+      <React.Suspense fallback={<div className="w-64 border-r shrink-0 hidden md:block" />}>
+        <SidebarWrapper />
+      </React.Suspense>
 
       <SidebarInset className="bg-[rgb(var(--sys-bg))] flex flex-col h-svh overflow-hidden">
         {/* Skip-to-content link — WCAG 2.4.1 Bypass Blocks */}

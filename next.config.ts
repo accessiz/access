@@ -1,9 +1,15 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
+  // --- CACHE COMPONENTS (Next 16) ---
+  cacheComponents: true,
 
   // --- SALIDA STANDALONE ---
   output: 'standalone',
+
+  // --- HMR from other local network devices ---
+  allowedDevOrigins: ['192.168.1.60', '189.168.1.60'],
 
   // --- Server Actions body size limit (image uploads) ---
   experimental: {
@@ -63,4 +69,8 @@ const nextConfig: NextConfig = {
   ],
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  silent: true,
+  widenClientFileUpload: true,
+  tunnelRoute: "/sentry-tunnel",
+});

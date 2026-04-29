@@ -3,6 +3,7 @@
 
 import * as React from 'react';
 import { useState, useTransition, useMemo, useEffect } from 'react';
+import { useDebouncedCallback } from 'use-debounce';
 
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -130,6 +131,10 @@ export default function ProjectDetailClient({
             router.replace(`${pathname}?${params.toString()}`);
         });
     }, [pathname, router, searchParams]);
+
+    const handleTalentSearch = useDebouncedCallback((value: string) => {
+        updateTalentPickerParams({ query: value, page: 1 });
+    }, 300);
 
     const handleAddModel = (modelId: string) => {
         startTransition(async () => {
@@ -293,7 +298,10 @@ export default function ProjectDetailClient({
                     <CardContent className="space-y-4 flex-1 flex flex-col min-h-0">
                         <SearchBar
                             value={searchQuery}
-                            onValueChange={setSearchQuery}
+                            onValueChange={(val) => {
+                                setSearchQuery(val);
+                                handleTalentSearch(val);
+                            }}
                             onClear={() => {
                                 setSearchQuery('')
                                 updateTalentPickerParams({ query: '', page: 1 })

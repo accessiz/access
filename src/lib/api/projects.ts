@@ -1,7 +1,5 @@
-'use server';
-
 import { createClient } from "@/lib/supabase/server";
-import { unstable_noStore as noStore } from 'next/cache';
+import { cacheLife, cacheTag } from 'next/cache';
 import { Model, Project } from "@/lib/types";
 import { logError } from '@/lib/utils/errors';
 import { toPublicUrl } from '@/lib/utils';
@@ -43,7 +41,9 @@ type SearchParams = {
 };
 
 export async function getProjectYearsForUser(): Promise<number[]> {
-  noStore();
+  'use cache: private';
+  cacheLife('minutes');
+  cacheTag('projects');
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -118,7 +118,9 @@ export async function getProjectYearsForUser(): Promise<number[]> {
 
 // Función para obtener la lista de proyectos (con conteo de modelos asignados)
 export async function getProjectsForUser(searchParams: SearchParams = {}) {
-  noStore();
+  'use cache: private';
+  cacheLife('minutes');
+  cacheTag('projects');
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -293,7 +295,9 @@ const extractDateFromTimestampUTC = (isoString: string) => {
 
 // Función para obtener un proyecto por ID
 export async function getProjectById(idOrPublicId: string): Promise<Project | null> {
-  noStore();
+  'use cache: private';
+  cacheLife('minutes');
+  cacheTag('projects');
   // Usamos supabaseAdmin para saltar RLS en la vista pública
   const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrPublicId);
 
@@ -344,7 +348,9 @@ export async function getProjectById(idOrPublicId: string): Promise<Project | nu
 
 // Función para obtener modelos de un proyecto
 export async function getModelsForProject(projectId: string): Promise<Model[]> {
-  noStore();
+  'use cache: private';
+  cacheLife('minutes');
+  cacheTag('projects');
   
   const { data: projectModelsData, error } = await supabaseAdmin
     .from('projects_models')
@@ -430,7 +436,9 @@ function isValidClientSelection(selection: unknown): selection is ClientSelectio
 
 // Función para obtener UN modelo específico para un proyecto (Versión Cliente - Bypasses RLS)
 export async function getModelForProject(projectId: string, modelId: string): Promise<Model | null> {
-  noStore();
+  'use cache: private';
+  cacheLife('minutes');
+  cacheTag('projects');
   
   // Usamos supabaseAdmin para saltar RLS en la vista cliente si es necesario
   // pero aseguramos que la consulta sea lo más completa posible.

@@ -9,6 +9,7 @@ import { projectFormSchema } from '@/lib/schemas/projects'
 import { logActivity } from '@/lib/activity-logger'
 import { ActivityTitles } from '@/lib/activity-titles'
 import { createSupabaseServerActionClient } from '@/lib/supabase/server-action'
+import { supabaseAdmin } from '@/lib/supabase/admin'
 
 import {
   type ActionState,
@@ -416,7 +417,9 @@ export async function deleteProject(id: string): Promise<ActionState> {
     }
 
     // Atomic cascade delete via DB function (single transaction)
-    const { error: rpcError } = await supabase.rpc('delete_project_cascade', {
+    // Uses supabaseAdmin (service_role) so we can REVOKE EXECUTE from public roles
+    // Security: ownership is already verified above (project.user_id === user.id)
+    const { error: rpcError } = await supabaseAdmin.rpc('delete_project_cascade', {
       p_project_id: id,
       p_user_id: user.id,
     });

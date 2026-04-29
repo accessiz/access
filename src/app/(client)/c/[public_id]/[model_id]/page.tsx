@@ -6,13 +6,27 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 import { Project } from '@/lib/types';
 import PasswordProtect from '../_components/PasswordProtect';
 
-export const dynamic = 'force-dynamic';
-
 type PageProps = {
   params: Promise<{ public_id: string; model_id: string }>;
 };
 
-export default async function ModelPortfolioPage({ params }: PageProps) {
+import { Suspense } from 'react';
+
+export default function ModelPortfolioPage({ params }: PageProps) {
+  return (
+    <Suspense fallback={
+      <div className="flex h-screen w-full items-center justify-center p-4 bg-background text-foreground">
+        <div className="animate-pulse">
+          <p className="text-muted-foreground">Cargando portafolio...</p>
+        </div>
+      </div>
+    }>
+      <ModelPortfolioContent params={params} />
+    </Suspense>
+  );
+}
+
+async function ModelPortfolioContent({ params }: PageProps) {
   const { public_id: projectPublicId, model_id: modelId } = await params;
 
   // 1. Obtener el proyecto usando supabaseAdmin para saltar RLS en vista pública

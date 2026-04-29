@@ -1,4 +1,5 @@
 import { Metadata } from 'next'
+import { connection } from 'next/server'
 import { BirthdaysClientPage } from './birthdays-client-page'
 import { getBirthdaysByMonth, getTodayBirthdays } from '@/lib/actions/birthdays'
 
@@ -7,7 +8,8 @@ export const metadata: Metadata = {
     description: 'Gestión de cumpleaños del talento',
 }
 
-function getCurrentMonthInGuatemala(): number {
+async function getCurrentMonthInGuatemala(): Promise<number> {
+    await connection()
     const monthStr = new Intl.DateTimeFormat('en-US', {
         timeZone: 'America/Guatemala',
         month: 'numeric',
@@ -18,7 +20,7 @@ function getCurrentMonthInGuatemala(): number {
 }
 
 export default async function BirthdaysPage() {
-    const initialMonth = getCurrentMonthInGuatemala()
+    const initialMonth = await getCurrentMonthInGuatemala()
     const [monthResult, todayResult] = await Promise.all([
         getBirthdaysByMonth(initialMonth),
         getTodayBirthdays(),

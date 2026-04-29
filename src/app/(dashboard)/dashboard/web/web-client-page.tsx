@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import { useDebouncedCallback } from 'use-debounce'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { Eye, EyeOff, Globe, Layers, Loader2, Mars, Search, User, Venus, VenusAndMars, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Switch } from '@/components/ui/switch'
@@ -131,6 +132,10 @@ export default function WebVisibilityClientPage({
         })
     }, [navigateWithParams])
 
+    const handleSearchDebounced = useDebouncedCallback((value: string) => {
+        updateListParams({ q: value, page: 1 })
+    }, 300)
+
     const handleToggle = async (modelId: string, newValue: boolean) => {
         setUpdating(modelId)
         const result = await toggleModelVisibility(modelId, newValue)
@@ -176,7 +181,10 @@ export default function WebVisibilityClientPage({
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                             <SearchBar
                                 value={search}
-                                onValueChange={setSearch}
+                                onValueChange={(val) => {
+                                    setSearch(val);
+                                    handleSearchDebounced(val);
+                                }}
                                 onClear={() => {
                                     setSearch('')
                                     updateListParams({ q: '', page: 1 })

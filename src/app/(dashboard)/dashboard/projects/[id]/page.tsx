@@ -10,8 +10,6 @@ export const metadata: Metadata = {
   title: 'Detalle de Proyecto',
 };
 
-export const dynamic = 'force-dynamic';
-
 type PageProps = {
   params: Promise<{ id: string }>;
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;

@@ -13,6 +13,7 @@
  */
 
 import { logger } from '@/lib/logger';
+import * as Sentry from '@sentry/nextjs';
 
 // ── Types ──
 
@@ -33,14 +34,13 @@ interface ErrorContext {
  * Report an exception to the error tracking service.
  */
 export function captureException(error: unknown, context: ErrorContext = {}): void {
-  // ── Sentry integration (uncomment when @sentry/nextjs is installed) ──
-  // import * as Sentry from '@sentry/nextjs';
-  // Sentry.captureException(error, {
-  //   tags: context.tags,
-  //   extra: context.extra,
-  //   level: context.level ?? 'error',
-  //   user: context.user,
-  // });
+  // ── Sentry integration ──
+  Sentry.captureException(error, {
+    tags: context.tags,
+    extra: context.extra,
+    level: context.level ?? 'error',
+    user: context.user,
+  });
 
   // ── Structured-log fallback ──
   logger.fromError(error, {
@@ -56,8 +56,11 @@ export function captureException(error: unknown, context: ErrorContext = {}): vo
  */
 export function captureMessage(message: string, context: ErrorContext = {}): void {
   // ── Sentry integration ──
-  // import * as Sentry from '@sentry/nextjs';
-  // Sentry.captureMessage(message, { tags: context.tags, extra: context.extra, level: context.level ?? 'info' });
+  Sentry.captureMessage(message, { 
+    tags: context.tags, 
+    extra: context.extra, 
+    level: context.level ?? 'info' 
+  });
 
   const level = context.level ?? 'info';
   const fn = level === 'error' || level === 'fatal' ? logger.error : level === 'warning' ? logger.warn : logger.info;
@@ -73,8 +76,7 @@ export function captureMessage(message: string, context: ErrorContext = {}): voi
  */
 export function setUser(user: { id: string; email?: string } | null): void {
   // ── Sentry integration ──
-  // import * as Sentry from '@sentry/nextjs';
-  // Sentry.setUser(user);
+  Sentry.setUser(user);
 
   if (user) {
     logger.info('Error tracking: user context set', { userId: user.id });

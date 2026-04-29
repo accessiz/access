@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { unstable_noStore as noStore } from 'next/cache';
+import { cacheLife, cacheTag } from 'next/cache';
 import { Model } from "@/lib/types";
 import { logError } from '@/lib/utils/errors';
 import { toPublicUrl } from '@/lib/utils';
@@ -71,7 +71,9 @@ function applyModelSearch(
 }
 
 export async function getModelsDirectoryPage(searchParams: ModelDirectorySearchParams) {
-  noStore();
+  'use cache: private';
+  cacheLife('minutes');
+  cacheTag('models');
   const supabase = await createClient();
   const currentPage = Math.max(searchParams.currentPage || 1, 1);
   const limit = searchParams.limit || MODELS_DIRECTORY_PAGE_SIZE;
@@ -97,16 +99,41 @@ export async function getModelsDirectoryPage(searchParams: ModelDirectorySearchP
   const from = (currentPage - 1) * limit;
   const to = from + limit - 1;
 
-  const { data, error, count } = await queryBuilder
-    .order('alias', { ascending: true })
-    .range(from, to);
+  let queryPromise = queryBuilder.order('alias', { ascending: true });
+
+  if (searchParams.query) {
+    // Si hay búsqueda, traemos más resultados para ordenar en memoria dando prioridad a prefix matches
+    queryPromise = queryPromise.range(0, 1000);
+  } else {
+    queryPromise = queryPromise.range(from, to);
+  }
+
+  const { data, error, count } = await queryPromise;
 
   if (error) {
     logError(error, { action: 'getModelsDirectoryPage.query', searchParams });
     return { data: [] as ModelDirectoryItem[], count: 0 };
   }
 
-  const rows = (data || []) as Array<ModelDirectoryItem & { cover_path?: string | null }>;
+  let rows = (data || []) as Array<ModelDirectoryItem & { cover_path?: string | null }>;
+
+  if (searchParams.query) {
+    const q = searchParams.query.toLowerCase().trim();
+    rows.sort((a, b) => {
+      const aAlias = (a.alias || '').toLowerCase();
+      const bAlias = (b.alias || '').toLowerCase();
+      
+      const aStarts = aAlias.startsWith(q);
+      const bStarts = bAlias.startsWith(q);
+      
+      if (aStarts && !bStarts) return -1;
+      if (!aStarts && bStarts) return 1;
+      
+      return aAlias.localeCompare(bAlias);
+    });
+
+    rows = rows.slice(from, to + 1);
+  }
 
   return {
     data: rows.map((model) => ({
@@ -118,7 +145,9 @@ export async function getModelsDirectoryPage(searchParams: ModelDirectorySearchP
 }
 
 export async function getModelPickerItems(limit = 1000): Promise<ModelPickerItem[]> {
-  noStore();
+  'use cache: private';
+  cacheLife('minutes');
+  cacheTag('models');
   const supabase = await createClient();
 
   const { data, error } = await supabase
@@ -139,7 +168,9 @@ export async function getModelPickerItems(limit = 1000): Promise<ModelPickerItem
 }
 
 export async function getModelPickerPage(searchParams: ModelPickerSearchParams) {
-  noStore();
+  'use cache: private';
+  cacheLife('minutes');
+  cacheTag('models');
   const supabase = await createClient();
   const currentPage = Math.max(searchParams.currentPage || 1, 1);
   const limit = searchParams.limit || MODEL_PICKER_PAGE_SIZE;
@@ -176,7 +207,9 @@ export async function getModelPickerPage(searchParams: ModelPickerSearchParams) 
 }
 
 export async function getModelsEnriched(searchParams: SearchParams) {
-  noStore();
+  'use cache: private';
+  cacheLife('minutes');
+  cacheTag('models');
   const supabase = await createClient();
   const currentPage = searchParams.currentPage || 1;
   const limit = searchParams.limit || ITEMS_PER_PAGE;
@@ -240,7 +273,9 @@ export async function getModelById(id: string): Promise<(Model & {
   galleryPaths?: string[] | null;
   galleryBlurHashes?: (string | null)[];
 }) | null> {
-  noStore();
+  'use cache: private';
+  cacheLife('minutes');
+  cacheTag('models');
   const supabase = await createClient();
 
   const { data, error } = await supabase
@@ -294,7 +329,9 @@ export async function getModelById(id: string): Promise<(Model & {
 }
 
 export async function getModelWorkHistory(modelId: string) {
-  noStore();
+  'use cache: private';
+  cacheLife('minutes');
+  cacheTag('models');
   const supabase = await createClient();
 
   // Type definitions for query results
@@ -552,7 +589,9 @@ export async function getModelWorkHistory(modelId: string) {
  * @returns Map<string, string> of busy model IDs to their active project IDs
  */
 export async function getBusyModelsToday(): Promise<Map<string, string>> {
-  noStore();
+  'use cache: private';
+  cacheLife('minutes');
+  cacheTag('models');
   const supabase = await createClient();
 
   // Get current datetime in Guatemala timezone (GMT-6)

@@ -24,7 +24,7 @@ export function CompCardPrintTemplate({ model, containerId }: Props) {
     const backPhotos = model.compCardUrls || [null, null, null, null];
 
     const StatRow = ({ label, value }: { label: string, value: string | number | null | undefined }) => {
-        if (!value) return null;
+        if (value === null || value === undefined || value === '') return null;
         return (
             <div style={{ display: 'contents' }}>
                 <div style={{ fontFamily: 'Inter, sans-serif', fontWeight: 400, fontSize: '36px', lineHeight: '160%', textTransform: 'uppercase' }}>
@@ -148,12 +148,12 @@ export function CompCardPrintTemplate({ model, containerId }: Props) {
                         </div>
                     </div>
 
-                    {/* ITEM 3: FOTO 2 (Abajo Izquierda) */}
+                    {/* ITEM 3: FOTO 2 (Abajo Izquierda) — uses backPhotos[2] */}
                     <div style={{ backgroundColor: 'rgb(242, 242, 242)', width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
                         {backPhotos[2] && <SmartCroppedImage src={toCorsUrl(backPhotos[2])!} alt="P2" className="w-full h-full object-cover" loading="eager" native context="print" disableAnimation />}
                     </div>
 
-                    {/* ITEM 4: FOTO 3 (Abajo Derecha) */}
+                    {/* ITEM 4: FOTO 3 (Abajo Derecha) — uses backPhotos[3] */}
                     <div style={{ backgroundColor: 'rgb(242, 242, 242)', width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
                         {backPhotos[3] && <SmartCroppedImage src={toCorsUrl(backPhotos[3])!} alt="P3" className="w-full h-full object-cover" loading="eager" native context="print" disableAnimation />}
                     </div>
