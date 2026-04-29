@@ -68,6 +68,8 @@ export const malePantsSizeOptions = [
 // Opciones para tallas de pantalón femeninas (US)
 // Incluye tallas regulares y curvy/plus size pero muestra solo números
 export const femalePantsSizeOptions = [
+  { value: '00', label: '00' },
+  { value: '0', label: '0' },
   { value: '2', label: '2' },
   { value: '4', label: '4' },
   { value: '6', label: '6' },

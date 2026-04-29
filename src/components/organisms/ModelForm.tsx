@@ -52,7 +52,7 @@ function NumericInputController({
         <Input
           {...field}
           type="number"
-          step="1"
+          step="any"
           placeholder={placeholder}
           value={field.value ?? ''}
           onKeyDown={onKeyDown}
@@ -75,8 +75,8 @@ export const ModelForm = ({ isSubmitting }: ModelFormProps) => {
 
   const preventNonNumericInput = (e: KeyboardEvent<HTMLInputElement>) => {
     const isControlKey = ['Backspace', 'Tab', 'ArrowLeft', 'ArrowRight', 'Delete', 'Enter', 'Home', 'End'].includes(e.key) || e.ctrlKey || e.metaKey;
-    const isDigit = /[0-9]/.test(e.key);
-    if (!isDigit && !isControlKey) {
+    const isDigitOrDot = /[0-9.]/.test(e.key);
+    if (!isDigitOrDot && !isControlKey) {
       e.preventDefault();
     }
   };
@@ -164,13 +164,10 @@ export const ModelForm = ({ isSubmitting }: ModelFormProps) => {
                 {...field}
                 value={field.value ?? ''}
                 onChange={(e) => {
-                  // Sanitizar: permitir letras y números, eliminar espacios y caracteres especiales
-                  // Convertir a mayúsculas automáticamente
-                  const sanitized = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-                  field.onChange(sanitized || null);
+                  field.onChange(e.target.value || null);
                 }}
                 disabled={isSubmitting}
-                placeholder="Alfanumérico sin espacios"
+                placeholder="Ej: P-1234567, AB123456"
               />
             )} />
             <FieldError errors={errors} name="passport_number" />
@@ -207,10 +204,16 @@ export const ModelForm = ({ isSubmitting }: ModelFormProps) => {
             </FormField>
           )}
           {selectedGender === 'Female' && (
-            <FormField label="Busto (cm)" htmlFor="bust_cm">
-              <NumericInputController name="bust_cm" control={control} placeholder="90" disabled={isSubmitting} onKeyDown={preventNonNumericInput} />
-              <FieldError errors={errors} name="bust_cm" />
-            </FormField>
+            <>
+              <FormField label="Pecho (cm)" htmlFor="chest_cm">
+                <NumericInputController name="chest_cm" control={control} placeholder="85" disabled={isSubmitting} onKeyDown={preventNonNumericInput} />
+                <FieldError errors={errors} name="chest_cm" />
+              </FormField>
+              <FormField label="Busto (cm)" htmlFor="bust_cm">
+                <NumericInputController name="bust_cm" control={control} placeholder="90" disabled={isSubmitting} onKeyDown={preventNonNumericInput} />
+                <FieldError errors={errors} name="bust_cm" />
+              </FormField>
+            </>
           )}
 
           <FormField label="Cintura (cm)" htmlFor="waist_cm">

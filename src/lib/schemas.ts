@@ -112,20 +112,15 @@ export const modelFormSchema = z.object({
   hips_cm: optionalPositiveNumber,
   shoe_size_us: optionalUSSize,
   pants_size: z.preprocess((val) => {
-    // Convert string to number for database compatibility
     if (val === undefined || val === null || (typeof val === 'string' && val.trim() === '')) {
       return null;
     }
-    if (typeof val === 'string') {
-      const num = parseInt(val, 10);
-      if (isNaN(num) || num <= 0) return null;
-      return num;
+    // Convert numbers to string for DB text column
+    if (typeof val === 'number') {
+      return String(val);
     }
-    if (typeof val === 'number' && val <= 0) {
-      return null;
-    }
-    return val;
-  }, z.number().positive().nullable()),
+    return String(val).trim();
+  }, z.string().nullable()),
 
   top_size: optionalString,
   eye_color: optionalString,

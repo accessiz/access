@@ -101,10 +101,9 @@ export default function ModelProfilePageClient({ initialModel, workHistory = [],
     toast.success('UUID copiado al portapapeles');
   };
 
-  const normalizePantsSize = (value: string | number | null | undefined): number | null => {
+  const normalizePantsSize = (value: string | number | null | undefined): string | null => {
     if (value === null || value === undefined || value === '') return null;
-    const parsed = parseInt(String(value), 10);
-    return isNaN(parsed) || parsed <= 0 ? null : parsed;
+    return String(value);
   };
 
   const normalizeShoeSize = (value: number | string | null | undefined): number | null => {
@@ -364,7 +363,12 @@ export default function ModelProfilePageClient({ initialModel, workHistory = [],
                   <Grid cols={5}>
                     <InfoDisplay label="Estatura (cm)" value={initialModel.height_cm} />
                     <InfoDisplay label="Hombros (cm)" value={initialModel.shoulders_cm} />
-                    {initialModel.gender === 'Male' ? <InfoDisplay label="Pecho (cm)" value={initialModel.chest_cm} /> : <InfoDisplay label="Busto (cm)" value={initialModel.bust_cm} />}
+                    {initialModel.gender === 'Male' ? <InfoDisplay label="Pecho (cm)" value={initialModel.chest_cm} /> : (
+                      <>
+                        <InfoDisplay label="Pecho (cm)" value={initialModel.chest_cm} />
+                        <InfoDisplay label="Busto (cm)" value={initialModel.bust_cm} />
+                      </>
+                    )}
                     <InfoDisplay label="Cintura (cm)" value={initialModel.waist_cm} />
                     <InfoDisplay label="Cadera (cm)" value={initialModel.hips_cm} />
                     <InfoDisplay label="Talla de Top" value={initialModel.top_size} />
