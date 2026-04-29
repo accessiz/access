@@ -16,7 +16,7 @@ export function buildCSP(nonce: string): string {
   const supabaseOrigin = originOf(SUPABASE_URL)
   const r2Origin = originOf(R2_PUBLIC_URL)
 
-  // Trusted sources for connect (API calls, realtime, auth)
+  // Trusted sources for connect (API calls, realtime, auth, Sentry)
   const connectSrc = [
     "'self'",
     "data:",
@@ -24,6 +24,8 @@ export function buildCSP(nonce: string): string {
     r2Origin,
     // Supabase Realtime uses wss://
     supabaseOrigin.replace('https://', 'wss://'),
+    // Sentry telemetry
+    'https://*.ingest.us.sentry.io',
     // Turbopack HMR WebSocket in development
     ...(IS_DEV ? ['ws://localhost:3000', 'ws://0.0.0.0:3000'] : []),
   ].filter(Boolean).join(' ')
@@ -44,10 +46,11 @@ export function buildCSP(nonce: string): string {
   ].filter(Boolean).join(' ')
 
   // In development, Turbopack needs eval() and inline scripts for HMR.
-  // In production, we use nonce + strict-dynamic for maximum security.
+  // In production, we allow 'unsafe-inline' because Next.js + Sentry Replay
+  // inject inline scripts that cannot carry a nonce attribute.
   const scriptSrc = IS_DEV
     ? `script-src 'self' 'unsafe-eval' 'unsafe-inline'`
-    : `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`
+    : `script-src 'self' 'unsafe-inline'`
 
   return [
     `default-src 'self'`,
@@ -155,9 +158,9 @@ export async function proxy(request: NextRequest) {
   return response
 }
 
-// Matcher: ejecuta en todas las rutas excepto assets estáticos
+// Matcher: ejecuta en todas las rutas excepto assets estáticos y sentry tunnel
 export const config = {
   matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|images/).*)',
+    '/((?!api|sentry-tunnel|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|images/).*)',
   ],
 }
