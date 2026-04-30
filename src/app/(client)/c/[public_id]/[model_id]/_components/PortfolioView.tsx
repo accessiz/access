@@ -3,7 +3,7 @@
 import { useState, useTransition, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { Model, Project } from '@/lib/types';
-import { updateModelSelection } from '@/lib/actions/projects_models';
+import { updateClientModelSelection } from '@/lib/actions/client_actions';
 
 import { Check, Loader2, ChevronLeft, ChevronRight, X as CloseIcon } from 'lucide-react';
 import { BackButton } from '@/components/molecules/BackButton';
@@ -32,7 +32,7 @@ export default function PortfolioView({ project, model: initialModel }: Portfoli
 
   const handleSelection = (selection: 'approved' | 'rejected') => {
     startTransition(async () => {
-      const result = await updateModelSelection(project.id, model.id, selection);
+      const result = await updateClientModelSelection(project.id, model.id, selection);
       if (result.success) {
         if (selection === 'approved') {
           toast.success('Talento Aprobado');
