@@ -146,8 +146,6 @@ export function CompCardPrintTemplate({ model, containerId }: Props) {
                             )}
                             <StatRow label="Waist" value={model.waist_cm ? `${model.waist_cm} CM` : null} />
                             <StatRow label="Hips" value={model.hips_cm ? `${model.hips_cm} CM` : null} />
-                            <StatRow label="Eyes" value={model.eye_color} />
-                            <StatRow label="Hair" value={model.hair_color} />
                             <StatRow label="Shirt" value={model.top_size} />
                             <StatRow label="Jeans" value={model.pants_size} />
                             <StatRow label="Shoes" value={model.shoe_size_us} />

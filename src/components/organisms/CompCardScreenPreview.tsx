@@ -99,8 +99,6 @@ export function CompCardScreenPreview({ model, className }: CompCardScreenPrevie
               )}
               <StatRow label="WAIST" value={model.waist_cm ? `${model.waist_cm} CM` : null} />
               <StatRow label="HIPS" value={model.hips_cm ? `${model.hips_cm} CM` : null} />
-              <StatRow label="EYES" value={model.eye_color} />
-              <StatRow label="HAIR" value={model.hair_color} />
               <StatRow label="SHIRT" value={model.top_size} />
               <StatRow label="JEANS" value={model.pants_size} />
               <StatRow label="SHOES" value={model.shoe_size_us} />
