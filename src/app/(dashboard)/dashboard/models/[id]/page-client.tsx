@@ -350,6 +350,7 @@ export default function ModelProfilePageClient({ initialModel, workHistory = [],
                     <InfoDisplay label="Género" value={initialModel.gender} />
                     <InfoDisplay label="Fecha de Nacimiento" value={initialModel.birth_date} />
                     <InfoDisplay label="Documento ID" value={initialModel.national_id} />
+                    <InfoDisplay label="Pasaporte" value={initialModel.passport_number} />
                     <InfoDisplay label="País de Residencia" value={initialModel.country} />
                     <InfoDisplay label="País de Nacimiento" value={initialModel.birth_country} />
                   </Grid>

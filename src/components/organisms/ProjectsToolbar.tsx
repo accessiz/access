@@ -57,7 +57,7 @@ export function ProjectsToolbar({ availableYears, mode = 'all', className }: Pro
         const params = new URLSearchParams(searchParams);
         params.set('page', '1');
         if (term) params.set('q', term); else params.delete('q');
-        router.replace(`${pathname}?${params.toString()}`);
+        router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     }, 300);
 
     const handleFilterChange = (key: 'year' | 'month' | 'status', value: string) => {
@@ -74,7 +74,7 @@ export function ProjectsToolbar({ availableYears, mode = 'all', className }: Pro
         } else {
             params.set(key, value);
         }
-        router.replace(`${pathname}?${params.toString()}`);
+        router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     }
 
     const searchEl = (

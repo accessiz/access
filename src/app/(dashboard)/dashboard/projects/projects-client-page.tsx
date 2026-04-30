@@ -96,7 +96,7 @@ export default function ProjectsClientPage({ initialProjects, initialCount, avai
         params.set('dir', direction);
         params.set('page', '1');
         startTransition(() => {
-            router.replace(`${pathname}?${params.toString()}`);
+            router.replace(`${pathname}?${params.toString()}`, { scroll: false });
         });
     };
 

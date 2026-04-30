@@ -27,33 +27,33 @@ export function ModelsToolbar({ countries }: { countries: string[] }) {
   const currentMinHeight = searchParams.get('minHeight');
   const currentMaxHeight = searchParams.get('maxHeight');
 
-  const handleSearch = useDebouncedCallback((term: string) => {
-    const params = new URLSearchParams(searchParams);
-    params.set('page', '1');
-    if (term) params.set('q', term); else params.delete('q');
-    router.replace(`${pathname}?${params.toString()}`);
-  }, 300);
+    const handleSearch = useDebouncedCallback((term: string) => {
+        const params = new URLSearchParams(searchParams);
+        params.set('page', '1');
+        if (term) params.set('q', term); else params.delete('q');
+        router.replace(`${pathname}?${params.toString()}`);
+    }, 300);
 
-  const handleFilter = (key: string, value: string | null) => {
-    const params = new URLSearchParams(searchParams);
-    params.set('page', '1');
-    if (value) params.set(key, value); else params.delete(key);
-    router.replace(`${pathname}?${params.toString()}`);
-  };
+    const handleFilter = (key: string, value: string | null) => {
+        const params = new URLSearchParams(searchParams);
+        params.set('page', '1');
+        if (value) params.set(key, value); else params.delete(key);
+        router.replace(`${pathname}?${params.toString()}`);
+    };
 
-  const handleFilterByHeight = (min: number | null, max: number | null) => {
-    const params = new URLSearchParams(searchParams);
-    params.set('page', '1');
-    if (min !== null) params.set('minHeight', String(min)); else params.delete('minHeight');
-    if (max !== null) params.set('maxHeight', String(max)); else params.delete('maxHeight');
-    router.replace(`${pathname}?${params.toString()}`);
-  };
+    const handleFilterByHeight = (min: number | null, max: number | null) => {
+        const params = new URLSearchParams(searchParams);
+        params.set('page', '1');
+        if (min !== null) params.set('minHeight', String(min)); else params.delete('minHeight');
+        if (max !== null) params.set('maxHeight', String(max)); else params.delete('maxHeight');
+        router.replace(`${pathname}?${params.toString()}`);
+    };
 
-  const setView = (newView: 'list' | 'grid') => {
-    const params = new URLSearchParams(searchParams);
-    params.set('view', newView);
-    router.replace(`${pathname}?${params.toString()}`);
-  };
+    const setView = (newView: 'list' | 'grid') => {
+        const params = new URLSearchParams(searchParams);
+        params.set('view', newView);
+        router.replace(`${pathname}?${params.toString()}`);
+    };
 
   const currentHeightLabel = useMemo(() =>
     heightRanges.find(range =>

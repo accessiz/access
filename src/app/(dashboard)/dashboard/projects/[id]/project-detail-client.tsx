@@ -128,7 +128,7 @@ export default function ProjectDetailClient({
         }
 
         startTransition(() => {
-            router.replace(`${pathname}?${params.toString()}`);
+            router.replace(`${pathname}?${params.toString()}`, { scroll: false });
         });
     }, [pathname, router, searchParams]);
 
