@@ -145,14 +145,11 @@ export const ModelForm = ({ isSubmitting }: ModelFormProps) => {
                 id="national_id"
                 {...field}
                 value={field.value ?? ''}
-                onKeyDown={preventNonNumericInput}
                 onChange={(e) => {
-                  // Sanitizar: eliminar todo lo que no sea número
-                  const sanitized = e.target.value.replace(/\D/g, '');
-                  field.onChange(sanitized || null);
+                  field.onChange(e.target.value || null);
                 }}
                 disabled={isSubmitting}
-                placeholder="Solo números, sin espacios"
+                placeholder="Ej: 1234567890101 o AB123456"
               />
             )} />
             <FieldError errors={errors} name="national_id" />
