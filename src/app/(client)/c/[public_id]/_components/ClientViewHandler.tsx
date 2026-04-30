@@ -3,8 +3,7 @@
 import { useEffect, useState, useTransition, useMemo, useRef } from 'react';
 import { gsap } from 'gsap';
 import { Project, Model } from '@/lib/types';
-import { finalizeProjectReview } from '@/lib/actions/client_actions';
-import { updateProjectStatus } from '@/lib/actions/projects';
+import { finalizeProjectReview, markProjectInReview } from '@/lib/actions/client_actions';
 import { toast } from 'sonner';
 import PasswordProtect from './PasswordProtect';
 import { ClientNavbar } from '../../_components/ClientNavbar';
@@ -62,8 +61,8 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
 
   // 3. OTROS ESTADOS
   const [isFinalizing, startFinalizeTransition] = useTransition();
-  const [isUpdatingStatus, startStatusUpdateTransition] = useTransition();
   const [isMounted, setIsMounted] = useState(false);
+  const statusUpdateAttempted = useRef(false);
 
   // --- EFECTO DE MONTAJE: RECUPERAR ESTADO Y ACTUALIZAR ESTADO DEL PROYECTO ---
   useEffect(() => {
@@ -91,16 +90,16 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
     }
 
     // Lógica para actualizar el estado del proyecto a "in-review"
-    // Se ejecuta si nadie está logueado (es un cliente) y el proyecto está en "sent"
-    if (!isAdmin && project.status === 'sent' && !isUpdatingStatus) {
-      startStatusUpdateTransition(async () => {
-        // La acción ahora también puede registrar la start_date
-        const result = await updateProjectStatus(project.id, 'in-review', true);
+    // Se ejecuta una sola vez si el cliente (no admin) abre un proyecto en estado "sent"
+    if (!isAdmin && project.status === 'sent' && !statusUpdateAttempted.current) {
+      statusUpdateAttempted.current = true;
+      markProjectInReview(project.id).then((result) => {
         if (!result.success) console.error("Error auto-updating status:", result.error);
       });
     }
 
-  }, [project.public_id, project.id, project.status, isUpdatingStatus, isAdmin, startExitAnimation]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // --- PHASE 7: ANIMATE CONTENT ELEMENTS (Navbar, Header, Progress, Footer, Submit) ---
   useEffect(() => {

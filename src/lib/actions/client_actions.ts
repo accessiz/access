@@ -254,3 +254,68 @@ export async function updateClientModelSelection(
     return { success: false, error: 'Error al actualizar selección.' };
   }
 }
+
+// --- Acción: Marcar proyecto como "in-review" cuando el cliente lo abre ---
+export async function markProjectInReview(projectId: string) {
+  if (!z.string().uuid().safeParse(projectId).success) {
+    return { success: false, error: 'ID inválido.' };
+  }
+
+  // 🔒 Verificar acceso (cookie HMAC o proyecto público)
+  const hasAccess = await verifyAccess(projectId);
+  if (!hasAccess) {
+    return { success: false, error: 'No tienes autorización.' };
+  }
+
+  try {
+    // Solo actualizar si el proyecto está en estado 'sent'
+    // Esto evita sobrescribir otros estados válidos
+    const { data: project, error: fetchError } = await supabaseAdmin
+      .from('projects')
+      .select('id, status, start_date, public_id, project_name')
+      .eq('id', projectId)
+      .single();
+
+    if (fetchError || !project) {
+      return { success: false, error: 'Proyecto no encontrado.' };
+    }
+
+    // Solo cambiar a in-review si está en 'sent'
+    if (project.status !== 'sent') {
+      return { success: true }; // No es un error, simplemente no hay nada que hacer
+    }
+
+    const updatePayload: Record<string, unknown> = { status: 'in-review' };
+
+    // Registrar start_date si no existe
+    if (!project.start_date) {
+      updatePayload.start_date = new Date().toISOString();
+    }
+
+    const { error } = await supabaseAdmin
+      .from('projects')
+      .update(updatePayload)
+      .eq('id', projectId);
+
+    if (error) throw error;
+
+    if (project.public_id) {
+      revalidatePath(`/c/${project.public_id}`);
+    }
+    revalidatePath(`/dashboard/projects/${projectId}`);
+    revalidatePath('/dashboard/projects');
+
+    // Log activity for notification bell
+    await logClientActivity({
+      projectId,
+      title: `Cliente abrió el proyecto "${project.project_name || 'proyecto'}"`,
+      metadata: { entity_id: projectId, entity_type: 'project', action: 'started_review' },
+    });
+
+    return { success: true };
+
+  } catch (err) {
+    logError(err, { action: 'markProjectInReview', projectId });
+    return { success: false, error: 'Error al actualizar estado.' };
+  }
+}
