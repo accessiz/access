@@ -188,17 +188,43 @@ export async function getModelPickerPage(searchParams: ModelPickerSearchParams) 
   const from = (currentPage - 1) * limit;
   const to = from + limit - 1;
 
-  const { data, error, count } = await queryBuilder
-    .order('alias', { ascending: true, nullsFirst: false })
-    .range(from, to);
+  let queryPromise = queryBuilder.order('alias', { ascending: true, nullsFirst: false });
+
+  if (searchParams.query) {
+    queryPromise = queryPromise.range(0, 1000);
+  } else {
+    queryPromise = queryPromise.range(from, to);
+  }
+
+  const { data, error, count } = await queryPromise;
 
   if (error) {
     logError(error, { action: 'getModelPickerPage.query', searchParams });
     return { data: [] as ModelPickerItem[], count: 0 };
   }
 
+  let rows = (data || []) as Array<ModelPickerItem & { cover_path?: string | null }>;
+
+  if (searchParams.query) {
+    const q = searchParams.query.toLowerCase().trim();
+    rows.sort((a, b) => {
+      const aAlias = (a.alias || '').toLowerCase();
+      const bAlias = (b.alias || '').toLowerCase();
+      
+      const aStarts = aAlias.startsWith(q);
+      const bStarts = bAlias.startsWith(q);
+      
+      if (aStarts && !bStarts) return -1;
+      if (!aStarts && bStarts) return 1;
+      
+      return aAlias.localeCompare(bAlias);
+    });
+
+    rows = rows.slice(from, to + 1);
+  }
+
   return {
-    data: ((data || []) as Array<ModelPickerItem & { cover_path?: string | null }>).map((model) => ({
+    data: rows.map((model) => ({
       ...model,
       coverUrl: toPublicUrl(model.cover_path),
     })),
