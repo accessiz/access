@@ -138,7 +138,9 @@ export function CompCardPrintTemplate({ model, containerId }: Props) {
                         <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', columnGap: '40px', rowGap: '16px', alignContent: 'end', height: '100%' }}>
                             <StatRow label="Height" value={model.height_cm ? `${model.height_cm} CM` : null} />
                             <StatRow label="Shoulders" value={model.shoulders_cm ? `${model.shoulders_cm} CM` : null} />
-                            <StatRow label="Chest" value={model.chest_cm ? `${model.chest_cm} CM` : null} />
+                            {model.gender === 'Male' && (
+                              <StatRow label="Chest" value={model.chest_cm ? `${model.chest_cm} CM` : null} />
+                            )}
                             {model.gender === 'Female' && (
                               <StatRow label="Bust" value={model.bust_cm ? `${model.bust_cm} CM` : null} />
                             )}

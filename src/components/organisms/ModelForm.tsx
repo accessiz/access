@@ -204,16 +204,10 @@ export const ModelForm = ({ isSubmitting }: ModelFormProps) => {
             </FormField>
           )}
           {selectedGender === 'Female' && (
-            <>
-              <FormField label="Pecho (cm)" htmlFor="chest_cm">
-                <NumericInputController name="chest_cm" control={control} placeholder="85" disabled={isSubmitting} onKeyDown={preventNonNumericInput} />
-                <FieldError errors={errors} name="chest_cm" />
-              </FormField>
-              <FormField label="Busto (cm)" htmlFor="bust_cm">
-                <NumericInputController name="bust_cm" control={control} placeholder="90" disabled={isSubmitting} onKeyDown={preventNonNumericInput} />
-                <FieldError errors={errors} name="bust_cm" />
-              </FormField>
-            </>
+            <FormField label="Busto (cm)" htmlFor="bust_cm">
+              <NumericInputController name="bust_cm" control={control} placeholder="90" disabled={isSubmitting} onKeyDown={preventNonNumericInput} />
+              <FieldError errors={errors} name="bust_cm" />
+            </FormField>
           )}
 
           <FormField label="Cintura (cm)" htmlFor="waist_cm">

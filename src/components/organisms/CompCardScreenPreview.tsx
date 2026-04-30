@@ -91,7 +91,9 @@ export function CompCardScreenPreview({ model, className }: CompCardScreenPrevie
             <div className="flex flex-col gap-0.5 sm:gap-2">
               <StatRow label="HEIGHT" value={model.height_cm ? `${model.height_cm} CM` : null} />
               <StatRow label="SHOULDERS" value={model.shoulders_cm ? `${model.shoulders_cm} CM` : null} />
-              <StatRow label="CHEST" value={model.chest_cm ? `${model.chest_cm} CM` : null} />
+              {model.gender === 'Male' && (
+                <StatRow label="CHEST" value={model.chest_cm ? `${model.chest_cm} CM` : null} />
+              )}
               {model.gender === 'Female' && (
                 <StatRow label="BUST" value={model.bust_cm ? `${model.bust_cm} CM` : null} />
               )}

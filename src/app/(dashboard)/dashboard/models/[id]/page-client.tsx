@@ -363,12 +363,7 @@ export default function ModelProfilePageClient({ initialModel, workHistory = [],
                   <Grid cols={5}>
                     <InfoDisplay label="Estatura (cm)" value={initialModel.height_cm} />
                     <InfoDisplay label="Hombros (cm)" value={initialModel.shoulders_cm} />
-                    {initialModel.gender === 'Male' ? <InfoDisplay label="Pecho (cm)" value={initialModel.chest_cm} /> : (
-                      <>
-                        <InfoDisplay label="Pecho (cm)" value={initialModel.chest_cm} />
-                        <InfoDisplay label="Busto (cm)" value={initialModel.bust_cm} />
-                      </>
-                    )}
+                    {initialModel.gender === 'Male' ? <InfoDisplay label="Pecho (cm)" value={initialModel.chest_cm} /> : <InfoDisplay label="Busto (cm)" value={initialModel.bust_cm} />}
                     <InfoDisplay label="Cintura (cm)" value={initialModel.waist_cm} />
                     <InfoDisplay label="Cadera (cm)" value={initialModel.hips_cm} />
                     <InfoDisplay label="Talla de Top" value={initialModel.top_size} />
