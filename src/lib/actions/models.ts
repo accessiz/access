@@ -5,35 +5,99 @@ import { modelFormSchema, ModelFormData } from '@/lib/schemas'
 import { z } from 'zod'
 import { zodErrorToFieldErrors } from '@/lib/utils/zod'
 import { logError } from '@/lib/utils/errors';
-import { PostgrestError } from '@supabase/supabase-js';
+import { PostgrestError, SupabaseClient } from '@supabase/supabase-js';
 import { logActivity } from '@/lib/activity-logger';
 import { ActivityTitles } from '@/lib/activity-titles';
 import { requireAuthenticatedAction } from '@/lib/actions/server-action-auth'
+import * as Sentry from '@sentry/nextjs'
 
 // Helper function to check for Supabase errors
 const isPostgrestError = (error: unknown): error is PostgrestError => {
   return typeof error === 'object' && error !== null && 'code' in error;
 };
 
-// Helper function to map common Supabase errors to user-friendly messages
-const mapDbError = (error: PostgrestError): { message: string; fieldErrors?: Record<string, string> } => {
-  // Unique constraint violation
-  if (error.code === '23505') {
-    // Check details for the specific constraint if available
-    if (error.details?.includes('models_email_key')) {
-      return { message: 'Este correo electrónico ya está registrado.', fieldErrors: { email: 'Este correo ya está en uso.' } };
-    }
-    if (error.details?.includes('models_national_id_key')) {
-      return { message: 'Este Documento ID ya está registrado.', fieldErrors: { national_id: 'Este ID ya está en uso.' } };
-    }
-    if (error.details?.includes('models_phone_e164_key')) {
-      return { message: 'Este número de teléfono ya está registrado.', fieldErrors: { phone_e164: 'Este teléfono ya está en uso.' } };
-    }
-    return { message: 'Se encontró un conflicto de datos únicos (ej. email o ID duplicado).' };
+// --- Constraint-to-column mapping ---
+const UNIQUE_CONSTRAINTS: Record<string, { column: string; label: string; fieldKey: keyof ModelFormData }> = {
+  models_email_key:           { column: 'email',           label: 'correo electrónico', fieldKey: 'email' },
+  models_national_id_key:     { column: 'national_id',     label: 'Documento ID',       fieldKey: 'national_id' },
+  models_phone_e164_key:      { column: 'phone_e164',      label: 'teléfono',           fieldKey: 'phone_e164' },
+  models_passport_number_key: { column: 'passport_number', label: 'pasaporte',          fieldKey: 'passport_number' },
+};
+
+/**
+ * Look up who already owns a conflicting unique value.
+ * Returns the alias or full_name of the existing record, or null if not found.
+ */
+async function findConflictOwner(
+  supabase: SupabaseClient,
+  column: string,
+  value: unknown,
+  excludeId?: string,
+): Promise<string | null> {
+  if (!value) return null;
+  let query = supabase
+    .from('models')
+    .select('alias, full_name')
+    .eq(column, value)
+    .limit(1)
+    .single();
+
+  if (excludeId) {
+    query = query.neq('id', excludeId);
   }
+
+  const { data } = await query;
+  if (!data) return null;
+  return data.alias || data.full_name || 'otro talento';
+}
+
+/**
+ * Map a Postgrest unique-constraint error (23505) to a user-friendly message
+ * that includes WHO already owns the conflicting value.
+ */
+async function mapDbError(
+  error: PostgrestError,
+  supabase: SupabaseClient,
+  submittedData?: ModelFormData,
+  existingModelId?: string,
+): Promise<{ message: string; fieldErrors?: Record<string, string> }> {
+
+  // --- Unique constraint violation ---
+  if (error.code === '23505') {
+    // Try to match the specific constraint from error.details
+    for (const [constraintName, info] of Object.entries(UNIQUE_CONSTRAINTS)) {
+      if (error.details?.includes(constraintName)) {
+        const value = submittedData?.[info.fieldKey];
+        const owner = await findConflictOwner(supabase, info.column, value, existingModelId);
+        const ownerText = owner ? ` por ${owner}` : '';
+        return {
+          message: value ? `El ${info.label} "${value}" ya está en uso${ownerText}.` : `Este ${info.label} ya está en uso${ownerText}.`,
+          fieldErrors: { [info.fieldKey]: `Este ${info.label} ya está en uso${ownerText}.` },
+        };
+      }
+    }
+
+    // Fallback: constraint not recognised — try ALL unique columns to find the conflict
+    if (submittedData) {
+      for (const info of Object.values(UNIQUE_CONSTRAINTS)) {
+        const value = submittedData[info.fieldKey];
+        if (!value) continue;
+        const owner = await findConflictOwner(supabase, info.column, value, existingModelId);
+        if (owner) {
+          return {
+            message: `El ${info.label} "${value}" ya está en uso por ${owner}.`,
+            fieldErrors: { [info.fieldKey]: `Este ${info.label} ya está en uso por ${owner}.` },
+          };
+        }
+      }
+    }
+
+    return { message: 'Se encontró un conflicto de datos únicos. Revisa que el email, teléfono, documento ID o pasaporte no estén asignados a otro talento.' };
+  }
+
   // Default fallback
   return { message: 'Ocurrió un error inesperado en la base de datos.' };
-};
+}
 
 // --- createModel function ---
 export async function createModel(data: ModelFormData) {
@@ -62,7 +126,7 @@ export async function createModel(data: ModelFormData) {
     // Handle Supabase/DB errors specifically
     if (error) {
       logError(error, { action: 'createModel.insert' }); //
-      const { message, fieldErrors } = mapDbError(error);
+      const { message, fieldErrors } = await mapDbError(error, supabase, validation.data);
       return { success: false, error: message, errors: fieldErrors };
     }
 
@@ -83,9 +147,13 @@ export async function createModel(data: ModelFormData) {
     logError(err, { action: 'createModel.catch_all' });
     // **CORRECTION: Use isPostgrestError check**
     if (isPostgrestError(err)) {
-      const { message, fieldErrors } = mapDbError(err);
+      const { message, fieldErrors } = await mapDbError(err, supabase, validation.data);
       return { success: false, error: message, errors: fieldErrors };
     }
+    
+    // Si es un error de código grave y no un error de base de datos controlado, lo mandamos a Sentry
+    Sentry.captureException(err, { extra: { action: 'createModel' } });
+    
     return { success: false, error: 'Ocurrió un error inesperado al intentar crear el modelo.' };
   }
 }
@@ -113,7 +181,7 @@ export async function updateModel(modelId: string, data: ModelFormData) {
     // Handle Supabase/DB errors
     if (error) {
       logError(error, { action: 'updateModel.update', modelId }); //
-      const { message, fieldErrors } = mapDbError(error);
+      const { message, fieldErrors } = await mapDbError(error, supabase, validation.data, modelId);
       return { success: false, error: message, errors: fieldErrors };
     }
 
@@ -135,9 +203,13 @@ export async function updateModel(modelId: string, data: ModelFormData) {
     logError(err, { action: 'updateModel.catch_all', modelId });
     // **CORRECTION: Use isPostgrestError check**
     if (isPostgrestError(err)) {
-      const { message, fieldErrors } = mapDbError(err);
+      const { message, fieldErrors } = await mapDbError(err, supabase, validation.data, modelId);
       return { success: false, error: message, errors: fieldErrors };
     }
+    
+    // Enviar errores graves a Sentry
+    Sentry.captureException(err, { extra: { action: 'updateModel', modelId } });
+    
     return { success: false, error: 'Ocurrió un error inesperado al intentar actualizar el modelo.' };
   }
 }
@@ -163,7 +235,7 @@ export async function deleteModel(modelId: string) {
     // Handle Supabase/DB errors
     if (error) {
       logError(error, { action: 'deleteModel.delete', modelId }); //
-      const { message } = mapDbError(error);
+      const { message } = await mapDbError(error, supabase);
       return { success: false, error: message };
     }
 
@@ -176,9 +248,12 @@ export async function deleteModel(modelId: string) {
     logError(err, { action: 'deleteModel.catch_all', modelId });
     // **CORRECTION: Use isPostgrestError check**
     if (isPostgrestError(err)) {
-      const { message } = mapDbError(err);
+      const { message } = await mapDbError(err, supabase);
       return { success: false, error: message };
     }
+    
+    Sentry.captureException(err, { extra: { action: 'deleteModel', modelId } });
+    
     return { success: false, error: 'Ocurrió un error inesperado al intentar eliminar el modelo.' };
   }
 }
@@ -212,6 +287,7 @@ export async function toggleModelVisibility(modelId: string, isPublic: boolean) 
 
   } catch (err) {
     logError(err, { action: 'toggleModelVisibility.catch_all', modelId });
+    Sentry.captureException(err, { extra: { action: 'toggleModelVisibility', modelId } });
     return { success: false, error: 'Error inesperado al cambiar visibilidad.' };
   }
 }

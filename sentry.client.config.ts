@@ -10,4 +10,12 @@ Sentry.init({
   integrations: [
     Sentry.replayIntegration(),
   ],
+  beforeSend(event, hint) {
+    const error = hint.originalException;
+    // Ignorar errores de validación del cliente (ZodError) para no ensuciar Sentry con errores del usuario
+    if (error && typeof error === 'object' && 'name' in error && error.name === 'ZodError') {
+      return null;
+    }
+    return event;
+  },
 });

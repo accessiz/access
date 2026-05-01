@@ -10,6 +10,7 @@ interface PhoneInputFieldProps {
     disabled?: boolean
     placeholder?: string
     className?: string
+    required?: boolean
 }
 
 export function PhoneInputField({
@@ -18,6 +19,7 @@ export function PhoneInputField({
     disabled,
     placeholder = 'Número de teléfono',
     className,
+    required = false,
 }: PhoneInputFieldProps) {
     return (
         <PhoneInput
@@ -42,7 +44,7 @@ export function PhoneInputField({
             dropdownClass="!bg-card !text-popover-foreground !border-border"
             searchClass="!bg-background !text-foreground"
             inputProps={{
-                required: true,
+                required,
             }}
         />
     )
