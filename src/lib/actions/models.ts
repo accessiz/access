@@ -39,14 +39,13 @@ async function findConflictOwner(
     .from('models')
     .select('alias, full_name')
     .eq(column, value)
-    .limit(1)
-    .single();
+    .limit(1);
 
   if (excludeId) {
     query = query.neq('id', excludeId);
   }
 
-  const { data } = await query;
+  const { data } = await query.single();
   if (!data) return null;
   return data.alias || data.full_name || 'otro talento';
 }
