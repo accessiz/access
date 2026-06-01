@@ -4,6 +4,26 @@ import React, { useState, useRef, useEffect, ReactNode, useCallback } from 'reac
 import { gsap } from 'gsap';
 import { ClientAnimationContext } from './ClientAnimationContext';
 
+// Helper to safely access sessionStorage without throwing in Safari Private Mode or when cookies are blocked
+const safeSessionStorage = {
+    getItem(key: string): string | null {
+        try {
+            return typeof window !== 'undefined' ? window.sessionStorage.getItem(key) : null;
+        } catch {
+            return null;
+        }
+    },
+    setItem(key: string, value: string): void {
+        try {
+            if (typeof window !== 'undefined') {
+                window.sessionStorage.setItem(key, value);
+            }
+        } catch {
+            // Silence storage/cookie restriction errors
+        }
+    }
+};
+
 export default function ClientAnimationWrapper({ children }: { children: ReactNode }) {
     const [animationState, setAnimationState] = useState<'intro' | 'logo-to-nav' | 'login' | 'transition' | 'finished'>('intro');
 
@@ -21,7 +41,7 @@ export default function ClientAnimationWrapper({ children }: { children: ReactNo
         return new Promise<void>((resolve) => {
             if (!containerRef.current) {
                 setAnimationState('finished');
-                sessionStorage.setItem('introPlayed', 'true');
+                safeSessionStorage.setItem('introPlayed', 'true');
                 resolve();
                 return;
             }
@@ -32,7 +52,7 @@ export default function ClientAnimationWrapper({ children }: { children: ReactNo
                 const tl = gsap.timeline({
                     onComplete: () => {
                         setAnimationState('finished');
-                        sessionStorage.setItem('introPlayed', 'true');
+                        safeSessionStorage.setItem('introPlayed', 'true');
                         resolve();
                     }
                 });
@@ -50,7 +70,7 @@ export default function ClientAnimationWrapper({ children }: { children: ReactNo
 
     // Phase 1-3: Initial Intro Animation
     useEffect(() => {
-        const played = sessionStorage.getItem('introPlayed');
+        const played = safeSessionStorage.getItem('introPlayed');
         if (played) {
             setAnimationState('finished');
             return;

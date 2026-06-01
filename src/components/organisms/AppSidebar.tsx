@@ -43,18 +43,18 @@ type SidebarCacheValue<T> = {
 function readSidebarCache<T>(key: string): T | null {
   if (typeof window === 'undefined') return null
 
-  const raw = window.sessionStorage.getItem(key)
-  if (!raw) return null
-
   try {
+    const raw = window.sessionStorage.getItem(key)
+    if (!raw) return null
+
     const parsed = JSON.parse(raw) as SidebarCacheValue<T>
     if (parsed.expiresAt <= Date.now()) {
-      window.sessionStorage.removeItem(key)
+      try { window.sessionStorage.removeItem(key) } catch {}
       return null
     }
     return parsed.value
   } catch {
-    window.sessionStorage.removeItem(key)
+    try { window.sessionStorage.removeItem(key) } catch {}
     return null
   }
 }
@@ -62,12 +62,15 @@ function readSidebarCache<T>(key: string): T | null {
 function writeSidebarCache<T>(key: string, value: T) {
   if (typeof window === 'undefined') return
 
-  const payload: SidebarCacheValue<T> = {
-    value,
-    expiresAt: Date.now() + SIDEBAR_CACHE_TTL_MS,
+  try {
+    const payload: SidebarCacheValue<T> = {
+      value,
+      expiresAt: Date.now() + SIDEBAR_CACHE_TTL_MS,
+    }
+    window.sessionStorage.setItem(key, JSON.stringify(payload))
+  } catch {
+    // Silence errors in environments with disabled storage
   }
-
-  window.sessionStorage.setItem(key, JSON.stringify(payload))
 }
 
 // Definición de tus rutas reales
