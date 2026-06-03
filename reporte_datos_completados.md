@@ -1,3 +1,118 @@
+# Reporte de Datos Completados: Segunda Actualización Manual de Perfiles Incompletos
+
+**Fecha de Actualización:** 2 de junio de 2026 (Hora local)
+**Origen de Datos:** `LISTADO GENERAL IZ.xlsx - LISTADO GENERAL SV.csv` (El Salvador)
+
+Se realizó una segunda ronda de actualizaciones manuales sobre perfiles que continuaban apareciendo con baja completitud (30%), cruzándolos con los listados de origen:
+
+### 1. Jeremy Ayala (id: `7d15081a-2c9d-4667-a538-444c30bd84c8`)
+*   **Completitud:** subió de **30%** a **75%**.
+*   **Campos Completados:**
+    *   `birth_date`: `'2005-09-17'`
+    *   `national_id`: `'069716579'`
+    *   `height_cm`: `176`
+    *   `top_size`: `'M'`
+    *   `pants_size`: `'32'`
+    *   `shoe_size_us`: `9`
+    *   `instagram`: `'Jeremy_aless'`
+    *   `tiktok`: `'Jeremy_alesss'`
+
+### 2. Diego Comandari (id: `93f73781-c79a-441e-81cb-3c1ca2bb65c5`)
+*   **Completitud:** subió de **30%** a **87%**.
+*   **Campos Completados:**
+    *   `birth_date`: `'2006-09-30'`
+    *   `national_id`: `'07555395-5'`
+    *   `height_cm`: `174`
+    *   `shoulders_cm`: `48`
+    *   `chest_cm`: `96`
+    *   `waist_cm`: `74`
+    *   `hips_cm`: `97`
+    *   `top_size`: `'M'`
+    *   `pants_size`: `'32'`
+    *   `shoe_size_us`: `9`
+    *   `instagram`: `'diego.comand'`
+    *   `tiktok`: `'diegocomandari7'`
+
+### 3. Axel Garcia (id: `739b52f5-1bd7-49a8-80af-322734fc6948`)
+*   **Completitud:** subió de **30%** a **79%**.
+*   **Campos Completados (sin sobrescribir campos ya llenos como full_name y email):**
+    *   `birth_date`: `'2004-05-04'`
+    *   `national_id`: `'06718257-0'`
+    *   `height_cm`: `181`
+    *   `chest_cm`: `110`
+    *   `waist_cm`: `77`
+    *   `hips_cm`: `110`
+    *   `top_size`: `'L'`
+    *   `pants_size`: `'32'`
+    *   `shoe_size_us`: `11`
+
+### 4. Dennis Sorto (id: `3da74c04-ac60-4173-90fc-b91a34b81c04`)
+*   **Completitud:** subió de **30%** a **70%**.
+*   **Campos Completados:**
+    *   `birth_date`: `'2003-10-30'`
+    *   `national_id`: `'06596918-1'`
+    *   `height_cm`: `174`
+    *   `top_size`: `'s - m'`
+    *   `pants_size`: `'29'`
+    *   `shoe_size_us`: `8.25`
+
+### 5. Leslie Rodriguez (id: `225d58e6-c6b4-4946-b3fd-d8863f8f7d9f`)
+*   **Completitud:** subió de **30%** a **75%**.
+*   **Campos Completados:**
+    *   `birth_date`: `'2000-11-12'`
+    *   `national_id`: `'060829121'`
+    *   `height_cm`: `160`
+    *   `top_size`: `'XS'`
+    *   `pants_size`: `'3'`
+    *   `shoe_size_us`: `5.75`
+    *   `instagram`: `'less.rodriguez_sv'`
+    *   `tiktok`: `'less_rm'`
+
+### 6. Rebeca Rosales (id: `cce5489b-7663-4fff-9691-3d852c22b8a3`)
+*   **Completitud:** subió de **30%** a **87%**.
+*   **Campos Completados:**
+    *   `birth_date`: `'1999-07-17'`
+    *   `national_id`: `'05909210-1'`
+    *   `height_cm`: `170`
+    *   `shoulders_cm`: `35`
+    *   `bust_cm`: `84`
+    *   `waist_cm`: `64`
+    *   `hips_cm`: `90`
+    *   `top_size`: `'S'`
+    *   `pants_size`: `'4'`
+    *   `shoe_size_us`: `8`
+    *   `instagram`: `'reberosales16'`
+    *   `tiktok`: `'reberosales7'`
+
+### 7. Kevin Salinas (id: `cca4ae53-1c5b-4cbb-8f92-0b6054ca6e4a`)
+*   **Completitud:** subió de **30%** a **87%**.
+*   **Campos Completados:**
+    *   `birth_date`: `'2005-06-17'`
+    *   `national_id`: `'069184625'`
+    *   `height_cm`: `175`
+    *   `shoulders_cm`: `46`
+    *   `chest_cm`: `108`
+    *   `waist_cm`: `87`
+    *   `hips_cm`: `111`
+    *   `top_size`: `'M'`
+    *   `pants_size`: `'32'`
+    *   `shoe_size_us`: `11`
+    *   `instagram`: `'kevin_salinas360'`
+    *   `tiktok`: `'Kevinsalinas055'`
+
+### 8. Paulina Ventura (id: `5adf94c4-5c70-45a4-b780-9dbe01fb38c1`)
+*   **Completitud:** subió de **33%** a **75%**.
+*   **Campos Completados (sin sobrescribir campos ya llenos como DUI e Instagram):**
+    *   `full_name`: `'Laura Paulina Hernandez Ventura'`
+    *   `height_cm`: `186`
+    *   `top_size`: `'s - m'`
+    *   `pants_size`: `'6'`
+    *   `shoe_size_us`: `9.5`
+    *   `email`: `'Venturapaulian71@gmail.com'`
+    *   `phone_e164`: `'+50377427415'`
+
+---
+
 # Reporte de Datos Completados: Actualización Manual de Perfiles Incompletos
 
 **Fecha de Actualización Manual:** 2 de junio de 2026 (Hora local)
