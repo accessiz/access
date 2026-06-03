@@ -100,7 +100,7 @@ export async function getLowCompletenessModels(limit = 5) {
 
   const { data, error } = await supabase
     .from('models')
-    .select('id, alias, profile_completeness, birth_date, cover_path, height_cm')
+    .select('id, alias, profile_completeness, birth_date, cover_path, height_cm, national_id, phone_e164, email, top_size, pants_size, shoe_size_us, instagram')
     .eq('user_id', user.id)
     .order('profile_completeness', { ascending: true })
     .limit(limit);
@@ -110,12 +110,19 @@ export async function getLowCompletenessModels(limit = 5) {
     return [];
   }
 
-  // Calculate missing fields for each model
+  // Calculate missing fields for each model based on the same rules as the DB completeness trigger
   return (data || []).map(m => {
     const missing: string[] = [];
+    if (!m.email) missing.push('Correo electrónico');
+    if (!m.phone_e164) missing.push('Teléfono');
+    if (!m.national_id) missing.push('Documento ID / DPI');
     if (!m.birth_date) missing.push('Fecha de nacimiento');
+    if (!m.height_cm || m.height_cm <= 0) missing.push('Altura');
+    if (!m.top_size) missing.push('Talla de Top');
+    if (!m.pants_size) missing.push('Talla de Pantalón');
+    if (!m.shoe_size_us || m.shoe_size_us <= 0) missing.push('Talla de Zapato');
+    if (!m.instagram) missing.push('Instagram');
     if (!m.cover_path) missing.push('Foto de portada');
-    if (!m.height_cm) missing.push('Altura');
     return { ...m, missing_fields: missing };
   });
 }
