@@ -89,7 +89,7 @@ export async function getRecentActivity(limit = 10): Promise<ActivityItem[]> {
   });
 }
 
-export async function getLowCompletenessModels(limit = 5) {
+export async function getLowCompletenessModels(limit = 100) {
   'use cache: private';
   cacheLife('hours');
   cacheTag('dashboard', 'low-completeness');
@@ -102,6 +102,7 @@ export async function getLowCompletenessModels(limit = 5) {
     .from('models')
     .select('id, alias, profile_completeness, birth_date, cover_path, height_cm, national_id, phone_e164, email, top_size, pants_size, shoe_size_us, instagram')
     .eq('user_id', user.id)
+    .lt('profile_completeness', 100)
     .order('profile_completeness', { ascending: true })
     .limit(limit);
 

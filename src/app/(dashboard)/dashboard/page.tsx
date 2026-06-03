@@ -124,7 +124,7 @@ async function RecentActivityCard() {
 
 // Async component for incomplete profiles
 async function IncompleteProfilesCard() {
-  const lowModels = await getLowCompletenessModels(10);
+  const lowModels = await getLowCompletenessModels(100);
 
   return (
     <Card className="bg-[rgb(var(--sys-bg-secondary))]">
