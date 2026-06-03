@@ -1,3 +1,38 @@
+# Reporte de Datos Completados: Tercera Actualización Manual de Perfiles Incompletos
+
+**Fecha de Actualización:** 2 de junio de 2026 (Hora local)
+**Origen de Datos:** `LISTADO GENERAL IZ.xlsx - LISTADO GENERAL SV.csv` (El Salvador)
+
+Se realizó una tercera ronda de actualizaciones manuales sobre perfiles solicitados, logrando completar sus datos biométricos y de contacto de forma exitosa y segura:
+
+### 1. Cris Lou (id: `c77fe75c-2bcd-42e5-aa1a-26bc1fe4d309`)
+*   **Completitud:** subió de **44%** a **82%**.
+*   **Campos Completados:**
+    *   `height_cm`: `175`
+    *   `shoulders_cm`: `45`
+    *   `chest_cm`: `81`
+    *   `waist_cm`: `67`
+    *   `hips_cm`: `89`
+    *   `top_size`: `'s'`
+    *   `pants_size`: `'32'`
+    *   `shoe_size_us`: `7`
+
+### 2. Stefany Reyes (id: `f2613cae-a545-4a58-a88e-185320143b8d`)
+*   **Completitud:** subió de **44%** a **87%**.
+*   **Campos Completados:**
+    *   `height_cm`: `165`
+    *   `shoulders_cm`: `38`
+    *   `bust_cm`: `81`
+    *   `waist_cm`: `61`
+    *   `hips_cm`: `92`
+    *   `top_size`: `'xs'`
+    *   `pants_size`: `'4'`
+    *   `shoe_size_us`: `6`
+    *   `instagram`: `'tefyreyesmodel'`
+    *   `tiktok`: `'tefyreyesmodel'`
+
+---
+
 # Reporte de Datos Completados: Segunda Actualización Manual de Perfiles Incompletos
 
 **Fecha de Actualización:** 2 de junio de 2026 (Hora local)
