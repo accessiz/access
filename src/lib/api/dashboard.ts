@@ -100,7 +100,11 @@ export async function getLowCompletenessModels(limit = 100) {
 
   const { data, error } = await supabase
     .from('models')
-    .select('id, alias, profile_completeness, birth_date, cover_path, height_cm, national_id, phone_e164, email, top_size, pants_size, shoe_size_us, instagram')
+    .select(`
+      id, alias, profile_completeness, full_name, national_id, phone_e164, email, height_cm,
+      gender, birth_date, top_size, pants_size, shoe_size_us, waist_cm, hips_cm,
+      shoulders_cm, chest_cm, bust_cm, eye_color, hair_color, instagram
+    `)
     .eq('user_id', user.id)
     .lt('profile_completeness', 100)
     .order('profile_completeness', { ascending: true })
@@ -114,16 +118,33 @@ export async function getLowCompletenessModels(limit = 100) {
   // Calculate missing fields for each model based on the same rules as the DB completeness trigger
   return (data || []).map(m => {
     const missing: string[] = [];
-    if (!m.email) missing.push('Correo electrónico');
-    if (!m.phone_e164) missing.push('Teléfono');
+    
+    // Critical (8 points each)
+    if (!m.full_name) missing.push('Nombre completo');
     if (!m.national_id) missing.push('Documento ID / DPI');
-    if (!m.birth_date) missing.push('Fecha de nacimiento');
+    if (!m.phone_e164) missing.push('Teléfono');
+    if (!m.email) missing.push('Correo electrónico');
     if (!m.height_cm || m.height_cm <= 0) missing.push('Altura');
+
+    // Essential (6 points each)
+    if (!m.gender) missing.push('Género');
+    if (!m.birth_date) missing.push('Fecha de nacimiento');
     if (!m.top_size) missing.push('Talla de Top');
     if (!m.pants_size) missing.push('Talla de Pantalón');
     if (!m.shoe_size_us || m.shoe_size_us <= 0) missing.push('Talla de Zapato');
+
+    // Detailed measurements (3 points each)
+    if (!m.waist_cm || m.waist_cm <= 0) missing.push('Cintura');
+    if (!m.hips_cm || m.hips_cm <= 0) missing.push('Cadera');
+    if (!m.shoulders_cm || m.shoulders_cm <= 0) missing.push('Hombros / Espalda');
+    if (!m.chest_cm || m.chest_cm <= 0) missing.push('Pecho');
+    if (!m.bust_cm || m.bust_cm <= 0) missing.push('Busto');
+
+    // Social and Appearance (5 points each)
+    if (!m.eye_color) missing.push('Color de ojos');
+    if (!m.hair_color) missing.push('Color de cabello');
     if (!m.instagram) missing.push('Instagram');
-    if (!m.cover_path) missing.push('Foto de portada');
+
     return { ...m, missing_fields: missing };
   });
 }
