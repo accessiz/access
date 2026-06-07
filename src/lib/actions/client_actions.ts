@@ -41,7 +41,7 @@ async function logClientActivity(params: {
       category: 'project', // Cambiado de 'client' a 'project' por constraint de DB
       title: params.title,
       message: params.message || null,
-      metadata: params.metadata || null,
+      metadata: params.metadata ? { ...params.metadata, project_id: params.projectId } : { project_id: params.projectId },
       is_urgent: true, // Esto hace que aparezca en la campanita
     });
 
@@ -115,10 +115,10 @@ export async function finalizeProjectReview(projectId: string, rejectPending: bo
 
     if (finalizeError) throw finalizeError;
 
-    // Revalidar
+    // Revalidar y obtener detalles para el log y email
     const { data: project } = await supabaseAdmin
       .from('projects')
-      .select('public_id, project_name')
+      .select('public_id, project_name, client_name')
       .eq('id', projectId)
       .single();
 
@@ -130,6 +130,48 @@ export async function finalizeProjectReview(projectId: string, rejectPending: bo
       title: `Cliente finalizó el proyecto "${project?.project_name || 'proyecto'}"`,
       metadata: { entity_id: projectId, entity_type: 'project', action: 'finalized' },
     });
+
+    // Enviar notificación por correo de selección finalizada a scouting
+    try {
+      const { data: approvedData, error: approvedError } = await supabaseAdmin
+        .from('projects_models')
+        .select(`
+          models:fk_projects_models_model (
+            alias,
+            full_name,
+            gender,
+            country,
+            birth_country
+          )
+        `)
+        .eq('project_id', projectId)
+        .eq('client_selection', 'approved');
+
+      if (approvedError) throw approvedError;
+
+      const approvedModels = (approvedData || [])
+        .map((item: any) => {
+          const m = item.models;
+          if (!m) return null;
+          return {
+            alias: m.alias || m.full_name || 'Sin Alias',
+            fullName: m.full_name || m.alias || 'Sin Nombre',
+            gender: m.gender || 'Unknown',
+            country: m.country || m.birth_country || 'Sin Nacionalidad',
+          };
+        })
+        .filter((m): m is Exclude<typeof m, null> => m !== null);
+
+      const { sendProjectCompletionEmail } = await import('@/lib/services/resend');
+      await sendProjectCompletionEmail({
+        projectName: project?.project_name || 'Proyecto',
+        clientName: project?.client_name || 'Cliente',
+        publicId: project?.public_id || projectId,
+        approvedModels,
+      });
+    } catch (emailErr) {
+      logError(emailErr, { action: 'finalizeProjectReview.sendEmail', projectId });
+    }
 
     return { success: true };
 
@@ -203,6 +245,14 @@ export async function updateClientModelSelection(
   }
 
   try {
+    // Consultar selección previa para detallar el log
+    const { data: previousRelation } = await supabaseAdmin
+      .from('projects_models')
+      .select('client_selection')
+      .eq('project_id', projectId)
+      .eq('model_id', modelId)
+      .maybeSingle();
+
     const { error } = await supabaseAdmin
       .from('projects_models')
       .update({
@@ -227,22 +277,43 @@ export async function updateClientModelSelection(
       .eq('id', modelId)
       .single();
 
-    // Log activity for notification bell (ONLY for approvals per design decision)
-    // Rejections are NOT logged individually (too noisy when project is finalized)
+    const prevSel = previousRelation?.client_selection;
+    const displayName = model?.alias || 'Talento';
+    let logTitle = '';
+
     if (selection === 'approved') {
+      if (prevSel === 'rejected') {
+        logTitle = `Cliente aprobó a ${displayName} (a quien había rechazado anteriormente)`;
+      } else {
+        logTitle = `Cliente aprobó a ${displayName}`;
+      }
+    } else if (selection === 'rejected') {
+      if (prevSel === 'approved') {
+        logTitle = `Cliente eliminó a ${displayName} de los aprobados`;
+      } else {
+        logTitle = `Cliente rechazó a ${displayName}`;
+      }
+    } else { // pending
+      if (prevSel === 'approved') {
+        logTitle = `Cliente quitó aprobación a ${displayName}`;
+      } else if (prevSel === 'rejected') {
+        logTitle = `Cliente quitó rechazo a ${displayName}`;
+      }
+    }
+
+    if (logTitle) {
       await logClientActivity({
         projectId,
-        title: ActivityTitles.clientApprovedModel(model?.alias || 'Talento', project?.project_name || 'Proyecto'),
+        title: logTitle,
         metadata: {
           entity_id: modelId,
           entity_type: 'model',
-          action: 'client_approved',
-          project_id: projectId
+          action: `client_${selection}`,
         },
       });
     }
 
-    // Revalidar la página del cliente (usamos project de línea 197)
+    // Revalidar la página del cliente
     if (project?.public_id) {
       revalidatePath(`/c/${project.public_id}`);
     }

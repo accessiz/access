@@ -153,7 +153,6 @@ export function PaymentEditorPopover({
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="per_day">Por día</SelectItem>
-                                            <SelectItem value="per_hour">Por hora</SelectItem>
                                             <SelectItem value="fixed">Tarifa fija</SelectItem>
                                         </SelectContent>
                                     </Select>

@@ -16,6 +16,7 @@ import {
   type FormDataScheduleEntry,
   type MigrationMapping,
   convertToTimestamp,
+  convertToGuatemalaTimestamp,
   timestampTo12h,
   extractDateFromTimestamp,
   extractScheduleFromFormData,
@@ -69,12 +70,28 @@ export async function createProject(
     };
   }
 
-  const { password, ...restOfData } = parsed.data;
+  const {
+    password,
+    apply_start_date,
+    apply_start_time,
+    apply_close_date,
+    apply_close_time,
+    ...restOfData
+  } = parsed.data;
 
   try {
     // Se guarda la contraseña en texto plano para que sea visible al compartir
     const projectPassword = password || null;
     const schedule = (parsed.data.schedule && parsed.data.schedule.length > 0) ? parsed.data.schedule : null;
+
+    let apply_start_at = null;
+    if (apply_start_date && apply_start_time) {
+      apply_start_at = convertToGuatemalaTimestamp(apply_start_date, apply_start_time);
+    }
+    let apply_end_at = null;
+    if (apply_close_date && apply_close_time) {
+      apply_end_at = convertToGuatemalaTimestamp(apply_close_date, apply_close_time);
+    }
 
     const insertPayload = {
       ...restOfData,
@@ -82,6 +99,8 @@ export async function createProject(
       schedule,
       status: 'draft' as const,
       user_id: user.id,
+      apply_start_at,
+      apply_end_at,
     };
 
     const { data: newProject, error } = await supabase
@@ -153,7 +172,7 @@ export async function updateProject(
 
   const { data: currentProject, error: ownerError } = await supabase
     .from('projects')
-    .select('user_id, default_model_fee, default_fee_type, currency, default_model_trade_fee')
+    .select('user_id, default_model_fee, default_fee_type, currency, default_model_trade_fee, password')
     .eq('id', projectId)
     .single();
 
@@ -188,14 +207,32 @@ export async function updateProject(
     };
   }
 
-  const { password, ...restOfData } = parsed.data;
+  const {
+    password,
+    apply_start_date,
+    apply_start_time,
+    apply_close_date,
+    apply_close_time,
+    ...restOfData
+  } = parsed.data;
 
   try {
     const schedule = (parsed.data.schedule && parsed.data.schedule.length > 0) ? parsed.data.schedule : null;
 
+    let apply_start_at = null;
+    if (apply_start_date && apply_start_time) {
+      apply_start_at = convertToGuatemalaTimestamp(apply_start_date, apply_start_time);
+    }
+    let apply_end_at = null;
+    if (apply_close_date && apply_close_time) {
+      apply_end_at = convertToGuatemalaTimestamp(apply_close_date, apply_close_time);
+    }
+
     const updatePayload: Record<string, unknown> = {
       ...restOfData,
       schedule,
+      apply_start_at,
+      apply_end_at,
     };
 
     // Se guarda en texto plano a petición del usuario
@@ -375,10 +412,30 @@ export async function updateProject(
     revalidatePath('/dashboard/projects');
     revalidatePath(`/dashboard/projects/${projectId}`);
 
+    // Detectar cambios específicos para el log
+    const passwordChanged = password !== undefined && password !== (currentProject?.password || '');
+    const scheduleChanged = (schedulesToInsert?.length ?? 0) > 0 || (scheduleIdsToDelete?.length ?? 0) > 0;
+
+    if (passwordChanged) {
+      await logActivity({
+        category: 'project',
+        title: `Cambiaste la contraseña de acceso del cliente para el proyecto "${parsed.data.project_name || 'Proyecto'}"`,
+        metadata: { project_id: projectId, entity_id: projectId, entity_type: 'project', action: 'updated_password' },
+      });
+    }
+
+    if (scheduleChanged) {
+      await logActivity({
+        category: 'project',
+        title: `Actualizaste las fechas del proyecto "${parsed.data.project_name || 'Proyecto'}"`,
+        metadata: { project_id: projectId, entity_id: projectId, entity_type: 'project', action: 'updated_dates' },
+      });
+    }
+
     await logActivity({
       category: 'project',
       title: ActivityTitles.projectUpdated(parsed.data.project_name || 'Proyecto'),
-      metadata: { entity_id: projectId, entity_type: 'project', action: 'updated' },
+      metadata: { project_id: projectId, entity_id: projectId, entity_type: 'project', action: 'updated' },
     });
 
     return { success: true, projectId };

@@ -77,6 +77,34 @@ export default function ProjectsClientPage({ initialProjects, initialCount, avai
     const pathname = usePathname();
     const router = useRouter();
 
+    // Sincronizar parámetros por defecto (año/mes actual en Guatemala) si faltan en la URL
+    useEffect(() => {
+        const params = new URLSearchParams(searchParams.toString());
+        let updated = false;
+
+        if (!params.has('year')) {
+            const currentYearStr = new Intl.DateTimeFormat('en-US', {
+                timeZone: 'America/Guatemala',
+                year: 'numeric',
+            }).format(new Date());
+            params.set('year', currentYearStr);
+            updated = true;
+        }
+
+        if (!params.has('month')) {
+            const currentMonthStr = new Intl.DateTimeFormat('en-US', {
+                timeZone: 'America/Guatemala',
+                month: 'numeric',
+            }).format(new Date());
+            params.set('month', currentMonthStr);
+            updated = true;
+        }
+
+        if (updated) {
+            router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+        }
+    }, [searchParams, pathname, router]);
+
     const currentPage = Number(searchParams.get('page')) || 1;
     const totalPages = Math.ceil(count / PAGE_SIZE);
 

@@ -134,7 +134,7 @@ export async function createModel(data: ModelFormData) {
 
     // Log activity
     await logActivity({
-      category: 'model',
+      category: 'talent',
       title: ActivityTitles.modelCreated(validation.data.alias || validation.data.full_name),
       metadata: { entity_id: newModel.id, entity_type: 'model', action: 'created' },
     });
@@ -190,7 +190,7 @@ export async function updateModel(modelId: string, data: ModelFormData) {
 
     // Log activity
     await logActivity({
-      category: 'model',
+      category: 'talent',
       title: ActivityTitles.modelUpdated(validation.data.alias || validation.data.full_name),
       metadata: { entity_id: modelId, entity_type: 'model', action: 'updated' },
     });
@@ -288,5 +288,54 @@ export async function toggleModelVisibility(modelId: string, isPublic: boolean) 
     logError(err, { action: 'toggleModelVisibility.catch_all', modelId });
     Sentry.captureException(err, { extra: { action: 'toggleModelVisibility', modelId } });
     return { success: false, error: 'Error inesperado al cambiar visibilidad.' };
+  }
+}
+
+// --- updateModelCredentials ---
+export async function updateModelCredentials(modelId: string, email: string, password_plain: string) {
+  if (!z.string().uuid().safeParse(modelId).success) {
+    return { success: false, error: 'ID de modelo inválido.' };
+  }
+  
+  if (!email || email.trim() === '') {
+    return { success: false, error: 'El correo electrónico es obligatorio.' };
+  }
+  
+  if (!password_plain || password_plain.length < 6) {
+    return { success: false, error: 'La contraseña debe tener al menos 6 caracteres.' };
+  }
+
+  const auth = await requireAuthenticatedAction()
+  if (!auth.user) {
+    return { success: false, error: auth.error }
+  }
+
+  const { supabase } = auth
+
+  try {
+    const { error } = await supabase
+      .from('models')
+      .update({ 
+        email: email.toLowerCase().trim(),
+        login_password: password_plain 
+      })
+      .eq('id', modelId);
+
+    if (error) {
+      logError(error, { action: 'updateModelCredentials', modelId });
+      if (error.code === '23505') {
+        return { success: false, error: 'El correo electrónico ya está en uso por otro talento.' };
+      }
+      return { success: false, error: 'No se pudo actualizar las credenciales.' };
+    }
+
+    revalidatePath('/dashboard/models');
+    revalidatePath(`/dashboard/models/${modelId}`);
+    return { success: true };
+
+  } catch (err) {
+    logError(err, { action: 'updateModelCredentials.catch_all', modelId });
+    Sentry.captureException(err, { extra: { action: 'updateModelCredentials', modelId } });
+    return { success: false, error: 'Error inesperado al actualizar credenciales.' };
   }
 }

@@ -35,6 +35,7 @@ import { TimePicker } from '@/components/ui/time-picker';
 import { TRADE_CATEGORIES, TRADE_CATEGORY_LABELS } from '@/lib/constants/finance';
 import { createClient } from '@/lib/supabase/client';
 import { cn, toTitleCase } from '@/lib/utils';
+import { timestampToGuatemalaDateTime } from '@/lib/actions/projects/helpers';
 
 type ProjectWithBilling = Project & {
   revenue?: number | null;
@@ -209,6 +210,9 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
     loadClients();
   }, [supabase, initialData]);
 
+  const applyStart = initialData?.apply_start_at ? timestampToGuatemalaDateTime(initialData.apply_start_at) : null;
+  const applyEnd = initialData?.apply_end_at ? timestampToGuatemalaDateTime(initialData.apply_end_at) : null;
+
   const normalizedClientPaymentStatus: ProjectFormData['client_payment_status'] =
     initialData?.client_payment_status === 'pending' ||
       initialData?.client_payment_status === 'invoiced' ||
@@ -249,6 +253,13 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
       client_trade_details: initialData?.client_trade_details || null,
       invoice_number: initialData?.invoice_number ?? '',
       invoice_date: initialData?.invoice_date ?? '',
+      // Campos del portal de modelos
+      description: initialData?.description || '',
+      location: initialData?.location || '',
+      apply_start_date: applyStart?.date || '',
+      apply_start_time: applyStart?.time || '09:00 AM',
+      apply_close_date: applyEnd?.date || '',
+      apply_close_time: applyEnd?.time || '06:00 PM',
     },
   });
 
@@ -406,6 +417,13 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
     fd.set('client_trade_details', values.client_trade_details || '');
     fd.set('invoice_number', values.invoice_number || '');
     fd.set('invoice_date', values.invoice_date || '');
+    // Campos del portal de modelos
+    fd.set('description', values.description || '');
+    fd.set('location', values.location || '');
+    fd.set('apply_start_date', values.apply_start_date || '');
+    fd.set('apply_start_time', values.apply_start_time || '');
+    fd.set('apply_close_date', values.apply_close_date || '');
+    fd.set('apply_close_time', values.apply_close_time || '');
 
     // Project types
     if (values.project_types && values.project_types.length > 0) {
@@ -705,6 +723,113 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
           </div>
         </div>
 
+        {/* ========== PASO 4.5: PORTAL DE MODELOS (DETALLES Y PLAZOS) ========== */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <h2 className="text-title">Portal de Modelos</h2>
+            <span className="text-label text-muted-foreground">(Información pública para talentos)</span>
+          </div>
+          <div className="border bg-card rounded-lg p-6 space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="project-description">Descripción del Trabajo</Label>
+              <textarea
+                id="project-description"
+                placeholder="Describe los requisitos del trabajo, vestuario, fotos, etc..."
+                className="w-full min-h-[100px] p-3 rounded-lg border border-separator/20 bg-background text-body transition-all outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
+                {...form.register('description')}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="project-location">Ubicación / Lugar</Label>
+              <Input
+                id="project-location"
+                placeholder="Ej: Zona 10, Ciudad de Guatemala o locación específica"
+                {...form.register('location')}
+              />
+            </div>
+
+            <div className="border-t border-separator/10 pt-4 space-y-4">
+              <h3 className="text-body font-semibold">Plazo para aplicar (opcional)</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                {/* Inicio de aplicación */}
+                <div className="space-y-4 p-4 rounded-xl border border-separator/10 bg-quaternary">
+                  <span className="text-label font-bold block">Fecha y hora de inicio</span>
+                  <div className="grid grid-cols-1 gap-4">
+                    <div className="flex flex-col gap-2">
+                      <Label>Fecha</Label>
+                      <Controller
+                        control={form.control}
+                        name="apply_start_date"
+                        render={({ field }) => (
+                          <>
+                            <input type="hidden" name="apply_start_date" value={field.value || ''} />
+                            <DatePicker value={field.value || ''} onChange={field.onChange} className="w-full" />
+                          </>
+                        )}
+                      />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <Label>Hora</Label>
+                      <Controller
+                        control={form.control}
+                        name="apply_start_time"
+                        render={({ field }) => (
+                          <>
+                            <input
+                              type="hidden"
+                              name="apply_start_time"
+                              value={form.watch('apply_start_time') || field.value || '09:00 AM'}
+                            />
+                            <TimePicker value={field.value || '09:00 AM'} onChange={field.onChange} />
+                          </>
+                        )}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Cierre de aplicación */}
+                <div className="space-y-4 p-4 rounded-xl border border-separator/10 bg-quaternary">
+                  <span className="text-label font-bold block">Fecha y hora de cierre</span>
+                  <div className="grid grid-cols-1 gap-4">
+                    <div className="flex flex-col gap-2">
+                      <Label>Fecha</Label>
+                      <Controller
+                        control={form.control}
+                        name="apply_close_date"
+                        render={({ field }) => (
+                          <>
+                            <input type="hidden" name="apply_close_date" value={field.value || ''} />
+                            <DatePicker value={field.value || ''} onChange={field.onChange} className="w-full" />
+                          </>
+                        )}
+                      />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <Label>Hora</Label>
+                      <Controller
+                        control={form.control}
+                        name="apply_close_time"
+                        render={({ field }) => (
+                          <>
+                            <input
+                              type="hidden"
+                              name="apply_close_time"
+                              value={form.watch('apply_close_time') || field.value || '06:00 PM'}
+                            />
+                            <TimePicker value={field.value || '06:00 PM'} onChange={field.onChange} />
+                          </>
+                        )}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* ========== PASO 5: PRESUPUESTO ========== */}
         <div className="space-y-4">
           <div className="flex items-center gap-2">
@@ -783,7 +908,6 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="per_day">Por día</SelectItem>
-                          <SelectItem value="per_hour">Por hora</SelectItem>
                           <SelectItem value="fixed">Fija</SelectItem>
                         </SelectContent>
                       </Select>
@@ -857,7 +981,6 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="per_day">Por día</SelectItem>
-                            <SelectItem value="per_hour">Por hora</SelectItem>
                             <SelectItem value="fixed">Fija / Flat Fee</SelectItem>
                           </SelectContent>
                         </Select>

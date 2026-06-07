@@ -1,0 +1,102 @@
+@reference "../../../../app/globals.css";
+
+.profile-card {
+  @apply w-full p-6 md:p-8 rounded-3xl border border-separator/15 bg-card shadow-xl transition-all;
+  background-color: rgb(var(--sys-bg-secondary));
+}
+
+.profile-header {
+  @apply flex flex-col md:flex-row items-center md:items-start gap-6;
+}
+
+.profile-avatar-container {
+  @apply relative w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden border-2 border-primary/20 bg-muted flex items-center justify-center shrink-0;
+}
+
+.profile-avatar-fallback {
+  @apply w-full h-full flex items-center justify-center bg-purple/10 text-purple font-semibold text-3xl uppercase;
+}
+
+.profile-info {
+  @apply flex-1 text-center md:text-left space-y-3;
+}
+
+.profile-name-row {
+  @apply space-y-1;
+}
+
+.profile-name {
+  @apply text-display font-bold text-foreground tracking-tight;
+}
+
+.profile-alias {
+  @apply text-body font-medium text-muted-foreground;
+}
+
+.profile-meta-grid {
+  @apply grid grid-cols-2 sm:grid-cols-3 gap-4 py-2 border-y border-separator/10;
+}
+
+.profile-meta-item {
+  @apply flex flex-col;
+}
+
+.profile-meta-label {
+  @apply text-label text-muted-foreground;
+}
+
+.profile-meta-value {
+  @apply text-body font-semibold text-foreground;
+}
+
+.profile-socials {
+  @apply flex flex-wrap gap-4 items-center justify-center md:justify-start pt-2;
+}
+
+.social-badge {
+  @apply flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-separator/20 bg-background/50 hover:bg-background transition-colors text-label font-medium;
+}
+
+.btn-edit-profile {
+  @apply flex items-center gap-1.5 px-4 py-2 rounded-xl border border-primary/20 hover:bg-primary/5 transition-all text-label font-semibold text-primary cursor-pointer;
+}
+
+.edit-form-container {
+  @apply mt-6 p-6 rounded-2xl border border-separator/15 bg-background/40 animate-in fade-in slide-in-from-top-4 duration-300;
+}
+
+.edit-form-grid {
+  @apply grid gap-4 sm:grid-cols-2;
+}
+
+.form-field {
+  @apply flex flex-col gap-1.5;
+}
+
+.form-label {
+  @apply text-label font-medium text-muted-foreground;
+}
+
+.form-input-wrapper {
+  @apply relative flex items-center;
+}
+
+.form-input-icon {
+  @apply absolute left-3 text-muted-foreground h-4 w-4;
+}
+
+.form-input {
+  @apply w-full h-10 pl-9 pr-3 rounded-lg border border-separator/20 bg-background text-body transition-all outline-none focus:border-primary focus:ring-1 focus:ring-primary/20;
+}
+
+.form-actions {
+  @apply flex justify-end gap-3 mt-5;
+}
+
+.btn-cancel {
+  @apply px-4 py-2 rounded-xl border border-separator/35 hover:bg-muted transition-all text-label font-medium text-muted-foreground cursor-pointer;
+}
+
+.btn-save {
+  @apply px-5 py-2 rounded-xl bg-primary hover:bg-primary/95 text-primary-foreground transition-all text-label font-semibold flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed;
+}

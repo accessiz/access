@@ -108,7 +108,8 @@ export function useFinancePayments({
                 .from('model_assignments')
                 .select('id, schedule_id, payment_status')
                 .eq('model_id', item.model_id)
-                .in('schedule_id', scheduleIds);
+                .in('schedule_id', scheduleIds)
+                .eq('payment_status', 'pending');
 
             if (fetchError) {
                 console.error('[confirmPayment] Error al buscar asignaciones:', fetchError);
@@ -206,7 +207,8 @@ export function useFinancePayments({
             .from('model_assignments')
             .select('id')
             .eq('model_id', item.model_id)
-            .in('schedule_id', scheduleIds);
+            .in('schedule_id', scheduleIds)
+            .eq('payment_status', 'pending');
 
         if (!assignments || assignments.length === 0) {
             toast.error('No se encontraron asignaciones');

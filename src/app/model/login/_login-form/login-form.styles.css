@@ -1,0 +1,38 @@
+@reference "../../../../app/globals.css";
+
+.login-card {
+  @apply w-full max-w-md mx-auto p-8 rounded-3xl border border-separator/15 bg-card shadow-2xl;
+  backdrop-filter: blur(12px);
+}
+
+.login-form {
+  @apply grid gap-5;
+}
+
+.form-group {
+  @apply grid gap-1.5;
+}
+
+.input-container {
+  @apply relative flex items-center;
+}
+
+.input-field {
+  @apply w-full h-11 px-4 rounded-xl border border-separator/20 bg-background/50 text-foreground text-body transition-all outline-none focus:border-primary focus:ring-1 focus:ring-primary/20;
+}
+
+.input-field-password {
+  @apply pr-11;
+}
+
+.password-toggle-btn {
+  @apply absolute right-3 text-muted-foreground hover:text-foreground transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2;
+}
+
+.error-container {
+  @apply p-3 rounded-lg border border-destructive/25 bg-destructive/10 text-label text-destructive text-center;
+}
+
+.submit-btn {
+  @apply w-full h-11 bg-primary text-primary-foreground font-semibold rounded-xl transition-all hover:bg-primary/95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer;
+}

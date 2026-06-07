@@ -65,12 +65,8 @@ export function ProjectsToolbar({ availableYears, mode = 'all', className }: Pro
         params.set('page', '1');
 
         if (value === 'all') {
-            // For month, keep `month=all` so selecting "Todos" persists on refresh.
-            if (key === 'month') {
-                params.set(key, 'all');
-            } else {
-                params.delete(key);
-            }
+            // Keep keys as 'all' so selecting "Todos" persists on refresh.
+            params.set(key, 'all');
         } else {
             params.set(key, value);
         }

@@ -61,6 +61,7 @@ function createChainMock(resolved: { data: unknown; error: unknown } = { data: n
 
 let mockSupabase: ReturnType<typeof createChainMock>;
 let mockGetUser: jest.Mock;
+let mockSupabaseAdminRpc: jest.Mock;
 
 /**
  * Table-aware Supabase mock for updateProject's complex multi-table flow:
@@ -191,6 +192,12 @@ jest.mock('@/lib/supabase/server-action', () => ({
   ),
 }));
 
+jest.mock('@/lib/supabase/admin', () => ({
+  supabaseAdmin: {
+    rpc: (...args: any[]) => mockSupabaseAdminRpc(...args),
+  },
+}));
+
 jest.mock('next/cache', () => ({ revalidatePath: jest.fn() }));
 jest.mock('bcryptjs', () => ({ hash: jest.fn((v: string) => Promise.resolve(`hashed_${v}`)) }));
 jest.mock('@/lib/activity-logger', () => ({ logActivity: jest.fn().mockResolvedValue(undefined) }));
@@ -220,6 +227,7 @@ describe('Project Server Actions', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockGetUser = jest.fn().mockResolvedValue({ data: { user: mockUser } });
+    mockSupabaseAdminRpc = jest.fn().mockResolvedValue({ error: null });
     mockSupabase = createChainMock();
   });
 
@@ -882,7 +890,7 @@ describe('Project Server Actions', () => {
         data: { user_id: mockUser.id, project_name: 'My Project' },
         error: null,
       });
-      chain.rpc = jest.fn().mockResolvedValue({ error: { message: 'rpc failed' } });
+      mockSupabaseAdminRpc = jest.fn().mockResolvedValue({ error: { message: 'rpc failed' } });
       mockSupabase = chain;
       const result = await deleteProject(mockProjectId);
       expect(result.success).toBe(false);

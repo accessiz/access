@@ -74,6 +74,14 @@ export const projectFormSchema = z.object({
   client_trade_details: z.string().optional().nullable(),
   invoice_number: z.string().optional().nullable(),
   invoice_date: z.string().optional().nullable(),
+
+  // Campos del portal de modelos
+  description: z.string().optional().nullable(),
+  location: z.string().optional().nullable(),
+  apply_start_date: z.string().optional().nullable(),
+  apply_start_time: z.string().optional().nullable(),
+  apply_close_date: z.string().optional().nullable(),
+  apply_close_time: z.string().optional().nullable(),
 });
 
 export type ProjectFormData = z.infer<typeof projectFormSchema>;

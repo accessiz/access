@@ -68,7 +68,7 @@ export async function addModelToProject(projectId: string, modelId: string) {
 
     // Log activity
     await logActivity({
-      category: 'model',
+      category: 'talent',
       title: ActivityTitles.modelAddedToProject(
         model?.alias || 'Talento',
         project?.project_name || 'Proyecto'
@@ -123,7 +123,7 @@ export async function removeModelFromProject(projectId: string, modelId: string)
 
     // Log activity
     await logActivity({
-      category: 'model',
+      category: 'talent',
       title: ActivityTitles.modelRemovedFromProject(
         model?.alias || 'Talento',
         project?.project_name || 'Proyecto'

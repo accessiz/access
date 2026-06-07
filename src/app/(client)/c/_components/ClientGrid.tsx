@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Model } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { CheckCircle2, XCircle, Loader2 } from 'lucide-react';
@@ -121,6 +121,15 @@ export function ClientGrid({ models, projectId, realProjectId, onSelectionChange
     });
     return initial;
   });
+
+  // Mantener las selecciones locales en sincronía cuando la propiedad 'models' cambie desde el padre
+  useEffect(() => {
+    const next: Record<string, GridModel['selection']> = {};
+    models.forEach(m => {
+      next[m.id] = m.selection || 'pending';
+    });
+    setLocalSelections(next);
+  }, [models]);
 
   const handleLocalSelectionChange = (modelId: string, selection: GridModel['selection']) => {
     setLocalSelections(prev => ({ ...prev, [modelId]: selection }));

@@ -14,6 +14,8 @@ import {
   Cake,
   Globe,
   AlertTriangle,
+  KeyRound,
+  Sparkles,
 } from "lucide-react"
 
 import { NavUser } from "@/components/organisms/NavUser"
@@ -84,6 +86,16 @@ const navMain = [
     title: "Talento",
     url: "/dashboard/models",
     icon: Users,
+  },
+  {
+    title: "Generador Compcard",
+    url: "/dashboard/compcard-generator",
+    icon: Sparkles,
+  },
+  {
+    title: "Accesos",
+    url: "/dashboard/models/access",
+    icon: KeyRound,
   },
   {
     title: "Proyectos",
@@ -241,9 +253,16 @@ export function AppSidebar({ user, ...props }: React.ComponentProps<typeof Sideb
         <SidebarMenu className="overflow-visible">
           {navMain.map((item) => {
             // Lógica para determinar si el item está activo
+            // Rutas que tienen sub-rutas como ítems separados en el sidebar
+            const siblingUrls = navMain
+              .filter(n => n.url !== item.url && n.url.startsWith(item.url))
+              .map(n => n.url)
+
             const isActive = item.url === '/dashboard'
               ? pathname === '/dashboard'
-              : pathname.startsWith(item.url)
+              : siblingUrls.length > 0
+                ? pathname.startsWith(item.url) && !siblingUrls.some(s => pathname.startsWith(s))
+                : pathname.startsWith(item.url)
 
             // Determinar si mostrar indicador de cumpleaños
             const showBirthdayIndicator = item.url === '/dashboard/birthdays' && hasTodayBirthdays

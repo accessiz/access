@@ -118,6 +118,8 @@ export async function proxy(request: NextRequest) {
     pathname === '/login' ||
     pathname.startsWith('/auth') ||
     pathname.startsWith('/c/') ||
+    pathname.startsWith('/m/') ||
+    pathname.startsWith('/model/') ||
     pathname.startsWith('/api/cron') ||
     pathname.startsWith('/api/health') ||
     pathname === '/api/csp-report'

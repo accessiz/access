@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { logError } from '@/lib/utils/errors'
 import type { ProjectStatus } from '@/lib/types'
 import { createSupabaseServerActionClient } from '@/lib/supabase/server-action'
+import { logActivity } from '@/lib/activity-logger'
 
 // ─────────────────────────────────────────────
 // completeProjectReview
@@ -75,7 +76,7 @@ export async function updateProjectStatus(
   try {
     const { data: projRow, error: fetchErr } = await supabase
       .from('projects')
-      .select('public_id, start_date')
+      .select('public_id, start_date, project_name')
       .eq('id', projectId)
       .single()
 
@@ -102,6 +103,22 @@ export async function updateProjectStatus(
       logError(error, { action: 'updateProjectStatus', projectId, status })
       return { success: false, error: 'No se pudo actualizar el estado del proyecto.' }
     }
+
+    // Traducir estados para legibilidad
+    const statusNames: Record<string, string> = {
+      draft: 'Borrador',
+      sent: 'Enviado',
+      'in-review': 'En revisión',
+      completed: 'Completado',
+      archived: 'Archivado',
+    };
+    const statusText = statusNames[status] || status;
+
+    await logActivity({
+      category: 'project',
+      title: `Cambiaste el estado del proyecto "${projRow?.project_name || 'Proyecto'}" a "${statusText}"`,
+      metadata: { project_id: projectId, entity_id: projectId, entity_type: 'project', action: 'status_changed', status },
+    });
 
     if (projRow?.public_id) {
       revalidatePath(`/c/${projRow.public_id}`)

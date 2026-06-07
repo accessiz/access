@@ -1,0 +1,70 @@
+@reference "../../../../app/globals.css";
+
+.survey-container {
+  @apply w-full max-w-2xl mx-auto p-6 md:p-8 rounded-3xl border border-separator/15 bg-card shadow-2xl space-y-6;
+  backdrop-filter: blur(12px);
+}
+
+.project-title {
+  @apply text-display font-semibold text-primary text-center tracking-tight;
+}
+
+.details-grid {
+  @apply grid gap-4 p-5 rounded-2xl bg-secondary/10 border border-separator/5;
+}
+
+.detail-item {
+  @apply flex items-start gap-3 text-body;
+}
+
+.detail-icon {
+  @apply text-primary mt-1 shrink-0;
+}
+
+.detail-content {
+  @apply flex flex-col min-w-0;
+}
+
+.detail-label {
+  @apply text-label font-medium text-muted-foreground;
+}
+
+.detail-value {
+  @apply text-body font-medium text-foreground;
+}
+
+.decision-container {
+  @apply grid grid-cols-2 gap-4 pt-4;
+}
+
+.btn-decision-yes {
+  @apply flex flex-col items-center justify-center p-5 rounded-2xl border-2 transition-all cursor-pointer select-none text-center;
+  @apply border-success/20 bg-success/5 text-success hover:bg-success/10;
+  &.selected {
+    @apply border-success bg-success/15 ring-2 ring-success/20;
+  }
+}
+
+.btn-decision-no {
+  @apply flex flex-col items-center justify-center p-5 rounded-2xl border-2 transition-all cursor-pointer select-none text-center;
+  @apply border-destructive/20 bg-destructive/5 text-destructive hover:bg-destructive/10;
+  &.selected {
+    @apply border-destructive bg-destructive/15 ring-2 ring-destructive/20;
+  }
+}
+
+.schedule-selection-container {
+  @apply p-5 rounded-2xl border border-separator/10 bg-secondary/5 space-y-4;
+}
+
+.schedule-card {
+  @apply flex items-center justify-between p-3 rounded-xl border border-separator/10 bg-card hover:bg-hover-overlay transition-colors;
+}
+
+.checkbox-label {
+  @apply flex-1 flex flex-col justify-center cursor-pointer select-none pl-3;
+}
+
+.submit-btn-portal {
+  @apply w-full h-12 bg-primary text-primary-foreground font-semibold rounded-xl transition-all hover:bg-primary/95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2;
+}

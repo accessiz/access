@@ -774,6 +774,16 @@ export function TalentAssignmentPanel({
                                                     </span>
                                                     <span>•</span>
                                                     <ProjectStatusBadge status={(localSelections[model.id] || model.client_selection) || 'pending'} size="small" />
+                                                    {model.model_status === 'applied' && (
+                                                        <span className="text-success font-medium bg-green/10 px-1.5 py-0.5 rounded text-[10px] lowercase">
+                                                            aplicó
+                                                        </span>
+                                                    )}
+                                                    {model.model_status === 'rejected' && (
+                                                        <span className="text-destructive font-medium bg-red/10 px-1.5 py-0.5 rounded text-[10px] lowercase">
+                                                            no aceptó
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </div>
 
@@ -861,6 +871,7 @@ export function TalentAssignmentPanel({
                                                     const { dayName, dayNumber, month } = formatScheduleDate(scheduleItem.date)
                                                     const hasMultipleSlots = datesWithMultipleSlots.has(scheduleItem.date)
                                                     const shortTime = scheduleItem.startTime?.replace(' AM', 'am').replace(' PM', 'pm') || ''
+                                                    const isSuggested = model.model_available_schedules?.includes(scheduleItem.id!);
 
                                                     return (
                                                         <div
@@ -869,12 +880,16 @@ export function TalentAssignmentPanel({
                                                                 "flex items-center justify-between gap-3 rounded-md border px-3 py-2",
                                                                 isPendingSave && 'bg-warning/10',
                                                                 savedThis && 'bg-success/10',
-                                                                errorThis && 'bg-destructive/10'
+                                                                errorThis && 'bg-destructive/10',
+                                                                isSuggested && 'bg-green-500/5 border-green-500/20'
                                                             )}
                                                         >
                                                             <div className="min-w-0">
-                                                                <div className="text-body font-medium">
+                                                                <div className="text-body font-medium flex items-center gap-1.5">
                                                                     {dayName} {dayNumber} {month}
+                                                                    {isSuggested && (
+                                                                        <span className="text-[10px] text-green font-medium lowercase">(disponible)</span>
+                                                                    )}
                                                                 </div>
                                                                 {hasMultipleSlots && shortTime && (
                                                                     <div className="text-label text-muted-foreground">{shortTime}</div>
@@ -1004,6 +1019,16 @@ export function TalentAssignmentPanel({
                                                             )}>
                                                                 {model.gender?.toLowerCase() === 'male' ? 'H' : 'M'}
                                                             </span>
+                                                            {model.model_status === 'applied' && (
+                                                                <span className="text-success font-medium bg-green/10 px-1.5 py-0.5 rounded text-[10px] lowercase">
+                                                                    aplicó
+                                                                </span>
+                                                            )}
+                                                            {model.model_status === 'rejected' && (
+                                                                <span className="text-destructive font-medium bg-red/10 px-1.5 py-0.5 rounded text-[10px] lowercase">
+                                                                    no aceptó
+                                                                </span>
+                                                            )}
                                                         </div>
                                                     </div>
 
@@ -1099,17 +1124,23 @@ export function TalentAssignmentPanel({
                                                     const isSavingThis = pendingChange?.status === 'saving'
                                                     const savedThis = pendingChange?.status === 'saved'
                                                     const errorThis = pendingChange?.status === 'error'
+                                                    const isSuggested = model.model_available_schedules?.includes(scheduleItem.id!)
 
                                                     return (
                                                         <div
                                                             key={scheduleItem.id}
                                                             className={cn(
-                                                                'w-28 min-w-28 flex items-center justify-center border-r border-[rgb(var(--separator))] last:border-r-0 py-3',
+                                                                'w-28 min-w-28 flex items-center justify-center border-r border-[rgb(var(--separator))] last:border-r-0 py-3 relative',
                                                                 isPendingSave && 'bg-warning/10',
                                                                 savedThis && 'bg-success/10',
-                                                                errorThis && 'bg-destructive/10'
+                                                                errorThis && 'bg-destructive/10',
+                                                                isSuggested && 'bg-green-500/5'
                                                             )}
+                                                            title={isSuggested ? 'disponible según el talento' : undefined}
                                                         >
+                                                            {isSuggested && (
+                                                                <div className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-green" />
+                                                            )}
                                                             {isSavingThis ? (
                                                                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                                                             ) : (

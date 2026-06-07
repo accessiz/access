@@ -33,7 +33,7 @@ function optional(key: string, fallback = ''): string {
 // Next.js can inline them into the client bundle at build time.
 export const env = {
   NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL ?? (() => {
-    if (isTest) return '__TEST_NEXT_PUBLIC_SUPABASE_URL__'
+    if (isTest) return 'https://test.supabase.co'
     throw new Error('[env] Missing required environment variable: NEXT_PUBLIC_SUPABASE_URL. Check your .env.local or deployment environment.')
   })(),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? (() => {
@@ -54,4 +54,6 @@ export const serverEnv = {
   get R2_BUCKET_NAME() { return required('R2_BUCKET_NAME') },
   get R2_PUBLIC_URL() { return optional('R2_PUBLIC_URL') },
   get CRON_SECRET() { return required('CRON_SECRET') },
+  get RESEND_API_KEY() { return required('RESEND_API_KEY') },
+  get RESEND_FROM_EMAIL() { return optional('RESEND_FROM_EMAIL', 'IZ Management <noreply@izmanagementglobal.com>') },
 } as const

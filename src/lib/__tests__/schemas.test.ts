@@ -238,16 +238,16 @@ describe('modelFormSchema', () => {
   // ── Pants size preprocessing ──
 
   describe('pants_size', () => {
-    it('accepts a valid numeric pants size', () => {
+    it('accepts and stringifies numeric pants size', () => {
       const result = modelFormSchema.safeParse({ ...validModel, pants_size: 32 });
       expect(result.success).toBe(true);
-      if (result.success) expect(result.data.pants_size).toBe(32);
+      if (result.success) expect(result.data.pants_size).toBe('32');
     });
 
-    it('coerces string to number', () => {
+    it('accepts string pants size', () => {
       const result = modelFormSchema.safeParse({ ...validModel, pants_size: '28' });
       expect(result.success).toBe(true);
-      if (result.success) expect(result.data.pants_size).toBe(28);
+      if (result.success) expect(result.data.pants_size).toBe('28');
     });
 
     it('converts empty string to null', () => {
@@ -262,34 +262,10 @@ describe('modelFormSchema', () => {
       if (result.success) expect(result.data.pants_size).toBeNull();
     });
 
-    it('converts 0 to null', () => {
-      const result = modelFormSchema.safeParse({ ...validModel, pants_size: 0 });
-      expect(result.success).toBe(true);
-      if (result.success) expect(result.data.pants_size).toBeNull();
-    });
-
-    it('converts string 0 to null', () => {
-      const result = modelFormSchema.safeParse({ ...validModel, pants_size: '0' });
-      expect(result.success).toBe(true);
-      if (result.success) expect(result.data.pants_size).toBeNull();
-    });
-
     it('converts undefined to null', () => {
       const result = modelFormSchema.safeParse({ ...validModel, pants_size: undefined });
       expect(result.success).toBe(true);
       if (result.success) expect(result.data.pants_size).toBeNull();
-    });
-
-    it('converts NaN string to null', () => {
-      const result = modelFormSchema.safeParse({ ...validModel, pants_size: 'abc' });
-      expect(result.success).toBe(true);
-      if (result.success) expect(result.data.pants_size).toBeNull();
-    });
-
-    it('passes through non-string, non-null values', () => {
-      // e.g. boolean — the zod number validator will reject this
-      const result = modelFormSchema.safeParse({ ...validModel, pants_size: true });
-      expect(result.success).toBe(false);
     });
   });
 

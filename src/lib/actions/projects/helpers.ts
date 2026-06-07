@@ -56,6 +56,35 @@ export const convertToTimestamp = (date: string, time12h: string) => {
   return `${date}T${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`;
 };
 
+export const convertToGuatemalaTimestamp = (date: string, time12h: string) => {
+  const ts = convertToTimestamp(date, time12h);
+  return `${ts}-06:00`;
+};
+
+export const timestampToGuatemalaDateTime = (timestamp: string) => {
+  const date = new Date(timestamp);
+  
+  // Format in America/Guatemala timezone
+  const formatterDate = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Guatemala',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+  const formatterTime = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Guatemala',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  });
+  
+  const partsDate = formatterDate.format(date).split('/');
+  const dateStr = `${partsDate[2]}-${partsDate[0]}-${partsDate[1]}`;
+  const timeStr = formatterTime.format(date);
+  
+  return { date: dateStr, time: timeStr };
+};
+
 /** Convert a UTC timestamp to 12h format (e.g. "02:30 PM") */
 export const timestampTo12h = (timestamp: string) => {
   const date = new Date(timestamp);
@@ -138,6 +167,12 @@ export function buildRawProjectData(
     client_trade_details: formData.get('client_trade_details') || null,
     invoice_number: formData.get('invoice_number') || null,
     invoice_date: formData.get('invoice_date') || null,
+    description: formData.get('description'),
+    location: formData.get('location'),
+    apply_start_date: formData.get('apply_start_date'),
+    apply_start_time: formData.get('apply_start_time'),
+    apply_close_date: formData.get('apply_close_date'),
+    apply_close_time: formData.get('apply_close_time'),
   };
 }
 

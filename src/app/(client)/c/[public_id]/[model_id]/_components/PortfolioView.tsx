@@ -4,6 +4,7 @@ import { useState, useTransition, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { Model, Project } from '@/lib/types';
 import { updateClientModelSelection } from '@/lib/actions/client_actions';
+import { readVersionedStorage, writeVersionedStorage } from '@/lib/client-storage';
 
 import { Check, Loader2, ChevronLeft, ChevronRight, X as CloseIcon } from 'lucide-react';
 import { BackButton } from '@/components/molecules/BackButton';
@@ -40,6 +41,16 @@ export default function PortfolioView({ project, model: initialModel }: Portfoli
           toast('Talento Descartado', { icon: <CloseIcon className="h-4 w-4 text-destructive" /> });
         }
         setModel(prevModel => ({ ...prevModel, client_selection: selection }));
+
+        // Guardar la selección en sessionStorage para sincronizarla con el grid general
+        const storageKey = `client:${project.public_id}:selections`;
+        const cachedSelections = readVersionedStorage<Record<string, 'approved' | 'rejected' | 'pending' | null>>(
+          'session',
+          storageKey,
+          1
+        ) || {};
+        cachedSelections[model.id] = selection;
+        writeVersionedStorage('session', storageKey, 1, cachedSelections);
       } else {
         toast.error(result.error || 'No se pudo guardar la selección.');
       }
@@ -102,6 +113,22 @@ export default function PortfolioView({ project, model: initialModel }: Portfoli
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
+
+  // Sincronizar selección desde sessionStorage al montar para evitar problemas de caché de rutas
+  useEffect(() => {
+    const storageKey = `client:${project.public_id}:selections`;
+    const cachedSelections = readVersionedStorage<Record<string, 'approved' | 'rejected' | 'pending' | null>>(
+      'session',
+      storageKey,
+      1
+    );
+    if (cachedSelections && cachedSelections[initialModel.id] !== undefined) {
+      setModel(prevModel => ({
+        ...prevModel,
+        client_selection: cachedSelections[initialModel.id]
+      }));
+    }
+  }, [initialModel.id, project.public_id]);
 
   return (
     <div className="relative min-h-screen w-full bg-background text-foreground flex flex-col">

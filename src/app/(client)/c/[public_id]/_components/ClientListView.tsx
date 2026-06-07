@@ -118,13 +118,11 @@ export function ClientListView({ models, projectId, realProjectId, onSelectionCh
   });
 
   useEffect(() => {
-    setLocalSelections(prev => {
-      const next = { ...prev };
-      for (const m of models) {
-        if (next[m.id] == null) next[m.id] = m.selection || 'pending';
-      }
-      return next;
+    const next: Record<string, GridModel['selection']> = {};
+    models.forEach(m => {
+      next[m.id] = m.selection || 'pending';
     });
+    setLocalSelections(next);
   }, [models]);
 
   const handleLocalSelectionChange = (modelId: string, selection: GridModel['selection']) => {

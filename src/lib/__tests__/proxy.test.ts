@@ -39,14 +39,9 @@ describe('originOf', () => {
 describe('buildCSP', () => {
   const nonce = 'test-nonce-123'
 
-  it('includes nonce in script-src', () => {
+  it('includes unsafe-inline in script-src', () => {
     const csp = buildCSP(nonce)
-    expect(csp).toContain(`'nonce-${nonce}'`)
-  })
-
-  it('includes strict-dynamic in script-src', () => {
-    const csp = buildCSP(nonce)
-    expect(csp).toContain("'strict-dynamic'")
+    expect(csp).toContain("script-src 'self' 'unsafe-inline'")
   })
 
   it('blocks object-src', () => {

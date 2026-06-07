@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
 
-export type ActivityCategory = 'project' | 'model' | 'client' | 'brand';
+export type ActivityCategory = 'project' | 'talent' | 'financial' | 'system';
 
 export interface LogActivityParams {
     category: ActivityCategory;

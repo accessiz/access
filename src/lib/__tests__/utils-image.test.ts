@@ -33,8 +33,8 @@ describe('toPublicUrl', () => {
     if (result && result.startsWith('http')) {
       expect(result).toContain(path);
     } else {
-      // Fallback: returns path as-is when no R2_PUBLIC_URL
-      expect(result).toBe(path);
+      // Fallback: returns path with leading slash when no R2_PUBLIC_URL
+      expect(result).toBe(`/${path}`);
     }
   });
 

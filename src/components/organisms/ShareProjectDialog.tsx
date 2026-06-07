@@ -4,6 +4,7 @@ import { useTransition, useState, useMemo } from 'react';
 import { toast } from 'sonner';
 import { Project, Model } from '@/lib/types';
 import { updateProjectStatus } from '@/lib/actions/projects';
+import { logActivity } from '@/lib/activity-logger';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -99,6 +100,21 @@ export function ShareProjectDialog({ project, children, onStatusChange, selected
     const success = await copyToClipboardFallback(projectUrl);
     if (success) {
       toast.success('Enlace copiado.');
+      await logActivity({
+        category: 'project',
+        title: `Copiaste el enlace de selección para el cliente del proyecto "${project.project_name}"`,
+        metadata: { project_id: project.id, entity_id: project.id, entity_type: 'project', action: 'copied_client_link' }
+      });
+      // Actualiza el estado del proyecto si está en 'draft'
+      if (project.status === 'draft') {
+        startTransition(async () => {
+          const result = await updateProjectStatus(project.id, 'sent');
+          if (result.success) {
+            onStatusChange('sent');
+            toast.info('El estado del proyecto se actualizó a "Enviado".');
+          }
+        });
+      }
     } else {
       toast.error('No se pudo copiar el enlace.');
     }
@@ -110,6 +126,11 @@ export function ShareProjectDialog({ project, children, onStatusChange, selected
     const success = await copyToClipboardFallback(project.password);
     if (success) {
       toast.success('Contraseña copiada.');
+      await logActivity({
+        category: 'project',
+        title: `Copiaste la contraseña de acceso del cliente para el proyecto "${project.project_name}"`,
+        metadata: { project_id: project.id, entity_id: project.id, entity_type: 'project', action: 'copied_client_password' }
+      });
     } else {
       toast.error('No se pudo copiar la contraseña.');
     }
@@ -129,6 +150,12 @@ export function ShareProjectDialog({ project, children, onStatusChange, selected
     setCopied(true);
     toast.success('¡Mensaje completo copiado!');
     setTimeout(() => setCopied(false), 2000); // Resetea el ícono de check
+
+    await logActivity({
+      category: 'project',
+      title: `Copiaste el mensaje de acceso del cliente para el proyecto "${project.project_name}"`,
+      metadata: { project_id: project.id, entity_id: project.id, entity_type: 'project', action: 'copied_client_message' }
+    });
 
     // 3. Actualiza el estado del proyecto si está en 'draft'
     if (project.status === 'draft') {

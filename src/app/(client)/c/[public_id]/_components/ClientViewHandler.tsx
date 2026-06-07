@@ -89,6 +89,20 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
       }, 100);
     }
 
+    // Recuperar selecciones guardadas de sessionStorage para evitar desfases con la caché de Next.js
+    const storageKey = getStorageKey(project.public_id, 'selections');
+    const cachedSelections = readVersionedStorage<Record<string, GridModel['selection']>>('session', storageKey, CLIENT_VIEW_STORAGE_VERSION);
+    if (cachedSelections) {
+      setModels(prev =>
+        prev.map(m => {
+          if (cachedSelections[m.id] !== undefined) {
+            return { ...m, selection: cachedSelections[m.id] };
+          }
+          return m;
+        })
+      );
+    }
+
     // Lógica para actualizar el estado del proyecto a "in-review"
     // Se ejecuta una sola vez si el cliente (no admin) abre un proyecto en estado "sent"
     if (!isAdmin && project.status === 'sent' && !statusUpdateAttempted.current) {
@@ -192,14 +206,32 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
   // Sync initialModels logic
   useEffect(() => {
     if (models.length === 0 && initialModels.length > 0) {
-      setModels(
-        initialModels.map(m => ({
-          ...m,
-          selection: (m.client_selection as GridModel['selection']) ?? 'pending'
-        }))
+      const baseModels = initialModels.map(m => ({
+        ...m,
+        selection: (m.client_selection as GridModel['selection']) ?? 'pending'
+      }));
+      
+      const storageKey = getStorageKey(project.public_id, 'selections');
+      const cachedSelections = readVersionedStorage<Record<string, GridModel['selection']>>(
+        'session',
+        storageKey,
+        CLIENT_VIEW_STORAGE_VERSION
       );
+      
+      if (cachedSelections) {
+        setModels(
+          baseModels.map(m => {
+            if (cachedSelections[m.id] !== undefined) {
+              return { ...m, selection: cachedSelections[m.id] };
+            }
+            return m;
+          })
+        );
+      } else {
+        setModels(baseModels);
+      }
     }
-  }, [initialModels, models.length]);
+  }, [initialModels, models.length, project.public_id]);
 
   const handleFinalize = () => {
     startFinalizeTransition(async () => {
@@ -214,9 +246,25 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
 
   // Handler para cambio de selección desde el grid
   const handleSelectionChange = (modelId: string, selection: GridModel['selection']) => {
-    setModels(prev => prev.map(m =>
-      m.id === modelId ? { ...m, selection } : m
-    ));
+    setModels(prev => {
+      const updated = prev.map(m =>
+        m.id === modelId ? { ...m, selection } : m
+      );
+      
+      // Persistir las selecciones actualizadas en sessionStorage
+      const selectionsMap: Record<string, GridModel['selection']> = {};
+      updated.forEach(m => {
+        selectionsMap[m.id] = m.selection || 'pending';
+      });
+      writeVersionedStorage(
+        'session',
+        getStorageKey(project.public_id, 'selections'),
+        CLIENT_VIEW_STORAGE_VERSION,
+        selectionsMap
+      );
+      
+      return updated;
+    });
   };
 
   // Estadísticas de progreso

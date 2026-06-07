@@ -85,6 +85,8 @@ export interface Model extends DbModel {
   fee_type?: string | null;
   currency?: string | null;
   notes?: string | null;
+  model_status?: 'applied' | 'rejected' | null;
+  model_available_schedules?: string[] | null;
 
   // Asignaciones de tiempo/días
   assignments?: DbModelAssignment[];
@@ -106,6 +108,11 @@ export interface Project extends DbProject {
   assigned_models_count?: number;
   // Modelos aprobados con sus detalles (para lista de proyectos)
   approved_models?: { id: string; alias: string; coverUrl: string | null }[];
+
+  apply_close_date?: string | null;
+  apply_close_time?: string | null;
+  apply_start_date?: string | null;
+  apply_start_time?: string | null;
 
   // Campos de configuración de pago (defaults)
   default_model_payment_type: 'cash' | 'trade' | 'mixed' | null;

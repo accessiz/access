@@ -21,9 +21,10 @@ import { Separator } from '@/components/ui/separator';
 import { ScheduleChips } from '@/components/molecules/ScheduleChips';
 import { SearchBar } from '@/components/molecules/SearchBar';
 
-import { ShareProjectDialog } from '@/components/organisms/ShareProjectDialog';
 import { ProjectStatusUpdater } from '@/components/organisms/ProjectStatusUpdater';
-import { Share2, Eye, Pencil, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Eye, Pencil, ChevronDown, ChevronLeft, ChevronRight, Calendar, Copy, Check, Link2, ExternalLink } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { ProjectForm } from '@/components/organisms/ProjectForm';
 import { TalentAssignmentPanel } from '@/components/organisms/TalentAssignmentPanel';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -33,7 +34,106 @@ import { Pagination, PaginationContent, PaginationItem, PaginationNext, Paginati
 import { BudgetSummaryCard } from './_budget-summary/BudgetSummary';
 import { TalentRow } from './_talent-row/TalentRow';
 import { DangerZone } from './_danger-zone/DangerZone';
+import { ProjectLinksCard } from './_project-links/ProjectLinksCard';
 
+
+
+function capitalizeFirstLetter(str: string): string {
+    if (!str) return '';
+    return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+function renderFormattedActivity(
+    text: string,
+    clientName: string | null | undefined,
+    selectedModels: any[] = [],
+    availableModels: any[] = []
+) {
+    if (!text) return null;
+
+    let processedText = text;
+    const clientPlaceholder = clientName || 'Cliente';
+    
+    // Replace leading "Cliente" (case-insensitive) with client name, or just highlight it
+    if (processedText.toLowerCase().startsWith('cliente')) {
+        processedText = clientPlaceholder + processedText.substring(7);
+    } else {
+        processedText = processedText.replace(/\bCliente\b/g, clientPlaceholder);
+    }
+
+    processedText = capitalizeFirstLetter(processedText);
+
+    // Extract unique model names to highlight
+    const modelNamesSet = new Set<string>();
+    selectedModels.forEach(m => {
+        if (m.alias) modelNamesSet.add(m.alias.trim());
+        if (m.full_name) modelNamesSet.add(m.full_name.trim());
+    });
+    availableModels.forEach(m => {
+        if (m.alias) modelNamesSet.add(m.alias.trim());
+        if (m.full_name) modelNamesSet.add(m.full_name.trim());
+    });
+
+    const modelNames = Array.from(modelNamesSet)
+        .filter(name => name.length > 1)
+        .sort((a, b) => b.length - a.length);
+
+    const clientNames = [clientPlaceholder].filter(Boolean) as string[];
+
+    const escapeRegExp = (string: string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const allNames = [...modelNames, ...clientNames]
+        .map(escapeRegExp)
+        .filter(Boolean);
+
+    if (allNames.length === 0) {
+        return <span>{processedText}</span>;
+    }
+
+    const nameRegex = new RegExp(`\\b(${allNames.join('|')})\\b`, 'gi');
+    
+    // Split by quotes to avoid matching inside project/proposal names
+    const quoteSegments = processedText.split('"');
+
+    return (
+        <span>
+            {quoteSegments.map((segment, segIndex) => {
+                if (segIndex % 2 === 1) {
+                    return `"${segment}"`;
+                }
+
+                const parts = segment.split(nameRegex);
+                return (
+                    <React.Fragment key={segIndex}>
+                        {parts.map((part, partIndex) => {
+                            const matchedModelName = modelNames.find(
+                                name => name.toLowerCase() === part.toLowerCase()
+                            );
+                            const matchedClientName = clientNames.find(
+                                name => name.toLowerCase() === part.toLowerCase()
+                            );
+
+                            if (matchedModelName) {
+                                return (
+                                    <span key={partIndex} className="text-purple font-semibold">
+                                        {part}
+                                    </span>
+                                );
+                            } else if (matchedClientName) {
+                                return (
+                                    <span key={partIndex} className="text-blue font-semibold">
+                                        {part}
+                                    </span>
+                                );
+                            } else {
+                                return part;
+                            }
+                        })}
+                    </React.Fragment>
+                );
+            })}
+        </span>
+    );
+}
 
 interface ProjectDetailClientProps {
     project: Project;
@@ -43,6 +143,7 @@ interface ProjectDetailClientProps {
     availableModelsCurrentPage: number;
     availableModelsTotalPages: number;
     initialTalentQuery: string;
+    activityLogs?: any[];
 }
 
 
@@ -54,6 +155,7 @@ export default function ProjectDetailClient({
     availableModelsCurrentPage,
     availableModelsTotalPages,
     initialTalentQuery,
+    activityLogs = [],
 }: ProjectDetailClientProps) {
     const router = useRouter();
     const pathname = usePathname();
@@ -64,6 +166,90 @@ export default function ProjectDetailClient({
     const [isPending, startTransition] = useTransition();
     const [isEditing, setIsEditing] = useState(false);
     const [scheduleOpen, setScheduleOpen] = useState(false);
+    const [activityOpen, setActivityOpen] = useState(true);
+    const [isMounted, setIsMounted] = useState(false);
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
+    // Obtener visualizaciones únicas de modelos ("Vistos" estilo Stories)
+    const uniqueViewers = useMemo(() => {
+        const openedLinkLogs = (activityLogs || []).filter(
+            (log: any) => log.category === 'talent' && log.metadata?.action === 'opened_link'
+        );
+
+        const uniqueViewersMap = new Map<string, { id: string; name: string; date: Date; gender?: string }>();
+        openedLinkLogs.forEach((log: any) => {
+            const entityId = log.metadata?.entity_id;
+            if (!entityId) return;
+
+            let modelName = log.metadata?.model_alias;
+            if (!modelName) {
+                // Fallback: parsear desde el título
+                const title = log.title || '';
+                const match = title.match(/^(.*?) abrió el enlace/);
+                if (match && match[1]) {
+                    modelName = match[1];
+                } else {
+                    modelName = 'modelo';
+                }
+            }
+
+            const logDate = new Date(log.created_at);
+            const existing = uniqueViewersMap.get(entityId);
+            if (!existing || logDate > existing.date) {
+                uniqueViewersMap.set(entityId, { 
+                    id: entityId, 
+                    name: modelName, 
+                    date: logDate,
+                    gender: log.metadata?.model_gender?.toLowerCase()
+                });
+            }
+        });
+
+        return Array.from(uniqueViewersMap.values()).sort((a, b) => b.date.getTime() - a.date.getTime());
+    }, [activityLogs]);
+
+    const viewersWithGender = useMemo(() => {
+        return uniqueViewers.map(viewer => {
+            const model = selectedModels.find(m => m.id === viewer.id);
+            return {
+                ...viewer,
+                gender: viewer.gender || model?.gender?.toLowerCase() || 'female'
+            };
+        });
+    }, [uniqueViewers, selectedModels]);
+
+    const maleViewers = useMemo(() => viewersWithGender.filter(v => v.gender === 'male'), [viewersWithGender]);
+    const femaleViewers = useMemo(() => viewersWithGender.filter(v => v.gender !== 'male'), [viewersWithGender]);
+
+    // Retornar los logs de actividad completos deduplicados
+    const filteredActivityLogs = useMemo(() => {
+        if (!activityLogs) return [];
+        const seenOpened = new Set<string>();
+        const seenApplied = new Set<string>();
+        const seenDeclined = new Set<string>();
+
+        return activityLogs.filter((log: any) => {
+            const action = log.metadata?.action;
+            const entityId = log.metadata?.entity_id;
+
+            if (action === 'opened_link' && entityId) {
+                if (seenOpened.has(entityId)) return false;
+                seenOpened.add(entityId);
+            }
+            if (action === 'applied' && entityId) {
+                if (seenApplied.has(entityId)) return false;
+                seenApplied.add(entityId);
+            }
+            if (action === 'declined' && entityId) {
+                if (seenDeclined.has(entityId)) return false;
+                seenDeclined.add(entityId);
+            }
+            return true;
+        });
+    }, [activityLogs]);
 
     // Sincronizar estado cuando los props cambian (después de router.refresh())
     useEffect(() => {
@@ -251,43 +437,49 @@ export default function ProjectDetailClient({
                     <Button onClick={() => setIsEditing(true)} variant="outline" className="grow sm:grow-0">
                         <Pencil className="mr-2 h-4 w-4" /> Editar Proyecto
                     </Button>
-                    <ShareProjectDialog project={project} onStatusChange={handleStatusChange} selectedModels={selectedModels}>
-                        <Button className="grow sm:grow-0"><Share2 className="mr-2 h-4 w-4" /> Compartir</Button>
-                    </ShareProjectDialog>
+
                 </div>
             </header>
 
-            <Card>
-                <Collapsible open={scheduleOpen} onOpenChange={setScheduleOpen}>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0">
-                        <CardTitle className="text-title font-semibold">Horarios</CardTitle>
+            <div className="grid lg:grid-cols-[1fr_340px] gap-6 items-stretch">
+                {/* Columna izquierda: Datos del proyecto */}
+                <div className="space-y-6">
+                    <Card>
+                        <Collapsible open={scheduleOpen} onOpenChange={setScheduleOpen}>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                                <CardTitle className="text-title font-semibold">Horarios</CardTitle>
 
-                        <CollapsibleTrigger asChild>
-                            <button
-                                type="button"
-                                className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-transparent border border-separator hover:bg-hover-overlay transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                                aria-label={scheduleOpen ? 'Contraer horarios' : 'Expandir horarios'}
-                            >
-                                <ChevronDown className={`h-5 w-5 transition-transform duration-200 ${scheduleOpen ? 'rotate-180' : ''}`} />
-                            </button>
-                        </CollapsibleTrigger>
-                    </CardHeader>
+                                <CollapsibleTrigger asChild>
+                                    <button
+                                        type="button"
+                                        className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-transparent border border-separator hover:bg-hover-overlay transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                                        aria-label={scheduleOpen ? 'Contraer horarios' : 'Expandir horarios'}
+                                    >
+                                        <ChevronDown className={`h-5 w-5 transition-transform duration-200 ${scheduleOpen ? 'rotate-180' : ''}`} />
+                                    </button>
+                                </CollapsibleTrigger>
+                            </CardHeader>
 
-                    {hasSchedule && (
-                        <CollapsibleContent asChild>
-                            <CardContent>
-                                <ScheduleChips schedule={project.schedule} fullWidth />
-                            </CardContent>
-                        </CollapsibleContent>
-                    )}
-                </Collapsible>
-            </Card>
+                            {hasSchedule && (
+                                <CollapsibleContent asChild>
+                                    <CardContent>
+                                        <ScheduleChips schedule={project.schedule} fullWidth />
+                                    </CardContent>
+                                </CollapsibleContent>
+                            )}
+                        </Collapsible>
+                    </Card>
 
 
-            <ProjectStatusUpdater project={project} selectedModels={selectedModels} />
+                    <ProjectStatusUpdater project={project} selectedModels={selectedModels} />
 
-            {/* Resumen de Presupuesto */}
-            <BudgetSummaryCard project={project} selectedModels={selectedModels} onRefresh={handleRefresh} />
+                    {/* Resumen de Presupuesto */}
+                    <BudgetSummaryCard project={project} selectedModels={selectedModels} onRefresh={handleRefresh} />
+                </div>
+
+                {/* Columna derecha: Enlaces y Accesos */}
+                <ProjectLinksCard project={project} onStatusChange={handleStatusChange} />
+            </div>
 
             <div className="grid md:grid-cols-[30%_1fr] gap-6 items-start">
                 <Card className="flex flex-col h-full">
@@ -391,6 +583,149 @@ export default function ProjectDetailClient({
                     }}
                     onRefresh={handleRefresh}
                 />
+            </div>
+
+             {/* Sección de Historial y Vistos en Grid de dos columnas */}
+            <div className="grid grid-cols-1 md:grid-cols-[300px_1fr] gap-6 items-start">
+                {/* Panel de "vistos" (quienes abrieron el enlace) - Siempre visible */}
+                <Card className="h-full">
+                    <CardHeader className="pb-3">
+                        <CardTitle className="text-title font-semibold flex items-center gap-2">
+                            <Eye className="h-5 w-5 text-muted-foreground" />
+                            Vistos ({uniqueViewers.length})
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        {/* Mujeres */}
+                        <div>
+                            <span className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">
+                                Mujeres ({femaleViewers.length})
+                            </span>
+                            {femaleViewers.length > 0 ? (
+                                <ol className="space-y-2 text-label pl-0 list-none">
+                                    {femaleViewers.map((viewer, index) => {
+                                        const formattedTime = viewer.date.toLocaleString('es-GT', {
+                                            timeZone: 'America/Guatemala',
+                                            day: 'numeric',
+                                            month: 'short',
+                                            hour: 'numeric',
+                                            minute: '2-digit',
+                                            hour12: true,
+                                        });
+                                        return (
+                                            <li key={viewer.id} className="flex justify-between items-center gap-2 text-foreground/90 border-b border-separator/10 pb-1.5 last:border-0 last:pb-0">
+                                                <span className="truncate font-medium">
+                                                    {index + 1}. {viewer.name}
+                                                </span>
+                                                <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                                                    {isMounted ? formattedTime : ''}
+                                                </span>
+                                            </li>
+                                        );
+                                    })}
+                                </ol>
+                            ) : (
+                                <p className="text-label text-muted-foreground py-1">
+                                    Ninguna mujer ha visto el proyecto aún.
+                                </p>
+                            )}
+                        </div>
+
+                        {/* Hombres */}
+                        <div className="pt-3 border-t border-separator/30">
+                            <span className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">
+                                Hombres ({maleViewers.length})
+                            </span>
+                            {maleViewers.length > 0 ? (
+                                <ol className="space-y-2 text-label pl-0 list-none">
+                                    {maleViewers.map((viewer, index) => {
+                                        const formattedTime = viewer.date.toLocaleString('es-GT', {
+                                            timeZone: 'America/Guatemala',
+                                            day: 'numeric',
+                                            month: 'short',
+                                            hour: 'numeric',
+                                            minute: '2-digit',
+                                            hour12: true,
+                                        });
+                                        return (
+                                            <li key={viewer.id} className="flex justify-between items-center gap-2 text-foreground/90 border-b border-separator/10 pb-1.5 last:border-0 last:pb-0">
+                                                <span className="truncate font-medium">
+                                                    {index + 1}. {viewer.name}
+                                                </span>
+                                                <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                                                    {isMounted ? formattedTime : ''}
+                                                </span>
+                                            </li>
+                                        );
+                                    })}
+                                </ol>
+                            ) : (
+                                <p className="text-label text-muted-foreground py-1">
+                                    Ningún hombre ha visto el proyecto aún.
+                                </p>
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* Historial de Actividad del Proyecto */}
+                <Card className="h-full">
+                    <Collapsible open={activityOpen} onOpenChange={setActivityOpen}>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                            <div>
+                                <CardTitle className="text-title font-semibold flex items-center gap-2">
+                                    <Calendar className="h-5 w-5" />
+                                    Historial de Actividad del Proyecto
+                                </CardTitle>
+                            </div>
+                            <CollapsibleTrigger asChild>
+                                <button
+                                    type="button"
+                                    className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-transparent border border-separator hover:bg-hover-overlay transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
+                                    aria-label={activityOpen ? 'contraer actividad' : 'expandir actividad'}
+                                >
+                                    <ChevronDown className={`h-5 w-5 transition-transform duration-200 ${activityOpen ? 'rotate-180' : ''}`} />
+                                </button>
+                            </CollapsibleTrigger>
+                        </CardHeader>
+                        <CollapsibleContent asChild>
+                            <CardContent className="space-y-4">
+                                {filteredActivityLogs && filteredActivityLogs.length > 0 ? (
+                                    <div className="divide-y divide-separator/10">
+                                        {filteredActivityLogs.map((log: any) => {
+                                            const date = new Date(log.created_at);
+                                            const formattedTime = date.toLocaleString('es-GT', {
+                                                timeZone: 'America/Guatemala',
+                                                day: 'numeric',
+                                                month: 'short',
+                                                hour: 'numeric',
+                                                minute: '2-digit',
+                                                hour12: true,
+                                            });
+
+                                            return (
+                                                <div key={log.id} className="py-3 first:pt-0 last:pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                                    <div>
+                                                        <p className="text-body font-medium text-foreground">
+                                                            {renderFormattedActivity(log.title, project.client_name, selectedModels, availableModels)}
+                                                        </p>
+                                                    </div>
+                                                    <span className="text-label text-muted-foreground whitespace-nowrap shrink-0">
+                                                        {isMounted ? formattedTime : ''}
+                                                    </span>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                ) : (
+                                    <p className="text-center text-body text-muted-foreground py-4">
+                                        No hay registros de actividad para este proyecto.
+                                    </p>
+                                )}
+                            </CardContent>
+                        </CollapsibleContent>
+                    </Collapsible>
+                </Card>
             </div>
 
             <DangerZone project={project} />

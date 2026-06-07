@@ -29,10 +29,16 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
     redirect('/login');
   }
 
-  const [project, selectedModels] = await Promise.all([
+  const [project, selectedModels, { data: activityLogsData }] = await Promise.all([
     getProjectByIdCached(id),
     getModelsForProjectCached(id),
+    supabase
+      .from('activity_logs')
+      .select('*')
+      .eq('metadata->>project_id', id)
+      .order('created_at', { ascending: false }),
   ]);
+  const activityLogs = activityLogsData || [];
 
   const pickerResult = await getModelPickerPage({
     query: pickerQuery,
@@ -69,6 +75,7 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
           availableModelsCurrentPage={Math.min(pickerCurrentPage, availableModelsTotalPages)}
           availableModelsTotalPages={availableModelsTotalPages}
           initialTalentQuery={pickerQuery ?? ''}
+          activityLogs={activityLogs}
         />
       );
     }
@@ -83,6 +90,7 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
       availableModelsCurrentPage={Math.min(pickerCurrentPage, availableModelsTotalPages)}
       availableModelsTotalPages={availableModelsTotalPages}
       initialTalentQuery={pickerQuery ?? ''}
+      activityLogs={activityLogs}
     />
   );
 }

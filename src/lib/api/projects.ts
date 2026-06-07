@@ -395,6 +395,8 @@ export async function getModelsForProject(projectId: string): Promise<Model[]> {
       fee_type: item.fee_type,
       currency: item.currency,
       notes: item.notes,
+      model_status: item.model_status,
+      model_available_schedules: item.model_available_schedules,
     }];
   });
 

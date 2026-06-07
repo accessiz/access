@@ -1,0 +1,150 @@
+@reference "../../../../app/globals.css";
+
+.history-section {
+  @apply space-y-6;
+}
+
+.section-title {
+  @apply text-title font-bold text-foreground tracking-tight;
+}
+
+.filters-card {
+  @apply p-5 rounded-2xl border border-separator/15 bg-card/60 shadow-sm grid gap-4 sm:grid-cols-2 md:grid-cols-4;
+}
+
+.filter-group {
+  @apply flex flex-col gap-1.5;
+}
+
+.filter-label {
+  @apply text-label font-medium text-muted-foreground;
+}
+
+.filter-select {
+  @apply w-full h-10 px-3 rounded-lg border border-separator/20 bg-background text-body transition-all outline-none focus:border-primary focus:ring-1 focus:ring-primary/20;
+}
+
+.projects-grid {
+  @apply grid gap-4 sm:grid-cols-2;
+}
+
+.project-card {
+  @apply p-5 rounded-2xl border border-separator/15 bg-card hover:bg-card/90 hover:scale-[1.01] hover:shadow-md transition-all cursor-pointer flex flex-col gap-4;
+}
+
+.project-card-header {
+  @apply flex justify-between items-start gap-3;
+}
+
+.project-card-name {
+  @apply text-body font-bold text-foreground line-clamp-1;
+}
+
+.project-card-client {
+  @apply text-label text-muted-foreground line-clamp-1;
+}
+
+.project-card-meta {
+  @apply grid grid-cols-2 gap-2 text-label border-t border-separator/10 pt-3;
+}
+
+.meta-col {
+  @apply flex flex-col gap-0.5;
+}
+
+.meta-label {
+  @apply text-muted-foreground;
+}
+
+.meta-value {
+  @apply font-semibold text-foreground;
+}
+
+.badges-row {
+  @apply flex flex-wrap gap-2 mt-auto pt-2;
+}
+
+.badge-status {
+  @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-label font-semibold;
+}
+
+.badge-pending {
+  @apply bg-yellow/10 text-yellow border border-yellow/20;
+}
+
+.badge-approved {
+  @apply bg-green/10 text-green border border-green/20;
+}
+
+.badge-rejected {
+  @apply bg-red/10 text-red border border-red/20;
+}
+
+.badge-paid {
+  @apply bg-blue/10 text-blue border border-blue/20;
+}
+
+.badge-unpaid {
+  @apply bg-muted text-muted-foreground border border-separator/20;
+}
+
+.no-projects {
+  @apply text-center py-12 px-4 rounded-2xl border border-dashed border-separator/30 bg-muted/20 text-muted-foreground;
+}
+
+/* Modal Detailed View */
+.modal-overlay {
+  @apply fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200;
+}
+
+.modal-content {
+  @apply w-full max-w-lg bg-card border border-separator/15 rounded-3xl shadow-2xl p-6 md:p-8 space-y-6 max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-200;
+}
+
+.modal-header {
+  @apply flex justify-between items-start gap-4 border-b border-separator/10 pb-4;
+}
+
+.modal-title-area {
+  @apply space-y-1;
+}
+
+.modal-title {
+  @apply text-title font-bold text-foreground;
+}
+
+.modal-close-btn {
+  @apply p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer;
+}
+
+.modal-body {
+  @apply space-y-5;
+}
+
+.info-section {
+  @apply space-y-2;
+}
+
+.info-section-title {
+  @apply text-label font-bold text-muted-foreground tracking-wider uppercase;
+}
+
+.schedules-list {
+  @apply space-y-2.5;
+}
+
+.schedule-item-detail {
+  @apply p-3.5 rounded-xl border border-separator/15 bg-background/50 flex flex-col sm:flex-row sm:items-center justify-between gap-2;
+}
+
+.schedule-item-meta {
+  @apply flex flex-col;
+}
+
+.schedule-item-date {
+  @apply text-body font-semibold text-foreground;
+}
+
+.schedule-item-hours {
+  @apply text-label text-muted-foreground;
+}

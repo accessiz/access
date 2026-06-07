@@ -1,0 +1,189 @@
+'use client';
+
+import { useState, useMemo, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import { updateModelCredentials } from '@/lib/actions/models';
+import { toast } from 'sonner';
+import { AccessModelItem } from './access-table.types';
+
+const PAGE_SIZE = 25;
+
+export function useAccessTable(initialModels: AccessModelItem[]) {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [genderFilter, setGenderFilter] = useState<'all' | 'male' | 'female'>('all');
+  const [countryFilter, setCountryFilter] = useState<string>('all');
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Password visibility map (modelId -> boolean)
+  const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
+
+  // Editing state
+  const [editingModel, setEditingModel] = useState<AccessModelItem | null>(null);
+  const [editEmail, setEditEmail] = useState('');
+  const [editPassword, setEditPassword] = useState('');
+  const [isPending, setIsPending] = useState(false);
+
+  const router = useRouter();
+
+  // Toggle password visibility for a model
+  const togglePasswordVisibility = (id: string) => {
+    setVisiblePasswords((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
+
+  // Get unique countries for filtering
+  const countryOptions = useMemo(() => {
+    const countries = new Set<string>();
+    initialModels.forEach((m) => {
+      if (m.country) countries.add(m.country.toLowerCase().trim());
+    });
+    return Array.from(countries).sort();
+  }, [initialModels]);
+
+  // Open edit modal
+  const handleStartEdit = (model: AccessModelItem) => {
+    setEditingModel(model);
+    setEditEmail(model.email || '');
+    setEditPassword(model.login_password || '');
+  };
+
+  // Cancel edit
+  const handleCancelEdit = useCallback(() => {
+    setEditingModel(null);
+    setEditEmail('');
+    setEditPassword('');
+  }, []);
+
+  // Submit credentials update
+  const handleSubmitEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingModel) return;
+
+    if (!editEmail || editEmail.trim() === '') {
+      toast.error('el correo electrónico es obligatorio.');
+      return;
+    }
+
+    if (!editPassword || editPassword.length < 6) {
+      toast.error('la contraseña debe tener al menos 6 caracteres.');
+      return;
+    }
+
+    setIsPending(true);
+
+    try {
+      const result = await updateModelCredentials(editingModel.id, editEmail, editPassword);
+      if (result.success) {
+        toast.success('credenciales actualizadas con éxito.');
+        setEditingModel(null);
+        router.refresh();
+      } else {
+        toast.error(result.error || 'error al actualizar credenciales.');
+      }
+    } catch {
+      toast.error('error de conexión al actualizar credenciales.');
+    } finally {
+      setIsPending(false);
+    }
+  };
+
+  // Filter models, then sort alphabetically by full_name
+  const filteredModels = useMemo(() => {
+    const filtered = initialModels.filter((m) => {
+      // 1. Search Query (full_name, alias, email)
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const matchesName = m.full_name?.toLowerCase().includes(q) || false;
+        const matchesAlias = m.alias?.toLowerCase().includes(q) || false;
+        const matchesEmail = m.email?.toLowerCase().includes(q) || false;
+        if (!matchesName && !matchesAlias && !matchesEmail) {
+          return false;
+        }
+      }
+
+      // 2. Gender Filter
+      if (genderFilter !== 'all') {
+        const g = m.gender?.toLowerCase() || '';
+        const isMale = g === 'male' || g === 'hombre' || g === 'm';
+        const isFemale = g === 'female' || g === 'mujer' || g === 'f';
+        if (genderFilter === 'male' && !isMale) return false;
+        if (genderFilter === 'female' && !isFemale) return false;
+      }
+
+      // 3. Country Filter
+      if (countryFilter !== 'all') {
+        if (m.country?.toLowerCase().trim() !== countryFilter) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+
+    // Sort alphabetically by full_name
+    filtered.sort((a, b) => {
+      const nameA = (a.full_name || a.alias || '').toLowerCase();
+      const nameB = (b.full_name || b.alias || '').toLowerCase();
+      return nameA.localeCompare(nameB, 'es');
+    });
+
+    return filtered;
+  }, [initialModels, searchQuery, genderFilter, countryFilter]);
+
+  // Pagination
+  const totalPages = Math.max(1, Math.ceil(filteredModels.length / PAGE_SIZE));
+
+  // Reset to page 1 when filters change
+  const safePage = currentPage > totalPages ? 1 : currentPage;
+
+  const paginatedModels = useMemo(() => {
+    const start = (safePage - 1) * PAGE_SIZE;
+    return filteredModels.slice(start, start + PAGE_SIZE);
+  }, [filteredModels, safePage]);
+
+  // Reset page when filters change
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    setCurrentPage(1);
+  };
+
+  const handleGenderFilterChange = (value: 'all' | 'male' | 'female') => {
+    setGenderFilter(value);
+    setCurrentPage(1);
+  };
+
+  const handleCountryFilterChange = (value: string) => {
+    setCountryFilter(value);
+    setCurrentPage(1);
+  };
+
+  return {
+    searchQuery,
+    handleSearchChange,
+    genderFilter,
+    handleGenderFilterChange,
+    countryFilter,
+    handleCountryFilterChange,
+    visiblePasswords,
+    togglePasswordVisibility,
+    editingModel,
+    editEmail,
+    setEditEmail,
+    editPassword,
+    setEditPassword,
+    isPending,
+    handleStartEdit,
+    handleCancelEdit,
+    handleSubmitEdit,
+    countryOptions,
+    filteredModels,
+    paginatedModels,
+    currentPage: safePage,
+    setCurrentPage,
+    totalPages,
+    totalCount: filteredModels.length,
+    pageSize: PAGE_SIZE,
+  };
+}

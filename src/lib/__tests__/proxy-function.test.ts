@@ -143,9 +143,10 @@ describe('proxy() function', () => {
 
   it.each([
     '/login',
-    '/',
     '/auth/callback',
     '/c/some-model',
+    '/m/50675b55',
+    '/model/login',
     '/api/cron/close-projects',
     '/api/health',
     '/api/csp-report',
@@ -159,6 +160,7 @@ describe('proxy() function', () => {
   // ── Auth guard: protected routes ──
 
   it.each([
+    '/',
     '/dashboard',
     '/dashboard/models',
     '/dashboard/projects/some-id',

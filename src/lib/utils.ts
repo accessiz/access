@@ -98,6 +98,7 @@ export function toPublicUrl(path: string | null | undefined): string | null {
  */
 export function toCorsUrl(url: string | null | undefined): string | null {
   if (!url) return null;
+  if (url.startsWith('blob:') || url.startsWith('data:')) return url;
   const separator = url.includes('?') ? '&' : '?';
   return `${url}${separator}cors=1`;
 }
