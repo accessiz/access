@@ -49,6 +49,15 @@ export async function completeProjectReview(projectId: string) {
       }
     } catch { }
     revalidatePath(`/dashboard/projects/${projectId}`)
+
+    // Enviar notificación por correo de selección finalizada a scouting
+    try {
+      const { sendProjectCompletionEmailByProjectId } = await import('@/lib/services/resend');
+      await sendProjectCompletionEmailByProjectId(projectId);
+    } catch (emailErr) {
+      logError(emailErr, { action: 'completeProjectReview.sendEmail', projectId });
+    }
+
     return { success: true }
   } catch (err) {
     logError(err, { action: 'completeProjectReview.catch_all', projectId })
@@ -125,6 +134,16 @@ export async function updateProjectStatus(
     }
     revalidatePath(`/dashboard/projects/${projectId}`)
     revalidatePath('/dashboard/projects')
+
+    if (status === 'completed') {
+      try {
+        const { sendProjectCompletionEmailByProjectId } = await import('@/lib/services/resend');
+        await sendProjectCompletionEmailByProjectId(projectId);
+      } catch (emailErr) {
+        logError(emailErr, { action: 'updateProjectStatus.sendEmail', projectId });
+      }
+    }
+
     return { success: true }
   } catch (err) {
     logError(err, { action: 'updateProjectStatus.catch_all', projectId, status })
@@ -196,6 +215,13 @@ export async function autoCloseExpiredProject(projectId: string): Promise<{ clos
     if (updateProjectError) {
       logError(updateProjectError, { action: 'autoCloseExpiredProject.updateProject', projectId });
       return { closed: false, error: 'Error al actualizar el estado del proyecto.' };
+    }
+
+    try {
+      const { sendProjectCompletionEmailByProjectId } = await import('@/lib/services/resend');
+      await sendProjectCompletionEmailByProjectId(projectId);
+    } catch (emailErr) {
+      logError(emailErr, { action: 'autoCloseExpiredProject.sendEmail', projectId });
     }
 
     revalidatePath(`/dashboard/projects/${projectId}`);

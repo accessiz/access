@@ -133,42 +133,8 @@ export async function finalizeProjectReview(projectId: string, rejectPending: bo
 
     // Enviar notificación por correo de selección finalizada a scouting
     try {
-      const { data: approvedData, error: approvedError } = await supabaseAdmin
-        .from('projects_models')
-        .select(`
-          models:fk_projects_models_model (
-            alias,
-            full_name,
-            gender,
-            country,
-            birth_country
-          )
-        `)
-        .eq('project_id', projectId)
-        .eq('client_selection', 'approved');
-
-      if (approvedError) throw approvedError;
-
-      const approvedModels = (approvedData || [])
-        .map((item: any) => {
-          const m = item.models;
-          if (!m) return null;
-          return {
-            alias: m.alias || m.full_name || 'Sin Alias',
-            fullName: m.full_name || m.alias || 'Sin Nombre',
-            gender: m.gender || 'Unknown',
-            country: m.country || m.birth_country || 'Sin Nacionalidad',
-          };
-        })
-        .filter((m): m is Exclude<typeof m, null> => m !== null);
-
-      const { sendProjectCompletionEmail } = await import('@/lib/services/resend');
-      await sendProjectCompletionEmail({
-        projectName: project?.project_name || 'Proyecto',
-        clientName: project?.client_name || 'Cliente',
-        publicId: project?.public_id || projectId,
-        approvedModels,
-      });
+      const { sendProjectCompletionEmailByProjectId } = await import('@/lib/services/resend');
+      await sendProjectCompletionEmailByProjectId(projectId);
     } catch (emailErr) {
       logError(emailErr, { action: 'finalizeProjectReview.sendEmail', projectId });
     }

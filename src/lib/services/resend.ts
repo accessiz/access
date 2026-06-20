@@ -213,3 +213,65 @@ export async function sendProjectCompletionEmail({
     return false;
   }
 }
+
+export async function sendProjectCompletionEmailByProjectId(projectId: string): Promise<boolean> {
+  try {
+    const { supabaseAdmin } = await import('@/lib/supabase/admin');
+
+    // 1. Obtener detalles del proyecto
+    const { data: project, error: projectError } = await supabaseAdmin
+      .from('projects')
+      .select('project_name, client_name, public_id')
+      .eq('id', projectId)
+      .single();
+
+    if (projectError || !project) {
+      console.error(`❌ Error fetching project ${projectId} for completion email:`, projectError);
+      return false;
+    }
+
+    // 2. Obtener modelos aprobados
+    const { data: approvedData, error: approvedError } = await supabaseAdmin
+      .from('projects_models')
+      .select(`
+        models:fk_projects_models_model (
+          alias,
+          full_name,
+          gender,
+          country,
+          birth_country
+        )
+      `)
+      .eq('project_id', projectId)
+      .eq('client_selection', 'approved');
+
+    if (approvedError) {
+      console.error(`❌ Error fetching approved models for project ${projectId}:`, approvedError);
+      return false;
+    }
+
+    const approvedModels = (approvedData || [])
+      .map((item: any) => {
+        const m = item.models;
+        if (!m) return null;
+        return {
+          alias: m.alias || m.full_name || 'Sin Alias',
+          fullName: m.full_name || m.alias || 'Sin Nombre',
+          gender: m.gender || 'Unknown',
+          country: m.country || m.birth_country || 'Sin Nacionalidad',
+        };
+      })
+      .filter((m): m is Exclude<typeof m, null> => m !== null);
+
+    return await sendProjectCompletionEmail({
+      projectName: project.project_name || 'Proyecto',
+      clientName: project.client_name || 'Cliente',
+      publicId: project.public_id || projectId,
+      approvedModels,
+    });
+  } catch (error) {
+    console.error(`❌ Exception in sendProjectCompletionEmailByProjectId for project ${projectId}:`, error);
+    return false;
+  }
+}
+

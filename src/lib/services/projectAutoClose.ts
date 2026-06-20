@@ -68,6 +68,14 @@ export async function autoCloseAllExpiredProjects(): Promise<{
 
         closedIds.push(project.id);
 
+        // Enviar notificación por correo de selección finalizada a scouting
+        try {
+          const { sendProjectCompletionEmailByProjectId } = await import('@/lib/services/resend');
+          await sendProjectCompletionEmailByProjectId(project.id);
+        } catch (emailErr) {
+          logError(emailErr, { action: 'autoCloseAllExpiredProjects.sendEmail', projectId: project.id });
+        }
+
         // Revalidate Next.js cache for this specific project
         try {
           if (project.public_id) {
