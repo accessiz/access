@@ -10,11 +10,11 @@ export async function autoCloseAllExpiredProjects(): Promise<{
   error?: string;
 }> {
   try {
-    // 1. Fetch all projects that are not completed or archived
+    // 1. Fetch all projects that are not completed, archived, or draft
     const { data: projects, error: projectsError } = await supabaseAdmin
       .from('projects')
       .select('id, status, schedule, public_id')
-      .not('status', 'in', '("completed","archived")');
+      .not('status', 'in', '("completed","archived","draft")');
 
     if (projectsError) {
       logError(projectsError, { action: 'autoCloseAllExpiredProjects.fetchProjects' });
