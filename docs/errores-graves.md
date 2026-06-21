@@ -270,9 +270,57 @@ No basta con configurar el CORS en R2. Hay que obligar al navegador a tratar la 
 
 > **Si una imagen se carga dos veces en la misma página con distintas necesidades de seguridad (una visual y otra para proceso/píxeles), la segunda DEBE llevar un parámetro de URL (como `?cors=1`) para evitar que el navegador use una copia de caché sin permisos.**
 
+## 9. CSP `connect-src` sin `blob:` rompe el generador temporal de Compcards
+
+**Fecha:** 2026-06-21  
+**Síntoma:** Al presionar "Descargar Compcard" en el generador temporal (`/dashboard/compcard-generator`), aparece el toast "Error al generar la compcard". La consola muestra múltiples errores: `Fetch API cannot load blob:https://access.izmgmt.com/...` — "Refused to connect because it violates the document's Content Security Policy directive: connect-src 'self' ...".  
+**Tiempo perdido:** ~15 min
+
+### ❌ Error
+
+```ts
+// src/proxy.ts — buildCSP()
+const connectSrc = [
+  "'self'",
+  "data:",
+  // ← Falta "blob:"
+  supabaseOrigin,
+  ...
+]
+```
+
+**¿Por qué es grave?**
+
+- El generador temporal usa `URL.createObjectURL()` para crear URLs `blob:` de las fotos subidas por el usuario
+- La librería `html-to-image` internamente usa `fetch()` para leer esas URLs `blob:` y convertirlas en data URLs para el canvas
+- `blob:` ya estaba en `img-src` (para mostrar las fotos), pero **no** en `connect-src` (para fetch)
+- El browser bloqueaba cada `fetch(blob:...)` → la captura fallaba en cascada → toast de error
+- El preview se veía perfecto (porque `img-src` sí tenía `blob:`), lo que hacía parecer que todo estaba bien
+
+### ✅ Correcto
+
+```ts
+// src/proxy.ts — buildCSP()
+const connectSrc = [
+  "'self'",
+  "data:",
+  "blob:",   // ← Necesario para que html-to-image pueda fetch() las imágenes blob
+  supabaseOrigin,
+  ...
+]
+```
+
+### Diferencia con Error #7
+
+El error #7 trataba sobre imágenes remotas de R2 (CORS + tainted canvas) en el generador de compcards **de modelos registrados**. Este error #9 es específico del generador **temporal** (cliente-side), donde las imágenes son `blob:` locales — no hay CORS involucrado, solo CSP.
+
+### Regla general
+
+> **Si una funcionalidad del lado del cliente usa `URL.createObjectURL()` y luego necesita `fetch()` esos blobs (como lo hacen librerías de captura HTML-to-image), `blob:` debe estar tanto en `img-src` como en `connect-src` de la CSP.**
+
 ---
 
-*Última actualización: 2026-03-14*
+*Última actualización: 2026-06-21*
 
 ---
 

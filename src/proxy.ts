@@ -20,6 +20,7 @@ export function buildCSP(nonce: string): string {
   const connectSrc = [
     "'self'",
     "data:",
+    "blob:",
     supabaseOrigin,
     r2Origin,
     // Supabase Realtime uses wss://
