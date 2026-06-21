@@ -39,7 +39,7 @@ export function ModelPortalLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className={`flex min-h-screen flex-col bg-background text-foreground ${isLoginPage ? '' : 'pb-20 lg:pb-0'}`}>
       {/* Estructura Principal del Workspace */}
-      <div className="flex flex-grow flex-col lg:flex-row w-full max-w-[1600px] mx-auto min-h-screen">
+      <div className="flex flex-grow flex-col lg:flex-row w-full min-h-screen">
         
         {/* Sidebar de Navegación Lateral (Oculto en móvil, activo en Desktop lg:) */}
         {!isLoginPage && (
@@ -170,21 +170,23 @@ export function ModelPortalLayout({ children }: { children: React.ReactNode }) {
         )}
 
         {/* Contenedor Principal de Contenido */}
-        <div className="flex-grow flex flex-col p-4 md:p-8 lg:p-10 justify-between gap-8 z-10 w-full overflow-hidden">
-          
-          {/* Mobile Top Header */}
-          {!isLoginPage && (
-            <header className="lg:hidden flex items-center justify-between border-b border-border pb-3">
-              <Logo className="h-6 w-auto text-foreground" />
-            </header>
-          )}
+        <div className="flex-grow flex flex-col w-full overflow-hidden">
+          <div className="flex-grow flex flex-col p-4 md:p-8 lg:p-10 justify-between gap-8 z-10 w-full max-w-[1600px] mx-auto">
+            
+            {/* Mobile Top Header */}
+            {!isLoginPage && (
+              <header className="lg:hidden flex items-center justify-between border-b border-border pb-3">
+                <Logo className="h-6 w-auto text-foreground" />
+              </header>
+            )}
 
-          {/* Workspace Wrapper */}
-          <div className="w-full flex-grow flex flex-col items-center justify-center">
-            {children}
+            {/* Workspace Wrapper */}
+            <div className="w-full flex-grow flex flex-col items-center justify-center">
+              {children}
+            </div>
+
+            {/* Footer removed */}
           </div>
-
-          {/* Footer removed */}
         </div>
 
       </div>

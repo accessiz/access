@@ -362,7 +362,7 @@ export function JobHistory({ projects, className }: JobHistoryProps) {
                   </span>
                 )}
                 {selectedProject.client_selection === 'pending' && (
-                  <span className="flex items-center gap-1 text-label bg-warning/10 border border-warning/20 text-warning-foreground px-2.5 py-1 rounded-full font-medium">
+                  <span className="flex items-center gap-1 text-label bg-amber-500/10 border border-amber-500/20 text-amber-500 px-2.5 py-1 rounded-full font-medium">
                     Pendiente
                   </span>
                 )}
@@ -373,7 +373,7 @@ export function JobHistory({ projects, className }: JobHistoryProps) {
                       <Check className="h-3 w-3" /> Pagado
                     </span>
                   ) : (
-                    <span className="flex items-center gap-1 text-label bg-warning/10 border border-warning/20 text-warning-foreground px-2.5 py-1 rounded-full font-medium">
+                    <span className="flex items-center gap-1 text-label bg-amber-500/10 border border-amber-500/20 text-amber-500 px-2.5 py-1 rounded-full font-medium">
                       Pendiente de Pago
                     </span>
                   )
