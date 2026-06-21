@@ -77,7 +77,10 @@ export async function GET(
         const newHeaders = new Headers(response.headers);
 
         const origin = req.headers.get('origin');
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+        const rawAppUrl = process.env.NEXT_PUBLIC_APP_URL;
+        const appUrl = rawAppUrl && rawAppUrl !== 'http://localhost:3000'
+            ? rawAppUrl
+            : (process.env.NODE_ENV === 'production' ? 'https://access.izmgmt.com' : 'http://localhost:3000');
         
         // Determinar si debemos permitir CORS (si coincide con nuestro app host o si es same-origin con origin: null)
         const isAllowedOrigin = origin && appUrl && origin.startsWith(appUrl);
@@ -120,7 +123,10 @@ export async function GET(
 
 export async function OPTIONS(req: NextRequest) {
     const origin = req.headers.get('origin');
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const rawAppUrl = process.env.NEXT_PUBLIC_APP_URL;
+    const appUrl = rawAppUrl && rawAppUrl !== 'http://localhost:3000'
+        ? rawAppUrl
+        : (process.env.NODE_ENV === 'production' ? 'https://access.izmgmt.com' : 'http://localhost:3000');
     const isAllowedOrigin = origin && appUrl && origin.startsWith(appUrl);
 
     return new NextResponse(null, {

@@ -75,16 +75,25 @@ export function TalentRow({
         setIsSyncing(false);
     };
 
+    const isPicker = actionType === 'add';
+
     return (
         <div className="flex flex-col gap-y-2 p-2 hover:bg-hover-overlay rounded-md transition-colors">
             <div className="flex items-center gap-x-3 gap-y-3">
-                <Avatar className="h-10 w-10 border border-border">
-                    <AvatarImage src={model.coverUrl || `${SUPABASE_PUBLIC_URL}${model.id}/Portada/cover.jpg`} />
-                    <AvatarFallback>{model.alias?.substring(0, 2) || 'IZ'}</AvatarFallback>
-                </Avatar>
+                {!isPicker && (
+                    <Avatar className="h-10 w-10 border border-border">
+                        <AvatarImage src={model.coverUrl || `${SUPABASE_PUBLIC_URL}${model.id}/Portada/cover.jpg`} />
+                        <AvatarFallback>{model.alias?.substring(0, 2) || 'IZ'}</AvatarFallback>
+                    </Avatar>
+                )}
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-x-2 gap-y-2">
-                        <p className="text-body font-medium truncate">{model.alias}</p>
+                        <p className="text-body font-medium truncate">
+                            {isPicker 
+                                ? (model.full_name || model.alias || 'Sin nombre')
+                                : model.alias
+                            }
+                        </p>
                         {actionType === 'remove' && (
                             <>
                                 {(model.agreed_fee || 0) > 0 && (
@@ -105,7 +114,15 @@ export function TalentRow({
                             </>
                         )}
                     </div>
-                    <p className="text-label text-muted-foreground truncate">{model.country}</p>
+                    <p className="text-label text-muted-foreground truncate">
+                        {isPicker
+                            ? [
+                                model.alias && model.alias !== model.full_name ? `Alias: ${model.alias}` : null,
+                                model.country
+                              ].filter(Boolean).join(' · ')
+                            : model.country
+                        }
+                    </p>
                 </div>
 
                 <div className="flex items-center gap-x-2 gap-y-2">

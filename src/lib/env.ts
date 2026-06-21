@@ -40,7 +40,12 @@ export const env = {
     if (isTest) return '__TEST_NEXT_PUBLIC_SUPABASE_ANON_KEY__'
     throw new Error('[env] Missing required environment variable: NEXT_PUBLIC_SUPABASE_ANON_KEY. Check your .env.local or deployment environment.')
   })(),
-  NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000',
+  NEXT_PUBLIC_APP_URL: (() => {
+    const raw = process.env.NEXT_PUBLIC_APP_URL;
+    if (raw && raw !== 'http://localhost:3000') return raw;
+    if (process.env.NODE_ENV === 'production') return 'https://access.izmgmt.com';
+    return raw ?? 'http://localhost:3000';
+  })(),
   NEXT_PUBLIC_R2_PUBLIC_URL: process.env.NEXT_PUBLIC_R2_PUBLIC_URL ?? '',
 } as const
 

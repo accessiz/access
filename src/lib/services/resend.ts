@@ -71,10 +71,18 @@ export async function sendProjectCompletionEmail({
       m => m.gender?.toLowerCase() !== 'male' && m.gender?.toLowerCase() !== 'female'
     );
 
-    const siteUrl = env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    const approvedPageUrl = `${siteUrl.replace(/\/$/, '')}/c/${publicId}/approved`;
+    const siteUrl = env.NEXT_PUBLIC_APP_URL && env.NEXT_PUBLIC_APP_URL !== 'http://localhost:3000'
+      ? env.NEXT_PUBLIC_APP_URL
+      : (process.env.NODE_ENV === 'production' ? 'https://access.izmgmt.com' : 'http://localhost:3000');
 
-    const subject = `✅ ${totalApproved} Modelos Aprobados — ${projectName} (${clientName || 'Cliente'})`;
+    // For 0 approved models, we link to the main project page rather than the approved page since the approved page is empty
+    const approvedPageUrl = totalApproved > 0 
+      ? `${siteUrl.replace(/\/$/, '')}/c/${publicId}/approved`
+      : `${siteUrl.replace(/\/$/, '')}/c/${publicId}`;
+
+    const subject = totalApproved > 0
+      ? `✅ ${totalApproved} Modelos Aprobados — ${projectName} (${clientName || 'Cliente'})`
+      : `⚠️ Selección Finalizada (0 Aprobados) — ${projectName} (${clientName || 'Cliente'})`;
 
     // Render lists helper
     const renderModelTable = (title: string, list: ModelInfo[], titleColor: string) => {
@@ -124,9 +132,15 @@ export async function sendProjectCompletionEmail({
             <p style="font-size: 15px; line-height: 1.6; color: #333;">
               Hola scouting,
             </p>
+            ${totalApproved > 0 ? `
             <p style="font-size: 15px; line-height: 1.6; color: #555;">
               El cliente ha finalizado la sesión de selección de talentos para su proyecto. A continuación encuentras la lista de modelos confirmados:
             </p>
+            ` : `
+            <p style="font-size: 15px; line-height: 1.6; color: #555;">
+              El proyecto ha finalizado pero no hubieron modelos aprobados. Por favor, contacta al cliente para dar seguimiento.
+            </p>
+            `}
 
             <!-- Project Details -->
             <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
@@ -148,20 +162,24 @@ export async function sendProjectCompletionEmail({
               </tr>
               <tr>
                 <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold;">Total Aprobados</td>
-                <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold; font-size: 16px;">${totalApproved}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold; font-size: 16px;">
+                  ${totalApproved > 0 ? totalApproved : '0 (Ninguno)'}
+                </td>
               </tr>
             </table>
 
             <!-- Model lists -->
-            ${renderModelTable('Hombres', men, '#333')}
-            ${renderModelTable('Mujeres', women, '#333')}
-            ${renderModelTable('Otros', other, '#333')}
+            ${totalApproved > 0 ? `
+              ${renderModelTable('Hombres', men, '#333')}
+              ${renderModelTable('Mujeres', women, '#333')}
+              ${renderModelTable('Otros', other, '#333')}
+            ` : ''}
 
             <!-- Call to Action Link -->
             <div style="text-align: center; margin: 30px 0;">
               <a href="${approvedPageUrl}" 
                  style="display: inline-block; background-color: #000; color: #fff; padding: 15px 40px; text-decoration: none; font-weight: bold; border-radius: 4px;">
-                VER DETALLE COMPLETO (FOTOS) →
+                ${totalApproved > 0 ? 'VER DETALLE COMPLETO (FOTOS) →' : 'VER SELECCIÓN COMPLETA →'}
               </a>
             </div>
             
