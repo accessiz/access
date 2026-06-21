@@ -5,28 +5,9 @@ import { useRouter } from 'next/navigation';
 import { updateModelCredentials, clearModelPassword } from '@/lib/actions/models';
 import { toast } from 'sonner';
 import { AccessModelItem } from './access-table.types';
+import { getPhonePrefix } from '@/lib/utils/phone';
 
 const PAGE_SIZE = 25;
-
-const COMMON_PREFIXES = ['+502', '+503', '+504', '+505', '+506', '+507', '+52', '+58', '+57', '+1'];
-
-function getPhonePrefix(phone: string | null | undefined): string | null {
-  if (!phone) return null;
-  const clean = phone.trim();
-  for (const prefix of COMMON_PREFIXES) {
-    if (clean.startsWith(prefix)) return prefix;
-  }
-  if (clean.startsWith('+')) {
-    if (clean.startsWith('+52') || clean.startsWith('+55') || clean.startsWith('+56') || clean.startsWith('+54')) {
-      return clean.substring(0, 3);
-    }
-    if (clean.startsWith('+1')) {
-      return '+1';
-    }
-    return clean.substring(0, 4);
-  }
-  return null;
-}
 
 export function useAccessTable(initialModels: AccessModelItem[]) {
   const [searchQuery, setSearchQuery] = useState('');

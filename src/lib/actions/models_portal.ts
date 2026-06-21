@@ -7,7 +7,7 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 import { logError } from '@/lib/utils/errors';
 import { signCookie, getCookieSecret, verifyCookie } from '@/lib/utils/cookie-signature';
 import { logActivity } from '@/lib/activity-logger';
-import { cleanAndNormalizePhone } from '@/lib/utils/phone';
+import { cleanAndNormalizePhone, getPhonePrefix } from '@/lib/utils/phone';
 
 // Helper to get Guatemala timestamp for activity logs
 const getGuatemalaISOString = () => {
@@ -753,6 +753,44 @@ export async function updateModelProfile(
   } catch (err) {
     logError(err, { action: 'updateModelProfile.catch_all', modelId });
     return { success: false, error: 'error inesperado al actualizar el perfil.' };
+  }
+}
+
+/**
+ * Retrieves all unique, sorted phone prefixes from registered models.
+ * Guarantees that +502 (Guatemala) is always included.
+ */
+export async function getActivePhonePrefixes() {
+  try {
+    const { data: phones, error } = await supabaseAdmin
+      .from('models')
+      .select('phone_e164')
+      .not('phone_e164', 'is', null);
+
+    if (error) {
+      logError(error, { action: 'getActivePhonePrefixes' });
+      return ['+502'];
+    }
+
+    const prefixSet = new Set<string>();
+    prefixSet.add('+502'); // Default prefix always present
+
+    if (phones) {
+      for (const row of phones) {
+        if (row.phone_e164) {
+          const prefix = getPhonePrefix(row.phone_e164);
+          if (prefix) {
+            prefixSet.add(prefix);
+          }
+        }
+      }
+    }
+
+    // Sort alphabetically, keeping a neat ordering
+    return Array.from(prefixSet).sort((a, b) => a.localeCompare(b, 'es'));
+  } catch (err) {
+    logError(err, { action: 'getActivePhonePrefixes.catch' });
+    return ['+502'];
   }
 }
 

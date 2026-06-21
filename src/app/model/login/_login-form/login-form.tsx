@@ -9,7 +9,22 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
-export function LoginForm({ redirectTo }: LoginFormProps) {
+const prefixToCountry: Record<string, string> = {
+  '+502': 'GT',
+  '+52': 'MX',
+  '+503': 'SV',
+  '+504': 'HN',
+  '+506': 'CR',
+  '+507': 'PA',
+  '+57': 'CO',
+  '+1': 'US/CA',
+  '+33': 'FR',
+  '+34': 'ES',
+  '+44': 'GB',
+  '+58': 'VE',
+};
+
+export function LoginForm({ redirectTo, prefixes = ['+502'] }: LoginFormProps) {
   const {
     phone,
     setPhone,
@@ -31,7 +46,10 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
   } = useLoginForm(redirectTo);
 
   // Estados locales para unir el código de país y el número telefónico
-  const [countryCode, setCountryCode] = React.useState('+502');
+  const [countryCode, setCountryCode] = React.useState(() => {
+    if (prefixes.includes('+502')) return '+502';
+    return prefixes[0] || '+502';
+  });
   const [localNumber, setLocalNumber] = React.useState('');
 
   // Sincronizar estados locales con el estado 'phone' de la lógica
@@ -66,14 +84,14 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
                   disabled={isPending}
                   className="bg-background border border-border rounded-xl py-3.5 px-3 text-foreground text-xs font-semibold outline-none focus:ring-2 focus:ring-purple/20 transition-all shrink-0"
                 >
-                  <option value="+502">+502 (GT)</option>
-                  <option value="+52">+52 (MX)</option>
-                  <option value="+503">+503 (SV)</option>
-                  <option value="+504">+504 (HN)</option>
-                  <option value="+506">+506 (CR)</option>
-                  <option value="+507">+507 (PA)</option>
-                  <option value="+57">+57 (CO)</option>
-                  <option value="+1">+1 (US)</option>
+                  {prefixes.map((pref) => {
+                    const country = prefixToCountry[pref];
+                    return (
+                      <option key={pref} value={pref}>
+                        {pref} {country ? `(${country})` : ''}
+                      </option>
+                    );
+                  })}
                 </select>
                 <div className="relative flex-1">
                   <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-muted-foreground">

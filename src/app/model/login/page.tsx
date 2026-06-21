@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { getLoggedInModel } from '@/lib/actions/models_portal';
+import { getLoggedInModel, getActivePhonePrefixes } from '@/lib/actions/models_portal';
 import { LoginForm } from './_login-form/login-form';
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
@@ -39,5 +39,8 @@ async function LoginFormContent({ searchParams }: PageProps) {
     redirect(redirectTo || '/model/profile');
   }
 
-  return <LoginForm redirectTo={redirectTo} />;
+  // Cargar prefijos activos de la base de datos
+  const prefixes = await getActivePhonePrefixes();
+
+  return <LoginForm redirectTo={redirectTo} prefixes={prefixes} />;
 }
