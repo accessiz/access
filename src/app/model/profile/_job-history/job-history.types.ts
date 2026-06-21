@@ -21,6 +21,8 @@ export interface AppliedProject {
   model_status: 'pending' | 'applied' | 'rejected' | null | string;
   model_available_schedules: string[] | null;
   application_deadline?: string | null;
+  apply_end_at?: string | null;
+  apply_start_at?: string | null;
   created_at: string;
   schedule: AppliedProjectSchedule[];
   assignments: any[];

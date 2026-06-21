@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { updateModelCredentials } from '@/lib/actions/models';
+import { updateModelCredentials, clearModelPassword } from '@/lib/actions/models';
 import { toast } from 'sonner';
 import { AccessModelItem } from './access-table.types';
 
@@ -84,6 +84,27 @@ export function useAccessTable(initialModels: AccessModelItem[]) {
       }
     } catch {
       toast.error('error de conexión al actualizar credenciales.');
+    } finally {
+      setIsPending(false);
+    }
+  };
+
+  const handleClearPassword = async (modelId: string) => {
+    if (!confirm('¿Estás seguro de que deseas restablecer la contraseña de este modelo? Tendrá que ingresar su número y crear una contraseña nueva.')) {
+      return;
+    }
+    setIsPending(true);
+    try {
+      const result = await clearModelPassword(modelId);
+      if (result.success) {
+        toast.success('Contraseña eliminada con éxito. El acceso ha sido restablecido.');
+        setEditingModel(null);
+        router.refresh();
+      } else {
+        toast.error(result.error || 'Error al restablecer la contraseña.');
+      }
+    } catch {
+      toast.error('Error de conexión al restablecer.');
     } finally {
       setIsPending(false);
     }
@@ -177,6 +198,7 @@ export function useAccessTable(initialModels: AccessModelItem[]) {
     handleStartEdit,
     handleCancelEdit,
     handleSubmitEdit,
+    handleClearPassword,
     countryOptions,
     filteredModels,
     paginatedModels,

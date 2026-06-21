@@ -7,6 +7,7 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 import { logError } from '@/lib/utils/errors';
 import { signCookie, getCookieSecret, verifyCookie } from '@/lib/utils/cookie-signature';
 import { logActivity } from '@/lib/activity-logger';
+import { cleanAndNormalizePhone } from '@/lib/utils/phone';
 
 // Helper to get Guatemala timestamp for activity logs
 const getGuatemalaISOString = () => {
@@ -19,26 +20,31 @@ const getGuatemalaISOString = () => {
 /**
  * Validates model credentials and sets a signed session cookie.
  */
-export async function loginModel(email: string, password: string) {
-  if (!email || !password) {
-    return { success: false, error: 'correo y contraseña son obligatorios.' };
+export async function loginModelByPhone(phone: string, password_plain: string) {
+  if (!phone || !password_plain) {
+    return { success: false, error: 'teléfono y contraseña son obligatorios.' };
+  }
+
+  const normalizedPhone = cleanAndNormalizePhone(phone);
+  if (!normalizedPhone) {
+    return { success: false, error: 'el número de teléfono no es válido.' };
   }
 
   try {
     // Query directly bypassing RLS since models are not auth users
     const { data: model, error } = await supabaseAdmin
       .from('models')
-      .select('id, email, login_password, full_name')
-      .eq('email', email.toLowerCase().trim())
+      .select('id, phone_e164, login_password, full_name')
+      .eq('phone_e164', normalizedPhone)
       .maybeSingle();
 
     if (error || !model) {
-      if (error) logError(error, { action: 'loginModel.fetch', email });
-      return { success: false, error: 'correo electrónico o contraseña incorrectos.' };
+      if (error) logError(error, { action: 'loginModelByPhone.fetch', phone: normalizedPhone });
+      return { success: false, error: 'número de teléfono o contraseña incorrectos.' };
     }
 
-    if (!model.login_password || model.login_password !== password) {
-      return { success: false, error: 'correo electrónico o contraseña incorrectos.' };
+    if (!model.login_password || model.login_password !== password_plain) {
+      return { success: false, error: 'número de teléfono o contraseña incorrectos.' };
     }
 
     // Set signed cookie
@@ -55,7 +61,7 @@ export async function loginModel(email: string, password: string) {
 
     return { success: true, modelId: model.id };
   } catch (err) {
-    logError(err, { action: 'loginModel.catch_all', email });
+    logError(err, { action: 'loginModelByPhone.catch_all', phone: normalizedPhone });
     return { success: false, error: 'error inesperado al iniciar sesión.' };
   }
 }
@@ -554,6 +560,8 @@ export async function getAppliedProjectsForModel(modelId: string) {
           model_status: item.model_status,
           model_available_schedules: item.model_available_schedules,
           application_deadline: project.application_deadline,
+          apply_end_at: project.apply_end_at,
+          apply_start_at: project.apply_start_at,
           created_at: project.created_at,
           schedule: schedules.map((s: any) => ({
             id: s.id,
@@ -575,58 +583,68 @@ export async function getAppliedProjectsForModel(modelId: string) {
 }
 
 /**
- * Checks if a model exists by email and if they already have a password set.
+ * Checks if a model exists by phone and if they already have a password set.
  */
-export async function checkModelEmail(email: string) {
-  if (!email) {
-    return { success: false, error: 'el correo electrónico es obligatorio.' };
+export async function checkModelPhone(phone: string) {
+  if (!phone) {
+    return { success: false, error: 'el número de teléfono es obligatorio.' };
+  }
+
+  const normalizedPhone = cleanAndNormalizePhone(phone);
+  if (!normalizedPhone) {
+    return { success: false, error: 'el número de teléfono no es válido.' };
   }
 
   try {
     const { data: model, error } = await supabaseAdmin
       .from('models')
-      .select('id, email, login_password')
-      .eq('email', email.toLowerCase().trim())
+      .select('id, phone_e164, login_password')
+      .eq('phone_e164', normalizedPhone)
       .maybeSingle();
 
     if (error) {
-      logError(error, { action: 'checkModelEmail.fetch', email });
-      return { success: false, error: 'error al verificar el correo.' };
+      logError(error, { action: 'checkModelPhone.fetch', phone: normalizedPhone });
+      return { success: false, error: 'error al verificar el teléfono.' };
     }
 
     if (!model) {
-      return { success: false, error: 'este correo electrónico no está registrado en el portal. contacta al administrador.' };
+      return { success: false, error: 'este número de teléfono no está registrado en el portal. contacta al administrador.' };
     }
 
-    return { success: true, hasPassword: !!model.login_password, modelId: model.id };
+    return { success: true, hasPassword: !!model.login_password, modelId: model.id, phone: model.phone_e164 };
   } catch (err) {
-    logError(err, { action: 'checkModelEmail.catch_all', email });
-    return { success: false, error: 'error inesperado al verificar el correo.' };
+    logError(err, { action: 'checkModelPhone.catch_all', phone: normalizedPhone });
+    return { success: false, error: 'error inesperado al verificar el teléfono.' };
   }
 }
 
 /**
  * Registers a new password for a model (first-time login) and sets the session cookie.
  */
-export async function registerModelPassword(email: string, password_plain: string) {
-  if (!email || !password_plain) {
-    return { success: false, error: 'el correo y la contraseña son obligatorios.' };
+export async function registerModelPasswordByPhone(phone: string, password_plain: string) {
+  if (!phone || !password_plain) {
+    return { success: false, error: 'el teléfono y la contraseña son obligatorios.' };
   }
 
   if (password_plain.length < 6) {
     return { success: false, error: 'la contraseña debe tener al menos 6 caracteres.' };
   }
 
+  const normalizedPhone = cleanAndNormalizePhone(phone);
+  if (!normalizedPhone) {
+    return { success: false, error: 'el número de teléfono no es válido.' };
+  }
+
   try {
     // 1. Fetch model to check if they already have a password
     const { data: model, error } = await supabaseAdmin
       .from('models')
-      .select('id, email, login_password')
-      .eq('email', email.toLowerCase().trim())
+      .select('id, phone_e164, login_password')
+      .eq('phone_e164', normalizedPhone)
       .maybeSingle();
 
     if (error || !model) {
-      if (error) logError(error, { action: 'registerModelPassword.fetch', email });
+      if (error) logError(error, { action: 'registerModelPasswordByPhone.fetch', phone: normalizedPhone });
       return { success: false, error: 'talento no encontrado.' };
     }
 
@@ -641,7 +659,7 @@ export async function registerModelPassword(email: string, password_plain: strin
       .eq('id', model.id);
 
     if (updateError) {
-      logError(updateError, { action: 'registerModelPassword.update', modelId: model.id });
+      logError(updateError, { action: 'registerModelPasswordByPhone.update', modelId: model.id });
       return { success: false, error: 'no se pudo registrar la contraseña.' };
     }
 
@@ -659,8 +677,82 @@ export async function registerModelPassword(email: string, password_plain: strin
 
     return { success: true, modelId: model.id };
   } catch (err) {
-    logError(err, { action: 'registerModelPassword.catch_all', email });
+    logError(err, { action: 'registerModelPasswordByPhone.catch_all', phone: normalizedPhone });
     return { success: false, error: 'error inesperado al registrar la contraseña.' };
+  }
+}
+
+/**
+ * Updates the model's profile details (email, phone, socials) from their profile view.
+ */
+export async function updateModelProfile(
+  modelId: string,
+  email: string,
+  phone: string,
+  instagram: string,
+  tiktok: string
+) {
+  if (!z.string().uuid().safeParse(modelId).success) {
+    return { success: false, error: 'id de talento inválido.' };
+  }
+
+  const normalizedPhone = cleanAndNormalizePhone(phone);
+  if (phone && !normalizedPhone) {
+    return { success: false, error: 'El número de teléfono no es válido. Debe incluir el código de país (ej. +502).' };
+  }
+
+  const trimmedEmail = email ? email.toLowerCase().trim() : null;
+
+  try {
+    // Validate unique email constraint if email is modified
+    if (trimmedEmail) {
+      const { data: dupEmail } = await supabaseAdmin
+        .from('models')
+        .select('id')
+        .eq('email', trimmedEmail)
+        .neq('id', modelId)
+        .maybeSingle();
+
+      if (dupEmail) {
+        return { success: false, error: 'Este correo electrónico ya está en uso por otro talento.' };
+      }
+    }
+
+    // Validate unique phone constraint if phone is modified
+    if (normalizedPhone) {
+      const { data: dupPhone } = await supabaseAdmin
+        .from('models')
+        .select('id')
+        .eq('phone_e164', normalizedPhone)
+        .neq('id', modelId)
+        .maybeSingle();
+
+      if (dupPhone) {
+        return { success: false, error: 'Este número de teléfono ya está en uso por otro talento.' };
+      }
+    }
+
+    const { error } = await supabaseAdmin
+      .from('models')
+      .update({
+        email: trimmedEmail,
+        phone_e164: normalizedPhone,
+        instagram: instagram ? instagram.trim() : null,
+        tiktok: tiktok ? tiktok.trim() : null,
+      })
+      .eq('id', modelId);
+
+    if (error) {
+      logError(error, { action: 'updateModelProfile', modelId });
+      return { success: false, error: 'error al actualizar el perfil.' };
+    }
+
+    revalidatePath('/dashboard/models');
+    revalidatePath(`/dashboard/models/${modelId}`);
+    return { success: true };
+  } catch (err) {
+    logError(err, { action: 'updateModelProfile.catch_all', modelId });
+    return { success: false, error: 'error inesperado al actualizar el perfil.' };
   }
 }
 

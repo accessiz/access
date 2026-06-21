@@ -35,8 +35,10 @@ async function ProfileContent() {
 
   // Filtrar: solo mostrar proyectos a partir de junio 2026 (lanzamiento de esta función)
   // para no confundir a los modelos con datos históricos anteriores.
+  // También ocultamos los proyectos que hayan sido rechazados por el cliente para no desmotivarlos.
   const CUTOFF_DATE = '2026-06';
   const appliedProjects = allAppliedProjects.filter((p) => {
+    if (p.client_selection === 'rejected') return false;
     const dateStr = p.schedule && p.schedule[0] ? p.schedule[0].date : p.created_at;
     if (!dateStr) return false;
     const yearMonth = dateStr.slice(0, 7); // 'YYYY-MM'

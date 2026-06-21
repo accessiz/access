@@ -339,3 +339,38 @@ export async function updateModelCredentials(modelId: string, email: string, pas
     return { success: false, error: 'Error inesperado al actualizar credenciales.' };
   }
 }
+
+// --- clearModelPassword ---
+export async function clearModelPassword(modelId: string) {
+  if (!z.string().uuid().safeParse(modelId).success) {
+    return { success: false, error: 'ID de modelo inválido.' };
+  }
+
+  const auth = await requireAuthenticatedAction()
+  if (!auth.user) {
+    return { success: false, error: auth.error }
+  }
+
+  const { supabase } = auth
+
+  try {
+    const { error } = await supabase
+      .from('models')
+      .update({ login_password: null })
+      .eq('id', modelId);
+
+    if (error) {
+      logError(error, { action: 'clearModelPassword', modelId });
+      return { success: false, error: 'No se pudo restablecer la contraseña.' };
+    }
+
+    revalidatePath('/dashboard/models/access');
+    revalidatePath('/dashboard/models');
+    revalidatePath(`/dashboard/models/${modelId}`);
+    return { success: true };
+  } catch (err) {
+    logError(err, { action: 'clearModelPassword.catch_all', modelId });
+    Sentry.captureException(err, { extra: { action: 'clearModelPassword', modelId } });
+    return { success: false, error: 'Error inesperado al restablecer la contraseña.' };
+  }
+}

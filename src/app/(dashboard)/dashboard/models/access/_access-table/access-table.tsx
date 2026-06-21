@@ -59,6 +59,7 @@ export function AccessTable({ initialModels }: AccessTableProps) {
     handleStartEdit,
     handleCancelEdit,
     handleSubmitEdit,
+    handleClearPassword,
     countryOptions,
     paginatedModels,
     currentPage,
@@ -464,33 +465,48 @@ export function AccessTable({ initialModels }: AccessTableProps) {
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-6">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleCancelEdit}
-                  disabled={isPending}
-                  className="lowercase"
-                >
-                  cancelar
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={isPending}
-                  className="gap-1.5 lowercase"
-                >
-                  {isPending ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      guardando...
-                    </>
-                  ) : (
-                    <>
-                      <Check className="h-4 w-4" />
-                      guardar
-                    </>
-                  )}
-                </Button>
+              <div className="flex justify-between items-center pt-6 mt-4 border-t">
+                {editingModel.login_password ? (
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    onClick={() => handleClearPassword(editingModel.id)}
+                    disabled={isPending}
+                    className="lowercase text-xs h-9 bg-rose-600 hover:bg-rose-700 text-white"
+                  >
+                    eliminar contraseña
+                  </Button>
+                ) : (
+                  <div />
+                )}
+                <div className="flex gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleCancelEdit}
+                    disabled={isPending}
+                    className="lowercase text-xs h-9"
+                  >
+                    cancelar
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={isPending}
+                    className="gap-1.5 lowercase text-xs h-9"
+                  >
+                    {isPending ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        guardando...
+                      </>
+                    ) : (
+                      <>
+                        <Check className="h-4 w-4" />
+                        guardar
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
             </form>
           </div>

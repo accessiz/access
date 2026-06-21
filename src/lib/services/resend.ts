@@ -114,81 +114,61 @@ export async function sendProjectCompletionEmail({
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <title>${escapeHtml(subject)}</title>
         </head>
-        <body style="margin: 0; padding: 0; background-color: #fafafa; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
-          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 30px auto; background-color: #ffffff; border: 1px solid #e5e5e7; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);">
+        <body style="margin: 0; padding: 0; background-color: #fafafa; font-family: Arial, sans-serif;">
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
             
-            <!-- Header Banner (High Fashion aesthetic) -->
-            <div style="background-color: #000000; padding: 32px 24px; text-align: center;">
-              <img src="${siteUrl.replace(/\/$/, '')}/images/access-logo_light.svg" alt="IZ ACCESS" style="height: 22px; display: block; margin: 0 auto; border: 0; outline: none; text-decoration: none;" />
-              <p style="color: #a1a1a6; margin: 12px 0 0 0; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; font-weight: 500;">
-                Selección Finalizada
-              </p>
-            </div>
+            <h1 style="color: #333; border-bottom: 2px solid #000; padding-bottom: 10px;">
+              Selección Finalizada
+            </h1>
 
-            <!-- Main Content Area -->
-            <div style="padding: 32px 24px;">
-              
-              <!-- Welcome message -->
-              <p style="margin-top: 0; font-size: 15px; line-height: 1.6; color: #1d1d1f;">
-                Hola scouting,
-              </p>
-              <p style="font-size: 15px; line-height: 1.6; color: #515154;">
-                El cliente ha finalizado la sesión de selección de talentos para su proyecto. A continuación encuentras la lista de modelos confirmados:
-              </p>
+            <p style="font-size: 15px; line-height: 1.6; color: #333;">
+              Hola scouting,
+            </p>
+            <p style="font-size: 15px; line-height: 1.6; color: #555;">
+              El cliente ha finalizado la sesión de selección de talentos para su proyecto. A continuación encuentras la lista de modelos confirmados:
+            </p>
 
-              <!-- Project Details Summary Box -->
-              <div style="background-color: #f5f5f7; border-radius: 8px; padding: 20px; margin: 24px 0;">
-                <h2 style="margin-top: 0; font-size: 15px; font-weight: 600; color: #1d1d1f; border-bottom: 1px solid #d2d2d7; padding-bottom: 8px; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">
-                  Detalle del Proyecto
-                </h2>
-                <table style="width: 100%; border-collapse: collapse; font-size: 14px; color: #515154;">
-                  <tr>
-                    <td style="padding: 6px 0; font-weight: bold; width: 35%; color: #1d1d1f;">Proyecto:</td>
-                    <td style="padding: 6px 0; color: #1d1d1f; font-weight: 500;">${escapeHtml(projectName)}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 6px 0; font-weight: bold; color: #1d1d1f;">Cliente:</td>
-                    <td style="padding: 6px 0; color: #1d1d1f; font-weight: 500;">${escapeHtml(clientName || '—')}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 6px 0; font-weight: bold; color: #1d1d1f;">Fecha:</td>
-                    <td style="padding: 6px 0; color: #1d1d1f;">${formattedDate}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 6px 0; font-weight: bold; color: #1d1d1f;">Hora:</td>
-                    <td style="padding: 6px 0; color: #1d1d1f;">${formattedTime}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 8px 0 0 0; font-weight: bold; color: #1d1d1f; border-top: 1px solid #e5e5e7; margin-top: 8px;">Aprobados:</td>
-                    <td style="padding: 8px 0 0 0; font-weight: bold; color: #000000; font-size: 16px; border-top: 1px solid #e5e5e7; margin-top: 8px;">
-                      ${totalApproved}
-                    </td>
-                  </tr>
-                </table>
-              </div>
+            <!-- Project Details -->
+            <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+              <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold; width: 40%;">Proyecto</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">${escapeHtml(projectName)}</td>
+              </tr>
+              <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold;">Cliente</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">${escapeHtml(clientName || '—')}</td>
+              </tr>
+              <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold;">Fecha</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">${formattedDate}</td>
+              </tr>
+              <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold;">Hora</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">${formattedTime}</td>
+              </tr>
+              <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold;">Total Aprobados</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold; font-size: 16px;">${totalApproved}</td>
+              </tr>
+            </table>
 
-              <!-- Model lists -->
-              ${renderModelTable('Hombres', men, '#1d1d1f')}
-              ${renderModelTable('Mujeres', women, '#1d1d1f')}
-              ${renderModelTable('Otros', other, '#1d1d1f')}
+            <!-- Model lists -->
+            ${renderModelTable('Hombres', men, '#333')}
+            ${renderModelTable('Mujeres', women, '#333')}
+            ${renderModelTable('Otros', other, '#333')}
 
-              <!-- Call to Action Link -->
-              <div style="text-align: center; margin: 36px 0 12px 0;">
-                <a href="${approvedPageUrl}" 
-                   style="display: inline-block; background-color: #000000; color: #ffffff; padding: 14px 32px; text-decoration: none; font-size: 14px; font-weight: 600; border-radius: 6px; letter-spacing: 1px; text-transform: uppercase; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-                  VER DETALLE COMPLETO (FOTOS) →
-                </a>
-              </div>
-              
-            </div>
-
-            <!-- Footer Message -->
-            <div style="background-color: #f5f5f7; border-top: 1px solid #e5e5e7; padding: 20px; text-align: center;">
-              <p style="color: #86868b; font-size: 11px; margin: 0; line-height: 1.4;">
-                Este correo fue enviado automáticamente al finalizar la selección de cliente en IZ ACCESS.
-              </p>
+            <!-- Call to Action Link -->
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${approvedPageUrl}" 
+                 style="display: inline-block; background-color: #000; color: #fff; padding: 15px 40px; text-decoration: none; font-weight: bold; border-radius: 4px;">
+                VER DETALLE COMPLETO (FOTOS) →
+              </a>
             </div>
             
+            <p style="color: #666; font-size: 12px; text-align: center; margin-top: 30px;">
+              Este correo fue enviado automáticamente al finalizar la selección de cliente.
+            </p>
+
           </div>
         </body>
       </html>

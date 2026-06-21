@@ -1,34 +1,38 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { loginModel, checkModelEmail, registerModelPassword } from '@/lib/actions/models_portal';
+import { loginModelByPhone, checkModelPhone, registerModelPasswordByPhone } from '@/lib/actions/models_portal';
 
 export function useLoginForm(redirectTo?: string) {
-  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [step, setStep] = useState<'email' | 'password' | 'register'>('email');
+  const [step, setStep] = useState<'phone' | 'password' | 'register'>('phone');
   const [error, setError] = useState('');
   const [isPending, setIsPending] = useState(false);
   const router = useRouter();
 
-  const handleEmailSubmit = async (e: React.FormEvent) => {
+  const handlePhoneSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) return;
+    if (!phone) return;
     setError('');
     setIsPending(true);
 
     try {
-      const result = await checkModelEmail(email);
+      const result = await checkModelPhone(phone);
       if (result.success) {
+        // Almacenar el teléfono normalizado retornado por el servidor
+        if (result.phone) {
+          setPhone(result.phone);
+        }
         if (result.hasPassword) {
           setStep('password');
         } else {
           setStep('register');
         }
       } else {
-        setError(result.error || 'el correo no está registrado.');
+        setError(result.error || 'el teléfono no está registrado.');
       }
     } catch (err) {
       setError('error de conexión. inténtalo de nuevo.');
@@ -43,7 +47,7 @@ export function useLoginForm(redirectTo?: string) {
     setIsPending(true);
 
     try {
-      const result = await loginModel(email, password);
+      const result = await loginModelByPhone(phone, password);
       if (result.success) {
         router.push(redirectTo || '/model/profile');
         router.refresh();
@@ -74,7 +78,7 @@ export function useLoginForm(redirectTo?: string) {
     setIsPending(true);
 
     try {
-      const result = await registerModelPassword(email, password);
+      const result = await registerModelPasswordByPhone(phone, password);
       if (result.success) {
         router.push(redirectTo || '/model/profile');
         router.refresh();
@@ -89,15 +93,15 @@ export function useLoginForm(redirectTo?: string) {
   };
 
   const resetStep = () => {
-    setStep('email');
+    setStep('phone');
     setPassword('');
     setConfirmPassword('');
     setError('');
   };
 
   return {
-    email,
-    setEmail,
+    phone,
+    setPhone,
     password,
     setPassword,
     confirmPassword,
@@ -109,7 +113,7 @@ export function useLoginForm(redirectTo?: string) {
     step,
     error,
     isPending,
-    handleEmailSubmit,
+    handlePhoneSubmit,
     handleLogin,
     handleRegister,
     resetStep,

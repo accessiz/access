@@ -2,28 +2,36 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { updateModelSocials } from '@/lib/actions/models_portal';
+import { updateModelProfile } from '@/lib/actions/models_portal';
 import { toast } from 'sonner';
 
-export function useProfileDetails(modelId: string, initialInstagram?: string | null, initialTiktok?: string | null) {
+export function useProfileDetails(
+  modelId: string,
+  initialEmail?: string | null,
+  initialPhone?: string | null,
+  initialInstagram?: string | null,
+  initialTiktok?: string | null
+) {
   const [isEditing, setIsEditing] = useState(false);
+  const [email, setEmail] = useState(initialEmail || '');
+  const [phone, setPhone] = useState(initialPhone || '');
   const [instagram, setInstagram] = useState(initialInstagram || '');
   const [tiktok, setTiktok] = useState(initialTiktok || '');
   const [isPending, setIsPending] = useState(false);
   const router = useRouter();
 
-  const handleUpdateSocials = async (e: React.FormEvent) => {
+  const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsPending(true);
 
     try {
-      const result = await updateModelSocials(modelId, instagram, tiktok);
+      const result = await updateModelProfile(modelId, email, phone, instagram, tiktok);
       if (result.success) {
-        toast.success('redes sociales actualizadas con éxito.');
+        toast.success('perfil actualizado con éxito.');
         setIsEditing(false);
         router.refresh();
       } else {
-        toast.error(result.error || 'error al actualizar redes sociales.');
+        toast.error(result.error || 'error al actualizar el perfil.');
       }
     } catch (err) {
       toast.error('error de conexión al actualizar.');
@@ -33,6 +41,8 @@ export function useProfileDetails(modelId: string, initialInstagram?: string | n
   };
 
   const handleCancel = () => {
+    setEmail(initialEmail || '');
+    setPhone(initialPhone || '');
     setInstagram(initialInstagram || '');
     setTiktok(initialTiktok || '');
     setIsEditing(false);
@@ -41,12 +51,16 @@ export function useProfileDetails(modelId: string, initialInstagram?: string | n
   return {
     isEditing,
     setIsEditing,
+    email,
+    setEmail,
+    phone,
+    setPhone,
     instagram,
     setInstagram,
     tiktok,
     setTiktok,
     isPending,
-    handleUpdateSocials,
+    handleUpdateProfile,
     handleCancel,
   };
 }

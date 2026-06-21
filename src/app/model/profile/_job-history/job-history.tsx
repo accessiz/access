@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 import { Calendar, MapPin, DollarSign, X, Check } from 'lucide-react';
 import { useJobHistory } from './job-history.logic';
 import { JobHistoryProps } from './job-history.types';
@@ -72,7 +73,6 @@ export function JobHistory({ projects, className }: JobHistoryProps) {
               <SelectItem value="all">Todas las Postulaciones</SelectItem>
               <SelectItem value="pending">Esperando Selección</SelectItem>
               <SelectItem value="approved">Aprobado en Proyecto</SelectItem>
-              <SelectItem value="rejected">No Seleccionado</SelectItem>
             </SelectContent>
           </Select>
 
@@ -329,11 +329,13 @@ export function JobHistory({ projects, className }: JobHistoryProps) {
 
 
       {/* Detail Modal */}
-      {selectedProject && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={() => setSelectedProject(null)}>
-          <div className="w-full max-w-xl bg-card border border-border rounded-2xl shadow-2xl p-6 md:p-8 space-y-6 animate-in fade-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
-            <div className="flex justify-between items-start gap-4 border-b border-border/40 pb-4">
-              <div className="space-y-1 text-left">
+      {selectedProject && (() => {
+        const isExpired = selectedProject.apply_end_at ? new Date() > new Date(selectedProject.apply_end_at) : false;
+        return (
+          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={() => setSelectedProject(null)}>
+            <div className="w-full max-w-xl bg-card border border-border rounded-2xl shadow-2xl p-6 md:p-8 space-y-6 animate-in fade-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
+              <div className="flex justify-between items-start gap-4 border-b border-border/40 pb-4">
+                <div className="space-y-1 text-left">
                 <h3 className="text-title font-bold text-foreground">{selectedProject.project_name}</h3>
               </div>
               <button
@@ -467,10 +469,22 @@ export function JobHistory({ projects, className }: JobHistoryProps) {
                   </div>
                 </div>
               )}
+
+              {!isExpired && selectedProject.public_id && (
+                <div className="pt-4 border-t border-border/40">
+                  <Link
+                    href={`/m/${selectedProject.public_id}`}
+                    className="bg-purple hover:bg-purple/90 text-white w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 cursor-pointer shadow-sm text-xs transition-all text-center block"
+                  >
+                    Modificar disponibilidad / Cambiar opinión
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
         </div>
-      )}
+      );
+    })()}
     </div>
   );
 }

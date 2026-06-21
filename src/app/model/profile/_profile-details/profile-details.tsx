@@ -1,12 +1,10 @@
 'use client';
 
 import * as React from 'react';
-import { Instagram, Edit2, Check, X, Loader2 } from 'lucide-react';
+import { Instagram, Edit2, Check, X, Loader2, Mail, Phone, MapPin } from 'lucide-react';
 import { useProfileDetails } from './profile-details.logic';
 import { ProfileDetailsProps } from './profile-details.types';
 import { toPublicUrl, toTitleCase } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import './profile-details.styles.css';
@@ -30,14 +28,18 @@ export function ProfileDetails({ model, className }: ProfileDetailsProps) {
   const {
     isEditing,
     setIsEditing,
+    email,
+    setEmail,
+    phone,
+    setPhone,
     instagram,
     setInstagram,
     tiktok,
     setTiktok,
     isPending,
-    handleUpdateSocials,
+    handleUpdateProfile,
     handleCancel,
-  } = useProfileDetails(model.id, model.instagram, model.tiktok);
+  } = useProfileDetails(model.id, model.email, model.phone_e164, model.instagram, model.tiktok);
 
   const coverUrl = React.useMemo(() => {
     return toPublicUrl(model.cover_path);
@@ -73,14 +75,28 @@ export function ProfileDetails({ model, className }: ProfileDetailsProps) {
 
         {/* Datos detallados al estilo Mockup */}
         <div className="space-y-2.5 text-left">
-          <div className="p-3 bg-background rounded-xl border border-border/40">
-            <span className="block text-[8px] uppercase tracking-widest text-muted-foreground font-bold">Correo Electrónico</span>
-            <span className="text-xs font-semibold text-foreground mt-0.5 block truncate select-all">{model.email}</span>
+          <div className="p-3 bg-background rounded-xl border border-border/40 flex items-start gap-3">
+            <Mail className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+            <div className="min-w-0 flex-1">
+              <span className="block text-[8px] uppercase tracking-widest text-muted-foreground font-bold">Correo Electrónico</span>
+              <span className="text-xs font-semibold text-foreground mt-0.5 block truncate select-all">{model.email || 'No especificado'}</span>
+            </div>
           </div>
 
-          <div className="p-3 bg-background rounded-xl border border-border/40">
-            <span className="block text-[8px] uppercase tracking-widest text-muted-foreground font-bold">Ubicación</span>
-            <span className="text-xs font-semibold text-foreground mt-0.5 block">{toTitleCase(model.country || 'Guatemala')}</span>
+          <div className="p-3 bg-background rounded-xl border border-border/40 flex items-start gap-3">
+            <Phone className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+            <div className="min-w-0 flex-1">
+              <span className="block text-[8px] uppercase tracking-widest text-muted-foreground font-bold">Teléfono de Acceso</span>
+              <span className="text-xs font-semibold text-foreground mt-0.5 block truncate select-all">{model.phone_e164 || 'No especificado'}</span>
+            </div>
+          </div>
+
+          <div className="p-3 bg-background rounded-xl border border-border/40 flex items-start gap-3">
+            <MapPin className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+            <div className="min-w-0 flex-1">
+              <span className="block text-[8px] uppercase tracking-widest text-muted-foreground font-bold">Ubicación</span>
+              <span className="text-xs font-semibold text-foreground mt-0.5 block">{toTitleCase(model.country || 'Guatemala')}</span>
+            </div>
           </div>
         </div>
 
@@ -134,16 +150,56 @@ export function ProfileDetails({ model, className }: ProfileDetailsProps) {
               onClick={() => setIsEditing(true)}
               className="w-full mt-2 py-2.5 bg-[#f4f4f6] text-[#18181b] hover:bg-purple hover:text-white rounded-full text-xs font-bold transition-all border-0 cursor-pointer shadow-sm"
             >
-              Editar Redes
+              Editar Datos
             </button>
           </div>
         ) : (
           <div className="edit-form-container mt-3 pt-4 border-t border-border/40 text-left">
             <h3 className="text-label font-extrabold uppercase tracking-widest mb-4 text-foreground">
-              Editar Enlaces de Redes
+              Editar Datos de Contacto
             </h3>
-            <form onSubmit={handleUpdateSocials} className="space-y-4">
+            <form onSubmit={handleUpdateProfile} className="space-y-4">
               <div className="grid gap-4">
+                
+                {/* Email Input */}
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-email" className="text-[9px] font-extrabold text-muted-foreground uppercase tracking-widest">
+                    Correo Electrónico
+                  </Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
+                    <input
+                      id="edit-email"
+                      type="email"
+                      placeholder="usuario@dominio.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      disabled={isPending}
+                      className="w-full bg-background border border-border focus:ring-2 focus:ring-purple/20 rounded-xl py-3 pl-10 pr-4 text-foreground text-xs font-semibold outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Phone Input */}
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-phone" className="text-[9px] font-extrabold text-muted-foreground uppercase tracking-widest">
+                    Teléfono (incluir +502, +52, etc.)
+                  </Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
+                    <input
+                      id="edit-phone"
+                      type="tel"
+                      placeholder="Ej: +502 5544 3322"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      disabled={isPending}
+                      className="w-full bg-background border border-border focus:ring-2 focus:ring-purple/20 rounded-xl py-3 pl-10 pr-4 text-foreground text-xs font-semibold outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Instagram Input */}
                 <div className="grid gap-2">
                   <Label htmlFor="edit-instagram" className="text-[9px] font-extrabold text-muted-foreground uppercase tracking-widest">
                     Usuario de Instagram
@@ -162,6 +218,7 @@ export function ProfileDetails({ model, className }: ProfileDetailsProps) {
                   </div>
                 </div>
 
+                {/* TikTok Input */}
                 <div className="grid gap-2">
                   <Label htmlFor="edit-tiktok" className="text-[9px] font-extrabold text-muted-foreground uppercase tracking-widest">
                     Usuario de TikTok

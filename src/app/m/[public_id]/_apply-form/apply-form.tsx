@@ -179,10 +179,10 @@ export function ApplyForm({ project, model }: ApplyFormProps) {
         )}
 
         {/* Selector de Días */}
-        {!isExpired && sortedSchedule.length > 0 && (
+        {sortedSchedule.length > 0 && (
           <div className="space-y-2 text-left">
             <span className="block text-[9px] font-extrabold text-muted-foreground uppercase tracking-widest">
-              Selecciona los días que tienes disponibles
+              {isExpired ? 'Días seleccionados para asistir' : 'Selecciona los días que tienes disponibles'}
             </span>
             
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -190,7 +190,7 @@ export function ApplyForm({ project, model }: ApplyFormProps) {
                 const isChecked = selectedSchedules.includes(scheduleItem.id!);
                 const { dayName, dayNumber, month } = formatScheduleDate(scheduleItem.date);
                 const dayNameShort = dayName.substring(0, 3).toUpperCase();
-                const isDisabled = isPending || !!localStatus;
+                const isDisabled = isPending || (isExpired && !!localStatus);
                 
                 return (
                   <button
@@ -221,89 +221,126 @@ export function ApplyForm({ project, model }: ApplyFormProps) {
         )}
 
         {/* Panel de Confirmación o Mensaje de Decisión */}
-        {!isExpired && (
-          <div className="space-y-4 pt-4 border-t border-border/40">
-            {localStatus ? (
-              <div className="space-y-3">
-                {localStatus === 'applied' ? (
-                  <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 p-4 rounded-xl flex items-center gap-3 text-left">
-                    <div className="h-8 w-8 rounded-full bg-emerald-500 flex items-center justify-center text-white shrink-0">
+        <div className="space-y-4 pt-4 border-t border-border/40">
+          {isExpired ? (
+            <div className="space-y-3">
+              {localStatus === 'applied' ? (
+                <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 p-4 rounded-xl flex items-center gap-3 text-left">
+                  <div className="h-8 w-8 rounded-full bg-emerald-500 flex items-center justify-center text-white shrink-0">
+                    <Check className="h-4 w-4 stroke-[3]" />
+                  </div>
+                  <div>
+                    <span className="block text-xs font-extrabold tracking-wider uppercase">Propuesta Aceptada</span>
+                    <span className="block text-[10px] text-emerald-600/80 dark:text-emerald-400/80 font-medium">
+                      Confirmaste tu disponibilidad para este trabajo antes del cierre.
+                    </span>
+                  </div>
+                </div>
+              ) : localStatus === 'rejected' ? (
+                <div className="bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 p-4 rounded-xl flex items-center gap-3 text-left">
+                  <div className="h-8 w-8 rounded-full bg-rose-500 flex items-center justify-center text-white shrink-0">
+                    <X className="h-4 w-4 stroke-[3]" />
+                  </div>
+                  <div>
+                    <span className="block text-xs font-extrabold tracking-wider uppercase">Propuesta Declinada</span>
+                    <span className="block text-[10px] text-rose-600/80 dark:text-rose-400/80 font-medium">
+                      Marcaste que no podías participar en este trabajo.
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-tertiary/60 border border-border/40 text-muted-foreground p-4 rounded-xl flex items-center gap-3 text-left">
+                  <div className="h-8 w-8 rounded-full bg-tertiary flex items-center justify-center text-muted-foreground shrink-0">
+                    <X className="h-4 w-4 stroke-[3]" />
+                  </div>
+                  <div>
+                    <span className="block text-xs font-extrabold tracking-wider uppercase">Plazo Expirado</span>
+                    <span className="block text-[10px] text-muted-foreground/80 font-medium">
+                      El plazo para responder a esta propuesta ya finalizó.
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <>
+              {/* Banners Informativos de Estado Actual (Plazo Abierto) */}
+              {localStatus && (
+                <div className="space-y-3 mb-2">
+                  {localStatus === 'applied' ? (
+                    <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 p-4 rounded-xl flex items-center gap-3 text-left shadow-sm">
+                      <Check className="h-4.5 w-4.5 text-emerald-500 shrink-0" />
+                      <div>
+                        <span className="block text-xs font-extrabold tracking-wider uppercase">¡Decisión Enviada!</span>
+                        <span className="block text-[10px] opacity-90 font-medium">
+                          Confirmaste tu asistencia. Puedes cambiar de opinión o disponibilidad y guardar una nueva respuesta mientras la propuesta siga abierta.
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 p-4 rounded-xl flex items-center gap-3 text-left shadow-sm">
+                      <X className="h-4.5 w-4.5 text-rose-500 shrink-0" />
+                      <div>
+                        <span className="block text-xs font-extrabold tracking-wider uppercase">¡Propuesta Declinada!</span>
+                        <span className="block text-[10px] opacity-90 font-medium">
+                          Marcaste que no puedes participar. Puedes cambiar de opinión, seleccionar tus días y volver a Aceptar mientras la propuesta siga abierta.
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <span className="block text-[9px] font-extrabold text-muted-foreground uppercase tracking-widest text-center">
+                ¿Confirmas tu disponibilidad para este trabajo?
+              </span>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <button
+                  type="button"
+                  disabled={isPending}
+                  onClick={async () => {
+                    const success = await submitResponse(true);
+                    if (success) setLocalStatus('applied');
+                  }}
+                  className="w-full bg-emerald-500/10 border border-emerald-500/25 hover:border-emerald-500/50 hover:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 p-4 rounded-xl flex items-center justify-between transition-all duration-200 cursor-pointer text-left active:scale-[0.99]"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-full bg-emerald-500 flex items-center justify-center text-white">
                       <Check className="h-4 w-4 stroke-[3]" />
                     </div>
                     <div>
-                      <span className="block text-xs font-extrabold tracking-wider uppercase">Propuesta Aceptada</span>
-                      <span className="block text-[10px] text-emerald-600/80 dark:text-emerald-400/80 font-medium">
-                        Has confirmado tu disponibilidad para este trabajo.
-                      </span>
+                      <span className="block text-xs font-extrabold tracking-wider uppercase">ACEPTAR</span>
+                      <span className="block text-[10px] text-emerald-600/80 dark:text-emerald-400/80 font-medium">Confirmar asistencia</span>
                     </div>
                   </div>
-                ) : (
-                  <div className="bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 p-4 rounded-xl flex items-center gap-3 text-left">
-                    <div className="h-8 w-8 rounded-full bg-rose-500 flex items-center justify-center text-white shrink-0">
+                  <span className="text-emerald-600/60 dark:text-emerald-400/60 font-bold">→</span>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={isPending}
+                  onClick={async () => {
+                    const success = await submitResponse(false);
+                    if (success) setLocalStatus('rejected');
+                  }}
+                  className="w-full bg-rose-500/10 border border-rose-500/25 hover:border-rose-500/50 hover:bg-rose-500/15 text-rose-600 dark:text-rose-400 p-4 rounded-xl flex items-center justify-between transition-all duration-200 cursor-pointer text-left active:scale-[0.99]"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-full bg-rose-500 flex items-center justify-center text-white">
                       <X className="h-4 w-4 stroke-[3]" />
                     </div>
                     <div>
-                      <span className="block text-xs font-extrabold tracking-wider uppercase">Propuesta Declinada</span>
-                      <span className="block text-[10px] text-rose-600/80 dark:text-rose-400/80 font-medium">
-                        Has marcado que no puedes participar en este trabajo.
-                      </span>
+                      <span className="block text-xs font-extrabold tracking-wider uppercase">DECLINAR</span>
+                      <span className="block text-[10px] text-rose-600/80 dark:text-rose-400/80 font-medium">Rechazar propuesta</span>
                     </div>
                   </div>
-                )}
+                  <span className="text-rose-600/60 dark:text-rose-400/60 font-bold">→</span>
+                </button>
               </div>
-            ) : (
-              <>
-                <span className="block text-[9px] font-extrabold text-muted-foreground uppercase tracking-widest text-center">
-                  ¿Confirmas tu disponibilidad para este trabajo?
-                </span>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <button
-                    type="button"
-                    disabled={isPending}
-                    onClick={async () => {
-                      const success = await submitResponse(true);
-                      if (success) setLocalStatus('applied');
-                    }}
-                    className="w-full bg-emerald-500/10 border border-emerald-500/25 hover:border-emerald-500/50 hover:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 p-4 rounded-xl flex items-center justify-between transition-all duration-200 cursor-pointer text-left active:scale-[0.99]"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 rounded-full bg-emerald-500 flex items-center justify-center text-white">
-                        <Check className="h-4 w-4 stroke-[3]" />
-                      </div>
-                      <div>
-                        <span className="block text-xs font-extrabold tracking-wider uppercase">ACEPTAR</span>
-                        <span className="block text-[10px] text-emerald-600/80 dark:text-emerald-400/80 font-medium">Confirmar asistencia</span>
-                      </div>
-                    </div>
-                    <span className="text-emerald-600/60 dark:text-emerald-400/60 font-bold">→</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    disabled={isPending}
-                    onClick={async () => {
-                      const success = await submitResponse(false);
-                      if (success) setLocalStatus('rejected');
-                    }}
-                    className="w-full bg-rose-500/10 border border-rose-500/25 hover:border-rose-500/50 hover:bg-rose-500/15 text-rose-600 dark:text-rose-400 p-4 rounded-xl flex items-center justify-between transition-all duration-200 cursor-pointer text-left active:scale-[0.99]"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 rounded-full bg-rose-500 flex items-center justify-center text-white">
-                        <X className="h-4 w-4 stroke-[3]" />
-                      </div>
-                      <div>
-                        <span className="block text-xs font-extrabold tracking-wider uppercase">DECLINAR</span>
-                        <span className="block text-[10px] text-rose-600/80 dark:text-rose-400/80 font-medium">Rechazar propuesta</span>
-                      </div>
-                    </div>
-                    <span className="text-rose-600/60 dark:text-rose-400/60 font-bold">→</span>
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        )}
+            </>
+          )}
+        </div>
       </CardContent>
     </Card>
   );

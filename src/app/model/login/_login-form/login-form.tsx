@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Mail, Lock, Eye, EyeOff, Loader2, ArrowLeft, ArrowUpRight, Check, ShieldAlert } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, Loader2, ArrowLeft, ArrowUpRight, Check, ShieldAlert, Phone } from 'lucide-react';
 import { useLoginForm } from './login-form.logic';
 import { LoginFormProps } from './login-form.types';
 import { Card, CardContent } from '@/components/ui/card';
@@ -11,8 +11,8 @@ import { Button } from '@/components/ui/button';
 
 export function LoginForm({ redirectTo }: LoginFormProps) {
   const {
-    email,
-    setEmail,
+    phone,
+    setPhone,
     password,
     setPassword,
     confirmPassword,
@@ -24,13 +24,27 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
     step,
     error,
     isPending,
-    handleEmailSubmit,
+    handlePhoneSubmit,
     handleLogin,
     handleRegister,
     resetStep,
   } = useLoginForm(redirectTo);
 
-  if (step === 'email') {
+  // Estados locales para unir el código de país y el número telefónico
+  const [countryCode, setCountryCode] = React.useState('+502');
+  const [localNumber, setLocalNumber] = React.useState('');
+
+  // Sincronizar estados locales con el estado 'phone' de la lógica
+  React.useEffect(() => {
+    const cleanedLocal = localNumber.replace(/[\s\-\(\)\.]/g, '');
+    if (cleanedLocal) {
+      setPhone(countryCode + cleanedLocal);
+    } else {
+      setPhone('');
+    }
+  }, [countryCode, localNumber, setPhone]);
+
+  if (step === 'phone') {
     return (
       <Card className="w-full max-w-md mx-auto bg-card border border-border rounded-[24px] p-6 md:p-10 shadow-2xl relative overflow-hidden">
         <CardContent className="p-0">
@@ -40,26 +54,43 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
             <h2 suppressHydrationWarning className="text-xl md:text-display font-extrabold text-foreground tracking-tight">Bienvenido</h2>
           </div>
 
-          <form onSubmit={handleEmailSubmit} className="space-y-5">
+          <form onSubmit={handlePhoneSubmit} className="space-y-5">
             <div>
-              <label className="block text-[9px] font-extrabold text-muted-foreground uppercase tracking-widest mb-2" htmlFor="model-email">
-                Correo Electrónico
+              <label className="block text-[9px] font-extrabold text-muted-foreground uppercase tracking-widest mb-2" htmlFor="model-phone">
+                Número de Teléfono
               </label>
-              <div className="relative">
-                <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-muted-foreground">
-                  <Mail className="h-4 w-4" />
-                </span>
-                <input
-                  id="model-email"
-                  type="email"
-                  placeholder="tuemail@ejemplo.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
+              <div className="flex gap-2">
+                <select
+                  value={countryCode}
+                  onChange={(e) => setCountryCode(e.target.value)}
                   disabled={isPending}
-                  className="w-full bg-background border border-border focus:ring-2 focus:ring-purple/20 rounded-xl py-3.5 pl-11 pr-4 text-foreground text-xs font-semibold outline-none transition-all duration-200"
-                  autoComplete="email"
-                />
+                  className="bg-background border border-border rounded-xl py-3.5 px-3 text-foreground text-xs font-semibold outline-none focus:ring-2 focus:ring-purple/20 transition-all shrink-0"
+                >
+                  <option value="+502">+502 (GT)</option>
+                  <option value="+52">+52 (MX)</option>
+                  <option value="+503">+503 (SV)</option>
+                  <option value="+504">+504 (HN)</option>
+                  <option value="+506">+506 (CR)</option>
+                  <option value="+507">+507 (PA)</option>
+                  <option value="+57">+57 (CO)</option>
+                  <option value="+1">+1 (US)</option>
+                </select>
+                <div className="relative flex-1">
+                  <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-muted-foreground">
+                    <Phone className="h-4 w-4" />
+                  </span>
+                  <input
+                    id="model-phone"
+                    type="tel"
+                    placeholder="Escribe tu número"
+                    value={localNumber}
+                    onChange={(e) => setLocalNumber(e.target.value)}
+                    required
+                    disabled={isPending}
+                    className="w-full bg-background border border-border focus:ring-2 focus:ring-purple/20 rounded-xl py-3.5 pl-11 pr-4 text-foreground text-xs font-semibold outline-none transition-all duration-200"
+                    autoComplete="tel"
+                  />
+                </div>
               </div>
             </div>
 
@@ -121,10 +152,10 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
           <form onSubmit={handleRegister} className="space-y-5">
             <div className="text-left space-y-2">
               <div className="flex items-center justify-between">
-                <Label className="text-[9px] font-extrabold text-muted-foreground uppercase tracking-widest">Correo Electrónico</Label>
+                <Label className="text-[9px] font-extrabold text-muted-foreground uppercase tracking-widest">Número de Teléfono</Label>
               </div>
               <div className="p-3.5 rounded-xl bg-background border border-border font-semibold text-body select-all truncate">
-                {email}
+                {phone}
               </div>
             </div>
 
@@ -238,10 +269,10 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
         <form onSubmit={handleLogin} className="space-y-5">
           <div className="text-left space-y-2">
             <div className="flex items-center justify-between">
-              <Label className="text-[9px] font-extrabold text-muted-foreground uppercase tracking-widest">Correo Electrónico</Label>
+              <Label className="text-[9px] font-extrabold text-muted-foreground uppercase tracking-widest">Número de Teléfono</Label>
             </div>
             <div className="p-3.5 rounded-xl bg-background border border-border font-semibold text-body select-all truncate">
-              {email}
+              {phone}
             </div>
           </div>
 
