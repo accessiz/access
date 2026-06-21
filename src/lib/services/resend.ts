@@ -71,15 +71,6 @@ export async function sendProjectCompletionEmail({
       m => m.gender?.toLowerCase() !== 'male' && m.gender?.toLowerCase() !== 'female'
     );
 
-    const siteUrl = env.NEXT_PUBLIC_APP_URL && env.NEXT_PUBLIC_APP_URL !== 'http://localhost:3000'
-      ? env.NEXT_PUBLIC_APP_URL
-      : (process.env.NODE_ENV === 'production' ? 'https://access.izmgmt.com' : 'http://localhost:3000');
-
-    // For 0 approved models, we link to the main project page rather than the approved page since the approved page is empty
-    const approvedPageUrl = totalApproved > 0 
-      ? `${siteUrl.replace(/\/$/, '')}/c/${publicId}/approved`
-      : `${siteUrl.replace(/\/$/, '')}/c/${publicId}`;
-
     const subject = totalApproved > 0
       ? `✅ ${totalApproved} Modelos Aprobados — ${projectName} (${clientName || 'Cliente'})`
       : `⚠️ Selección Finalizada (0 Aprobados) — ${projectName} (${clientName || 'Cliente'})`;
@@ -174,14 +165,6 @@ export async function sendProjectCompletionEmail({
               ${renderModelTable('Mujeres', women, '#333')}
               ${renderModelTable('Otros', other, '#333')}
             ` : ''}
-
-            <!-- Call to Action Link -->
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="${approvedPageUrl}" 
-                 style="display: inline-block; background-color: #000; color: #fff; padding: 15px 40px; text-decoration: none; font-weight: bold; border-radius: 4px;">
-                ${totalApproved > 0 ? 'VER DETALLE COMPLETO (FOTOS) →' : 'VER SELECCIÓN COMPLETA →'}
-              </a>
-            </div>
             
             <p style="color: #666; font-size: 12px; text-align: center; margin-top: 30px;">
               Este correo fue enviado automáticamente al finalizar la selección de cliente.

@@ -19,7 +19,7 @@ export default async function ModelsAccessPage() {
   // 2. Cargar modelos alfabéticamente (vista rápida sin fotos)
   const { data: models } = await supabase
     .from('models')
-    .select('id, full_name, alias, email, login_password, country, gender')
+    .select('id, full_name, alias, email, phone_e164, login_password, country, gender')
     .order('full_name', { ascending: true });
 
   const modelsList = models || [];

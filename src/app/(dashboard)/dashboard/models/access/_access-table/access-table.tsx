@@ -48,6 +48,10 @@ export function AccessTable({ initialModels }: AccessTableProps) {
     handleGenderFilterChange,
     countryFilter,
     handleCountryFilterChange,
+    passwordFilter,
+    handlePasswordFilterChange,
+    phonePrefixFilter,
+    handlePhonePrefixFilterChange,
     visiblePasswords,
     togglePasswordVisibility,
     editingModel,
@@ -61,6 +65,7 @@ export function AccessTable({ initialModels }: AccessTableProps) {
     handleSubmitEdit,
     handleClearPassword,
     countryOptions,
+    phonePrefixOptions,
     paginatedModels,
     currentPage,
     setCurrentPage,
@@ -111,33 +116,67 @@ export function AccessTable({ initialModels }: AccessTableProps) {
           <div className="flex flex-col sm:flex-row w-full sm:w-auto items-stretch sm:items-center gap-2">
             <SearchBar
               className="w-full sm:w-72"
-              placeholder="buscar por nombre o correo..."
+              placeholder="buscar por alias, correo o teléfono..."
               value={searchQuery}
               onValueChange={handleSearchChange}
               onClear={() => handleSearchChange('')}
             />
 
-            <div className="flex items-center gap-2 self-start sm:self-auto">
-              {/* Gender Filter */}
-              <SegmentedControl
-                ariaLabel="filtrar por género"
+            <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+              {/* Gender Filter Dropdown */}
+              <Select
                 value={genderFilter}
                 onValueChange={handleGenderFilterChange}
-                mobileColumns={3}
-                options={[
-                  { value: 'all', label: 'Todos' },
-                  { value: 'male', label: 'Hombres' },
-                  { value: 'female', label: 'Mujeres' },
-                ]}
-                className="w-full sm:w-auto"
-              />
+              >
+                <SelectTrigger className="w-36">
+                  <SelectValue placeholder="Género" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los Géneros</SelectItem>
+                  <SelectItem value="male">Hombres</SelectItem>
+                  <SelectItem value="female">Mujeres</SelectItem>
+                </SelectContent>
+              </Select>
 
-              {/* Country Filter */}
+              {/* Password Filter Dropdown */}
+              <Select
+                value={passwordFilter}
+                onValueChange={handlePasswordFilterChange}
+              >
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Contraseña" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas las Contraseñas</SelectItem>
+                  <SelectItem value="has_password">Con Contraseña</SelectItem>
+                  <SelectItem value="no_password">Sin Contraseña</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Phone Prefix Filter Dropdown */}
+              <Select
+                value={phonePrefixFilter}
+                onValueChange={handlePhonePrefixFilterChange}
+              >
+                <SelectTrigger className="w-36">
+                  <SelectValue placeholder="Prefijo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los Prefijos</SelectItem>
+                  {phonePrefixOptions.map((prefix) => (
+                    <SelectItem key={prefix} value={prefix}>
+                      {prefix}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Country Filter Dropdown */}
               <Select
                 value={countryFilter}
                 onValueChange={handleCountryFilterChange}
               >
-                <SelectTrigger>
+                <SelectTrigger className="w-40">
                   <SelectValue placeholder="País" />
                 </SelectTrigger>
                 <SelectContent>
@@ -180,20 +219,19 @@ export function AccessTable({ initialModels }: AccessTableProps) {
                           {rowNumber.toString().padStart(2, '0')}
                         </span>
                         <span className="min-w-0 text-title font-semibold text-foreground capitalize truncate">
-                          {model.full_name}
+                          {model.alias || '—'}
                         </span>
                       </div>
-                      {model.alias && model.alias !== model.full_name && (
-                        <p className="text-body text-muted-foreground capitalize truncate">
-                          alias: {model.alias}
-                        </p>
-                      )}
                     </div>
                   </div>
 
                   <div className="mt-3 flex flex-col gap-2">
                     <div className="text-body text-muted-foreground lowercase truncate">
                       correo: <span className="text-foreground">{model.email || '—'}</span>
+                    </div>
+
+                    <div className="text-body text-muted-foreground lowercase truncate">
+                      teléfono: <span className="text-foreground font-mono">{model.phone_e164 || '—'}</span>
                     </div>
 
                     <div className="flex items-center gap-2 text-body text-muted-foreground">
@@ -250,8 +288,9 @@ export function AccessTable({ initialModels }: AccessTableProps) {
               <TableHeader>
                 <TableRow className="bg-quaternary hover:bg-quaternary">
                   <TableHead className="w-12">#</TableHead>
-                  <TableHead>Nombre Completo</TableHead>
+                  <TableHead>Alias</TableHead>
                   <TableHead>Correo Electrónico</TableHead>
+                  <TableHead>Teléfono</TableHead>
                   <TableHead>Contraseña de Acceso</TableHead>
                   <TableHead>País</TableHead>
                   <TableHead>Género</TableHead>
@@ -274,15 +313,13 @@ export function AccessTable({ initialModels }: AccessTableProps) {
                           {rowNumber.toString().padStart(2, '0')}
                         </TableCell>
                         <TableCell className="font-medium capitalize">
-                          {model.full_name}
-                          {model.alias && model.alias !== model.full_name && (
-                            <span className="text-label text-muted-foreground font-normal block capitalize">
-                              alias: {model.alias}
-                            </span>
-                          )}
+                          {model.alias || '—'}
                         </TableCell>
                         <TableCell className="lowercase">
                           {model.email || '—'}
+                        </TableCell>
+                        <TableCell className="font-mono text-body text-muted-foreground whitespace-nowrap">
+                          {model.phone_e164 || '—'}
                         </TableCell>
                         <TableCell>
                           {hasPassword ? (
@@ -325,7 +362,7 @@ export function AccessTable({ initialModels }: AccessTableProps) {
                   })
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-12 text-muted-foreground lowercase">
+                    <TableCell colSpan={8} className="text-center py-12 text-muted-foreground lowercase">
                       no se encontraron talentos con los filtros seleccionados.
                     </TableCell>
                   </TableRow>

@@ -2,7 +2,7 @@
 
 
 import * as React from 'react';
-import { useState, useTransition, useMemo, useEffect } from 'react';
+import { useState, useTransition, useMemo, useEffect, useRef } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 
 import Link from 'next/link';
@@ -163,6 +163,7 @@ export default function ProjectDetailClient({
     const [project, setProject] = useState(initialProject);
     const [selectedModels, setSelectedModels] = useState(initialSelectedModels);
     const [searchQuery, setSearchQuery] = useState(initialTalentQuery);
+    const lastSearchedQueryRef = useRef(initialTalentQuery);
     const [isPending, startTransition] = useTransition();
     const [isEditing, setIsEditing] = useState(false);
     const [scheduleOpen, setScheduleOpen] = useState(false);
@@ -258,7 +259,10 @@ export default function ProjectDetailClient({
     }, [initialProject, initialSelectedModels]);
 
     useEffect(() => {
-        setSearchQuery(initialTalentQuery);
+        if (initialTalentQuery !== lastSearchedQueryRef.current) {
+            setSearchQuery(initialTalentQuery);
+            lastSearchedQueryRef.current = initialTalentQuery;
+        }
     }, [initialTalentQuery]);
 
     const handleRefresh = () => {
@@ -319,6 +323,7 @@ export default function ProjectDetailClient({
     }, [pathname, router, searchParams]);
 
     const handleTalentSearch = useDebouncedCallback((value: string) => {
+        lastSearchedQueryRef.current = value;
         updateTalentPickerParams({ query: value, page: 1 });
     }, 300);
 
@@ -495,10 +500,14 @@ export default function ProjectDetailClient({
                                 handleTalentSearch(val);
                             }}
                             onClear={() => {
-                                setSearchQuery('')
-                                updateTalentPickerParams({ query: '', page: 1 })
+                                setSearchQuery('');
+                                lastSearchedQueryRef.current = '';
+                                updateTalentPickerParams({ query: '', page: 1 });
                             }}
-                            onSubmit={(value) => updateTalentPickerParams({ query: value, page: 1 })}
+                            onSubmit={(value) => {
+                                lastSearchedQueryRef.current = value;
+                                updateTalentPickerParams({ query: value, page: 1 });
+                            }}
                             placeholder="Buscar talento por nombre o alias..."
                             ariaLabel="Buscar talento"
                             inputClassName="h-9"

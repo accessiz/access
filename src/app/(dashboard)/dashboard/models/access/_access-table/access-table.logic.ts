@@ -8,10 +8,32 @@ import { AccessModelItem } from './access-table.types';
 
 const PAGE_SIZE = 25;
 
+const COMMON_PREFIXES = ['+502', '+503', '+504', '+505', '+506', '+507', '+52', '+58', '+57', '+1'];
+
+function getPhonePrefix(phone: string | null | undefined): string | null {
+  if (!phone) return null;
+  const clean = phone.trim();
+  for (const prefix of COMMON_PREFIXES) {
+    if (clean.startsWith(prefix)) return prefix;
+  }
+  if (clean.startsWith('+')) {
+    if (clean.startsWith('+52') || clean.startsWith('+55') || clean.startsWith('+56') || clean.startsWith('+54')) {
+      return clean.substring(0, 3);
+    }
+    if (clean.startsWith('+1')) {
+      return '+1';
+    }
+    return clean.substring(0, 4);
+  }
+  return null;
+}
+
 export function useAccessTable(initialModels: AccessModelItem[]) {
   const [searchQuery, setSearchQuery] = useState('');
   const [genderFilter, setGenderFilter] = useState<'all' | 'male' | 'female'>('all');
   const [countryFilter, setCountryFilter] = useState<string>('all');
+  const [passwordFilter, setPasswordFilter] = useState<'all' | 'has_password' | 'no_password'>('all');
+  const [phonePrefixFilter, setPhonePrefixFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
 
   // Password visibility map (modelId -> boolean)
@@ -40,6 +62,16 @@ export function useAccessTable(initialModels: AccessModelItem[]) {
       if (m.country) countries.add(m.country.toLowerCase().trim());
     });
     return Array.from(countries).sort();
+  }, [initialModels]);
+
+  // Get unique phone prefixes for filtering
+  const phonePrefixOptions = useMemo(() => {
+    const prefixes = new Set<string>();
+    initialModels.forEach((m) => {
+      const prefix = getPhonePrefix(m.phone_e164);
+      if (prefix) prefixes.add(prefix);
+    });
+    return Array.from(prefixes).sort();
   }, [initialModels]);
 
   // Open edit modal
@@ -110,16 +142,16 @@ export function useAccessTable(initialModels: AccessModelItem[]) {
     }
   };
 
-  // Filter models, then sort alphabetically by full_name
+  // Filter models, then sort alphabetically by alias
   const filteredModels = useMemo(() => {
     const filtered = initialModels.filter((m) => {
-      // 1. Search Query (full_name, alias, email)
+      // 1. Search Query (alias, email, phone)
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
-        const matchesName = m.full_name?.toLowerCase().includes(q) || false;
         const matchesAlias = m.alias?.toLowerCase().includes(q) || false;
         const matchesEmail = m.email?.toLowerCase().includes(q) || false;
-        if (!matchesName && !matchesAlias && !matchesEmail) {
+        const matchesPhone = m.phone_e164?.toLowerCase().includes(q) || false;
+        if (!matchesAlias && !matchesEmail && !matchesPhone) {
           return false;
         }
       }
@@ -133,7 +165,20 @@ export function useAccessTable(initialModels: AccessModelItem[]) {
         if (genderFilter === 'female' && !isFemale) return false;
       }
 
-      // 3. Country Filter
+      // 3. Password Filter
+      if (passwordFilter !== 'all') {
+        const hasPassword = !!m.login_password;
+        if (passwordFilter === 'has_password' && !hasPassword) return false;
+        if (passwordFilter === 'no_password' && hasPassword) return false;
+      }
+
+      // 4. Phone Prefix Filter
+      if (phonePrefixFilter !== 'all') {
+        const prefix = getPhonePrefix(m.phone_e164);
+        if (prefix !== phonePrefixFilter) return false;
+      }
+
+      // 5. Country Filter
       if (countryFilter !== 'all') {
         if (m.country?.toLowerCase().trim() !== countryFilter) {
           return false;
@@ -143,15 +188,15 @@ export function useAccessTable(initialModels: AccessModelItem[]) {
       return true;
     });
 
-    // Sort alphabetically by full_name
+    // Sort alphabetically by alias
     filtered.sort((a, b) => {
-      const nameA = (a.full_name || a.alias || '').toLowerCase();
-      const nameB = (b.full_name || b.alias || '').toLowerCase();
-      return nameA.localeCompare(nameB, 'es');
+      const aliasA = (a.alias || '').toLowerCase();
+      const aliasB = (b.alias || '').toLowerCase();
+      return aliasA.localeCompare(aliasB, 'es');
     });
 
     return filtered;
-  }, [initialModels, searchQuery, genderFilter, countryFilter]);
+  }, [initialModels, searchQuery, genderFilter, passwordFilter, phonePrefixFilter, countryFilter]);
 
   // Pagination
   const totalPages = Math.max(1, Math.ceil(filteredModels.length / PAGE_SIZE));
@@ -180,6 +225,16 @@ export function useAccessTable(initialModels: AccessModelItem[]) {
     setCurrentPage(1);
   };
 
+  const handlePasswordFilterChange = (value: 'all' | 'has_password' | 'no_password') => {
+    setPasswordFilter(value);
+    setCurrentPage(1);
+  };
+
+  const handlePhonePrefixFilterChange = (value: string) => {
+    setPhonePrefixFilter(value);
+    setCurrentPage(1);
+  };
+
   return {
     searchQuery,
     handleSearchChange,
@@ -187,6 +242,10 @@ export function useAccessTable(initialModels: AccessModelItem[]) {
     handleGenderFilterChange,
     countryFilter,
     handleCountryFilterChange,
+    passwordFilter,
+    handlePasswordFilterChange,
+    phonePrefixFilter,
+    handlePhonePrefixFilterChange,
     visiblePasswords,
     togglePasswordVisibility,
     editingModel,
@@ -200,6 +259,7 @@ export function useAccessTable(initialModels: AccessModelItem[]) {
     handleSubmitEdit,
     handleClearPassword,
     countryOptions,
+    phonePrefixOptions,
     filteredModels,
     paginatedModels,
     currentPage: safePage,

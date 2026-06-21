@@ -43,8 +43,7 @@ describe('sendProjectCompletionEmail', () => {
     expect(callArgs.subject).toContain('Client Co');
 
     expect(callArgs.html).toContain('El cliente ha finalizado la sesión de selección');
-    expect(callArgs.html).toContain('VER DETALLE COMPLETO (FOTOS)');
-    expect(callArgs.html).toContain('c/proj123/approved');
+    expect(callArgs.html).not.toContain('VER DETALLE COMPLETO');
     expect(callArgs.html).toContain('Hombres (1)');
     expect(callArgs.html).toContain('Mujeres (1)');
     expect(callArgs.html).toContain('John Doe');
@@ -68,10 +67,8 @@ describe('sendProjectCompletionEmail', () => {
     expect(callArgs.subject).toContain('Lonely Client');
 
     expect(callArgs.html).toContain('El proyecto ha finalizado pero no hubieron modelos aprobados. Por favor, contacta al cliente para dar seguimiento.');
-    expect(callArgs.html).toContain('VER SELECCIÓN COMPLETA');
-    expect(callArgs.html).not.toContain('VER DETALLE COMPLETO (FOTOS)');
-    expect(callArgs.html).toContain('c/empty456');
-    expect(callArgs.html).not.toContain('c/empty456/approved');
+    expect(callArgs.html).not.toContain('VER DETALLE COMPLETO');
+    expect(callArgs.html).not.toContain('VER SELECCIÓN COMPLETA');
     expect(callArgs.html).not.toContain('Hombres');
     expect(callArgs.html).not.toContain('Mujeres');
   });

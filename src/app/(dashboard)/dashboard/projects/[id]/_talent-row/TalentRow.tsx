@@ -88,12 +88,7 @@ export function TalentRow({
                 )}
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-x-2 gap-y-2">
-                        <p className="text-body font-medium truncate">
-                            {isPicker 
-                                ? (model.full_name || model.alias || 'Sin nombre')
-                                : model.alias
-                            }
-                        </p>
+                        <p className="text-body font-medium truncate">{model.alias}</p>
                         {actionType === 'remove' && (
                             <>
                                 {(model.agreed_fee || 0) > 0 && (
@@ -114,15 +109,7 @@ export function TalentRow({
                             </>
                         )}
                     </div>
-                    <p className="text-label text-muted-foreground truncate">
-                        {isPicker
-                            ? [
-                                model.alias && model.alias !== model.full_name ? `Alias: ${model.alias}` : null,
-                                model.country
-                              ].filter(Boolean).join(' · ')
-                            : model.country
-                        }
-                    </p>
+                    <p className="text-label text-muted-foreground truncate">{model.country}</p>
                 </div>
 
                 <div className="flex items-center gap-x-2 gap-y-2">
