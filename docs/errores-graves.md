@@ -367,4 +367,51 @@ Esto solo afecta al **client bundle**. En server-side, `process.env[key]` funcio
 > **Variables `NEXT_PUBLIC_*` SIEMPRE deben referenciarse estáticamente.**  
 > Usar `process.env.NEXT_PUBLIC_SUPABASE_URL`, NUNCA `process.env[key]` con key variable.
 
+---
 
+## 10. `crossOrigin="anonymous"` en imágenes con URL `blob:` o `data:` causa `ERR_FILE_NOT_FOUND`
+
+**Fecha:** 2026-06-21  
+**Síntoma:** Al descargar la compcard en el generador temporal, el navegador muestra errores en la consola: `GET blob:https://access.izmgmt.com/... net::ERR_FILE_NOT_FOUND` y no descarga las imágenes, o las descarga en blanco/vacías.  
+**Tiempo perdido:** ~10 min
+
+### ❌ Error
+
+En `SmartCroppedImage.tsx` (u otros componentes de imagen nativos), se aplicaba `crossOrigin="anonymous"` de forma genérica a cualquier URL que no empezara con `/`:
+
+```tsx
+<img
+  src={src}
+  crossOrigin={src.startsWith('/') ? undefined : "anonymous"}
+  ...
+/>
+```
+
+**¿Por qué ocurre?**
+Las URLs `blob:` (como las de fotos temporales locales subidas por el usuario) y `data:` no empiezan por `/`, por lo que el componente les inyectaba `crossOrigin="anonymous"`. El navegador intenta validar el CORS de estos recursos de origen cruzado de forma estricta, lo que falla en navegadores modernos (Chrome/Safari) al ser protocolos no-HTTP (`blob:`, `data:`), resultando en un error de red `net::ERR_FILE_NOT_FOUND`.
+
+### ✅ Correcto
+
+Evitar inyectar `crossOrigin="anonymous"` si el recurso es una URL de tipo `blob:` o `data:`:
+
+```tsx
+<img
+  src={src}
+  crossOrigin={
+    src.startsWith('/') ||
+    src.startsWith('blob:') ||
+    src.startsWith('data:')
+      ? undefined
+      : 'anonymous'
+  }
+  ...
+/>
+```
+
+### Regla general
+
+> **Nunca asignar `crossOrigin="anonymous"` a elementos `<img>` cuyas fuentes sean URLs de esquema local `blob:` o data URIs `data:`. Esto confunde al motor de red del navegador y produce un fallo inmediato de carga `ERR_FILE_NOT_FOUND`.**
+
+---
+
+*Última actualización: 2026-06-21*

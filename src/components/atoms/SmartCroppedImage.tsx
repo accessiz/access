@@ -117,7 +117,13 @@ export function SmartCroppedImage({
                     loading={loading}
                     fetchPriority={isPriority ? 'high' : 'auto'}
                     decoding="async"
-                    crossOrigin={src.startsWith('/') ? undefined : "anonymous"}
+                    crossOrigin={
+                        src.startsWith('/') ||
+                        src.startsWith('blob:') ||
+                        src.startsWith('data:')
+                            ? undefined
+                            : 'anonymous'
+                    }
                     onLoad={() => setIsLoaded(true)}
                     onError={onError}
                     className={cn('w-full h-full object-cover', fadeClasses, className)}
