@@ -10,6 +10,7 @@ import { ScheduleMigrationModal, type NewScheduleOption } from '@/components/org
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { projectFormSchema, ProjectFormData } from '@/lib/schemas/projects';
 import {
   Trash2,
@@ -229,6 +230,7 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
       brand_id: initialData?.brand_id || null,
       project_types: (initialData?.project_types as ProjectType[]) || [],
       password: initialData?.password || '',
+      hide_schedule: initialData?.hide_schedule || false,
       schedule: initialData?.schedule && initialData.schedule.length > 0
         ? initialData.schedule.map(item => ({
           date: item.date ? item.date.split('T')[0] : '',
@@ -672,6 +674,26 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
             <Button type="button" variant="outline" onClick={() => append({ date: format(new Date(), 'yyyy-MM-dd'), startTime: '09:00 AM', endTime: '05:00 PM' })}>
               <Plus className="mr-2 h-4 w-4" /> Añadir fecha
             </Button>
+
+            <div className="flex items-center space-x-2 pt-4 border-t border-separator/10 mt-4">
+              <Controller
+                control={form.control}
+                name="hide_schedule"
+                render={({ field }) => (
+                  <>
+                    <input type="hidden" name="hide_schedule" value={String(field.value || false)} />
+                    <Checkbox
+                      id="hide_schedule"
+                      checked={field.value || false}
+                      onCheckedChange={field.onChange}
+                    />
+                  </>
+                )}
+              />
+              <Label htmlFor="hide_schedule" className="cursor-pointer font-medium text-body">
+                Ocultar horario a los modelos (solo verán fechas, no horas específicas)
+              </Label>
+            </div>
           </div>
         </div>
 

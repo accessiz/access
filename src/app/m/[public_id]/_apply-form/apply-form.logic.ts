@@ -35,7 +35,7 @@ export function useApplyForm(projectId: string, modelId: string, initialSelected
       const result = await applyToProject(projectId, modelId, acceptVal, acceptVal ? selectedSchedules : []);
       if (result.success) {
         toast.success(acceptVal ? '¡Tu decisión fue enviada! Puedes verla en tu perfil.' : '¡Tu respuesta fue enviada! Puedes verla en tu perfil.');
-        router.push('/model/profile');
+        router.push('/model/apply');
         router.refresh();
         return true;
       } else {

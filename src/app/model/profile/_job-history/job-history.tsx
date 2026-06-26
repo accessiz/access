@@ -12,14 +12,27 @@ import { MonthSelect } from '@/components/molecules/MonthSelect';
 import './job-history.styles.css';
 
 
+const WEEKDAYS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+const MONTHS = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+];
+
 const formatScheduleDate = (dateStr: string) => {
   const parts = dateStr.split('-');
   if (parts.length !== 3) return { fullDate: dateStr, dayNumber: 0, month: '' };
   const [year, month, day] = parts;
+  
+  const date = new Date(`${dateStr}T00:00:00`);
+  const dayOfWeek = date.getDay();
+  const dayNumber = date.getDate();
+  const monthIndex = date.getMonth();
+
+  const fullDate = `${WEEKDAYS[dayOfWeek]}, ${dayNumber} de ${MONTHS[monthIndex]}`;
   return {
-    dayNumber: parseInt(day, 10),
-    month,
-    fullDate: `${day}/${month}/${year}`,
+    dayNumber,
+    month: MONTHS[monthIndex],
+    fullDate,
   };
 };
 
@@ -341,10 +354,10 @@ export function JobHistory({ projects, className }: JobHistoryProps) {
               <button
                 type="button"
                 onClick={() => setSelectedProject(null)}
-                className="h-8 w-8 rounded-full bg-tertiary hover:bg-primary hover:text-background text-foreground flex items-center justify-center transition-colors duration-200 border-0 cursor-pointer"
+                className="h-11 w-11 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white flex items-center justify-center transition-all duration-200 border-0 cursor-pointer shadow-lg active:scale-95 shrink-0"
                 aria-label="Cerrar"
               >
-                <X className="h-4 w-4" />
+                <X className="h-5 w-5" />
               </button>
             </div>
 
@@ -435,15 +448,15 @@ export function JobHistory({ projects, className }: JobHistoryProps) {
                       return (
                         <div key={sch.id} className="flex items-center justify-between p-3.5">
                           <div className="flex flex-col">
-                            <span className="text-body font-semibold text-foreground">{fullDate}</span>
-                            <span className="text-label text-muted-foreground mt-0.5">
-                              {sch.startTime} - {sch.endTime}
-                            </span>
-                            {sch.location && (
-                              <span className="text-label text-muted-foreground mt-0.5">
-                                Lugar: {sch.location}
-                              </span>
-                            )}
+                             <span className="text-body font-semibold text-foreground">{fullDate}</span>
+                             <span className="text-label text-muted-foreground mt-0.5">
+                               {selectedProject.hide_schedule ? 'Horario por definir' : `${sch.startTime} - ${sch.endTime}`}
+                             </span>
+                             {!selectedProject.hide_schedule && sch.location && (
+                               <span className="text-label text-muted-foreground mt-0.5">
+                                 Lugar: {sch.location}
+                               </span>
+                             )}
                           </div>
 
                           <div className="flex items-center gap-2">

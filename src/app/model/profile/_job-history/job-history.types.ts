@@ -27,6 +27,8 @@ export interface AppliedProject {
   schedule: AppliedProjectSchedule[];
   assignments: any[];
   isPaid: boolean;
+  status?: string | null;
+  hide_schedule?: boolean | null;
 }
 
 export interface JobHistoryProps {

@@ -8,16 +8,29 @@ import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
 import LogoIcon from '@/components/LogoIcon';
 import Logo from '@/components/LogoDark';
-import { logoutModel } from '@/lib/actions/models_portal';
+import { logoutModel, checkActiveApplicationsAction } from '@/lib/actions/models_portal';
 
 export function ModelPortalLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = React.useState(false);
+  const [hasActive, setHasActive] = React.useState(false);
 
   React.useEffect(() => {
     setMounted(true);
   }, []);
+
+  React.useEffect(() => {
+    const checkActive = async () => {
+      try {
+        const res = await checkActiveApplicationsAction();
+        setHasActive(res.hasActive);
+      } catch (err) {
+        console.error('Error checking active applications:', err);
+      }
+    };
+    checkActive();
+  }, [pathname]);
 
   const handleLogout = async () => {
     try {
@@ -61,34 +74,34 @@ export function ModelPortalLayout({ children }: { children: React.ReactNode }) {
 
               <Link
                 href="/model/profile"
-                className={`h-10 w-10 rounded-full flex items-center justify-center transition-all duration-200 ${
+                className={`h-11 w-11 rounded-full flex items-center justify-center transition-all duration-200 ${
                   isActive('/model/profile') 
                     ? 'bg-purple text-white shadow-md' 
                     : 'text-muted-foreground hover:text-foreground hover:bg-hover-overlay/15'
                 }`}
                 title="Mi Perfil"
               >
-                <User className="h-5 w-5" />
+                <User className="h-5.5 w-5.5" />
               </Link>
 
-              {isProjectPage && projectPublicId ? (
+              {hasActive ? (
                 <Link
-                  href={`/m/${projectPublicId}`}
-                  className={`h-10 w-10 rounded-full flex items-center justify-center transition-all duration-200 ${
-                    isActive(`/m/${projectPublicId}`) 
+                  href="/model/apply"
+                  className={`h-11 w-11 rounded-full flex items-center justify-center transition-all duration-200 ${
+                    isActive('/model/apply') || isProjectPage
                       ? 'bg-purple text-white shadow-md' 
                       : 'text-muted-foreground hover:text-foreground hover:bg-hover-overlay/15'
                   }`}
-                  title="Detalle del Trabajo Pendiente"
+                  title="Aplicaciones Activas"
                 >
-                  <CalendarCheck className="h-5 w-5" />
+                  <CalendarCheck className="h-5.5 w-5.5" />
                 </Link>
               ) : (
                 <div 
-                  className="h-10 w-10 rounded-full flex items-center justify-center text-muted-foreground/30 cursor-not-allowed"
-                  title="Ningún detalle de proyecto activo"
+                  className="h-11 w-11 rounded-full flex items-center justify-center text-muted-foreground/30 cursor-not-allowed"
+                  title="Ninguna postulación activa disponible"
                 >
-                  <CalendarCheck className="h-5 w-5" />
+                  <CalendarCheck className="h-5.5 w-5.5" />
                 </div>
               )}
             </nav>
@@ -114,57 +127,57 @@ export function ModelPortalLayout({ children }: { children: React.ReactNode }) {
 
         {/* Barra de Navegación Móvil (Bottom Tab Bar - 100% Mobile-First) */}
         {!isLoginPage && (
-          <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-card/95 backdrop-blur-md border-t border-border flex justify-around items-center py-3 px-4 shadow-sm transition-colors duration-200">
+          <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-card/95 backdrop-blur-md border-t border-border flex justify-around items-center py-4 px-4 shadow-lg transition-colors duration-200">
             {/* 1. Workspace */}
             <Link
               href="/model/profile"
-              className={`flex flex-col items-center gap-1 transition-all ${
-                isActive('/model/profile') ? 'text-purple' : 'text-muted-foreground hover:text-foreground'
+              className={`flex flex-col items-center gap-1.5 transition-all active:scale-95 ${
+                isActive('/model/profile') ? 'text-purple font-extrabold' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              <User className="h-4 w-4" />
-              <span className="text-[9px] font-bold uppercase tracking-wider">Workspace</span>
+              <User className="h-5 w-5" />
+              <span className="text-[10px] font-bold uppercase tracking-wider">Workspace</span>
             </Link>
 
             {/* 2. Aplicar */}
-            {isProjectPage && projectPublicId ? (
+            {hasActive ? (
               <Link
-                href={`/m/${projectPublicId}`}
-                className={`flex flex-col items-center gap-1 transition-all ${
-                  isActive(`/m/${projectPublicId}`) ? 'text-purple' : 'text-muted-foreground hover:text-foreground'
+                href="/model/apply"
+                className={`flex flex-col items-center gap-1.5 transition-all active:scale-95 ${
+                  isActive('/model/apply') || isProjectPage ? 'text-purple font-extrabold' : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                <CalendarCheck className="h-4 w-4" />
-                <span className="text-[9px] font-bold uppercase tracking-wider">Aplicar</span>
+                <CalendarCheck className="h-5 w-5" />
+                <span className="text-[10px] font-bold uppercase tracking-wider">Aplicar</span>
               </Link>
             ) : (
-              <div className="flex flex-col items-center gap-1 text-muted-foreground/30 pointer-events-none">
-                <CalendarCheck className="h-4 w-4" />
-                <span className="text-[9px] font-bold uppercase tracking-wider">Aplicar</span>
+              <div className="flex flex-col items-center gap-1.5 text-muted-foreground/30 pointer-events-none">
+                <CalendarCheck className="h-5 w-5" />
+                <span className="text-[10px] font-bold uppercase tracking-wider">Aplicar</span>
               </div>
             )}
 
             {/* 3. Tema */}
             <button 
               onClick={() => mounted && setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="flex flex-col items-center gap-1 text-muted-foreground hover:text-foreground active:scale-95 transition-all bg-transparent border-0 cursor-pointer"
+              className="flex flex-col items-center gap-1.5 text-muted-foreground hover:text-foreground active:scale-95 transition-all bg-transparent border-0 cursor-pointer"
             >
               {mounted && theme === 'dark' ? (
-                <Sun className="h-4 w-4" />
+                <Sun className="h-5 w-5" />
               ) : (
-                <Moon className="h-4 w-4" />
+                <Moon className="h-5 w-5" />
               )}
-              <span className="text-[9px] font-bold uppercase tracking-wider">Tema</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider">Tema</span>
             </button>
 
             {/* 4. Salir */}
             <button
               type="button"
               onClick={handleLogout}
-              className="flex flex-col items-center gap-1 text-muted-foreground hover:text-foreground active:scale-95 transition-all bg-transparent border-0 cursor-pointer"
+              className="flex flex-col items-center gap-1.5 text-muted-foreground hover:text-foreground active:scale-95 transition-all bg-transparent border-0 cursor-pointer"
             >
-              <LogOut className="h-4 w-4" />
-              <span className="text-[9px] font-bold uppercase tracking-wider">Salir</span>
+              <LogOut className="h-5 w-5" />
+              <span className="text-[10px] font-bold uppercase tracking-wider">Salir</span>
             </button>
           </nav>
         )}

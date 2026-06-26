@@ -106,7 +106,7 @@ export function ApplyForm({ project, model }: ApplyFormProps) {
         
         {/* Botón Volver */}
         <Link
-          href="/model/profile"
+          href="/model/apply"
           className="absolute top-6 left-6 h-8 w-8 rounded-full bg-tertiary hover:bg-primary hover:text-background text-foreground flex items-center justify-center transition-colors duration-200 shadow-sm z-20"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -211,7 +211,7 @@ export function ApplyForm({ project, model }: ApplyFormProps) {
                       {isChecked ? 'Disponible' : 'No asisto'}
                     </span>
                     <span className={`text-[10px] mt-0.5 ${isChecked ? 'text-white/80' : 'text-muted-foreground/60'}`}>
-                      {scheduleItem.startTime} - {scheduleItem.endTime}
+                      {project.hide_schedule ? 'Horario por definir' : `${scheduleItem.startTime} - ${scheduleItem.endTime}`}
                     </span>
                   </button>
                 );

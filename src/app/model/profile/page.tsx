@@ -33,11 +33,12 @@ async function ProfileContent() {
   // 2. Cargar proyectos aplicados
   const allAppliedProjects = await getAppliedProjectsForModel(model.id);
 
-  // Filtrar: solo mostrar proyectos a partir de junio 2026 (lanzamiento de esta función)
-  // para no confundir a los modelos con datos históricos anteriores.
-  // También ocultamos los proyectos que hayan sido rechazados por el cliente para no desmotivarlos.
+  // Filtrar: solo mostrar en el historial del workspace proyectos a los que ya postuló
+  // y que ya fueron enviados al cliente (no borradores).
   const CUTOFF_DATE = '2026-06';
   const appliedProjects = allAppliedProjects.filter((p) => {
+    if (p.model_status !== 'applied') return false;
+    if (p.status === 'draft') return false;
     if (p.client_selection === 'rejected') return false;
     const dateStr = p.schedule && p.schedule[0] ? p.schedule[0].date : p.created_at;
     if (!dateStr) return false;
@@ -46,12 +47,12 @@ async function ProfileContent() {
   });
 
   // 3. Identificar si hay alguna propuesta de trabajo pendiente con plazo para aplicar y que no haya expirado
-  const pendingInvitation = appliedProjects.find(
+  const pendingInvitation = allAppliedProjects.find(
     (p) => 
       (p.model_status === 'pending' || !p.model_status) && 
       p.public_id && 
-      p.application_deadline && 
-      new Date(p.application_deadline).getTime() > Date.now()
+      p.apply_end_at && 
+      new Date(p.apply_end_at).getTime() > Date.now()
   );
 
   // 4. Calcular KPIs

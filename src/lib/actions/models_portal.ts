@@ -479,6 +479,23 @@ export async function updateModelSocials(modelId: string, instagram: string, tik
   }
 }
 
+const formatTimeTo12h = (isoString: string) => {
+  if (!isoString) return '';
+  try {
+    const date = new Date(isoString);
+    let hours = date.getUTCHours();
+    const minutes = date.getUTCMinutes();
+    const period = hours >= 12 ? 'PM' : 'AM';
+
+    hours = hours % 12;
+    hours = hours ? hours : 12;
+
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${period}`;
+  } catch (e) {
+    return isoString;
+  }
+};
+
 /**
  * Fetches the list of projects the model has applied to, along with their schedules,
  * assignments, client selection, and computed payment status.
@@ -563,11 +580,13 @@ export async function getAppliedProjectsForModel(modelId: string) {
           apply_end_at: project.apply_end_at,
           apply_start_at: project.apply_start_at,
           created_at: project.created_at,
+          status: project.status,
+          hide_schedule: project.hide_schedule,
           schedule: schedules.map((s: any) => ({
             id: s.id,
             date: s.start_time.split('T')[0],
-            startTime: s.start_time,
-            endTime: s.end_time,
+            startTime: formatTimeTo12h(s.start_time),
+            endTime: formatTimeTo12h(s.end_time),
             location: s.location,
           })),
           assignments: projectAssignments,
@@ -793,4 +812,29 @@ export async function getActivePhonePrefixes() {
     return ['+502'];
   }
 }
+
+/**
+ * Checks if the currently logged-in model has any active (unexpired) applications.
+ */
+export async function checkActiveApplicationsAction() {
+  try {
+    const model = await getLoggedInModel();
+    if (!model) {
+      return { hasActive: false };
+    }
+
+    const allProjects = await getAppliedProjectsForModel(model.id);
+    const now = new Date();
+    const activeProjects = allProjects.filter((p) => {
+      if (!p.apply_end_at) return true;
+      return new Date(p.apply_end_at) > now;
+    });
+
+    return { hasActive: activeProjects.length > 0 };
+  } catch (err) {
+    logError(err, { action: 'checkActiveApplicationsAction' });
+    return { hasActive: false };
+  }
+}
+
 
