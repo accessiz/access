@@ -235,7 +235,7 @@ export function ApplyForm({ project, model }: ApplyFormProps) {
                       } ${
                         isChecked 
                           ? 'bg-purple border-purple text-white shadow-md' 
-                          : 'bg-[#1a1a1e] border-border text-muted-foreground'
+                          : 'bg-tertiary/40 border-border/40 text-muted-foreground'
                       }`}
                     >
                       <span className="text-[10px] font-extrabold tracking-widest">{dayNameShort} {dayNumber}</span>

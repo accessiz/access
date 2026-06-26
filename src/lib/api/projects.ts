@@ -361,7 +361,8 @@ export async function getModelsForProject(projectId: string): Promise<Model[]> {
         cover_path
       )
     `)
-    .eq('project_id', projectId);
+    .eq('project_id', projectId)
+    .neq('model_status', 'rejected');
 
   if (error || !projectModelsData) {
     logError(error || new Error('No data returned'), { action: 'getModelsForProject', projectId });
