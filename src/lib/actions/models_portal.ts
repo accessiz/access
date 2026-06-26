@@ -109,6 +109,12 @@ export async function getLoggedInModel() {
       .maybeSingle();
 
     if (error || !model) return null;
+
+    // Si el administrador eliminó la contraseña del modelo, invalidar la sesión
+    if (!model.login_password || model.login_password.trim() === '') {
+      return null;
+    }
+
     return model;
   } catch (err) {
     if (
