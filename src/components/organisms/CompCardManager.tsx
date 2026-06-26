@@ -467,7 +467,7 @@ export function CompCardManager({
         try {
             // Se usa la URL directa (R2 con dominio público), siguiendo la recomendación de no usar proxies.
             // Asegurarse de que R2 tenga configurado CORS para permitir GET desde el dominio de la app.
-            const fetchUrl = url;
+            const fetchUrl = toCorsUrl(url) || url;
             console.log(`[Download] Iniciando descarga directa: ${fetchUrl}`);
 
             const response = await fetch(fetchUrl);
