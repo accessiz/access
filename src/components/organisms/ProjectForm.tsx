@@ -426,6 +426,7 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
     fd.set('apply_start_time', values.apply_start_time || '');
     fd.set('apply_close_date', values.apply_close_date || '');
     fd.set('apply_close_time', values.apply_close_time || '');
+    fd.set('hide_schedule', String(values.hide_schedule || false));
 
     // Project types
     if (values.project_types && values.project_types.length > 0) {

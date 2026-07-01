@@ -452,7 +452,14 @@ export default function ProjectDetailClient({
                     <Card>
                         <Collapsible open={scheduleOpen} onOpenChange={setScheduleOpen}>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0">
-                                <CardTitle className="text-title font-semibold">Horarios</CardTitle>
+                                <div className="flex items-center gap-2">
+                                    <CardTitle className="text-title font-semibold">Horarios</CardTitle>
+                                    {project.hide_schedule && (
+                                        <span className="text-[10px] bg-amber-500/10 text-amber-500 border border-amber-500/20 px-2 py-0.5 rounded-full font-medium">
+                                            Oculto para modelos
+                                        </span>
+                                    )}
+                                </div>
 
                                 <CollapsibleTrigger asChild>
                                     <button
