@@ -48,8 +48,8 @@ const optionalUSSize = z.preprocess((val) => {
   const num = Number(val);
   if (Number.isNaN(num)) return val; // deja que Zod lo invalide
 
-  // Round to one decimal (e.g., 4 -> 4.0)
-  return Number(num.toFixed(1));
+  // Round to nearest 0.5 (e.g., 9.75 -> 10.0, 5.25 -> 5.5, 7.15 -> 7.0)
+  return Math.round(num * 2) / 2;
 }, z.union([
   z.number().refine((v) => {
     return usShoeSizes.includes(v);

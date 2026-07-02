@@ -62,6 +62,14 @@ export function LoginForm({ redirectTo, prefixes = ['+502'] }: LoginFormProps) {
     }
   }, [countryCode, localNumber, setPhone]);
 
+  // Generar la URL de WhatsApp para Soporte IZ con el número de teléfono dinámico
+  const getSupportWhatsappUrl = () => {
+    const destination = '50247388666';
+    const displayPhone = phone.trim() || '(poner tu número aqui porfavor)';
+    const text = `hola estoy intentando ingresar con el número de telefono ${displayPhone} pero no puedo ingresar.`;
+    return `https://wa.me/${destination}?text=${encodeURIComponent(text)}`;
+  };
+
   if (step === 'phone') {
     return (
       <Card className="w-full max-w-md mx-auto bg-card border border-border rounded-[24px] p-6 md:p-10 shadow-2xl relative overflow-hidden">
@@ -135,7 +143,7 @@ export function LoginForm({ redirectTo, prefixes = ['+502'] }: LoginFormProps) {
           </form>
 
           <div className="mt-8 pt-6 border-t border-border text-center text-[11px] text-muted-foreground">
-            ¿Problemas de acceso? <a href="#" className="text-foreground font-bold hover:underline">Soporte IZ</a>
+            ¿Problemas de acceso? <a href={getSupportWhatsappUrl()} target="_blank" rel="noopener noreferrer" className="text-foreground font-bold hover:underline">Soporte IZ</a>
           </div>
         </CardContent>
       </Card>
@@ -262,6 +270,10 @@ export function LoginForm({ redirectTo, prefixes = ['+502'] }: LoginFormProps) {
               )}
             </button>
           </form>
+
+          <div className="mt-8 pt-6 border-t border-border text-center text-[11px] text-muted-foreground">
+            ¿Problemas de acceso? <a href={getSupportWhatsappUrl()} target="_blank" rel="noopener noreferrer" className="text-foreground font-bold hover:underline">Soporte IZ</a>
+          </div>
         </CardContent>
       </Card>
     );
@@ -346,6 +358,10 @@ export function LoginForm({ redirectTo, prefixes = ['+502'] }: LoginFormProps) {
             )}
           </button>
         </form>
+
+        <div className="mt-8 pt-6 border-t border-border text-center text-[11px] text-muted-foreground">
+          ¿Problemas de acceso? <a href={getSupportWhatsappUrl()} target="_blank" rel="noopener noreferrer" className="text-foreground font-bold hover:underline">Soporte IZ</a>
+        </div>
       </CardContent>
     </Card>
   );

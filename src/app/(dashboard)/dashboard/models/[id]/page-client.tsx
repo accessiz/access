@@ -110,7 +110,7 @@ export default function ModelProfilePageClient({ initialModel, workHistory = [],
     if (value === null || value === undefined || value === '') return null;
     const parsed = Number(value);
     if (!Number.isFinite(parsed)) return null;
-    const rounded = Number(parsed.toFixed(1));
+    const rounded = Math.round(parsed * 2) / 2;
     return isNaN(rounded) ? null : rounded;
   };
 

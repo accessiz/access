@@ -190,6 +190,16 @@ describe('modelFormSchema', () => {
       expect(result.success).toBe(true);
       if (result.success) expect(result.data.shoe_size_us).toBe(8);
     });
+
+    it('rounds non-standard US sizes to nearest 0.5 (e.g. 9.75 to 10.0, 5.25 to 5.5)', () => {
+      const result = modelFormSchema.safeParse({ ...validModel, shoe_size_us: 9.75 });
+      expect(result.success).toBe(true);
+      if (result.success) expect(result.data.shoe_size_us).toBe(10);
+
+      const result2 = modelFormSchema.safeParse({ ...validModel, shoe_size_us: 5.25 });
+      expect(result2.success).toBe(true);
+      if (result2.success) expect(result2.data.shoe_size_us).toBe(5.5);
+    });
   });
 
   // ── Gender enum ──
