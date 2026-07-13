@@ -6,6 +6,7 @@ import { ApplyForm } from './_apply-form/apply-form';
 import type { Metadata } from 'next';
 import { connection } from 'next/server';
 import { Suspense } from 'react';
+import { env } from '@/lib/env';
 
 type PageProps = {
   params: Promise<{ public_id: string }>;
@@ -42,6 +43,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const paymentStr = fee ? `${currency} ${fee} por día` : 'canje';
 
   const brandNameText = project.brand?.name || project.client_name || project.project_name;
+  const imageUrl = `${env.NEXT_PUBLIC_APP_URL}/api/og/m/${public_id}.png`;
 
   return {
     title: brandNameText,
@@ -50,6 +52,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title: brandNameText,
       description: `fecha: ${datesStr} | pago: ${paymentStr}. confirma tu disponibilidad aquí.`,
       type: 'website',
+      images: [
+        {
+          url: imageUrl,
+          width: 1200,
+          height: 630,
+          type: 'image/png',
+        }
+      ]
     },
   };
 }

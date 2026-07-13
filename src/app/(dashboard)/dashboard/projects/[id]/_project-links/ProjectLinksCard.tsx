@@ -86,7 +86,7 @@ export function ProjectLinksCard({ project, onStatusChange }: ProjectLinksCardPr
 
   const deadlineText = applyEnd ? `${formatDate(applyEnd.date)} a las ${applyEnd.time}` : '';
 
-  const modelShareMsg = `*IZ Management | Casting* 🌟\n\n` +
+  const modelShareMsg = `*IZ Management | Casting*\n\n` +
     `Buscamos: *${genderText}*\n` +
     (brandNameText ? `Marca: *${brandNameText}*\n` : '') +
     (scheduleDates ? `Días: *${scheduleDates}*\n` : '') +

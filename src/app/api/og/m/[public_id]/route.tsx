@@ -1,22 +1,20 @@
 import { ImageResponse } from 'next/og';
 import { getProjectById } from '@/lib/api/projects';
+import { NextRequest } from 'next/server';
 
-export const runtime = 'edge';
-
-export const alt = 'Portal de Modelos';
-export const size = {
-  width: 1200,
-  height: 630,
-};
-
-export const contentType = 'image/png';
-
-export default async function Image({ params }: { params: Promise<{ public_id: string }> }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ public_id: string }> }
+) {
   const { public_id } = await params;
-  const project = await getProjectById(public_id);
+  
+  // Strip .png if present (for crawler compatibility URLs like public_id.png)
+  const cleanId = public_id.replace(/\.png$/, '');
+
+  const project = await getProjectById(cleanId);
   const brandName = project?.brand?.name || project?.client_name || project?.project_name || 'Casting';
 
-  return new ImageResponse(
+  const imageResponse = new ImageResponse(
     (
       <div
         style={{
@@ -70,7 +68,21 @@ export default async function Image({ params }: { params: Promise<{ public_id: s
       </div>
     ),
     {
-      ...size,
+      width: 1200,
+      height: 630,
     }
   );
+
+  // Buffer response and send with Content-Length to avoid chunked transfer-encoding compatibility issues with WhatsApp scraper
+  const blob = await imageResponse.blob();
+  const arrayBuffer = await blob.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+
+  return new Response(buffer, {
+    headers: {
+      'Content-Type': 'image/png',
+      'Content-Length': buffer.length.toString(),
+      'Cache-Control': 'public, max-age=31536000, immutable',
+    },
+  });
 }
