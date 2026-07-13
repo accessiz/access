@@ -174,6 +174,7 @@ export function buildRawProjectData(
     apply_close_date: formData.get('apply_close_date'),
     apply_close_time: formData.get('apply_close_time'),
     hide_schedule: formData.has('hide_schedule') ? formData.get('hide_schedule') === 'true' || formData.get('hide_schedule') === 'on' : false,
+    gender_target: formData.get('gender_target') || 'Todos',
   };
 }
 

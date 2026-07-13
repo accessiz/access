@@ -592,6 +592,7 @@ export type Database = {
           location: string | null
           apply_start_at: string | null
           apply_end_at: string | null
+          gender_target: string | null
           currency: string | null
           default_fee_type: string | null
           default_model_fee: number | null
@@ -632,6 +633,7 @@ export type Database = {
           location?: string | null
           apply_start_at?: string | null
           apply_end_at?: string | null
+          gender_target?: string | null
           currency?: string | null
           default_fee_type?: string | null
           default_model_fee?: number | null
@@ -672,6 +674,7 @@ export type Database = {
           location?: string | null
           apply_start_at?: string | null
           apply_end_at?: string | null
+          gender_target?: string | null
           currency?: string | null
           default_fee_type?: string | null
           default_model_fee?: number | null

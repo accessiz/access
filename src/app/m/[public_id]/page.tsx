@@ -41,11 +41,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const currency = project.currency || 'GTQ';
   const paymentStr = fee ? `${currency} ${fee} por día` : 'canje';
 
+  const brandNameText = project.brand?.name || project.client_name || project.project_name;
+
   return {
-    title: `proyecto: ${project.project_name}`,
+    title: brandNameText,
     description: `fecha: ${datesStr} | pago: ${paymentStr}. confirma tu disponibilidad aquí.`,
     openGraph: {
-      title: `proyecto: ${project.project_name}`,
+      title: brandNameText,
       description: `fecha: ${datesStr} | pago: ${paymentStr}. confirma tu disponibilidad aquí.`,
       type: 'website',
     },

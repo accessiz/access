@@ -57,7 +57,44 @@ export function ProjectLinksCard({ project, onStatusChange }: ProjectLinksCardPr
 
   const clientShareMsg = `Hola,\n\nTe compartimos el enlace para la selección del casting del proyecto "${project.project_name}".\n\nEnlace: ${clientUrl}\n${project.password ? `Contraseña: ${project.password}\n` : ''}\nPara cualquier consulta, quedamos a disposición.\nIZ Management | IZ ACCESS`;
 
-  const modelShareMsg = `Hola,\n\nTe compartimos el enlace para registrar tu disponibilidad para el proyecto "${project.project_name}".\n\nEnlace: ${modelUrl}\n\nPor favor ingresa y completa tu postulación.\n\nIZ Management | IZ ACCESS`;
+  const genderText = project.gender_target === 'Hombres' ? 'Hombres' : project.gender_target === 'Mujeres' ? 'Mujeres' : 'Hombres y Mujeres';
+  const brandNameText = project.brand?.name || project.client_name || '';
+  
+  const uniqueDates = Array.from(new Set((project.schedule || []).map(s => s.date)))
+    .map(dateStr => formatDate(dateStr));
+  const scheduleDates = uniqueDates.length > 0 ? uniqueDates.join(', ') : '';
+
+  const paymentParts = [];
+  const projectPaymentType = project.default_model_payment_type || 'cash';
+  const currency = project.currency || 'GTQ';
+
+  if (projectPaymentType === 'cash' || projectPaymentType === 'mixed') {
+    if (project.default_model_fee !== null && project.default_model_fee !== undefined) {
+      const feeType = project.default_fee_type === 'per_hour' ? 'por hora' : project.default_fee_type === 'fixed' ? 'fijo' : 'por día';
+      paymentParts.push(`${currency} ${project.default_model_fee} ${feeType}`);
+    }
+  }
+  if (projectPaymentType === 'trade' || projectPaymentType === 'mixed') {
+    const tradeDetails = project.default_model_trade_details || 'Canje';
+    if (project.default_model_trade_fee) {
+      paymentParts.push(`Canje equivalente a ${currency} ${project.default_model_trade_fee} (${tradeDetails})`);
+    } else {
+      paymentParts.push(`Canje (${tradeDetails})`);
+    }
+  }
+  const paymentText = paymentParts.join(' + ') || 'A convenir';
+
+  const deadlineText = applyEnd ? `${formatDate(applyEnd.date)} a las ${applyEnd.time}` : '';
+
+  const modelShareMsg = `*IZ Management | Casting* 🌟\n\n` +
+    `Buscamos: *${genderText}*\n` +
+    (brandNameText ? `Marca: *${brandNameText}*\n` : '') +
+    (scheduleDates ? `Días: *${scheduleDates}*\n` : '') +
+    `Pago: *${paymentText}*\n` +
+    (deadlineText ? `Aplicar antes de: *${deadlineText}*\n` : '') +
+    `\n` +
+    `Enlace para aplicar:\n` +
+    `${modelUrl}`;
 
   async function copyText(text: string, setCopiedState: (v: boolean) => void, successMsg: string) {
     if (navigator.clipboard && window.isSecureContext) {

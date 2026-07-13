@@ -83,6 +83,7 @@ export const projectFormSchema = z.object({
   apply_close_date: z.string().optional().nullable(),
   apply_close_time: z.string().optional().nullable(),
   hide_schedule: z.boolean().optional().nullable(),
+  gender_target: z.enum(['Todos', 'Hombres', 'Mujeres']).optional().nullable(),
 });
 
 export type ProjectFormData = z.infer<typeof projectFormSchema>;

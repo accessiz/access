@@ -303,7 +303,7 @@ export async function getProjectById(idOrPublicId: string): Promise<Project | nu
 
   let query = supabaseAdmin
     .from('projects')
-    .select('*, project_schedule(*)');
+    .select('*, project_schedule(*), brand:brands(*)');
 
   if (isUUID) {
     query = query.or(`id.eq.${idOrPublicId},public_id.eq.${idOrPublicId}`);

@@ -96,6 +96,7 @@ export interface Project extends DbProject {
   id: string;
   status: ProjectStatus;
   hide_schedule?: boolean | null;
+  gender_target: 'Todos' | 'Hombres' | 'Mujeres' | null;
   // project_types viene de DbProject como text[] pero lo tipamos más estricto
   project_types: ProjectType[] | null;
   // Relaciones opcionales (no vienen de la DB, se cargan con joins)

@@ -17,6 +17,8 @@ import {
   Plus,
   Save,
   X,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 
 import {
@@ -175,6 +177,7 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
   // Estado separado para moneda del cliente (puede ser diferente a la de modelos)
   const [clientCurrency, setClientCurrency] = useState<'GTQ' | 'USD'>((initialData?.currency as 'GTQ' | 'USD') || 'GTQ');
   const [hasManuallySetClientCurrency, setHasManuallySetClientCurrency] = useState(false);
+  const [showFormPassword, setShowFormPassword] = useState(false);
 
   // Cargar clientes al montar
   useEffect(() => {
@@ -262,6 +265,7 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
       apply_start_time: applyStart?.time || '09:00 AM',
       apply_close_date: applyEnd?.date || '',
       apply_close_time: applyEnd?.time || '06:00 PM',
+      gender_target: (initialData as any)?.gender_target || 'Todos',
     },
   });
 
@@ -427,6 +431,7 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
     fd.set('apply_close_date', values.apply_close_date || '');
     fd.set('apply_close_time', values.apply_close_time || '');
     fd.set('hide_schedule', String(values.hide_schedule || false));
+    fd.set('gender_target', values.gender_target || 'Todos');
 
     // Project types
     if (values.project_types && values.project_types.length > 0) {
@@ -769,6 +774,41 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
                 id="project-location"
                 placeholder="Ej: Zona 10, Ciudad de Guatemala o locación específica"
                 {...form.register('location')}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Público Objetivo (Género)</Label>
+              <Controller
+                control={form.control}
+                name="gender_target"
+                render={({ field }) => (
+                  <div className="flex gap-2">
+                    {[
+                      { value: 'Todos', label: 'Todos' },
+                      { value: 'Hombres', label: 'Hombres' },
+                      { value: 'Mujeres', label: 'Mujeres' }
+                    ].map((opt) => {
+                      const isSelected = (field.value || 'Todos') === opt.value;
+                      return (
+                        <Button
+                          key={opt.value}
+                          type="button"
+                          variant={isSelected ? "default" : "outline"}
+                          size="sm"
+                          className={cn(
+                            "h-9 px-5 transition-all relative cursor-pointer font-medium",
+                            isSelected && "bg-purple text-white hover:bg-purple"
+                          )}
+                          onClick={() => field.onChange(opt.value)}
+                        >
+                          {opt.label}
+                        </Button>
+                      );
+                    })}
+                    <input type="hidden" name="gender_target" value={field.value || 'Todos'} />
+                  </div>
+                )}
               />
             </div>
 
@@ -1242,7 +1282,21 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
           <div className="border bg-card rounded-lg p-6">
             <div className="space-y-2 max-w-sm">
               <Label>Contraseña de acceso</Label>
-              <Input type="password" {...form.register('password')} placeholder="Mínimo 6 caracteres" />
+              <div className="relative">
+                <Input
+                  type={showFormPassword ? "text" : "password"}
+                  {...form.register('password')}
+                  placeholder="Mínimo 6 caracteres"
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowFormPassword(!showFormPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer focus:outline-none flex items-center justify-center h-8 w-8 rounded-md hover:bg-hover-overlay"
+                >
+                  {showFormPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
           </div>
         </div>
