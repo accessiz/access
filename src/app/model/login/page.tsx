@@ -16,15 +16,41 @@ type PageProps = {
 
 export default function ModelLoginPage({ searchParams }: PageProps) {
   return (
-    <div className="w-full max-w-md space-y-6 text-center py-6 flex flex-col items-center justify-center">
-      {/* Logo Access completo con letras originales, centrado */}
-      <div className="mb-16">
-        <Logo className="h-8 w-auto text-foreground" />
-      </div>
+    <div className="ds-grid-auth bg-background text-foreground">
       
-      <Suspense fallback={<div className="text-center text-body text-muted-foreground">Cargando formulario...</div>}>
+      {/* SECCIÓN DE MARCA INMERSIVA (Columna Izquierda - Oculta en Móvil, Visible en Escritorio: 3 Columnas) */}
+      <aside className="ds-grid-auth-aside bg-black p-12 flex-col justify-between text-white relative overflow-hidden">
+        {/* Video de fondo en loop */}
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+        >
+          <source src="/videos/abstract-purple-glowing-particle-flow-background.mp4" type="video/mp4" />
+        </video>
+
+        {/* Overlay oscuro sutil para legibilidad del logo */}
+        <div className="absolute inset-0 bg-black/30 pointer-events-none"></div>
+
+        {/* Header Superior de la Marca - Logotipo de Access */}
+        <div className="flex items-center gap-3 z-10">
+          <Logo className="h-8 w-auto text-white" />
+        </div>
+
+        {/* Espacio central vacío para diseño premium minimalista */}
+        <div className="my-auto z-10"></div>
+
+        {/* Footer vacío */}
+        <div className="z-10"></div>
+      </aside>
+
+      {/* FORMULARIO DE ACCESO (Columna Derecha - 100% Mobile First: 1 Columna en móvil, 5 en escritorio) */}
+      <Suspense fallback={<div className="ds-grid-auth-main flex items-center justify-center ds-text-sm text-muted-foreground bg-card md:bg-background/20 min-h-screen">Cargando formulario...</div>}>
         <LoginFormContent searchParams={searchParams} />
       </Suspense>
+      
     </div>
   );
 }

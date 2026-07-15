@@ -1,5 +1,6 @@
 import { ModelPortalLayout } from '@/components/layouts/model-portal-layout';
 import { Suspense } from 'react';
+import '@/app/styles/globals-ds.css';
 
 export default function MLayout({ children }: { children: React.ReactNode }) {
   return (

@@ -362,7 +362,7 @@ export async function getModelsForProject(projectId: string): Promise<Model[]> {
       )
     `)
     .eq('project_id', projectId)
-    .neq('model_status', 'rejected');
+    .in('model_status', ['applied', 'added_by_admin']);
 
   if (error || !projectModelsData) {
     logError(error || new Error('No data returned'), { action: 'getModelsForProject', projectId });

@@ -1,27 +1,64 @@
 'use client';
 
 import * as React from 'react';
-import { Mail, Lock, Eye, EyeOff, Loader2, ArrowLeft, ArrowUpRight, Check, ShieldAlert, Phone } from 'lucide-react';
+import { Lock, Eye, EyeOff, ArrowLeft, ShieldAlert, Phone, Sun, Moon } from 'lucide-react';
+import { useTheme } from 'next-themes';
 import { useLoginForm } from './login-form.logic';
 import { LoginFormProps } from './login-form.types';
-import { Card, CardContent } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/ds/button';
+import { Input } from '@/components/ui/ds/input';
+import { Dropdown } from '@/components/ui/ds/dropdown';
+import Logo from '@/components/LogoDark';
 
-const prefixToCountry: Record<string, string> = {
-  '+502': 'GT',
-  '+52': 'MX',
-  '+503': 'SV',
-  '+504': 'HN',
-  '+506': 'CR',
-  '+507': 'PA',
-  '+57': 'CO',
-  '+1': 'US/CA',
-  '+33': 'FR',
-  '+34': 'ES',
-  '+44': 'GB',
-  '+58': 'VE',
+// Diccionario de soporte de países, banderas, máscaras y longitudes
+const prefixToCountryData: Record<string, { flag: string; name: string; length: number; mask: string }> = {
+  '+502': { flag: '🇬🇹', name: 'Guatemala', length: 8, mask: '0000 0000' },
+  '+52': { flag: '🇲🇽', name: 'México', length: 10, mask: '00 0000 0000' },
+  '+503': { flag: '🇸🇻', name: 'El Salvador', length: 8, mask: '0000 0000' },
+  '+504': { flag: '🇭🇳', name: 'Honduras', length: 8, mask: '0000 0000' },
+  '+506': { flag: '🇨🇷', name: 'Costa Rica', length: 8, mask: '0000 0000' },
+  '+507': { flag: '🇵🇦', name: 'Panamá', length: 8, mask: '0000 0000' },
+  '+57': { flag: '🇨🇴', name: 'Colombia', length: 10, mask: '000 000 0000' },
+  '+1': { flag: '🇺🇸', name: 'Estados Unidos', length: 10, mask: '000 000 0000' },
+  '+33': { flag: '🇫🇷', name: 'Francia', length: 9, mask: '0 00 00 00 00' },
+  '+34': { flag: '🇪🇸', name: 'España', length: 9, mask: '000 000 000' },
+  '+44': { flag: '🇬🇧', name: 'Reino Unido', length: 10, mask: '0000 000000' },
+  '+58': { flag: '🇻🇪', name: 'Venezuela', length: 10, mask: '000 000 0000' },
+  '+370': { flag: '🇱🇹', name: 'Lituania', length: 8, mask: '000 00 000' },
+  '+49': { flag: '🇩🇪', name: 'Alemania', length: 10, mask: '0000 000000' },
+  '+39': { flag: '🇮🇹', name: 'Italia', length: 10, mask: '000 0000 000' },
+  '+51': { flag: '🇵🇪', name: 'Perú', length: 9, mask: '000 000 000' },
+  '+54': { flag: '🇦🇷', name: 'Argentina', length: 10, mask: '9 00 0000 0000' },
+  '+55': { flag: '🇧🇷', name: 'Brasil', length: 11, mask: '00 00000 0000' },
+  '+56': { flag: '🇨🇱', name: 'Chile', length: 9, mask: '9 0000 0000' },
+  '+591': { flag: '🇧🇴', name: 'Bolivia', length: 8, mask: '0000 0000' },
+  '+593': { flag: '🇪🇨', name: 'Ecuador', length: 9, mask: '90 000 0000' },
+  '+595': { flag: '🇵🇾', name: 'Paraguay', length: 9, mask: '000 000 000' },
+  '+598': { flag: '🇺🇾', name: 'Uruguay', length: 8, mask: '000 00 00' },
+  '+41': { flag: '🇨🇭', name: 'Suiza', length: 9, mask: '00 000 00 00' },
+  '+351': { flag: '🇵🇹', name: 'Portugal', length: 9, mask: '000 000 000' },
+  '+48': { flag: '🇵🇱', name: 'Polonia', length: 9, mask: '000 000 000' },
+  '+40': { flag: '🇷🇴', name: 'Rumania', length: 9, mask: '000 000 000' },
+  '+31': { flag: '🇳🇱', name: 'Países Bajos', length: 9, mask: '0 0000 0000' },
+  '+32': { flag: '🇧🇪', name: 'Bélgica', length: 9, mask: '000 00 00 00' },
+  '+43': { flag: '🇦🇹', name: 'Austria', length: 10, mask: '000 0000 000' },
+  '+46': { flag: '🇸🇪', name: 'Suecia', length: 9, mask: '00 000 00 00' },
+  '+47': { flag: '🇳🇴', name: 'Noruega', length: 8, mask: '000 00 000' },
+  '+45': { flag: '🇩🇰', name: 'Dinamarca', length: 8, mask: '00 00 00 00' },
+  '+358': { flag: '🇫🇮', name: 'Finlandia', length: 9, mask: '000 000000' },
+};
+
+// Helper dinámico para resolver datos de país y evitar mostrar "Otro"
+const getCountryData = (prefix: string) => {
+  if (prefixToCountryData[prefix]) {
+    return prefixToCountryData[prefix];
+  }
+  return {
+    flag: '🌐',
+    name: `País (${prefix})`,
+    length: 10,
+    mask: '0000000000'
+  };
 };
 
 export function LoginForm({ redirectTo, prefixes = ['+502'] }: LoginFormProps) {
@@ -45,16 +82,50 @@ export function LoginForm({ redirectTo, prefixes = ['+502'] }: LoginFormProps) {
     resetStep,
   } = useLoginForm(redirectTo);
 
-  // Estados locales para unir el código de país y el número telefónico
+  // Tema claro/oscuro
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => setMounted(true), []);
+
+  const toggleTheme = () => {
+    if (!mounted) return;
+    setTheme(theme === 'dark' ? 'light' : 'dark');
+  };
+
+  // Prefijo y banderas locales
   const [countryCode, setCountryCode] = React.useState(() => {
     if (prefixes.includes('+502')) return '+502';
     return prefixes[0] || '+502';
   });
   const [localNumber, setLocalNumber] = React.useState('');
+  const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
 
-  // Sincronizar estados locales con el estado 'phone' de la lógica
+  const countryData = getCountryData(countryCode);
+
+  // Formateador dinámico según máscara del país
+  const formatPhoneNumber = (val: string, mask: string) => {
+    const raw = val.replace(/\D/g, '');
+    let formatted = '';
+    let rawIndex = 0;
+    for (let i = 0; i < mask.length && rawIndex < raw.length; i++) {
+      if (mask[i] === '0') {
+        formatted += raw[rawIndex];
+        rawIndex++;
+      } else {
+        formatted += mask[i];
+      }
+    }
+    return formatted;
+  };
+
+  const handlePhoneInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatPhoneNumber(e.target.value, countryData.mask);
+    setLocalNumber(formatted);
+  };
+
+  // Sincronizar estado local con el hook principal
   React.useEffect(() => {
-    const cleanedLocal = localNumber.replace(/[\s\-\(\)\.]/g, '');
+    const cleanedLocal = localNumber.replace(/\D/g, '');
     if (cleanedLocal) {
       setPhone(countryCode + cleanedLocal);
     } else {
@@ -62,307 +133,336 @@ export function LoginForm({ redirectTo, prefixes = ['+502'] }: LoginFormProps) {
     }
   }, [countryCode, localNumber, setPhone]);
 
-  // Generar la URL de WhatsApp para Soporte IZ con el número de teléfono dinámico
+  // WhatsApp de Soporte
   const getSupportWhatsappUrl = () => {
     const destination = '50247388666';
     const displayPhone = phone.trim() || '(poner tu número aqui porfavor)';
-    const text = `hola estoy intentando ingresar con el número de telefono ${displayPhone} pero no puedo ingresar.`;
+    const text = `Hola estoy intentando ingresar con el número de teléfono ${displayPhone} pero no puedo ingresar.`;
     return `https://wa.me/${destination}?text=${encodeURIComponent(text)}`;
   };
 
-  if (step === 'phone') {
-    return (
-      <Card className="w-full max-w-md mx-auto bg-card border border-border rounded-[24px] p-6 md:p-10 shadow-2xl relative overflow-hidden">
-        <CardContent className="p-0">
-          
-          {/* Encabezado con titulo */}
-          <div className="text-center mb-8">
-            <h2 suppressHydrationWarning className="text-xl md:text-display font-extrabold text-foreground tracking-tight">Bienvenido</h2>
-          </div>
+  return (
+    <main className="ds-grid-auth-main flex flex-col justify-between min-h-screen bg-card md:bg-background/20 p-6 sm:p-12 md:p-16 relative transition-colors duration-300">
+      
+      {/* HEADER CON CONTROLADOR DE TEMA */}
+      <header className="w-full flex justify-between items-center z-30">
+        {/* Logo visible solo en móvil (Logotipo de Access) */}
+        <div className="flex items-center gap-2 md:hidden">
+          <Logo className="h-7 w-auto text-foreground" />
+        </div>
+        <div className="hidden md:block"></div>
 
-          <form onSubmit={handlePhoneSubmit} className="space-y-5">
+        {/* Botón Selector de Tema */}
+        <button
+          type="button"
+          onClick={toggleTheme}
+          className="w-11 h-11 rounded-full bg-[rgb(var(--ds-color-surface-container-low))] hover:bg-[rgb(var(--ds-color-surface-container-high))] flex items-center justify-center border border-[rgb(var(--ds-color-outline-variant))]/40 text-foreground transition-all duration-200 cursor-pointer active:scale-[0.9] outline-none"
+          aria-label="Cambiar tema"
+        >
+          {mounted && theme === 'dark' ? (
+            <Sun className="h-5 w-5" />
+          ) : (
+            <Moon className="h-5 w-5" />
+          )}
+        </button>
+      </header>
+
+      {/* CONTENEDOR DE FORMULARIO DIRECTO */}
+      <div className="flex-1 flex flex-col justify-center max-w-md w-full mx-auto py-10 md:py-0 text-center md:text-left">
+        
+        {/* PASO 1: TELÉFONO */}
+        {step === 'phone' && (
+          <div className="w-full space-y-8">
             <div>
-              <label className="block text-[9px] font-extrabold text-muted-foreground uppercase tracking-widest mb-2" htmlFor="model-phone">
-                Número de Teléfono
-              </label>
-              <div className="flex gap-2">
-                <select
-                  value={countryCode}
-                  onChange={(e) => setCountryCode(e.target.value)}
-                  disabled={isPending}
-                  className="bg-background border border-border rounded-xl py-3.5 px-3 text-foreground text-xs font-semibold outline-none focus:ring-2 focus:ring-purple/20 transition-all shrink-0"
-                >
-                  {prefixes.map((pref) => {
-                    const country = prefixToCountry[pref];
-                    return (
-                      <option key={pref} value={pref}>
-                        {pref} {country ? `(${country})` : ''}
-                      </option>
-                    );
-                  })}
-                </select>
-                <div className="relative flex-1">
-                  <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-muted-foreground">
-                    <Phone className="h-4 w-4" />
-                  </span>
-                  <input
-                    id="model-phone"
+              <h1 className="ds-text-4xl font-extrabold text-foreground mb-2 leading-tight">
+                Ingresa a tu <span className="text-[rgb(var(--ds-color-primary))]">perfil</span>
+              </h1>
+
+            </div>
+
+            <form onSubmit={handlePhoneSubmit} className="space-y-6">
+              <div className="space-y-2">
+                <label className="ds-text-sm text-muted-foreground font-semibold block" htmlFor="ds-model-phone">
+                  Ingresa tu número de teléfono
+                </label>
+                
+                <div className="grid grid-cols-[100px_1fr] gap-3 items-center">
+                  <Dropdown
+                    onClick={() => setIsDrawerOpen(true)}
+                    triggerContent={<span className="text-2xl select-none">{countryData.flag}</span>}
+                    className="w-full !h-14"
+                  />
+
+                  <Input
+                    id="ds-model-phone"
                     type="tel"
-                    placeholder="Escribe tu número"
+                    placeholder={countryData.mask}
                     value={localNumber}
-                    onChange={(e) => setLocalNumber(e.target.value)}
-                    required
+                    onChange={handlePhoneInputChange}
+                    leftElement={<span className="ds-text-base text-muted-foreground font-bold select-none">{countryCode}</span>}
+                    leftPadding={countryCode.length >= 4 ? '5.5rem' : '4.5rem'}
+                    className="!h-14"
                     disabled={isPending}
-                    className="w-full bg-background border border-border focus:ring-2 focus:ring-purple/20 rounded-xl py-3.5 pl-11 pr-4 text-foreground text-xs font-semibold outline-none transition-all duration-200"
+                    required
                     autoComplete="tel"
                   />
                 </div>
               </div>
-            </div>
 
-            {error && (
-              <p className="text-label text-destructive text-center p-3 rounded-lg border border-destructive/25 bg-destructive/10" role="alert">
-                {error}
-              </p>
-            )}
-
-            <button
-              type="submit"
-              disabled={isPending}
-              className="w-full bg-[#f4f4f6] text-[#18181b] hover:bg-purple hover:text-white font-bold rounded-xl py-3.5 px-4 transition-all duration-200 flex items-center justify-center gap-2 text-xs uppercase tracking-wider shadow-sm active:scale-[0.98] cursor-pointer border-0"
-            >
-              {isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Verificando...</span>
-                </>
-              ) : (
-                <span>Continuar</span>
+              {error && (
+                <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/25 ds-text-sm text-red-500 font-semibold" role="alert">
+                  {error}
+                </div>
               )}
-            </button>
-          </form>
 
-          <div className="mt-8 pt-6 border-t border-border text-center text-[11px] text-muted-foreground">
-            ¿Problemas de acceso? <a href={getSupportWhatsappUrl()} target="_blank" rel="noopener noreferrer" className="text-foreground font-bold hover:underline">Soporte IZ</a>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+              <Button
+                type="submit"
+                loading={isPending}
+                disabled={localNumber.replace(/\D/g, '').length !== countryData.length}
+                variant="primary"
+                className="w-full !h-14 mt-4"
+              >
+                Continuar
+              </Button>
+            </form>
 
-  if (step === 'register') {
-    return (
-      <Card className="w-full max-w-md mx-auto bg-card border border-border rounded-[24px] p-6 md:p-10 shadow-2xl relative overflow-hidden">
-        <CardContent className="p-0">
-          
-          <button 
-            type="button"
-            onClick={resetStep}
-            className="absolute top-6 left-6 h-8 w-8 rounded-full bg-tertiary hover:bg-primary hover:text-background text-foreground flex items-center justify-center transition-colors duration-200 border-0 cursor-pointer"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-          </button>
-
-          <div className="mt-8 mb-6 text-left">
-            <div className="flex items-start gap-3 p-4 rounded-2xl bg-tertiary border border-border">
-              <ShieldAlert className="h-5 w-5 text-purple shrink-0 mt-0.5" />
-              <div>
-                <h4 className="text-[9px] font-bold text-foreground uppercase tracking-widest">Primer Ingreso</h4>
-                <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">Establece una contraseña para tu cuenta de acceso.</p>
-              </div>
+            <div className="mt-8 pt-6 border-t border-[rgb(var(--ds-color-outline-variant))]/20 text-center ds-text-sm text-muted-foreground">
+              ¿Problemas de acceso? <a href={getSupportWhatsappUrl()} target="_blank" rel="noopener noreferrer" className="text-foreground font-bold hover:underline">Soporte IZ</a>
             </div>
-            
-            <h2 className="text-xl md:text-title font-extrabold text-foreground tracking-tight mt-6">Establecer Contraseña</h2>
           </div>
+        )}
 
-          <form onSubmit={handleRegister} className="space-y-5">
-            <div className="text-left space-y-2">
-              <div className="flex items-center justify-between">
-                <Label className="text-[9px] font-extrabold text-muted-foreground uppercase tracking-widest">Número de Teléfono</Label>
-              </div>
-              <div className="p-3.5 rounded-xl bg-background border border-border font-semibold text-body select-all truncate">
-                {phone}
-              </div>
+        {/* PASO 2: LOGIN (CON CONTRASEÑA REGISTRADA) */}
+        {step === 'password' && (
+          <div className="w-full space-y-6">
+            <div>
+              <h2 className="ds-text-3xl font-extrabold text-foreground mb-2 leading-tight">
+                Escribe tu contraseña
+              </h2>
+              <p className="ds-text-sm text-muted-foreground">
+                Ingresa la contraseña de tu cuenta para acceder al portal.
+              </p>
             </div>
 
-            <div className="text-left">
-              <Label htmlFor="model-password-reg" className="block text-[9px] font-extrabold text-muted-foreground uppercase tracking-widest mb-2">
-                Nueva Contraseña
-              </Label>
-              <div className="relative">
-                <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-muted-foreground">
-                  <Lock className="h-4 w-4" />
-                </span>
-                <input
-                  id="model-password-reg"
+            <form onSubmit={handleLogin} className="space-y-6">
+              <div className="space-y-2">
+                <label className="ds-text-sm text-muted-foreground font-semibold block">Número de teléfono</label>
+                <div className="p-4 rounded-2xl bg-[rgb(var(--ds-color-surface-container-low))] border border-[rgb(var(--ds-color-outline-variant))]/20 ds-text-base font-semibold select-all text-left">
+                  {phone}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="ds-text-sm text-muted-foreground font-semibold block" htmlFor="ds-model-password">
+                  Contraseña
+                </label>
+                <Input
+                  id="ds-model-password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Escribe tu contraseña"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={isPending}
+                  className="!h-14"
+                  autoComplete="current-password"
+                  rightElement={
+                    <button
+                      type="button"
+                      tabIndex={-1}
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer bg-transparent border-0 outline-none"
+                      aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                    >
+                      {showPassword ? <EyeOff className="h-4.5 w-4.5" /> : <Eye className="h-4.5 w-4.5" />}
+                    </button>
+                  }
+                />
+              </div>
+
+              {error && (
+                <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/25 ds-text-sm text-red-500 font-semibold" role="alert">
+                  {error}
+                </div>
+              )}
+
+              <div className="space-y-3 pt-4">
+                <Button
+                  type="submit"
+                  loading={isPending}
+                  variant="primary"
+                  className="w-full !h-14"
+                >
+                  Ingresar
+                </Button>
+                <Button
+                  type="button"
+                  onClick={resetStep}
+                  variant="outline"
+                  className="w-full !h-14"
+                >
+                  Volver
+                </Button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* PASO 3: REGISTRO (NUEVA CONTRASEÑA EN PRIMER ACCESO) */}
+        {step === 'register' && (
+          <div className="w-full space-y-6">
+            <div>
+              <h2 className="ds-text-3xl font-extrabold text-foreground mb-2 leading-tight">
+                Establecer contraseña
+              </h2>
+            </div>
+
+            <form onSubmit={handleRegister} className="space-y-5">
+              <div className="space-y-2">
+                <label className="ds-text-sm text-muted-foreground font-semibold block">Número de teléfono</label>
+                <div className="p-4 rounded-2xl bg-[rgb(var(--ds-color-surface-container-low))] border border-[rgb(var(--ds-color-outline-variant))]/20 ds-text-base font-semibold select-all text-left">
+                  {phone}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="ds-text-sm text-muted-foreground font-semibold block" htmlFor="ds-model-password-reg">
+                  Nueva contraseña
+                </label>
+                <Input
+                  id="ds-model-password-reg"
                   type={showPassword ? 'text' : 'password'}
                   placeholder="Mínimo 6 caracteres"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   disabled={isPending}
-                  className="w-full bg-background border border-border focus:ring-2 focus:ring-purple/20 rounded-xl py-3.5 pl-11 pr-11 text-foreground text-xs font-semibold outline-none transition-all duration-200"
+                  className="!h-14"
                   autoComplete="new-password"
                   minLength={6}
+                  rightElement={
+                    <button
+                      type="button"
+                      tabIndex={-1}
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer bg-transparent border-0 outline-none"
+                      aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                    >
+                      {showPassword ? <EyeOff className="h-4.5 w-4.5" /> : <Eye className="h-4.5 w-4.5" />}
+                    </button>
+                  }
                 />
-                <button
-                  type="button"
-                  tabIndex={-1}
-                  onClick={() => setShowPassword((prev) => !prev)}
-                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-muted-foreground hover:text-foreground transition-colors cursor-pointer bg-transparent border-0"
-                  aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
               </div>
-            </div>
 
-            <div className="text-left">
-              <Label htmlFor="model-confirm-password" className="block text-[9px] font-extrabold text-muted-foreground uppercase tracking-widest mb-2">
-                Confirmar Contraseña
-              </Label>
-              <div className="relative">
-                <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-muted-foreground">
-                  <Lock className="h-4 w-4" />
-                </span>
-                <input
-                  id="model-confirm-password"
+              <div className="space-y-2">
+                <label className="ds-text-sm text-muted-foreground font-semibold block" htmlFor="ds-model-confirm-password">
+                  Confirmar contraseña
+                </label>
+                <Input
+                  id="ds-model-confirm-password"
                   type={showConfirmPassword ? 'text' : 'password'}
                   placeholder="Confirma tu contraseña"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
                   disabled={isPending}
-                  className="w-full bg-background border border-border focus:ring-2 focus:ring-purple/20 rounded-xl py-3.5 pl-11 pr-11 text-foreground text-xs font-semibold outline-none transition-all duration-200"
+                  className="!h-14"
                   autoComplete="new-password"
                   minLength={6}
+                  rightElement={
+                    <button
+                      type="button"
+                      tabIndex={-1}
+                      onClick={() => setShowConfirmPassword((prev) => !prev)}
+                      className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer bg-transparent border-0 outline-none"
+                      aria-label={showConfirmPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                    >
+                      {showConfirmPassword ? <EyeOff className="h-4.5 w-4.5" /> : <Eye className="h-4.5 w-4.5" />}
+                    </button>
+                  }
                 />
-                <button
-                  type="button"
-                  tabIndex={-1}
-                  onClick={() => setShowConfirmPassword((prev) => !prev)}
-                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-muted-foreground hover:text-foreground transition-colors cursor-pointer bg-transparent border-0"
-                  aria-label={showConfirmPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                >
-                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
               </div>
-            </div>
 
-            {error && (
-              <p className="text-label text-destructive text-center p-3 rounded-lg border border-destructive/25 bg-destructive/10" role="alert">
-                {error}
-              </p>
-            )}
-
-            <button
-              type="submit"
-              disabled={isPending}
-              className="w-full bg-[#f4f4f6] text-[#18181b] hover:bg-purple hover:text-white font-bold rounded-xl py-3.5 px-4 transition-all duration-200 flex items-center justify-center gap-2 text-xs uppercase tracking-wider shadow-sm active:scale-[0.98] cursor-pointer border-0"
-            >
-              {isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Registrando...</span>
-                </>
-              ) : (
-                <span>Registrarse y Acceder</span>
+              {error && (
+                <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/25 ds-text-sm text-red-500 font-semibold" role="alert">
+                  {error}
+                </div>
               )}
-            </button>
-          </form>
 
-          <div className="mt-8 pt-6 border-t border-border text-center text-[11px] text-muted-foreground">
-            ¿Problemas de acceso? <a href={getSupportWhatsappUrl()} target="_blank" rel="noopener noreferrer" className="text-foreground font-bold hover:underline">Soporte IZ</a>
+              <div className="space-y-3 pt-4">
+                <Button
+                  type="submit"
+                  loading={isPending}
+                  variant="primary"
+                  className="w-full !h-14"
+                >
+                  Establecer contraseña
+                </Button>
+                <Button
+                  type="button"
+                  onClick={resetStep}
+                  variant="outline"
+                  className="w-full !h-14"
+                >
+                  Volver
+                </Button>
+              </div>
+            </form>
           </div>
-        </CardContent>
-      </Card>
-    );
-  }
+        )}
 
-  // step === 'password'
-  return (
-    <Card className="w-full max-w-md mx-auto bg-card border border-border rounded-[24px] p-6 md:p-10 shadow-2xl relative overflow-hidden">
-      <CardContent className="p-0">
+      </div>
+
+      {/* DRAWER / MODAL ADAPTATIVO DE PAÍSES */}
+      {isDrawerOpen && (
+        <div
+          onClick={() => setIsDrawerOpen(false)}
+          className="fixed inset-0 bg-black/60 z-40 backdrop-blur-sm transition-opacity duration-300 animate-fade-in"
+        />
+      )}
+      
+      <div className={`fixed bottom-0 md:top-1/2 md:bottom-auto left-0 right-0 md:left-1/2 md:right-auto md:-translate-x-1/2 md:-translate-y-1/2 w-full md:max-w-md max-h-[80vh] md:max-h-[600px] bg-[rgb(var(--ds-color-surface))] rounded-t-[32px] md:rounded-2xl border border-[rgb(var(--ds-color-outline-variant))]/30 shadow-2xl z-50 flex flex-col transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${isDrawerOpen ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0 pointer-events-none md:translate-y-[-40%]'}`}>
         
-        <button 
-          type="button"
-          onClick={resetStep}
-          className="absolute top-6 left-6 h-8 w-8 rounded-full bg-tertiary hover:bg-primary hover:text-background text-foreground flex items-center justify-center transition-colors duration-200 border-0 cursor-pointer"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" />
-        </button>
-
-        <div className="text-center mb-8 mt-8">
-          <h2 className="text-xl md:text-display font-extrabold text-foreground tracking-tight">Ingresar Contraseña</h2>
+        <div className="w-full flex justify-center py-3 md:hidden">
+          <div className="w-10 h-1 bg-[rgb(var(--ds-color-outline-variant))]/50 rounded-full"></div>
         </div>
 
-        <form onSubmit={handleLogin} className="space-y-5">
-          <div className="text-left space-y-2">
-            <div className="flex items-center justify-between">
-              <Label className="text-[9px] font-extrabold text-muted-foreground uppercase tracking-widest">Número de Teléfono</Label>
-            </div>
-            <div className="p-3.5 rounded-xl bg-background border border-border font-semibold text-body select-all truncate">
-              {phone}
-            </div>
-          </div>
-
-          <div className="text-left">
-            <Label htmlFor="model-password-login" className="block text-[9px] font-extrabold text-muted-foreground uppercase tracking-widest mb-2">
-              Contraseña
-            </Label>
-            <div className="relative">
-              <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-muted-foreground">
-                <Lock className="h-4 w-4" />
-              </span>
-              <input
-                id="model-password-login"
-                type={showPassword ? 'text' : 'password'}
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                disabled={isPending}
-                className="w-full bg-background border border-border focus:ring-2 focus:ring-purple/20 rounded-xl py-3.5 pl-11 pr-11 text-foreground text-xs font-semibold outline-none transition-all duration-200"
-                autoComplete="current-password"
-              />
-              <button
-                type="button"
-                tabIndex={-1}
-                onClick={() => setShowPassword((prev) => !prev)}
-                className="absolute inset-y-0 right-0 pr-4 flex items-center text-muted-foreground hover:text-foreground transition-colors cursor-pointer bg-transparent border-0"
-                aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-              >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            </div>
-          </div>
-
-          {error && (
-            <p className="text-label text-destructive text-center p-3 rounded-lg border border-destructive/25 bg-destructive/10" role="alert">
-              {error}
-            </p>
-          )}
-
+        <div className="px-6 pb-3 pt-2 md:pt-5 flex justify-between items-center border-b border-[rgb(var(--ds-color-outline-variant))]/20">
+          <span className="ds-text-lg text-foreground font-bold">Selecciona tu país</span>
           <button
-            type="submit"
-            disabled={isPending}
-            className="w-full bg-[#f4f4f6] text-[#18181b] hover:bg-purple hover:text-white font-bold rounded-xl py-3.5 px-4 transition-all duration-200 flex items-center justify-center gap-2 text-xs uppercase tracking-wider shadow-sm active:scale-[0.98] cursor-pointer border-0"
+            type="button"
+            onClick={() => setIsDrawerOpen(false)}
+            className="w-9 h-9 rounded-full bg-[rgb(var(--ds-color-surface-container-high))] flex items-center justify-center text-muted-foreground hover:text-foreground transition-all duration-200 border-0 cursor-pointer outline-none"
           >
-            {isPending ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Iniciando...</span>
-              </>
-            ) : (
-              <span>Iniciar Sesión</span>
-            )}
+            ✕
           </button>
-        </form>
-
-        <div className="mt-8 pt-6 border-t border-border text-center text-[11px] text-muted-foreground">
-          ¿Problemas de acceso? <a href={getSupportWhatsappUrl()} target="_blank" rel="noopener noreferrer" className="text-foreground font-bold hover:underline">Soporte IZ</a>
         </div>
-      </CardContent>
-    </Card>
+
+        <div className="flex-grow overflow-y-auto px-6 py-4 space-y-1.5 scrollbar-none">
+          {prefixes.map((pref) => {
+            const data = getCountryData(pref);
+            return (
+              <button
+                key={pref}
+                type="button"
+                onClick={() => {
+                  setCountryCode(pref);
+                  setLocalNumber('');
+                  setIsDrawerOpen(false);
+                }}
+                className="w-full h-14 px-4 rounded-xl grid grid-cols-[36px_1fr_auto] items-center text-left hover:bg-[rgb(var(--ds-color-surface-container-high))] transition-colors cursor-pointer border-0 bg-transparent active:scale-[0.99] outline-none"
+              >
+                <span className="text-2xl select-none">{data.flag}</span>
+                <span className="ds-text-base font-bold text-foreground">{data.name}</span>
+                <span className="ds-text-base text-muted-foreground font-semibold">{pref}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+
+
+    </main>
   );
 }

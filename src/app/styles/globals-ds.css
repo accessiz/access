@@ -1,0 +1,7 @@
+/**
+ * Design System Entrypoint CSS
+ * Import this file only in pages/layouts that use the new CSS-based design system
+ */
+
+@import "./tokens-ds.css";
+@import "./components-ds.css";

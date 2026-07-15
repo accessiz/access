@@ -24,8 +24,7 @@ export function useJobHistory(projects: AppliedProject[]) {
   }, []);
 
   const [selectedProject, setSelectedProject] = useState<AppliedProject | null>(null);
-  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
-  const [paymentFilter, setPaymentFilter] = useState<'all' | 'paid' | 'unpaid'>('all');
+  const [stateFilter, setStateFilter] = useState<'all' | 'pending' | 'unpaid' | 'paid'>('all');
   const [yearFilter, setYearFilter] = useState<YearValue>(currentYearStr as YearValue);
   const [monthFilter, setMonthFilter] = useState<MonthValue>(currentMonth as MonthValue);
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -35,7 +34,7 @@ export function useJobHistory(projects: AppliedProject[]) {
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [statusFilter, paymentFilter, yearFilter, monthFilter]);
+  }, [stateFilter, yearFilter, monthFilter]);
 
   // Years options - dynamic from projects + current year (as numbers)
   const yearOptions = useMemo(() => {
@@ -55,17 +54,30 @@ export function useJobHistory(projects: AppliedProject[]) {
 
   // Filtered projects
   const filteredProjects = useMemo(() => {
+    const now = new Date();
     return projects.filter((p) => {
-      // 1. Status Filter
-      if (statusFilter !== 'all' && p.client_selection !== statusFilter) {
-        return false;
+      // Determine project work state
+      let isProjectFinished = false;
+      if (p.schedule && p.schedule.length > 0) {
+        const sorted = [...p.schedule].sort((a, b) => a.date.localeCompare(b.date));
+        const lastSchedule = sorted[sorted.length - 1];
+        const lastDate = new Date(`${lastSchedule.date}T23:59:59`);
+        isProjectFinished = lastDate < now;
       }
 
-      // 2. Payment Filter
-      if (paymentFilter !== 'all') {
-        const isPaid = p.isPaid;
-        if (paymentFilter === 'paid' && !isPaid) return false;
-        if (paymentFilter === 'unpaid' && isPaid) return false;
+      const isPaid = p.isPaid;
+      let computedState: 'pending' | 'unpaid' | 'paid';
+      if (isPaid) {
+        computedState = 'paid';
+      } else if (isProjectFinished) {
+        computedState = 'unpaid';
+      } else {
+        computedState = 'pending';
+      }
+
+      // 1. State Filter
+      if (stateFilter !== 'all' && computedState !== stateFilter) {
+        return false;
       }
 
       // Project date logic
@@ -90,7 +102,7 @@ export function useJobHistory(projects: AppliedProject[]) {
 
       return true;
     });
-  }, [projects, statusFilter, paymentFilter, yearFilter, monthFilter]);
+  }, [projects, stateFilter, yearFilter, monthFilter]);
 
   const totalPages = Math.ceil(filteredProjects.length / pageSize);
 
@@ -102,10 +114,8 @@ export function useJobHistory(projects: AppliedProject[]) {
   return {
     selectedProject,
     setSelectedProject,
-    statusFilter,
-    setStatusFilter,
-    paymentFilter,
-    setPaymentFilter,
+    stateFilter,
+    setStateFilter,
     yearFilter,
     setYearFilter,
     monthFilter,

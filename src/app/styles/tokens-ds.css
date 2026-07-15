@@ -1,0 +1,83 @@
+/**
+ * Design Tokens - Shared Design System
+ * Material Design 3 Surface/Outline Colors & Typography
+ */
+
+@layer base {
+    :root {
+        /* ==========================================
+         * BRAND & ACCENT COLORS (RGB channels)
+         * ========================================== */
+        --ds-color-primary: 124 58 237;          /* #7C3AED - Morado Kasting */
+        --ds-color-primary-hover: 109 40 217;    /* #6D28D9 - Morado Oscuro */
+        --ds-color-primary-foreground: 255 255 255;
+        
+        --ds-color-accent: 236 72 153;           /* #EC4899 - Rosa Kasting */
+        --ds-color-accent-hover: 219 39 119;     /* #DB2777 - Rosa Oscuro */
+        --ds-color-accent-foreground: 255 255 255;
+
+        --ds-color-error: 239 68 68;             /* #EF4444 - Rojo Error / Destructive */
+        --ds-color-error-hover: 220 38 38;       /* #DC2626 */
+
+        /* ==========================================
+         * CONTROL SIZE CONTROLLERS (Global heights & radiuses)
+         * ========================================== */
+        --ds-control-height: 56px;
+        --ds-control-radius: 16px;
+
+        /* ==========================================
+         * TYPOGRAPHY SCALE (Major Second 1.125) & WEIGHTS
+         * Capped at semibold (600) max.
+         * ========================================== */
+        --ds-font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+        
+        --ds-font-weight-regular: 400;
+        --ds-font-weight-medium: 500;
+        --ds-font-weight-semibold: 600;
+
+        /* ==========================================
+         * M3 SURFACE COLORS - LIGHT MODE (RGB channels)
+         * ========================================== */
+        --ds-color-surface: 249 249 255;
+        --ds-color-surface-dim: 217 217 224;
+        --ds-color-surface-bright: 249 249 255;
+        
+        --ds-color-surface-container-lowest: 255 255 255;
+        --ds-color-surface-container-low: 243 243 250;
+        --ds-color-surface-container: 237 237 244;
+        --ds-color-surface-container-high: 231 232 238;
+        --ds-color-surface-container-highest: 226 226 233;
+
+        --ds-color-on-surface: 25 28 32;
+        --ds-color-on-surface-variant: 68 71 78;
+
+        --ds-color-outline: 116 119 127;
+        --ds-color-outline-variant: 196 198 208;
+    }
+
+    .dark,
+    [data-theme="dark"],
+    html[data-theme="dark"] {
+        /* ==========================================
+         * M3 SURFACE COLORS - DARK MODE (RGB channels)
+         * ========================================== */
+        --ds-color-surface: 17 19 24;
+        --ds-color-surface-dim: 17 19 24;
+        --ds-color-surface-bright: 55 57 62;
+        
+        --ds-color-surface-container-lowest: 12 14 19;
+        --ds-color-surface-container-low: 25 28 32;
+        --ds-color-surface-container: 29 32 36;
+        --ds-color-surface-container-high: 40 42 47;
+        --ds-color-surface-container-highest: 51 53 58;
+
+        --ds-color-on-surface: 226 226 233;
+        --ds-color-on-surface-variant: 196 198 208;
+
+        --ds-color-outline: 142 144 153;
+        --ds-color-outline-variant: 68 71 78;
+
+        --ds-color-error: 248 113 113;           /* #F87171 - Rojo Suave para Dark Mode */
+        --ds-color-error-hover: 239 68 68;       /* #EF4444 */
+    }
+}

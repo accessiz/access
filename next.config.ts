@@ -49,24 +49,32 @@ const nextConfig: NextConfig = {
   },
 
   // --- Security headers for all routes ---
-  headers: async () => [
-    {
-      source: '/(.*)',
-      headers: [
-        { key: 'X-DNS-Prefetch-Control', value: 'on' },
-        { key: 'X-Content-Type-Options', value: 'nosniff' },
-        { key: 'X-Frame-Options', value: 'DENY' },
-        { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-      ],
-    },
-    {
-      // Immutable caching for hashed static assets
-      source: '/_next/static/(.*)',
-      headers: [
-        { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
-      ],
-    },
-  ],
+  headers: async () => {
+    const rules = [
+      {
+        source: '/(.*)',
+        headers: [
+          { key: 'X-DNS-Prefetch-Control', value: 'on' },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'X-Frame-Options', value: 'DENY' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+        ],
+      },
+    ];
+
+    // Evitar que el navegador cachee recursos de desarrollo en localhost
+    if (process.env.NODE_ENV === 'production') {
+      rules.push({
+        // Immutable caching for hashed static assets
+        source: '/_next/static/(.*)',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        ],
+      });
+    }
+
+    return rules;
+  },
 };
 
 export default withSentryConfig(nextConfig, {

@@ -779,6 +779,11 @@ export function TalentAssignmentPanel({
                                                             aplicó
                                                         </span>
                                                     )}
+                                                    {model.model_status === 'added_by_admin' && (
+                                                        <span className="text-[rgb(var(--ds-color-primary))] font-medium bg-[rgb(var(--ds-color-primary))]/10 px-1.5 py-0.5 rounded text-[10px] lowercase">
+                                                            añadido
+                                                        </span>
+                                                    )}
                                                     {model.model_status === 'rejected' && (
                                                         <span className="text-destructive font-medium bg-red/10 px-1.5 py-0.5 rounded text-[10px] lowercase">
                                                             no aceptó
@@ -1022,6 +1027,11 @@ export function TalentAssignmentPanel({
                                                             {model.model_status === 'applied' && (
                                                                 <span className="text-success font-medium bg-green/10 px-1.5 py-0.5 rounded text-[10px] lowercase">
                                                                     aplicó
+                                                                </span>
+                                                            )}
+                                                            {model.model_status === 'added_by_admin' && (
+                                                                <span className="text-[rgb(var(--ds-color-primary))] font-medium bg-[rgb(var(--ds-color-primary))]/10 px-1.5 py-0.5 rounded text-[10px] lowercase">
+                                                                    añadido
                                                                 </span>
                                                             )}
                                                             {model.model_status === 'rejected' && (

@@ -5,8 +5,7 @@ import { ProfileDetails } from './_profile-details/profile-details';
 import { JobHistory } from './_job-history/job-history';
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
-import { Bell, Briefcase, DollarSign, ArrowRight } from 'lucide-react';
-import { KPICard } from '@/components/molecules/KPICard';
+import { Bell, ArrowRight } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'Mi Perfil — Portal de Modelos',
@@ -33,13 +32,13 @@ async function ProfileContent() {
   // 2. Cargar proyectos aplicados
   const allAppliedProjects = await getAppliedProjectsForModel(model.id);
 
-  // Filtrar: solo mostrar en el historial del workspace proyectos a los que ya postuló
-  // y que ya fueron enviados al cliente (no borradores).
+  // Filtrar: solo mostrar en el historial del workspace proyectos a los que ya postuló,
+  // que ya fueron aprobados por el cliente y que no sean borradores.
   const CUTOFF_DATE = '2026-06';
   const appliedProjects = allAppliedProjects.filter((p) => {
-    if (p.model_status !== 'applied') return false;
+    if (p.model_status !== 'applied' && p.model_status !== 'added_by_admin') return false;
     if (p.status === 'draft') return false;
-    if (p.client_selection === 'rejected') return false;
+    if (p.client_selection !== 'approved') return false;
     const dateStr = p.schedule && p.schedule[0] ? p.schedule[0].date : p.created_at;
     if (!dateStr) return false;
     const yearMonth = dateStr.slice(0, 7); // 'YYYY-MM'
@@ -59,9 +58,9 @@ async function ProfileContent() {
   const totalProjects = appliedProjects.length;
   const approvedCount = appliedProjects.filter((p) => p.client_selection === 'approved').length;
 
-  // Ingresos en GTQ: sumamos agreed_fee por días asignados (schedules) o fixed fee
+  // Ingresos en GTQ: sumamos agreed_fee únicamente de los proyectos aprobados que ya fueron pagados (isPaid === true)
   const totalIncome = appliedProjects
-    .filter((p) => p.client_selection === 'approved')
+    .filter((p) => p.client_selection === 'approved' && p.isPaid)
     .reduce((sum, p) => {
       const daysCount = p.assignments?.length || p.schedule?.length || 1;
       const fee = p.agreed_fee || 0;
@@ -103,35 +102,16 @@ async function ProfileContent() {
         </div>
       )}
 
-      {/* Fila de KPI Widgets */}
-      <div className="grid grid-cols-2 gap-4">
-        <KPICard
-          title="Proyectos"
-          value={String(totalProjects)}
-          description={`${approvedCount} aprobados`}
-          icon={Briefcase}
-          iconClassName="text-purple"
-          className="bg-[rgb(var(--sys-bg-secondary))] hover:bg-[rgb(var(--sys-bg-secondary))]"
-        />
-        <KPICard
-          title="Ingresos"
-          value={`GTQ ${totalIncome.toLocaleString()}`}
-          description={`${approvedCount} proyectos pagados`}
-          icon={DollarSign}
-          iconClassName="text-emerald-500"
-          className="bg-[rgb(var(--sys-bg-secondary))] hover:bg-[rgb(var(--sys-bg-secondary))]"
-        />
-      </div>
+      {/* Perfil del Modelo (Card Premium + Cuadritos + Métricas KPIs) */}
+      <ProfileDetails
+        model={model}
+        totalProjects={totalProjects}
+        approvedCount={approvedCount}
+        totalIncome={totalIncome}
+      />
 
-      {/* Grid de Perfil e Historial */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-        <div className="md:col-span-1">
-          <ProfileDetails model={model} />
-        </div>
-        <div className="md:col-span-2">
-          <JobHistory projects={appliedProjects} />
-        </div>
-      </div>
+      {/* Historial de Proyectos con Filtros */}
+      <JobHistory projects={appliedProjects} />
 
     </div>
   );

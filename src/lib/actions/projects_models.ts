@@ -7,6 +7,7 @@ import { PostgrestError } from '@supabase/supabase-js';
 import { logActivity } from '@/lib/activity-logger';
 import { ActivityTitles } from '@/lib/activity-titles';
 import { createSupabaseServerActionClient } from '@/lib/supabase/server-action';
+import { supabaseAdmin } from '@/lib/supabase/admin';
 
 // --- Tus helpers de errores (Estos están perfectos) ---
 const isPostgrestError = (error: unknown): error is PostgrestError => {
@@ -26,41 +27,61 @@ const mapProjectModelDbError = (error: PostgrestError): { message: string } => {
 
 // --- Acción: addModelToProject (Actualizada) ---
 export async function addModelToProject(projectId: string, modelId: string) {
-  // 3. Usamos 'await' al llamar al helper
-  const supabase = await createSupabaseServerActionClient();
-
   if (!z.string().uuid().safeParse(projectId).success || !z.string().uuid().safeParse(modelId).success) {
     return { success: false, error: 'IDs de proyecto o modelo inválidos.' };
   }
 
   try {
     // 4. Obtener valores por defecto del proyecto y nombres para el log
-    const { data: project } = await supabase
+    const { data: project } = await supabaseAdmin
       .from('projects')
       .select('default_model_fee, default_fee_type, currency, project_name')
       .eq('id', projectId)
       .single();
 
-    const { data: model } = await supabase
+    const { data: model } = await supabaseAdmin
       .from('models')
       .select('alias')
       .eq('id', modelId)
       .single();
 
-    const insertData = {
-      project_id: projectId,
-      model_id: modelId,
-      agreed_fee: project?.default_model_fee || 0,
-      fee_type: project?.default_fee_type || 'per_day',
-      currency: project?.currency || 'GTQ'
-    };
+    const { data: existing } = await supabaseAdmin
+      .from('projects_models')
+      .select('project_id, model_id')
+      .eq('project_id', projectId)
+      .eq('model_id', modelId)
+      .maybeSingle();
 
-    const { error } = await supabase.from('projects_models').insert(insertData);
+    let dbError;
+    if (existing) {
+      const { error } = await supabaseAdmin
+        .from('projects_models')
+        .update({
+          model_status: 'added_by_admin',
+          agreed_fee: project?.default_model_fee || 0,
+          fee_type: project?.default_fee_type || 'per_day',
+          currency: project?.currency || 'GTQ'
+        })
+        .eq('project_id', projectId)
+        .eq('model_id', modelId);
+      dbError = error;
+    } else {
+      const { error } = await supabaseAdmin
+        .from('projects_models')
+        .insert({
+          project_id: projectId,
+          model_id: modelId,
+          model_status: 'added_by_admin',
+          agreed_fee: project?.default_model_fee || 0,
+          fee_type: project?.default_fee_type || 'per_day',
+          currency: project?.currency || 'GTQ'
+        });
+      dbError = error;
+    }
 
-    if (error) {
-      logError(error, { action: 'addModelToProject', projectId, modelId });
-      if (error.code === '23505') { return { success: true }; }
-      const { message } = mapProjectModelDbError(error);
+    if (dbError) {
+      logError(dbError, { action: 'addModelToProject', projectId, modelId });
+      const { message } = mapProjectModelDbError(dbError);
       return { success: false, error: message };
     }
 
@@ -90,28 +111,45 @@ export async function addModelToProject(projectId: string, modelId: string) {
 
 // --- Acción: removeModelFromProject (Actualizada) ---
 export async function removeModelFromProject(projectId: string, modelId: string) {
-  // 3. Usamos 'await' al llamar al helper
-  const supabase = await createSupabaseServerActionClient();
-
   if (!z.string().uuid().safeParse(projectId).success || !z.string().uuid().safeParse(modelId).success) {
     return { success: false, error: 'IDs de proyecto o modelo inválidos.' };
   }
 
   try {
     // Get names for the log
-    const { data: project } = await supabase
+    const { data: project } = await supabaseAdmin
       .from('projects')
       .select('project_name')
       .eq('id', projectId)
       .single();
 
-    const { data: model } = await supabase
+    const { data: model } = await supabaseAdmin
       .from('models')
       .select('alias')
       .eq('id', modelId)
       .single();
 
-    const { error } = await supabase.from('projects_models').delete().eq('project_id', projectId).eq('model_id', modelId);
+    // 1. Eliminar primero asignaciones asociadas a este modelo en este proyecto
+    const { data: projectSchedules } = await supabaseAdmin
+      .from('project_schedule')
+      .select('id')
+      .eq('project_id', projectId);
+
+    const scheduleIds = projectSchedules?.map(s => s.id) || [];
+    if (scheduleIds.length > 0) {
+      await supabaseAdmin
+        .from('model_assignments')
+        .delete()
+        .eq('model_id', modelId)
+        .in('schedule_id', scheduleIds);
+    }
+
+    // 2. Eliminar la relación de projects_models
+    const { error } = await supabaseAdmin
+      .from('projects_models')
+      .delete()
+      .eq('project_id', projectId)
+      .eq('model_id', modelId);
 
     if (error) {
       logError(error, { action: 'removeModelFromProject', projectId, modelId });
@@ -140,7 +178,6 @@ export async function removeModelFromProject(projectId: string, modelId: string)
       return { success: false, error: message };
     }
     return { success: false, error: "No se pudo quitar el talento del proyecto debido a un error inesperado." };
-    // 4. Se eliminó la 'a' que causaba el error en la línea 113
   }
 }
 

@@ -143,13 +143,48 @@ export async function logModelOpenedLink(projectId: string, modelId: string) {
   try {
     // 1. Fetch project owner user_id and names
     const [{ data: project }, { data: model }] = await Promise.all([
-      supabaseAdmin.from('projects').select('user_id, project_name').eq('id', projectId).single(),
+      supabaseAdmin.from('projects').select('user_id, project_name, default_model_fee, default_fee_type, currency, default_model_trade_fee').eq('id', projectId).single(),
       supabaseAdmin.from('models').select('alias, full_name, gender').eq('id', modelId).single(),
     ]);
 
     if (!project || !model) return { success: false };
 
-    // 2. Check if we already have one or more logs in activity_logs to avoid duplicate spam
+    // 2. Query projects_models relation to ensure it exists
+    const { data: relation } = await supabaseAdmin
+      .from('projects_models')
+      .select('last_opened_at')
+      .eq('project_id', projectId)
+      .eq('model_id', modelId)
+      .maybeSingle();
+
+    if (!relation) {
+      // Si no existe la relación, se inserta una nueva indicando que abrió el enlace
+      const { error: insertErr } = await supabaseAdmin
+        .from('projects_models')
+        .insert({
+          project_id: projectId,
+          model_id: modelId,
+          last_opened_at: new Date().toISOString(),
+          client_selection: 'pending',
+          agreed_fee: project.default_model_fee || 0,
+          fee_type: project.default_fee_type || 'per_day',
+          currency: project.currency || 'GTQ',
+          trade_fee: project.default_model_trade_fee || 0,
+        });
+
+      if (insertErr) {
+        logError(insertErr, { action: 'logModelOpenedLink.insertNewRelation', projectId, modelId });
+      }
+    } else {
+      // Update the relation timestamp to keep it fresh
+      await supabaseAdmin
+        .from('projects_models')
+        .update({ last_opened_at: new Date().toISOString() })
+        .eq('project_id', projectId)
+        .eq('model_id', modelId);
+    }
+
+    // 3. Check if we already have one or more logs in activity_logs to avoid duplicate spam
     const { data: existingLogs } = await supabaseAdmin
       .from('activity_logs')
       .select('id, created_at')
@@ -168,50 +203,7 @@ export async function logModelOpenedLink(projectId: string, modelId: string) {
           .delete()
           .in('id', idsToDelete);
       }
-
-      // Update last_opened_at to keep it fresh
-      await supabaseAdmin
-        .from('projects_models')
-        .update({ last_opened_at: new Date().toISOString() })
-        .eq('project_id', projectId)
-        .eq('model_id', modelId);
-
       return { success: true };
-    }
-
-    // 3. Try to set last_opened_at with concurrency lock if it's the first time, otherwise just update it
-    const { data: relation } = await supabaseAdmin
-      .from('projects_models')
-      .select('last_opened_at')
-      .eq('project_id', projectId)
-      .eq('model_id', modelId)
-      .maybeSingle();
-
-    if (relation && relation.last_opened_at === null) {
-      const { data: firstTimeUpdated, error: updateError } = await supabaseAdmin
-        .from('projects_models')
-        .update({ last_opened_at: new Date().toISOString() })
-        .eq('project_id', projectId)
-        .eq('model_id', modelId)
-        .is('last_opened_at', null)
-        .select('model_id');
-
-      if (updateError) {
-        logError(updateError, { action: 'logModelOpenedLink.firstTimeUpdate', projectId, modelId });
-      }
-
-      const isFirstTime = firstTimeUpdated && firstTimeUpdated.length > 0;
-      if (!isFirstTime) {
-        // Parallel request already handled the logging, return early
-        return { success: true };
-      }
-    } else {
-      // It was opened before but the activity log is missing, so we just update the timestamp and proceed to write the log
-      await supabaseAdmin
-        .from('projects_models')
-        .update({ last_opened_at: new Date().toISOString() })
-        .eq('project_id', projectId)
-        .eq('model_id', modelId);
     }
 
     // 4. Insert log under the project owner's account
@@ -370,9 +362,16 @@ export async function applyToProject(
 
     // 4. Log activity
     const displayName = model.alias || model.full_name;
-    const title = accept
-      ? `${displayName} aceptó aplicar al proyecto "${project.project_name}"`
-      : `${displayName} rechazó el trabajo del proyecto "${project.project_name}"`;
+    let title = '';
+    if (accept) {
+      if (existingRelation && existingRelation.model_status === 'applied') {
+        title = `${displayName} modificó su disponibilidad para el proyecto "${project.project_name}"`;
+      } else {
+        title = `${displayName} aceptó aplicar al proyecto "${project.project_name}"`;
+      }
+    } else {
+      title = `${displayName} rechazó el trabajo del proyecto "${project.project_name}"`;
+    }
 
     // Formateador de fechas breves en español (ej. "7 jun")
     const formatBriefSpanishDate = (isoString: string) => {
@@ -413,16 +412,6 @@ export async function applyToProject(
     const message = accept
       ? `${displayName} marcó disponibilidad para ${datesDetail} y envió su respuesta.`
       : `${displayName} marcó que no puede participar.`;
-
-    // Delete any existing response logs (applied or declined) for this model/project
-    // to ensure only the latest response is kept in the activity log
-    await supabaseAdmin
-      .from('activity_logs')
-      .delete()
-      .eq('user_id', project.user_id)
-      .eq('metadata->>project_id', projectId)
-      .eq('metadata->>entity_id', modelId)
-      .or('metadata->>action.eq.applied,metadata->>action.eq.declined');
 
     const { error: insertError } = await supabaseAdmin.from('activity_logs').insert({
       user_id: project.user_id,
@@ -588,6 +577,7 @@ export async function getAppliedProjectsForModel(modelId: string) {
           created_at: project.created_at,
           status: project.status,
           hide_schedule: project.hide_schedule,
+          gender_target: project.gender_target,
           schedule: schedules.map((s: any) => ({
             id: s.id,
             date: s.start_time.split('T')[0],

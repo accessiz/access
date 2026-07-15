@@ -119,42 +119,29 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
     fullName: string | null | undefined,
     types: ProjectType[] | null | undefined,
     brandName: string | null | undefined,
-    clientName: string | null | undefined
+    clientName: string | null | undefined,
+    scheduleDates: string[] = []
   ): string => {
     if (!fullName) return '';
 
-    // Obtener las partes que NO son la palabra adicional
-    // IMPORTANTE: Debe coincidir EXACTAMENTE con la lógica de generateProjectName
-    const prefixParts: string[] = [];
+    // Generamos el nombre base SIN la palabra adicional (customName = null)
+    const baseName = generateProjectName(
+      types || [],
+      clientName,
+      brandName,
+      null,
+      scheduleDates
+    );
 
-    // 1. Tipos de proyecto (solo el PRIMERO, igual que generateProjectName)
-    if (types && types.length > 0) {
-      const firstType = PROJECT_TYPES.find(pt => pt.value === types[0])?.label || types[0];
-      prefixParts.push(firstType);
-    }
-
-    // 2. Marca o Cliente (aplicar Title Case igual que generateProjectName)
-    if (brandName) {
-      prefixParts.push(toTitleCase(brandName));
-    } else if (clientName) {
-      prefixParts.push(toTitleCase(clientName));
-    }
-
-    // Construir el prefijo esperado
-    const expectedPrefix = prefixParts.join(' - ');
-
-    // Si el nombre empieza con el prefijo, quitarlo
-    if (expectedPrefix && fullName.startsWith(expectedPrefix)) {
-      const remainder = fullName.slice(expectedPrefix.length);
-      // Quitar el separador " - " si existe
-      if (remainder.startsWith(' - ')) {
-        return remainder.slice(3).trim();
+    // Si el nombre completo inicia con el nombre base, extraemos el sobrante
+    if (fullName.startsWith(baseName)) {
+      const remainder = fullName.slice(baseName.length).trim();
+      if (remainder.startsWith('-')) {
+        return remainder.slice(1).trim();
       }
-      return remainder.trim();
+      return remainder;
     }
 
-    // Si no coincide el patrón, devolver vacío para modo edición
-    // (el usuario puede escribir uno nuevo)
     return '';
   };
 
@@ -196,12 +183,14 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
         if (initialData?.project_name) {
           const client = data.find(c => c.id === initialData.client_id);
           const brand = client?.brands?.find(b => b.id === initialData.brand_id);
+          const scheduleDates = initialData.schedule?.map((s: any) => s.date) || [];
 
           const extracted = extractCustomName(
             initialData.project_name,
             initialData.project_types as ProjectType[] | null,
             brand?.name,
-            client?.name || initialData.client_name
+            client?.name || initialData.client_name,
+            scheduleDates
           );
 
           if (extracted) {

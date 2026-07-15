@@ -42,9 +42,9 @@ const SelectContent = ({ className, children, position = "popper", ref, ...props
     <SelectPrimitive.Content
       ref={ref}
       className={cn(
-        "relative z-50 max-h-96 min-w-32 overflow-y-auto rounded-md border border-separator/50 bg-background/80 backdrop-blur-md text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
+        "relative z-50 max-h-96 min-w-32 overflow-y-auto rounded-[20px] border border-[rgb(var(--ds-color-outline-variant))]/20 bg-[rgb(var(--ds-color-surface-container-highest))]/95 backdrop-blur-md text-foreground shadow-2xl p-1.5 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
         position === "popper" &&
-        "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
+        "data-[side=bottom]:translate-y-1.5 data-[side=left]:-translate-x-1.5 data-[side=right]:translate-x-1.5 data-[side=top]:-translate-y-1.5",
         className
       )}
       position={position}
@@ -85,14 +85,14 @@ const SelectItem = ({ className, children, ref, ...props }: SelectItemProps) => 
   <SelectPrimitive.Item
     ref={ref}
     className={cn(
-      "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-body outline-none focus:bg-purple focus:text-white data-disabled:pointer-events-none data-disabled:opacity-50",
+      "relative flex w-full cursor-default select-none items-center rounded-xl py-2.5 pl-9 pr-3 text-body outline-none focus:bg-[rgb(var(--ds-color-surface-container-lowest))] focus:text-[rgb(var(--ds-color-on-surface))] data-disabled:pointer-events-none data-disabled:opacity-50 transition-colors",
       className
     )}
     {...props}
   >
-    <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+    <span className="absolute left-3 flex h-3.5 w-3.5 items-center justify-center">
       <SelectPrimitive.ItemIndicator>
-        <Check className="h-4 w-4" />
+        <Check className="h-4 w-4 text-[rgb(var(--ds-color-primary))]" />
       </SelectPrimitive.ItemIndicator>
     </span>
 

@@ -60,9 +60,62 @@ export function ProjectLinksCard({ project, onStatusChange }: ProjectLinksCardPr
   const genderText = project.gender_target === 'Hombres' ? 'Hombres' : project.gender_target === 'Mujeres' ? 'Mujeres' : 'Hombres y Mujeres';
   const brandNameText = project.brand?.name || project.client_name || '';
   
-  const uniqueDates = Array.from(new Set((project.schedule || []).map(s => s.date)))
-    .map(dateStr => formatDate(dateStr));
-  const scheduleDates = uniqueDates.length > 0 ? uniqueDates.join(', ') : '';
+  const formatTime = (timeStr: string) => {
+    if (!timeStr) return '';
+    const match = timeStr.match(/^(\d{1,2}):(\d{2})/);
+    if (match) {
+      let hours = parseInt(match[1], 10);
+      const minutes = match[2];
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12;
+      hours = hours ? hours : 12;
+      return `${hours}:${minutes}${ampm}`;
+    }
+    return timeStr;
+  };
+
+  const formatScheduleLine = (sch: { date: string; startTime: string; endTime: string }) => {
+    let day = '';
+    let monthName = '';
+    try {
+      const parts = sch.date.split('-');
+      if (parts.length === 3) {
+        const d = parseInt(parts[2], 10);
+        const m = parseInt(parts[1], 10);
+        const monthsFull = [
+          'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+          'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+        ];
+        day = String(d);
+        monthName = monthsFull[m - 1] || '';
+      } else {
+        const d = new Date(sch.date);
+        day = String(d.getDate());
+        monthName = d.toLocaleDateString('es-ES', { month: 'long' });
+        if (monthName) {
+          monthName = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+        }
+      }
+    } catch (e) {
+      day = sch.date;
+    }
+
+    const datePart = monthName ? `${day} ${monthName}` : day;
+    if (project.hide_schedule) {
+      return `*${datePart}*`;
+    }
+
+    const startFormatted = formatTime(sch.startTime);
+    const endFormatted = formatTime(sch.endTime);
+
+    if (startFormatted && endFormatted) {
+      return `*${datePart} - ${startFormatted} a ${endFormatted}*`;
+    }
+    return `*${datePart}*`;
+  };
+
+  const sortedSchedules = [...(project.schedule || [])].sort((a, b) => a.date.localeCompare(b.date));
+  const scheduleLines = sortedSchedules.map(sch => formatScheduleLine(sch)).join('\n');
 
   const paymentParts = [];
   const projectPaymentType = project.default_model_payment_type || 'cash';
@@ -89,7 +142,7 @@ export function ProjectLinksCard({ project, onStatusChange }: ProjectLinksCardPr
   const modelShareMsg = `*IZ Management | Casting*\n\n` +
     `Buscamos: *${genderText}*\n` +
     (brandNameText ? `Marca: *${brandNameText}*\n` : '') +
-    (scheduleDates ? `Días: *${scheduleDates}*\n` : '') +
+    (scheduleLines ? `Fechas:\n${scheduleLines}\n` : '') +
     `Pago: *${paymentText}*\n` +
     (deadlineText ? `Aplicar antes de: *${deadlineText}*\n` : '') +
     `\n` +

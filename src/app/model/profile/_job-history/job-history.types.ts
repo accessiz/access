@@ -29,6 +29,7 @@ export interface AppliedProject {
   isPaid: boolean;
   status?: string | null;
   hide_schedule?: boolean | null;
+  gender_target?: string | null;
 }
 
 export interface JobHistoryProps {

@@ -40,10 +40,8 @@ export function JobHistory({ projects, className }: JobHistoryProps) {
   const {
     selectedProject,
     setSelectedProject,
-    statusFilter,
-    setStatusFilter,
-    paymentFilter,
-    setPaymentFilter,
+    stateFilter,
+    setStateFilter,
     yearFilter,
     setYearFilter,
     monthFilter,
@@ -69,52 +67,57 @@ export function JobHistory({ projects, className }: JobHistoryProps) {
   }, [setSelectedProject]);
 
   return (
-    <div className={`space-y-6 text-left ${className || ''}`}>
+    <div className={`bg-[rgb(var(--ds-color-surface-container))] border border-[rgb(var(--ds-color-outline-variant))]/20 rounded-3xl p-6 shadow-sm text-left ${className || ''}`}>
       
       {/* Header */}
-      <h3 className="text-sm font-extrabold text-foreground uppercase tracking-wider">Historial de Proyectos</h3>
+      <div className="border-b border-[rgb(var(--ds-color-outline-variant))]/20 pb-5 mb-5 text-left">
+        <div>
+          <h3 className="ds-text-lg font-extrabold text-foreground">Tus Trabajos y Pagos</h3>
+          <p className="ds-text-xs text-muted-foreground mt-0.5">Aquí aparecen tus proyectos aprobados, pendientes de realizar y cobros registrados.</p>
+        </div>
+      </div>
 
-        {/* Filtros */}
-        <div className="grid grid-cols-2 md:grid-cols-[2.5fr_1.8fr_0.8fr_0.9fr] gap-2">
-          
-          {/* Select Estado */}
-          <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
-            <SelectTrigger>
+      {/* Filtros */}
+      <div className="grid grid-cols-2 gap-4 mb-6 bg-[rgb(var(--ds-color-surface-container-lowest))] p-4 rounded-2xl border border-[rgb(var(--ds-color-outline-variant))]/20">
+        
+        {/* Estado de Trabajo */}
+        <div className="flex flex-col gap-1.5 text-left col-span-2">
+          <label className="ds-text-xs text-muted-foreground font-bold tracking-wider">Estado de Trabajo</label>
+          <Select value={stateFilter} onValueChange={(v) => setStateFilter(v as any)}>
+            <SelectTrigger className="!h-10 rounded-xl bg-[rgb(var(--ds-color-surface-container))] border-[rgb(var(--ds-color-outline-variant))]/20 text-xs">
               <SelectValue placeholder="Estado" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todas las Postulaciones</SelectItem>
-              <SelectItem value="pending">Esperando Selección</SelectItem>
-              <SelectItem value="approved">Aprobado en Proyecto</SelectItem>
+              <SelectItem value="all">Todos los Trabajos</SelectItem>
+              <SelectItem value="pending">Pendientes (Por realizar)</SelectItem>
+              <SelectItem value="unpaid">Por Cobrar</SelectItem>
+              <SelectItem value="paid">Pagados</SelectItem>
             </SelectContent>
           </Select>
+        </div>
 
-          {/* Select Pago */}
-          <Select value={paymentFilter} onValueChange={(v) => setPaymentFilter(v as any)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Pago" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos los Pagos</SelectItem>
-              <SelectItem value="paid">Ya Pagado</SelectItem>
-              <SelectItem value="unpaid">Pendiente de Cobro</SelectItem>
-            </SelectContent>
-          </Select>
-
-          {/* Select Año */}
+        {/* Año */}
+        <div className="flex flex-col gap-1.5 text-left col-span-1">
+          <label className="ds-text-xs text-muted-foreground font-bold tracking-wider">Año</label>
           <YearSelect
             years={yearOptions}
             onValueChange={setYearFilter}
             value={yearFilter}
+            triggerClassName="!h-10 rounded-xl bg-[rgb(var(--ds-color-surface-container))] border-[rgb(var(--ds-color-outline-variant))]/20 text-xs"
           />
+        </div>
 
-          {/* Select Mes */}
+        {/* Mes */}
+        <div className="flex flex-col gap-1.5 text-left col-span-1">
+          <label className="ds-text-xs text-muted-foreground font-bold tracking-wider">Mes</label>
           <MonthSelect
             onValueChange={setMonthFilter}
             value={monthFilter}
+            triggerClassName="!h-10 rounded-xl bg-[rgb(var(--ds-color-surface-container))] border-[rgb(var(--ds-color-outline-variant))]/20 text-xs"
           />
-
         </div>
+
+      </div>
 
         {/* Listado de Proyectos */}
         <div className="min-h-[220px]">
@@ -142,9 +145,35 @@ export function JobHistory({ projects, className }: JobHistoryProps) {
                   const currency = (project.currency || 'GTQ').toUpperCase();
                   const feeStr = fee ? `${currency} ${fee.toLocaleString()}` : 'Canje';
 
-                  // Selection state badges
-                  const isApproved = project.client_selection === 'approved';
-                  const isRejected = project.client_selection === 'rejected';
+                  // Calculate work state
+                  let isProjectFinished = false;
+                  if (project.schedule && project.schedule.length > 0) {
+                    const sorted = [...project.schedule].sort((a, b) => a.date.localeCompare(b.date));
+                    const lastSchedule = sorted[sorted.length - 1];
+                    const lastDate = new Date(`${lastSchedule.date}T23:59:59`);
+                    isProjectFinished = lastDate < new Date();
+                  }
+
+                  let statusBadge = null;
+                  if (project.isPaid) {
+                    statusBadge = (
+                      <span className="inline-flex items-center gap-0.5 px-2 py-0.5 text-[10px] font-bold bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 rounded-full">
+                        <Check className="h-2.5 w-2.5 stroke-[3]" /> Pagado
+                      </span>
+                    );
+                  } else if (isProjectFinished) {
+                    statusBadge = (
+                      <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-bold bg-amber-500/10 border border-amber-500/20 text-amber-500 rounded-full">
+                        Por Cobrar
+                      </span>
+                    );
+                  } else {
+                    statusBadge = (
+                      <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-bold bg-blue-500/10 border border-blue-500/20 text-blue-500 rounded-full">
+                        Pendiente
+                      </span>
+                    );
+                  }
 
                   return (
                     <div
@@ -160,44 +189,17 @@ export function JobHistory({ projects, className }: JobHistoryProps) {
                           {project.project_name}
                         </h4>
                         <div className="flex flex-wrap items-center gap-1.5 mt-2">
-                          {isApproved && (
-                            <span className="inline-flex items-center gap-0.5 px-2 py-0.5 text-[10px] font-bold bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 rounded-full">
-                              <Check className="h-2.5 w-2.5 stroke-[3]" /> Seleccionado
-                            </span>
-                          )}
-                          {isRejected && (
-                            <span className="inline-flex items-center gap-0.5 px-2 py-0.5 text-[10px] font-bold bg-rose-500/10 border border-rose-500/20 text-rose-500 rounded-full">
-                              <X className="h-2.5 w-2.5 stroke-[3]" /> No Seleccionado
-                            </span>
-                          )}
-                          {!isApproved && !isRejected && (
-                            <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-bold bg-amber-500/10 border border-amber-500/20 text-amber-500 rounded-full">
-                              En Espera
-                            </span>
-                          )}
-                          {isApproved && (
-                            project.isPaid ? (
-                              <span className="inline-flex items-center gap-0.5 px-2 py-0.5 text-[10px] font-bold bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 rounded-full">
-                                <Check className="h-2.5 w-2.5 stroke-[3]" /> Cobrado
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-bold bg-amber-500/10 border border-amber-500/20 text-amber-500 rounded-full">
-                                Por Cobrar
-                              </span>
-                            )
-                          )}
-                        </div>
+                        {statusBadge}
                       </div>
-                      {!isRejected && (
-                        <div className="text-right shrink-0 ml-3">
-                          <span className="block text-[8px] font-extrabold text-muted-foreground uppercase tracking-widest">
-                            Pago
-                          </span>
-                          <span className="block text-xs font-extrabold text-foreground mt-0.5">
-                            {feeStr}
-                          </span>
-                        </div>
-                      )}
+                    </div>
+                      <div className="text-right shrink-0 ml-3">
+                        <span className="block text-[8px] font-extrabold text-muted-foreground tracking-widest">
+                          Pago
+                        </span>
+                        <span className="block text-xs font-extrabold text-foreground mt-0.5">
+                          {feeStr}
+                        </span>
+                      </div>
                     </div>
                   );
                 })}
@@ -209,11 +211,11 @@ export function JobHistory({ projects, className }: JobHistoryProps) {
                   <Table className="min-w-full">
                     <TableHeader>
                       <TableRow className="bg-tertiary/40 hover:bg-tertiary/40 border-b border-border/40">
-                        <TableHead className="w-12 font-bold text-muted-foreground uppercase tracking-wider text-[10px] text-left pl-4 py-3">#</TableHead>
-                        <TableHead className="font-bold text-muted-foreground uppercase tracking-wider text-[10px] text-left py-3">Proyecto</TableHead>
-                        <TableHead className="font-bold text-muted-foreground uppercase tracking-wider text-[10px] text-left py-3">Estado</TableHead>
-                        <TableHead className="font-bold text-muted-foreground uppercase tracking-wider text-[10px] text-left py-3">Pago</TableHead>
-                        <TableHead className="font-bold text-muted-foreground uppercase tracking-wider text-[10px] text-left pr-4 py-3">Fecha</TableHead>
+                        <TableHead className="w-12 font-bold text-muted-foreground tracking-wider text-[10px] text-left pl-4 py-3">#</TableHead>
+                        <TableHead className="font-bold text-muted-foreground tracking-wider text-[10px] text-left py-3">Proyecto</TableHead>
+                        <TableHead className="font-bold text-muted-foreground tracking-wider text-[10px] text-left py-3">Estado</TableHead>
+                        <TableHead className="font-bold text-muted-foreground tracking-wider text-[10px] text-left py-3">Pago</TableHead>
+                        <TableHead className="font-bold text-muted-foreground tracking-wider text-[10px] text-left pr-4 py-3">Fecha</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -257,37 +259,39 @@ export function JobHistory({ projects, className }: JobHistoryProps) {
                             </TableCell>
                             <TableCell className="py-3.5">
                               <div className="flex flex-wrap items-center gap-1">
-                                {isApproved && (
-                                  <span className="inline-flex items-center gap-0.5 px-2 py-0.5 text-[10px] font-bold bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 rounded-full">
-                                    <Check className="h-2.5 w-2.5 stroke-[3]" /> Seleccionado
-                                  </span>
-                                )}
-                                {isRejected && (
-                                  <span className="inline-flex items-center gap-0.5 px-2 py-0.5 text-[10px] font-bold bg-rose-500/10 border border-rose-500/20 text-rose-500 rounded-full">
-                                    <X className="h-2.5 w-2.5 stroke-[3]" /> No Seleccionado
-                                  </span>
-                                )}
-                                {!isApproved && !isRejected && (
-                                  <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-bold bg-amber-500/10 border border-amber-500/20 text-amber-500 rounded-full">
-                                    En Espera
-                                  </span>
-                                )}
-                                {isApproved && (
-                                  project.isPaid ? (
-                                    <span className="inline-flex items-center gap-0.5 px-2 py-0.5 text-[10px] font-bold bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 rounded-full">
-                                      <Check className="h-2.5 w-2.5 stroke-[3]" /> Cobrado
-                                    </span>
-                                  ) : (
-                                    <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-bold bg-amber-500/10 border border-amber-500/20 text-amber-500 rounded-full">
-                                      Por Cobrar
-                                    </span>
-                                  )
-                                )}
-                              
+                                {(() => {
+                                  let isProjectFinished = false;
+                                  if (project.schedule && project.schedule.length > 0) {
+                                    const sorted = [...project.schedule].sort((a, b) => a.date.localeCompare(b.date));
+                                    const lastSchedule = sorted[sorted.length - 1];
+                                    const lastDate = new Date(`${lastSchedule.date}T23:59:59`);
+                                    isProjectFinished = lastDate < new Date();
+                                  }
+
+                                  if (project.isPaid) {
+                                    return (
+                                      <span className="inline-flex items-center gap-0.5 px-2 py-0.5 text-[10px] font-bold bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 rounded-full">
+                                        <Check className="h-2.5 w-2.5 stroke-[3]" /> Pagado
+                                      </span>
+                                    );
+                                  } else if (isProjectFinished) {
+                                    return (
+                                      <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-bold bg-amber-500/10 border border-amber-500/20 text-amber-500 rounded-full">
+                                        Por Cobrar
+                                      </span>
+                                    );
+                                  } else {
+                                    return (
+                                      <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-bold bg-blue-500/10 border border-blue-500/20 text-blue-500 rounded-full">
+                                        Pendiente
+                                      </span>
+                                    );
+                                  }
+                                })()}
                               </div>
                             </TableCell>
                             <TableCell className="font-semibold text-foreground py-3.5">
-                              {isRejected ? '' : feeStr}
+                              {feeStr}
                             </TableCell>
                             <TableCell className="text-muted-foreground text-xs pr-4 py-3.5">
                               {datesStr}
@@ -344,6 +348,15 @@ export function JobHistory({ projects, className }: JobHistoryProps) {
       {/* Detail Modal */}
       {selectedProject && (() => {
         const isExpired = selectedProject.apply_end_at ? new Date() > new Date(selectedProject.apply_end_at) : false;
+        
+        let isProjectFinished = false;
+        if (selectedProject.schedule && selectedProject.schedule.length > 0) {
+          const sorted = [...selectedProject.schedule].sort((a, b) => a.date.localeCompare(b.date));
+          const lastSchedule = sorted[sorted.length - 1];
+          const lastDate = new Date(`${lastSchedule.date}T23:59:59`);
+          isProjectFinished = lastDate < new Date();
+        }
+
         return (
           <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={() => setSelectedProject(null)}>
             <div className="w-full max-w-xl bg-card border border-border rounded-2xl shadow-2xl p-6 md:p-8 space-y-6 animate-in fade-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
@@ -364,32 +377,18 @@ export function JobHistory({ projects, className }: JobHistoryProps) {
             <div className="space-y-5 text-left">
               {/* Badges */}
               <div className="flex items-center gap-2">
-                {selectedProject.client_selection === 'approved' && (
-                  <span className="flex items-center gap-1 text-label bg-success/10 border border-success/20 text-success px-2.5 py-1 rounded-full font-medium">
-                    <Check className="h-3 w-3" /> Aprobado
+                {selectedProject.isPaid ? (
+                  <span className="flex items-center gap-1 text-label bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 px-2.5 py-1 rounded-full font-semibold">
+                    <Check className="h-3 w-3 stroke-[3]" /> Pagado
                   </span>
-                )}
-                {selectedProject.client_selection === 'rejected' && (
-                  <span className="flex items-center gap-1 text-label bg-destructive/10 border border-destructive/20 text-destructive px-2.5 py-1 rounded-full font-medium">
-                    <X className="h-3 w-3" /> Rechazado
+                ) : isProjectFinished ? (
+                  <span className="flex items-center gap-1 text-label bg-amber-500/10 border border-amber-500/20 text-amber-500 px-2.5 py-1 rounded-full font-semibold">
+                    Por Cobrar
                   </span>
-                )}
-                {selectedProject.client_selection === 'pending' && (
-                  <span className="flex items-center gap-1 text-label bg-amber-500/10 border border-amber-500/20 text-amber-500 px-2.5 py-1 rounded-full font-medium">
+                ) : (
+                  <span className="flex items-center gap-1 text-label bg-blue-500/10 border border-blue-500/20 text-blue-500 px-2.5 py-1 rounded-full font-semibold">
                     Pendiente
                   </span>
-                )}
-
-                {selectedProject.client_selection === 'approved' && (
-                  selectedProject.isPaid ? (
-                    <span className="flex items-center gap-1 text-label bg-success/10 border border-success/20 text-success px-2.5 py-1 rounded-full font-medium">
-                      <Check className="h-3 w-3" /> Pagado
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-1 text-label bg-amber-500/10 border border-amber-500/20 text-amber-500 px-2.5 py-1 rounded-full font-medium">
-                      Pendiente de Pago
-                    </span>
-                  )
                 )}
               </div>
 
@@ -399,7 +398,7 @@ export function JobHistory({ projects, className }: JobHistoryProps) {
                   <div className="flex items-start gap-2.5">
                     <MapPin className="h-4 w-4 text-muted-foreground shrink-0 mt-1" />
                     <div>
-                      <span className="text-label text-muted-foreground block font-bold uppercase tracking-wider">Lugar</span>
+                      <span className="text-label text-muted-foreground block font-bold tracking-wide">Lugar</span>
                       <span className="text-body font-semibold text-foreground">{selectedProject.location}</span>
                     </div>
                   </div>
@@ -409,7 +408,7 @@ export function JobHistory({ projects, className }: JobHistoryProps) {
                   <div className="flex items-start gap-2.5">
                     <Calendar className="h-4 w-4 text-muted-foreground shrink-0 mt-1" />
                     <div>
-                      <span className="text-label text-muted-foreground block font-bold uppercase tracking-wider">Descripción del Trabajo</span>
+                      <span className="text-label text-muted-foreground block font-bold tracking-wide">Descripción del Trabajo</span>
                       <span className="text-body font-semibold text-foreground">{selectedProject.description}</span>
                     </div>
                   </div>
@@ -418,7 +417,7 @@ export function JobHistory({ projects, className }: JobHistoryProps) {
                 <div className="flex items-start gap-2.5">
                   <DollarSign className="h-4 w-4 text-muted-foreground shrink-0 mt-1" />
                   <div>
-                    <span className="text-label text-muted-foreground block font-bold uppercase tracking-wider">Pago</span>
+                    <span className="text-label text-muted-foreground block font-bold tracking-wide">Pago</span>
                     <span className="text-body font-semibold text-foreground">
                       {selectedProject.agreed_fee
                         ? `${(selectedProject.currency || 'GTQ').toUpperCase()} ${selectedProject.agreed_fee.toLocaleString()} ${selectedProject.fee_type === 'per_hour' ? 'Por Hora' : selectedProject.fee_type === 'fixed' ? 'Monto Fijo' : 'Por Día'}`
@@ -431,7 +430,7 @@ export function JobHistory({ projects, className }: JobHistoryProps) {
               {/* Schedules List */}
               {selectedProject.schedule && selectedProject.schedule.length > 0 && (
                 <div className="space-y-3">
-                  <span className="text-label font-bold tracking-wider text-muted-foreground uppercase block mb-1">
+                  <span className="text-label font-bold tracking-wide text-muted-foreground block mb-1">
                     Horarios del Proyecto
                   </span>
                   <div className="divide-y divide-border/40 border border-border/40 rounded-xl bg-background overflow-hidden">
