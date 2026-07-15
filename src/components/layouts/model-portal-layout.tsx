@@ -115,7 +115,7 @@ export function ModelPortalLayout({ children }: { children: React.ReactNode }) {
         {/* Floating Capsule Toolbar Navigation */}
         {!isLoginPage && (
           <nav
-            className="ds-floating-toolbar"
+            className="ds-floating-toolbar fixed bottom-6 left-0 right-0 mx-auto w-max z-50 flex items-center gap-4 rounded-full px-6 py-3"
             style={{
               backdropFilter: 'blur(28px) saturate(180%)',
               WebkitBackdropFilter: 'blur(28px) saturate(180%)',

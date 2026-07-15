@@ -82,10 +82,10 @@ export function ProfileDetails({
   }, [model.height_cm]);
 
   return (
-    <div className={`space-y-12 w-full ${className}`}>
+    <div className={`space-y-12 lg:space-y-6 w-full ${className}`}>
       
       {/* 1. SECCIÓN DE RETRATO PRINCIPAL (Tinder-like Card - Instagrammable) */}
-      <div className="relative w-full max-w-[480px] h-[580px] rounded-[32px] overflow-hidden shadow-2xl border border-zinc-800/80 flex flex-col justify-between p-6 mx-auto bg-zinc-950">
+      <div className="relative w-full max-w-[480px] h-[580px] rounded-[32px] overflow-hidden shadow-2xl border border-transparent flex flex-col justify-between p-6 mx-auto bg-transparent">
         
         {/* Retrato de fondo de la modelo */}
         <div className="absolute inset-0 z-0 select-none">
@@ -139,7 +139,7 @@ export function ProfileDetails({
       </div>
 
       {/* 2. SECCIÓN DE INFORMACIÓN PERSONAL (Utiliza los componentes de campo del Design System) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto w-full text-left bg-[rgb(var(--ds-color-surface-container))] border border-[rgb(var(--ds-color-outline-variant))]/20 p-6 md:p-8 rounded-3xl shadow-sm">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-6 max-w-4xl mx-auto w-full text-left bg-[rgb(var(--ds-color-surface-container))] border border-[rgb(var(--ds-color-outline-variant))]/20 p-6 md:p-8 rounded-3xl shadow-sm">
         
         {/* Email */}
         <div className="space-y-2">
@@ -164,7 +164,7 @@ export function ProfileDetails({
         </div>
 
         {/* Redes Sociales */}
-        <div className="space-y-2 md:col-span-2">
+        <div className="space-y-2 md:col-span-2 lg:col-span-1">
           <label className="ds-text-sm text-muted-foreground font-semibold block">Redes Sociales</label>
           <div className="space-y-3">
             {/* Instagram */}
@@ -218,7 +218,7 @@ export function ProfileDetails({
         </div>
 
         {/* Botón Editar Datos */}
-        <div className="col-span-1 md:col-span-2 flex justify-center pt-4">
+        <div className="col-span-1 md:col-span-2 lg:col-span-1 flex justify-center pt-4">
           <Button
             type="button"
             onClick={() => setIsEditing(true)}
@@ -232,7 +232,7 @@ export function ProfileDetails({
       </div>
 
       {/* 3. SECCIÓN DE MÉTRICAS / KPIs */}
-      <section className="grid grid-cols-1 gap-4 max-w-4xl mx-auto">
+      <section className="grid grid-cols-1 gap-4 max-w-4xl mx-auto lg:hidden">
         
         {/* Proyectos */}
         <div className="bg-[rgb(var(--ds-color-surface-container))] border border-[rgb(var(--ds-color-outline-variant))]/20 rounded-2xl p-5 shadow-sm text-left">

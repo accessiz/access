@@ -102,16 +102,49 @@ async function ProfileContent() {
         </div>
       )}
 
-      {/* Perfil del Modelo (Card Premium + Cuadritos + Métricas KPIs) */}
-      <ProfileDetails
-        model={model}
-        totalProjects={totalProjects}
-        approvedCount={approvedCount}
-        totalIncome={totalIncome}
-      />
+      {/* Diseño de Rejilla de Dos Columnas en Escritorio (lg), Apilado en Móvil */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start w-full">
+        {/* Columna Izquierda: Perfil del Modelo */}
+        <div className="lg:col-span-5 w-full space-y-6">
+          <ProfileDetails
+            model={model}
+            totalProjects={totalProjects}
+            approvedCount={approvedCount}
+            totalIncome={totalIncome}
+          />
+        </div>
 
-      {/* Historial de Proyectos con Filtros */}
-      <JobHistory projects={appliedProjects} />
+        {/* Columna Derecha: Historial de Proyectos */}
+        <div className="lg:col-span-7 w-full space-y-6">
+          {/* KPIs en una fila de 2 columnas, solo visible en escritorio (lg) */}
+          <div className="hidden lg:grid lg:grid-cols-2 gap-4">
+            {/* Proyectos */}
+            <div className="bg-[rgb(var(--ds-color-surface-container))] border border-[rgb(var(--ds-color-outline-variant))]/20 rounded-2xl p-5 shadow-sm text-left">
+              <span className="ds-text-xs text-muted-foreground font-bold tracking-wider block">Proyectos</span>
+              <div className="flex items-baseline gap-2 mt-2">
+                <span className="text-3xl font-black text-foreground tracking-tight">
+                  {String(totalProjects).padStart(2, '0')}
+                </span>
+                <span className="text-purple ds-text-xs font-bold">
+                  {approvedCount} aprobados
+                </span>
+              </div>
+            </div>
+
+            {/* Ingresos */}
+            <div className="bg-[rgb(var(--ds-color-surface-container))] border border-[rgb(var(--ds-color-outline-variant))]/20 rounded-2xl p-5 shadow-sm text-left">
+              <span className="ds-text-xs text-muted-foreground font-bold tracking-wider block">Ingresos</span>
+              <div className="flex items-baseline gap-1 mt-2">
+                <span className="text-2xl font-black text-[rgb(var(--ds-color-on-surface))] tracking-tight">
+                  GTQ {totalIncome.toLocaleString()}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <JobHistory projects={appliedProjects} />
+        </div>
+      </div>
 
     </div>
   );
