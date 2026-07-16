@@ -36,7 +36,8 @@ async function ProfileContent() {
   // que ya fueron aprobados por el cliente y que no sean borradores.
   const CUTOFF_DATE = '2026-06';
   const appliedProjects = allAppliedProjects.filter((p) => {
-    if (p.model_status !== 'applied' && p.model_status !== 'added_by_admin') return false;
+    const isValidStatus = p.model_status === 'applied' || p.model_status === 'added_by_admin' || p.model_status === 'pending' || !p.model_status;
+    if (!isValidStatus) return false;
     if (p.status === 'draft') return false;
     if (p.client_selection !== 'approved') return false;
     const dateStr = p.schedule && p.schedule[0] ? p.schedule[0].date : p.created_at;

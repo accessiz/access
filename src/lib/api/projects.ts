@@ -361,13 +361,26 @@ export async function getModelsForProject(projectId: string): Promise<Model[]> {
         cover_path
       )
     `)
-    .eq('project_id', projectId)
-    .in('model_status', ['applied', 'added_by_admin']);
+    .eq('project_id', projectId);
 
   if (error || !projectModelsData) {
     logError(error || new Error('No data returned'), { action: 'getModelsForProject', projectId });
     return [];
   }
+
+  // Filter in memory:
+  // - Show models that applied ('applied')
+  // - Show models added by admin ('added_by_admin')
+  // - Show models that are approved/rejected by client (even if status is pending/null)
+  // - Show models with null or undefined model_status (legacy manual adds)
+  const activeProjectModelsData = projectModelsData.filter(item => 
+    item.model_status === 'applied' ||
+    item.model_status === 'added_by_admin' ||
+    item.client_selection === 'approved' ||
+    item.client_selection === 'rejected' ||
+    item.model_status === null ||
+    item.model_status === undefined
+  );
 
   const VALID_CLIENT_SELECTIONS_INNER = ['pending', 'approved', 'rejected'] as const;
   type ClientSelectionInner = typeof VALID_CLIENT_SELECTIONS_INNER[number];
@@ -376,7 +389,7 @@ export async function getModelsForProject(projectId: string): Promise<Model[]> {
     return VALID_CLIENT_SELECTIONS_INNER.includes(selection as ClientSelectionInner);
   }
 
-  const modelsWithPaths = projectModelsData.flatMap(item => {
+  const modelsWithPaths = activeProjectModelsData.flatMap(item => {
     const modelData = item.models;
     if (!modelData || Array.isArray(modelData) || typeof modelData !== 'object') {
       logger.warn('Invalid model data in project', { projectId, item });
