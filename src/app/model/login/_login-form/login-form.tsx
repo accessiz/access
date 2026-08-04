@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Lock, Eye, EyeOff, ArrowLeft, ShieldAlert, Phone, Sun, Moon } from 'lucide-react';
+import { Lock, Eye, EyeOff, ArrowLeft, ShieldAlert, Phone, Sun, Moon, Globe } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useLoginForm } from './login-form.logic';
 import { LoginFormProps } from './login-form.types';
@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/ds/button';
 import { Input } from '@/components/ui/ds/input';
 import { Dropdown } from '@/components/ui/ds/dropdown';
 import Logo from '@/components/LogoDark';
+import { useModelI18n } from '@/lib/i18n/ModelI18nContext';
 
 // Diccionario de soporte de países, banderas, máscaras y longitudes
 const prefixToCountryData: Record<string, { flag: string; name: string; length: number; mask: string }> = {
@@ -62,6 +63,7 @@ const getCountryData = (prefix: string) => {
 };
 
 export function LoginForm({ redirectTo, prefixes = ['+502'] }: LoginFormProps) {
+  const { locale, setLocale, t } = useModelI18n();
   const {
     phone,
     setPhone,
@@ -152,19 +154,30 @@ export function LoginForm({ redirectTo, prefixes = ['+502'] }: LoginFormProps) {
         </div>
         <div className="hidden md:block"></div>
 
-        {/* Botón Selector de Tema */}
-        <button
-          type="button"
-          onClick={toggleTheme}
-          className="w-11 h-11 rounded-full bg-[rgb(var(--ds-color-surface-container-low))] hover:bg-[rgb(var(--ds-color-surface-container-high))] flex items-center justify-center border border-[rgb(var(--ds-color-outline-variant))]/40 text-foreground transition-all duration-200 cursor-pointer active:scale-[0.9] outline-none"
-          aria-label="Cambiar tema"
-        >
-          {mounted && theme === 'dark' ? (
-            <Sun className="h-5 w-5" />
-          ) : (
-            <Moon className="h-5 w-5" />
-          )}
-        </button>
+        {/* Botones Selector de Tema y Selector de Idioma */}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setLocale(locale === 'es' ? 'en' : 'es')}
+            className="h-11 px-3 rounded-full bg-[rgb(var(--ds-color-surface-container-low))] hover:bg-[rgb(var(--ds-color-surface-container-high))] flex items-center gap-1.5 border border-[rgb(var(--ds-color-outline-variant))]/40 text-foreground text-xs font-bold transition-all duration-200 cursor-pointer active:scale-[0.9] outline-none"
+            title="Switch Language"
+          >
+            <Globe className="h-4 w-4" />
+            <span>{locale === 'es' ? 'EN' : 'ES'}</span>
+          </button>
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="w-11 h-11 rounded-full bg-[rgb(var(--ds-color-surface-container-low))] hover:bg-[rgb(var(--ds-color-surface-container-high))] flex items-center justify-center border border-[rgb(var(--ds-color-outline-variant))]/40 text-foreground transition-all duration-200 cursor-pointer active:scale-[0.9] outline-none"
+            aria-label="Cambiar tema"
+          >
+            {mounted && theme === 'dark' ? (
+              <Sun className="h-5 w-5" />
+            ) : (
+              <Moon className="h-5 w-5" />
+            )}
+          </button>
+        </div>
       </header>
 
       {/* CONTENEDOR DE FORMULARIO DIRECTO */}
@@ -175,15 +188,14 @@ export function LoginForm({ redirectTo, prefixes = ['+502'] }: LoginFormProps) {
           <div className="w-full space-y-8">
             <div>
               <h1 className="ds-text-4xl font-extrabold text-foreground mb-2 leading-tight">
-                Ingresa a tu <span className="text-[rgb(var(--ds-color-primary))]">perfil</span>
+                {t.login.titlePrefix}<span className="text-[rgb(var(--ds-color-primary))]">{t.login.titleHighlight}</span>
               </h1>
-
             </div>
 
             <form onSubmit={handlePhoneSubmit} className="space-y-6">
               <div className="space-y-2">
                 <label className="ds-text-sm text-muted-foreground font-semibold block" htmlFor="ds-model-phone">
-                  Ingresa tu número de teléfono
+                  {t.login.phoneLabel}
                 </label>
                 
                 <div className="grid grid-cols-[100px_1fr] gap-3 items-center">
@@ -222,12 +234,12 @@ export function LoginForm({ redirectTo, prefixes = ['+502'] }: LoginFormProps) {
                 variant="primary"
                 className="w-full !h-14 mt-4"
               >
-                Continuar
+                {t.login.continue}
               </Button>
             </form>
 
             <div className="mt-8 pt-6 border-t border-[rgb(var(--ds-color-outline-variant))]/20 text-center ds-text-sm text-muted-foreground">
-              ¿Problemas de acceso? <a href={getSupportWhatsappUrl()} target="_blank" rel="noopener noreferrer" className="text-foreground font-bold hover:underline">Soporte IZ</a>
+              {t.login.supportText} <a href={getSupportWhatsappUrl()} target="_blank" rel="noopener noreferrer" className="text-foreground font-bold hover:underline">{t.login.supportLink}</a>
             </div>
           </div>
         )}
@@ -237,16 +249,16 @@ export function LoginForm({ redirectTo, prefixes = ['+502'] }: LoginFormProps) {
           <div className="w-full space-y-6">
             <div>
               <h2 className="ds-text-3xl font-extrabold text-foreground mb-2 leading-tight">
-                Escribe tu contraseña
+                {t.login.passwordTitle}
               </h2>
               <p className="ds-text-sm text-muted-foreground">
-                Ingresa la contraseña de tu cuenta para acceder al portal.
+                {t.login.passwordSubtitle}
               </p>
             </div>
 
             <form onSubmit={handleLogin} className="space-y-6">
               <div className="space-y-2">
-                <label className="ds-text-sm text-muted-foreground font-semibold block">Número de teléfono</label>
+                <label className="ds-text-sm text-muted-foreground font-semibold block">{t.login.phoneFieldLabel}</label>
                 <div className="p-4 rounded-2xl bg-[rgb(var(--ds-color-surface-container-low))] border border-[rgb(var(--ds-color-outline-variant))]/20 ds-text-base font-semibold select-all text-left">
                   {phone}
                 </div>
@@ -254,12 +266,12 @@ export function LoginForm({ redirectTo, prefixes = ['+502'] }: LoginFormProps) {
 
               <div className="space-y-2">
                 <label className="ds-text-sm text-muted-foreground font-semibold block" htmlFor="ds-model-password">
-                  Contraseña
+                  {t.login.passwordLabel}
                 </label>
                 <Input
                   id="ds-model-password"
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="Escribe tu contraseña"
+                  placeholder={t.login.passwordPlaceholder}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -293,7 +305,7 @@ export function LoginForm({ redirectTo, prefixes = ['+502'] }: LoginFormProps) {
                   variant="primary"
                   className="w-full !h-14"
                 >
-                  Ingresar
+                  {t.login.loginBtn}
                 </Button>
                 <Button
                   type="button"
@@ -301,7 +313,7 @@ export function LoginForm({ redirectTo, prefixes = ['+502'] }: LoginFormProps) {
                   variant="outline"
                   className="w-full !h-14"
                 >
-                  Volver
+                  {t.login.backBtn}
                 </Button>
               </div>
             </form>
@@ -313,13 +325,13 @@ export function LoginForm({ redirectTo, prefixes = ['+502'] }: LoginFormProps) {
           <div className="w-full space-y-6">
             <div>
               <h2 className="ds-text-3xl font-extrabold text-foreground mb-2 leading-tight">
-                Establecer contraseña
+                {t.login.registerTitle}
               </h2>
             </div>
 
             <form onSubmit={handleRegister} className="space-y-5">
               <div className="space-y-2">
-                <label className="ds-text-sm text-muted-foreground font-semibold block">Número de teléfono</label>
+                <label className="ds-text-sm text-muted-foreground font-semibold block">{t.login.phoneFieldLabel}</label>
                 <div className="p-4 rounded-2xl bg-[rgb(var(--ds-color-surface-container-low))] border border-[rgb(var(--ds-color-outline-variant))]/20 ds-text-base font-semibold select-all text-left">
                   {phone}
                 </div>
@@ -327,12 +339,12 @@ export function LoginForm({ redirectTo, prefixes = ['+502'] }: LoginFormProps) {
 
               <div className="space-y-2">
                 <label className="ds-text-sm text-muted-foreground font-semibold block" htmlFor="ds-model-password-reg">
-                  Nueva contraseña
+                  {t.login.newPasswordLabel}
                 </label>
                 <Input
                   id="ds-model-password-reg"
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="Mínimo 6 caracteres"
+                  placeholder={t.login.newPasswordPlaceholder}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -356,12 +368,12 @@ export function LoginForm({ redirectTo, prefixes = ['+502'] }: LoginFormProps) {
 
               <div className="space-y-2">
                 <label className="ds-text-sm text-muted-foreground font-semibold block" htmlFor="ds-model-confirm-password">
-                  Confirmar contraseña
+                  {t.login.confirmPasswordLabel}
                 </label>
                 <Input
                   id="ds-model-confirm-password"
                   type={showConfirmPassword ? 'text' : 'password'}
-                  placeholder="Confirma tu contraseña"
+                  placeholder={t.login.confirmPasswordPlaceholder}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
@@ -396,7 +408,7 @@ export function LoginForm({ redirectTo, prefixes = ['+502'] }: LoginFormProps) {
                   variant="primary"
                   className="w-full !h-14"
                 >
-                  Establecer contraseña
+                  {t.login.registerBtn}
                 </Button>
                 <Button
                   type="button"
@@ -404,7 +416,7 @@ export function LoginForm({ redirectTo, prefixes = ['+502'] }: LoginFormProps) {
                   variant="outline"
                   className="w-full !h-14"
                 >
-                  Volver
+                  {t.login.backBtn}
                 </Button>
               </div>
             </form>
@@ -428,7 +440,7 @@ export function LoginForm({ redirectTo, prefixes = ['+502'] }: LoginFormProps) {
         </div>
 
         <div className="px-6 pb-3 pt-2 md:pt-5 flex justify-between items-center border-b border-[rgb(var(--ds-color-outline-variant))]/20">
-          <span className="ds-text-lg text-foreground font-bold">Selecciona tu país</span>
+          <span className="ds-text-lg text-foreground font-bold">{t.login.selectCountry}</span>
           <button
             type="button"
             onClick={() => setIsDrawerOpen(false)}

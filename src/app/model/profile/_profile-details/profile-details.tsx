@@ -7,6 +7,7 @@ import { ProfileDetailsProps } from './profile-details.types';
 import { toPublicUrl, toTitleCase } from '@/lib/utils';
 import { Input } from '@/components/ui/ds/input';
 import { Button } from '@/components/ui/ds/button';
+import { useModelI18n } from '@/lib/i18n/ModelI18nContext';
 import gsap from 'gsap';
 
 // TikTok SVG Icon
@@ -31,6 +32,7 @@ export function ProfileDetails({
   totalIncome,
   className = '',
 }: ProfileDetailsProps) {
+  const { t } = useModelI18n();
   const {
     isEditing,
     setIsEditing,
@@ -75,11 +77,6 @@ export function ProfileDetails({
   const coverUrl = React.useMemo(() => {
     return toPublicUrl(model.cover_path);
   }, [model.cover_path]);
-
-  // Formato para mostrar la altura
-  const heightStr = React.useMemo(() => {
-    return model.height_cm ? `${(model.height_cm / 100).toFixed(2)} m` : 'No definida';
-  }, [model.height_cm]);
 
   return (
     <div className={`space-y-12 lg:space-y-6 w-full ${className}`}>
@@ -138,15 +135,15 @@ export function ProfileDetails({
 
       </div>
 
-      {/* 2. SECCIÓN DE INFORMACIÓN PERSONAL (Utiliza los componentes de campo del Design System) */}
+      {/* 2. SECCIÓN DE INFORMACIÓN PERSONAL */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-6 max-w-4xl mx-auto w-full text-left bg-[rgb(var(--ds-color-surface-container))] border border-[rgb(var(--ds-color-outline-variant))]/20 p-6 md:p-8 rounded-3xl shadow-sm">
         
         {/* Email */}
         <div className="space-y-2">
-          <label className="ds-text-sm text-muted-foreground font-semibold block">Correo Electrónico</label>
+          <label className="ds-text-sm text-muted-foreground font-semibold block">{t.profile.email}</label>
           <Input
             readOnly
-            value={model.email || 'No especificado'}
+            value={model.email || 'No especificando'}
             leftElement={<Mail className="h-4.5 w-4.5 text-purple" />}
             className="cursor-default"
           />
@@ -154,7 +151,7 @@ export function ProfileDetails({
 
         {/* Teléfono */}
         <div className="space-y-2">
-          <label className="ds-text-sm text-muted-foreground font-semibold block">Teléfono de Acceso</label>
+          <label className="ds-text-sm text-muted-foreground font-semibold block">{t.profile.phone}</label>
           <Input
             readOnly
             value={model.phone_e164 || 'No especificado'}
@@ -165,7 +162,7 @@ export function ProfileDetails({
 
         {/* Redes Sociales */}
         <div className="space-y-2 md:col-span-2 lg:col-span-1">
-          <label className="ds-text-sm text-muted-foreground font-semibold block">Redes Sociales</label>
+          <label className="ds-text-sm text-muted-foreground font-semibold block">Social Media</label>
           <div className="space-y-3">
             {/* Instagram */}
             {model.instagram ? (
@@ -185,7 +182,7 @@ export function ProfileDetails({
             ) : (
               <Input
                 readOnly
-                value="Instagram no definido"
+                value="Instagram"
                 leftElement={<Instagram className="h-4.5 w-4.5 text-muted-foreground/45" />}
                 className="opacity-65 cursor-not-allowed"
               />
@@ -209,7 +206,7 @@ export function ProfileDetails({
             ) : (
               <Input
                 readOnly
-                value="TikTok no definido"
+                value="TikTok"
                 leftElement={<TikTokIcon className="h-4.5 w-4.5 text-muted-foreground/45" />}
                 className="opacity-65 cursor-not-allowed"
               />
@@ -225,7 +222,7 @@ export function ProfileDetails({
             variant="primary"
             className="w-full max-w-xs !h-14"
           >
-            Editar Datos
+            {t.profile.personalData}
           </Button>
         </div>
 

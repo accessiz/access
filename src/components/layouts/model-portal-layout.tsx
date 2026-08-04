@@ -3,17 +3,27 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LogOut, User, CalendarCheck, Sun, Moon } from 'lucide-react';
+import { LogOut, User, CalendarCheck, Sun, Moon, Globe } from 'lucide-react';
 import { useTheme } from 'next-themes';
-import { Button } from '@/components/ui/button';
-import LogoIcon from '@/components/LogoIcon';
 import Logo from '@/components/LogoDark';
 import { logoutModel, checkActiveApplicationsAction } from '@/lib/actions/models_portal';
+import { ModelI18nProvider, useModelI18n } from '@/lib/i18n/ModelI18nContext';
+import { AntiTranslateGuard } from '@/components/AntiTranslateGuard';
 import gsap from 'gsap';
 
 export function ModelPortalLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <ModelI18nProvider>
+      <AntiTranslateGuard />
+      <ModelPortalLayoutContent>{children}</ModelPortalLayoutContent>
+    </ModelI18nProvider>
+  );
+}
+
+function ModelPortalLayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
+  const { locale, setLocale, t } = useModelI18n();
   const [mounted, setMounted] = React.useState(false);
   const [hasActive, setHasActive] = React.useState(false);
 
@@ -48,8 +58,6 @@ export function ModelPortalLayout({ children }: { children: React.ReactNode }) {
   };
 
   const isProjectPage = pathname.startsWith('/m/');
-  const projectPublicId = isProjectPage ? pathname.split('/')[2] : null;
-
   const isActive = (path: string) => pathname === path;
   const isLoginPage = pathname === '/model/login';
 
@@ -68,7 +76,6 @@ export function ModelPortalLayout({ children }: { children: React.ReactNode }) {
       const activeWidth = activeEl.offsetWidth;
       const activeHeight = activeEl.offsetHeight;
 
-      // Animar posición y tamaño del indicador usando GSAP para transiciones fluidas y orgánicas
       gsap.to(indicator, {
         x: activeLeft,
         width: activeWidth,
@@ -79,7 +86,6 @@ export function ModelPortalLayout({ children }: { children: React.ReactNode }) {
         scale: 1,
       });
     } else if (indicator) {
-      // Ocultar si no hay ninguna opción activa elegible para el slide
       gsap.to(indicator, {
         opacity: 0,
         scale: 0.8,
@@ -89,7 +95,7 @@ export function ModelPortalLayout({ children }: { children: React.ReactNode }) {
   }, [pathname, isProjectPage, hasActive, mounted]);
 
   return (
-    <div className={`flex min-h-screen flex-col bg-background text-foreground ${isLoginPage ? '' : 'pb-24 md:pb-28'}`}>
+    <div className={`flex min-h-screen flex-col bg-background text-foreground notranslate ${isLoginPage ? '' : 'pb-24 md:pb-28'}`} translate="no">
       {/* Estructura Principal del Workspace */}
       <div className="flex flex-grow flex-col w-full min-h-screen">
         
@@ -99,8 +105,17 @@ export function ModelPortalLayout({ children }: { children: React.ReactNode }) {
             
             {/* Mobile Top Header */}
             {!isLoginPage && (
-              <header className="lg:hidden flex items-center justify-center border-b border-border pb-3">
+              <header className="lg:hidden flex items-center justify-between border-b border-border pb-3 px-2">
                 <Logo className="h-6 w-auto text-foreground" />
+                <button
+                  type="button"
+                  onClick={() => setLocale(locale === 'es' ? 'en' : 'es')}
+                  className="px-2.5 py-1 rounded-full text-xs font-bold bg-surface-container-low border border-border text-foreground flex items-center gap-1.5 cursor-pointer active:scale-95"
+                  title="Switch Language"
+                >
+                  <Globe className="h-3.5 w-3.5" />
+                  <span>{locale === 'es' ? 'EN' : 'ES'}</span>
+                </button>
               </header>
             )}
 
@@ -135,7 +150,7 @@ export function ModelPortalLayout({ children }: { children: React.ReactNode }) {
                 style={{ opacity: 0, width: '48px', height: '48px' }}
               />
 
-              {/* Workspace */}
+              {/* Perfil */}
               <Link
                 ref={el => { buttonRefs.current['/model/profile'] = el; }}
                 href="/model/profile"
@@ -144,7 +159,7 @@ export function ModelPortalLayout({ children }: { children: React.ReactNode }) {
                     ? 'text-white'
                     : 'text-muted-foreground hover:text-foreground hover:bg-[rgb(var(--ds-color-surface-container-highest))]/80 bg-[rgb(var(--ds-color-surface-container-lowest))]/60'
                 }`}
-                title="Mi Perfil"
+                title={t.layout.myProfile}
               >
                 <User className="h-5.5 w-5.5" />
               </Link>
@@ -159,24 +174,34 @@ export function ModelPortalLayout({ children }: { children: React.ReactNode }) {
                       ? 'text-white'
                       : 'text-muted-foreground hover:text-foreground hover:bg-[rgb(var(--ds-color-surface-container-highest))]/80 bg-[rgb(var(--ds-color-surface-container-lowest))]/60'
                   }`}
-                  title="Aplicaciones Activas"
+                  title={t.layout.activeApplications}
                 >
                   <CalendarCheck className="h-5.5 w-5.5" />
                 </Link>
               ) : (
                 <div
                   className="relative z-10 h-12 w-12 rounded-full flex items-center justify-center text-muted-foreground/35 bg-[rgb(var(--ds-color-surface-container-lowest))]/60 cursor-not-allowed"
-                  title="Ninguna postulación activa disponible"
+                  title={t.layout.activeApplications}
                 >
                   <CalendarCheck className="h-5.5 w-5.5 opacity-30" />
                 </div>
               )}
 
+              {/* Selector de Idioma */}
+              <button
+                type="button"
+                onClick={() => setLocale(locale === 'es' ? 'en' : 'es')}
+                className="relative z-10 h-12 w-12 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-[rgb(var(--ds-color-surface-container-highest))]/80 bg-[rgb(var(--ds-color-surface-container-lowest))]/60 transition-all active:scale-90 border-0 cursor-pointer font-bold text-xs"
+                title={t.layout.language}
+              >
+                <span>{locale === 'es' ? 'EN' : 'ES'}</span>
+              </button>
+
               {/* Tema */}
               <button
                 onClick={() => mounted && setTheme(theme === 'dark' ? 'light' : 'dark')}
                 className="relative z-10 h-12 w-12 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-[rgb(var(--ds-color-surface-container-highest))]/80 bg-[rgb(var(--ds-color-surface-container-lowest))]/60 transition-all active:scale-90 border-0 cursor-pointer"
-                title="Cambiar Tema"
+                title={t.layout.changeTheme}
               >
                 {mounted && theme === 'dark' ? (
                   <Sun className="h-5.5 w-5.5" />
@@ -185,12 +210,12 @@ export function ModelPortalLayout({ children }: { children: React.ReactNode }) {
                 )}
               </button>
 
-              {/* Salir (Fondo igual al solecito con icono destacado en rojo) */}
+              {/* Salir */}
               <button
                 type="button"
                 onClick={handleLogout}
                 className="relative z-10 h-12 w-12 rounded-full flex items-center justify-center text-red-500 hover:text-red-600 hover:bg-[rgb(var(--ds-color-surface-container-highest))]/80 bg-[rgb(var(--ds-color-surface-container-lowest))]/60 transition-all active:scale-90 border-0 cursor-pointer"
-                title="Cerrar Sesión"
+                title={t.layout.logOut}
               >
                 <LogOut className="h-5.5 w-5.5" />
               </button>
@@ -203,3 +228,4 @@ export function ModelPortalLayout({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
+

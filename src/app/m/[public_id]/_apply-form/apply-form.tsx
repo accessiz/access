@@ -9,6 +9,7 @@ import { toTitleCase } from '@/lib/utils';
 import { PROJECT_TYPES } from '@/lib/types';
 import { timestampToGuatemalaDateTime } from '@/lib/actions/projects/helpers';
 import { Button } from '@/components/ui/ds/button';
+import { useModelI18n } from '@/lib/i18n/ModelI18nContext';
 import gsap from 'gsap';
 
 const WEEKDAYS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
@@ -41,6 +42,7 @@ const formatScheduleDate = (dateStr: string) => {
 };
 
 export function ApplyForm({ project, model }: ApplyFormProps) {
+  const { t } = useModelI18n();
   const sortedSchedule = React.useMemo(() => {
     if (!project.schedule) return [];
     return [...project.schedule]
@@ -135,10 +137,10 @@ export function ApplyForm({ project, model }: ApplyFormProps) {
   const paymentStr = React.useMemo(() => {
     const fee = project.default_model_fee;
     const currency = (project.currency || 'GTQ').toUpperCase();
-    if (!fee) return 'Canje';
-    const typeLabel = project.default_fee_type === 'per_hour' ? 'Por hora' : project.default_fee_type === 'fixed' ? 'Monto fijo' : 'Por día';
+    if (!fee) return t.apply.feeTrade;
+    const typeLabel = project.default_fee_type === 'per_hour' ? '/h' : project.default_fee_type === 'fixed' ? '' : t.apply.feePerDay;
     return `${currency} ${fee.toLocaleString()} ${typeLabel}`;
-  }, [project.default_model_fee, project.default_fee_type, project.currency]);
+  }, [project.default_model_fee, project.default_fee_type, project.currency, t]);
 
   const isExpired = project.apply_end_at ? new Date() > new Date(project.apply_end_at) : false;
   const applyEnd = project.apply_end_at ? timestampToGuatemalaDateTime(project.apply_end_at) : null;
@@ -155,7 +157,7 @@ export function ApplyForm({ project, model }: ApplyFormProps) {
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div>
-          <h2 className="ds-text-sm font-bold text-[rgb(var(--ds-color-on-surface))] leading-tight">Regresar</h2>
+          <h2 className="ds-text-sm font-bold text-[rgb(var(--ds-color-on-surface))] leading-tight">{t.apply.proposalTitle}</h2>
         </div>
       </div>
 
@@ -165,7 +167,7 @@ export function ApplyForm({ project, model }: ApplyFormProps) {
           <div className="flex items-center gap-1.5 text-[rgb(var(--ds-color-error))] font-bold ds-text-xs">
             <span className="h-2 w-2 rounded-full bg-[rgb(var(--ds-color-error))] animate-pulse"></span>
             <span>
-              Límite para aplicar: {applyEnd.date.split('-')[2]} {['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'][parseInt(applyEnd.date.split('-')[1], 10) - 1]}, {applyEnd.time}
+              Límite: {applyEnd.date.split('-')[2]} {['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'][parseInt(applyEnd.date.split('-')[1], 10) - 1]}, {applyEnd.time}
             </span>
           </div>
         )}
@@ -186,7 +188,7 @@ export function ApplyForm({ project, model }: ApplyFormProps) {
       <div className="w-full bg-[rgb(var(--ds-color-surface-container))] border border-[rgb(var(--ds-color-outline-variant))]/20 rounded-3xl p-6 shadow-md space-y-4">
         <div className="flex flex-col gap-4">
           <div className="flex justify-between items-center">
-            <span className="ds-text-xs font-bold text-[rgb(var(--ds-color-on-surface-variant))]/50">Pago estimado</span>
+            <span className="ds-text-xs font-bold text-[rgb(var(--ds-color-on-surface-variant))]/50">Pago</span>
             <span className="ds-text-sm font-bold text-[rgb(var(--ds-color-on-surface))]">{paymentStr}</span>
           </div>
           <div className="flex justify-between items-center border-t border-[rgb(var(--ds-color-outline-variant))]/10 pt-4">
@@ -194,7 +196,7 @@ export function ApplyForm({ project, model }: ApplyFormProps) {
             <span className="ds-text-sm font-bold text-[rgb(var(--ds-color-on-surface))]">{project.location || 'Guatemala'}</span>
           </div>
           <div className="flex justify-between items-center border-t border-[rgb(var(--ds-color-outline-variant))]/10 pt-4">
-            <span className="ds-text-xs font-bold text-[rgb(var(--ds-color-on-surface-variant))]/50">Fechas del proyecto</span>
+            <span className="ds-text-xs font-bold text-[rgb(var(--ds-color-on-surface-variant))]/50">{t.apply.datesTitle}</span>
             <span className="ds-text-sm font-bold text-[rgb(var(--ds-color-on-surface))]">{datesConsolidated}</span>
           </div>
         </div>
@@ -204,8 +206,7 @@ export function ApplyForm({ project, model }: ApplyFormProps) {
       {!isExpired && sortedSchedule.length > 0 && (
         <div className="w-full bg-[rgb(var(--ds-color-surface-container))] border border-[rgb(var(--ds-color-outline-variant))]/20 rounded-3xl p-6 shadow-md space-y-4">
           <div className="flex flex-col text-left">
-            <h3 className="ds-text-sm font-bold text-[rgb(var(--ds-color-on-surface))]">Confirma tus días disponibles</h3>
-            <p className="ds-text-xs text-[rgb(var(--ds-color-on-surface-variant))]/60">Toca para marcar las fechas en las que tienes disponibilidad.</p>
+            <h3 className="ds-text-sm font-bold text-[rgb(var(--ds-color-on-surface))]">{t.apply.selectAvailableDates}</h3>
           </div>
 
           <div className="flex flex-col divide-y divide-[rgb(var(--ds-color-outline-variant))]/10 pt-2">
