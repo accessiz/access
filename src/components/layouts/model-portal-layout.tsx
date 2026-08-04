@@ -103,15 +103,15 @@ function ModelPortalLayoutContent({ children }: { children: React.ReactNode }) {
         <div className="flex-grow flex flex-col w-full overflow-hidden">
           <div className={`flex-grow flex flex-col justify-start z-10 w-full ${isLoginPage ? 'max-w-none p-0 gap-0' : 'max-w-[1600px] mx-auto p-4 md:p-8 lg:p-10 pb-28 md:pb-32 gap-8'}`}>
             
-            {/* Mobile Top Header */}
+            {/* Top Header con Logo y Selector de Idioma */}
             {!isLoginPage && (
-              <header className="lg:hidden flex items-center justify-between border-b border-border pb-3 px-2">
+              <header className="flex items-center justify-between border-b border-border pb-3 px-2">
                 <Logo className="h-6 w-auto text-foreground" />
                 <button
                   type="button"
                   onClick={() => setLocale(locale === 'es' ? 'en' : 'es')}
-                  className="px-2.5 py-1 rounded-full text-xs font-bold bg-surface-container-low border border-border text-foreground flex items-center gap-1.5 cursor-pointer active:scale-95"
-                  title="Switch Language"
+                  className="px-3 py-1 rounded-full text-xs font-bold bg-surface-container-low border border-border text-foreground flex items-center gap-1.5 cursor-pointer active:scale-95 hover:bg-surface-container-high transition-colors"
+                  title={t.layout.language}
                 >
                   <Globe className="h-3.5 w-3.5" />
                   <span>{locale === 'es' ? 'EN' : 'ES'}</span>
@@ -186,16 +186,6 @@ function ModelPortalLayoutContent({ children }: { children: React.ReactNode }) {
                   <CalendarCheck className="h-5.5 w-5.5 opacity-30" />
                 </div>
               )}
-
-              {/* Selector de Idioma */}
-              <button
-                type="button"
-                onClick={() => setLocale(locale === 'es' ? 'en' : 'es')}
-                className="relative z-10 h-12 w-12 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-[rgb(var(--ds-color-surface-container-highest))]/80 bg-[rgb(var(--ds-color-surface-container-lowest))]/60 transition-all active:scale-90 border-0 cursor-pointer font-bold text-xs"
-                title={t.layout.language}
-              >
-                <span>{locale === 'es' ? 'EN' : 'ES'}</span>
-              </button>
 
               {/* Tema */}
               <button
