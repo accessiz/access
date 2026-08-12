@@ -85,7 +85,7 @@ export interface Model extends DbModel {
   fee_type?: string | null;
   currency?: string | null;
   notes?: string | null;
-  model_status?: 'applied' | 'rejected' | 'added_by_admin' | null;
+  model_status?: 'applied' | 'rejected' | 'added_by_admin' | 'pending' | null;
   model_available_schedules?: string[] | null;
 
   // Asignaciones de tiempo/días

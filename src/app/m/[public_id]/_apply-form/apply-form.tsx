@@ -91,8 +91,8 @@ export function ApplyForm({ project, model }: ApplyFormProps) {
   }, []);
 
   const [localStatus, setLocalStatus] = React.useState<string | null>(model.model_status || null);
-  const [showDecisionButtons, setShowDecisionButtons] = React.useState(!model.model_status);
-  const isDatesDisabled = isPending || (!showDecisionButtons && localStatus !== null);
+  const [showDecisionButtons, setShowDecisionButtons] = React.useState(!model.model_status || model.model_status === 'pending');
+  const isDatesDisabled = isPending || (!showDecisionButtons && localStatus !== null && localStatus !== 'pending');
 
   const [modalState, setModalState] = React.useState<{
     isOpen: boolean;
@@ -109,7 +109,7 @@ export function ApplyForm({ project, model }: ApplyFormProps) {
   // Sincronizar el estado cuando cambia desde la revalidación del servidor
   React.useEffect(() => {
     setLocalStatus(model.model_status || null);
-    setShowDecisionButtons(!model.model_status);
+    setShowDecisionButtons(!model.model_status || model.model_status === 'pending');
   }, [model.model_status]);
 
   // Resetear el estado del modal únicamente al cargar/montar un nuevo proyecto
@@ -282,7 +282,7 @@ export function ApplyForm({ project, model }: ApplyFormProps) {
       ) : (
         <>
           {/* Banners Informativos de Estado Actual (Fondo Inverso del Surface, Centrado Horizontalmente) */}
-          {!showDecisionButtons && localStatus && (
+          {!showDecisionButtons && localStatus && localStatus !== 'pending' && (
             <div className="space-y-3 mb-2">
               <div className="bg-[rgb(var(--ds-color-on-surface))] text-[rgb(var(--ds-color-surface))] p-6 rounded-3xl flex flex-col items-center text-center shadow-md border-0 space-y-3">
                 <div className="shrink-0">
