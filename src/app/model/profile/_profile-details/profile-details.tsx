@@ -138,6 +138,13 @@ export function ProfileDetails({
       {/* 2. SECCIÓN DE INFORMACIÓN PERSONAL */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-6 max-w-4xl mx-auto w-full text-left bg-[rgb(var(--ds-color-surface-container))] border border-[rgb(var(--ds-color-outline-variant))]/20 p-6 md:p-8 rounded-3xl shadow-sm">
         
+        {/* Header de la sección */}
+        <div className="col-span-1 md:col-span-2 lg:col-span-1 border-b border-[rgb(var(--ds-color-outline-variant))]/10 pb-3 mb-1 flex items-center justify-between">
+          <span className="ds-text-xs text-muted-foreground font-black tracking-widest uppercase">
+            {t.profile.personalData}
+          </span>
+        </div>
+
         {/* Email */}
         <div className="space-y-2">
           <label className="ds-text-sm text-muted-foreground font-semibold block">{t.profile.email}</label>
@@ -222,7 +229,7 @@ export function ProfileDetails({
             variant="primary"
             className="w-full max-w-xs !h-14"
           >
-            {t.profile.personalData}
+            {t.profile.editData}
           </Button>
         </div>
 
@@ -262,7 +269,7 @@ export function ProfileDetails({
           <div className="bg-[rgb(var(--ds-color-surface-container))] border border-[rgb(var(--ds-color-outline-variant))]/20 w-full max-w-md rounded-3xl p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200 text-left">
             
             <div className="flex justify-between items-center pb-2 border-b border-[rgb(var(--ds-color-outline-variant))]/20">
-              <h3 className="ds-text-lg font-bold text-foreground">Editar Datos</h3>
+              <h3 className="ds-text-lg font-bold text-foreground">{t.profile.editData}</h3>
               <button
                 type="button"
                 onClick={handleCancel}

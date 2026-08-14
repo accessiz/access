@@ -35,6 +35,7 @@
     "title": "Mi Perfil",
     "subtitle": "Gestiona tus datos de contacto y revisa el estado de tus proyectos.",
     "personalData": "Datos Personales",
+    "editData": "Editar Datos",
     "fullName": "Nombre completo",
     "email": "Correo electrónico",
     "phone": "Número de teléfono",

@@ -35,6 +35,7 @@
     "title": "My Profile",
     "subtitle": "Manage your contact information and view your project statuses.",
     "personalData": "Personal Information",
+    "editData": "Edit Info",
     "fullName": "Full name",
     "email": "Email address",
     "phone": "Phone number",
