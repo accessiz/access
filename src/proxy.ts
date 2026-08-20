@@ -56,10 +56,12 @@ export function buildCSP(nonce: string): string {
   return [
     `default-src 'self'`,
     scriptSrc,
-    `style-src 'self' 'unsafe-inline'`, // Tailwind + next-themes inject inline styles
+    `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`, // Tailwind + next-themes + Google Fonts
     `img-src ${imgSrc}`,
     `media-src ${mediaSrc}`,
     `font-src 'self' https://fonts.gstatic.com`,
+    `worker-src 'self' blob:`,
+    `child-src 'self' blob:`,
     `connect-src ${connectSrc}`,
     `frame-ancestors 'none'`,
     `base-uri 'self'`,

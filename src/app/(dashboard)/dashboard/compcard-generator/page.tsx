@@ -204,20 +204,6 @@ export default function CompCardGeneratorPage() {
 
   const printContainerId = 'compcard-print-container';
 
-  // Revoke URLs on unmount to prevent memory leaks
-  useEffect(() => {
-    return () => {
-      if (coverUrl && coverUrl.startsWith('blob:')) {
-        URL.revokeObjectURL(coverUrl);
-      }
-      compCardUrls.forEach(url => {
-        if (url && url.startsWith('blob:')) {
-          URL.revokeObjectURL(url);
-        }
-      });
-    };
-  }, [coverUrl, compCardUrls]);
-
   const handleFileSelect = (file: File, aspect: number, slot: CropState['slot']) => {
     const reader = new FileReader();
     reader.onload = () => {
@@ -231,43 +217,33 @@ export default function CompCardGeneratorPage() {
   };
 
   const handleCropComplete = (croppedFile: File) => {
-    const url = URL.createObjectURL(croppedFile);
-    if (!cropState) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      if (!cropState) return;
 
-    if (cropState.slot === 'cover') {
-      if (coverUrl && coverUrl.startsWith('blob:')) {
-        URL.revokeObjectURL(coverUrl);
+      if (cropState.slot === 'cover') {
+        setCoverUrl(dataUrl);
+      } else {
+        const idx = cropState.slot;
+        setCompCardUrls(prev => {
+          const copy = [...prev];
+          copy[idx] = dataUrl;
+          return copy;
+        });
       }
-      setCoverUrl(url);
-    } else {
-      const idx = cropState.slot;
-      setCompCardUrls(prev => {
-        const copy = [...prev];
-        const old = copy[idx];
-        if (old && old.startsWith('blob:')) {
-          URL.revokeObjectURL(old);
-        }
-        copy[idx] = url;
-        return copy;
-      });
-    }
-    setCropState(null);
-    toast.success('Imagen recortada con éxito.');
+      setCropState(null);
+      toast.success('Imagen recortada con éxito.');
+    };
+    reader.readAsDataURL(croppedFile);
   };
 
   const handleDeleteImage = (slot: CropState['slot']) => {
     if (slot === 'cover') {
-      if (coverUrl && coverUrl.startsWith('blob:')) {
-        URL.revokeObjectURL(coverUrl);
-      }
       setCoverUrl(null);
     } else {
       setCompCardUrls(prev => {
         const copy = [...prev];
-        const old = copy[slot];
-        if (old && old.startsWith('blob:')) {
-          URL.revokeObjectURL(old);
-        }
         copy[slot] = null;
         return copy;
       });
@@ -310,6 +286,9 @@ export default function CompCardGeneratorPage() {
         return true;
       },
       skipAutoScale: true,
+      onImageErrorHandler: (event: unknown) => {
+        console.warn('html-to-image onImageErrorHandler:', event);
+      },
     };
 
     try {
@@ -498,8 +477,25 @@ export default function CompCardGeneratorPage() {
       toast.success('Descarga completada con éxito.');
 
     } catch (error: unknown) {
-      console.error('Error en descarga:', error);
-      toast.error('Error al generar la compcard');
+      let errorMessage = 'Error desconocido';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      } else if (error && typeof error === 'object') {
+        if ('isTrusted' in error) {
+          errorMessage = 'Error de red o procesamiento al cargar las imágenes para la captura. Verifica las fotos e intenta de nuevo.';
+        } else {
+          try {
+            const str = JSON.stringify(error, null, 2);
+            if (str !== '{}') errorMessage = str;
+          } catch {
+            // ignore
+          }
+        }
+      }
+      console.error('Error en descarga:', errorMessage, error);
+      toast.error('Error al generar la compcard', { description: errorMessage });
     } finally {
       if (wrapper && originalWrapperStyle) {
         Object.assign(wrapper.style, originalWrapperStyle);

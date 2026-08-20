@@ -69,9 +69,15 @@ describe('buildCSP', () => {
     expect(csp).toContain('https://fonts.gstatic.com')
   })
 
-  it('allows unsafe-inline for styles (Tailwind requirement)', () => {
+  it('allows unsafe-inline and Google Fonts for styles', () => {
     const csp = buildCSP(nonce)
-    expect(csp).toContain("style-src 'self' 'unsafe-inline'")
+    expect(csp).toContain("style-src 'self' 'unsafe-inline' https://fonts.googleapis.com")
+  })
+
+  it('includes worker-src and child-src with blob:', () => {
+    const csp = buildCSP(nonce)
+    expect(csp).toContain("worker-src 'self' blob:")
+    expect(csp).toContain("child-src 'self' blob:")
   })
 
   it('includes blob: and data: in img-src', () => {
@@ -83,10 +89,10 @@ describe('buildCSP', () => {
   it('returns a properly semicolon-separated string', () => {
     const csp = buildCSP(nonce)
     const directives = csp.split('; ')
-    expect(directives.length).toBeGreaterThanOrEqual(11)
+    expect(directives.length).toBeGreaterThanOrEqual(13)
     // Each directive should start with a known keyword
     for (const d of directives) {
-      expect(d).toMatch(/^(default-src|script-src|style-src|img-src|media-src|font-src|connect-src|frame-ancestors|base-uri|form-action|object-src|upgrade-insecure-requests|report-uri|report-to)/)
+      expect(d).toMatch(/^(default-src|script-src|style-src|img-src|media-src|font-src|worker-src|child-src|connect-src|frame-ancestors|base-uri|form-action|object-src|upgrade-insecure-requests|report-uri|report-to)/)
     }
   })
 
