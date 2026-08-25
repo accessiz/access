@@ -11,54 +11,107 @@ import { Dropdown } from '@/components/ui/ds/dropdown';
 import Logo from '@/components/LogoDark';
 import { useModelI18n } from '@/lib/i18n/ModelI18nContext';
 
-// Diccionario de soporte de países, banderas, máscaras y longitudes
-const prefixToCountryData: Record<string, { flag: string; name: string; length: number; mask: string }> = {
-  '+502': { flag: '🇬🇹', name: 'Guatemala', length: 8, mask: '0000 0000' },
-  '+52': { flag: '🇲🇽', name: 'México', length: 10, mask: '00 0000 0000' },
-  '+503': { flag: '🇸🇻', name: 'El Salvador', length: 8, mask: '0000 0000' },
-  '+504': { flag: '🇭🇳', name: 'Honduras', length: 8, mask: '0000 0000' },
-  '+506': { flag: '🇨🇷', name: 'Costa Rica', length: 8, mask: '0000 0000' },
-  '+507': { flag: '🇵🇦', name: 'Panamá', length: 8, mask: '0000 0000' },
-  '+57': { flag: '🇨🇴', name: 'Colombia', length: 10, mask: '000 000 0000' },
-  '+1': { flag: '🇺🇸', name: 'Estados Unidos', length: 10, mask: '000 000 0000' },
-  '+33': { flag: '🇫🇷', name: 'Francia', length: 9, mask: '0 00 00 00 00' },
-  '+34': { flag: '🇪🇸', name: 'España', length: 9, mask: '000 000 000' },
-  '+44': { flag: '🇬🇧', name: 'Reino Unido', length: 10, mask: '0000 000000' },
-  '+58': { flag: '🇻🇪', name: 'Venezuela', length: 10, mask: '000 000 0000' },
-  '+370': { flag: '🇱🇹', name: 'Lituania', length: 8, mask: '000 00 000' },
-  '+49': { flag: '🇩🇪', name: 'Alemania', length: 10, mask: '0000 000000' },
-  '+39': { flag: '🇮🇹', name: 'Italia', length: 10, mask: '000 0000 000' },
-  '+51': { flag: '🇵🇪', name: 'Perú', length: 9, mask: '000 000 000' },
-  '+54': { flag: '🇦🇷', name: 'Argentina', length: 10, mask: '9 00 0000 0000' },
-  '+55': { flag: '🇧🇷', name: 'Brasil', length: 11, mask: '00 00000 0000' },
-  '+56': { flag: '🇨🇱', name: 'Chile', length: 9, mask: '9 0000 0000' },
-  '+591': { flag: '🇧🇴', name: 'Bolivia', length: 8, mask: '0000 0000' },
-  '+593': { flag: '🇪🇨', name: 'Ecuador', length: 9, mask: '90 000 0000' },
-  '+595': { flag: '🇵🇾', name: 'Paraguay', length: 9, mask: '000 000 000' },
-  '+598': { flag: '🇺🇾', name: 'Uruguay', length: 8, mask: '000 00 00' },
-  '+41': { flag: '🇨🇭', name: 'Suiza', length: 9, mask: '00 000 00 00' },
-  '+351': { flag: '🇵🇹', name: 'Portugal', length: 9, mask: '000 000 000' },
-  '+48': { flag: '🇵🇱', name: 'Polonia', length: 9, mask: '000 000 000' },
-  '+40': { flag: '🇷🇴', name: 'Rumania', length: 9, mask: '000 000 000' },
-  '+31': { flag: '🇳🇱', name: 'Países Bajos', length: 9, mask: '0 0000 0000' },
-  '+32': { flag: '🇧🇪', name: 'Bélgica', length: 9, mask: '000 00 00 00' },
-  '+43': { flag: '🇦🇹', name: 'Austria', length: 10, mask: '000 0000 000' },
-  '+46': { flag: '🇸🇪', name: 'Suecia', length: 9, mask: '00 000 00 00' },
-  '+47': { flag: '🇳🇴', name: 'Noruega', length: 8, mask: '000 00 000' },
-  '+45': { flag: '🇩🇰', name: 'Dinamarca', length: 8, mask: '00 00 00 00' },
-  '+358': { flag: '🇫🇮', name: 'Finlandia', length: 9, mask: '000 000000' },
+// Interfaz para datos de configuración de país y formato telefónico
+interface CountryPhoneConfig {
+  flag: string;
+  name: string;
+  minLength: number;
+  maxLength: number;
+  mask: string;
+}
+
+// Diccionario de soporte de países, banderas, máscaras y longitudes (estándar internacional E.164)
+const prefixToCountryData: Record<string, CountryPhoneConfig> = {
+  // Centroamérica y Caribe
+  '+502': { flag: '🇬🇹', name: 'Guatemala', minLength: 8, maxLength: 8, mask: '0000 0000' },
+  '+503': { flag: '🇸🇻', name: 'El Salvador', minLength: 8, maxLength: 8, mask: '0000 0000' },
+  '+504': { flag: '🇭🇳', name: 'Honduras', minLength: 8, maxLength: 8, mask: '0000 0000' },
+  '+505': { flag: '🇳🇮', name: 'Nicaragua', minLength: 8, maxLength: 8, mask: '0000 0000' },
+  '+506': { flag: '🇨🇷', name: 'Costa Rica', minLength: 8, maxLength: 8, mask: '0000 0000' },
+  '+507': { flag: '🇵🇦', name: 'Panamá', minLength: 8, maxLength: 8, mask: '0000 0000' },
+  '+501': { flag: '🇧🇿', name: 'Belice', minLength: 7, maxLength: 7, mask: '000 0000' },
+  '+509': { flag: '🇭🇹', name: 'Haití', minLength: 8, maxLength: 8, mask: '0000 0000' },
+  '+53': { flag: '🇨🇺', name: 'Cuba', minLength: 8, maxLength: 8, mask: '0000 0000' },
+  '+1809': { flag: '🇩🇴', name: 'República Dominicana', minLength: 7, maxLength: 10, mask: '000 0000' },
+  '+1829': { flag: '🇩🇴', name: 'República Dominicana', minLength: 7, maxLength: 10, mask: '000 0000' },
+  '+1849': { flag: '🇩🇴', name: 'República Dominicana', minLength: 7, maxLength: 10, mask: '000 0000' },
+
+  // Norteamérica
+  '+1': { flag: '🇺🇸', name: 'Estados Unidos / Canadá', minLength: 10, maxLength: 10, mask: '000 000 0000' },
+  '+52': { flag: '🇲🇽', name: 'México', minLength: 10, maxLength: 10, mask: '00 0000 0000' },
+
+  // Sudamérica
+  '+57': { flag: '🇨🇴', name: 'Colombia', minLength: 10, maxLength: 10, mask: '000 000 0000' },
+  '+58': { flag: '🇻🇪', name: 'Venezuela', minLength: 10, maxLength: 10, mask: '000 000 0000' },
+  '+51': { flag: '🇵🇪', name: 'Perú', minLength: 9, maxLength: 9, mask: '000 000 000' },
+  '+54': { flag: '🇦🇷', name: 'Argentina', minLength: 10, maxLength: 11, mask: '9 00 0000 0000' },
+  '+55': { flag: '🇧🇷', name: 'Brasil', minLength: 10, maxLength: 11, mask: '00 00000 0000' },
+  '+56': { flag: '🇨🇱', name: 'Chile', minLength: 9, maxLength: 9, mask: '9 0000 0000' },
+  '+591': { flag: '🇧🇴', name: 'Bolivia', minLength: 8, maxLength: 8, mask: '0000 0000' },
+  '+593': { flag: '🇪🇨', name: 'Ecuador', minLength: 9, maxLength: 9, mask: '90 000 0000' },
+  '+595': { flag: '🇵🇾', name: 'Paraguay', minLength: 9, maxLength: 9, mask: '000 000 000' },
+  '+598': { flag: '🇺🇾', name: 'Uruguay', minLength: 8, maxLength: 8, mask: '000 00 00' },
+
+  // Europa
+  '+34': { flag: '🇪🇸', name: 'España', minLength: 9, maxLength: 9, mask: '000 000 000' },
+  '+33': { flag: '🇫🇷', name: 'Francia', minLength: 9, maxLength: 9, mask: '0 00 00 00 00' },
+  '+44': { flag: '🇬🇧', name: 'Reino Unido', minLength: 9, maxLength: 10, mask: '0000 000000' },
+  // En Alemania (+49) los números móviles tienen 10 u 11 dígitos y las líneas fijas/DDI entre 6 y 13 dígitos
+  '+49': { flag: '🇩🇪', name: 'Alemania', minLength: 6, maxLength: 13, mask: '0000 0000 000' },
+  '+39': { flag: '🇮🇹', name: 'Italia', minLength: 9, maxLength: 11, mask: '000 0000 000' },
+  '+370': { flag: '🇱🇹', name: 'Lituania', minLength: 8, maxLength: 8, mask: '000 00 000' },
+  '+41': { flag: '🇨🇭', name: 'Suiza', minLength: 9, maxLength: 9, mask: '00 000 00 00' },
+  '+351': { flag: '🇵🇹', name: 'Portugal', minLength: 9, maxLength: 9, mask: '000 000 000' },
+  '+48': { flag: '🇵🇱', name: 'Polonia', minLength: 9, maxLength: 9, mask: '000 000 000' },
+  '+40': { flag: '🇷🇴', name: 'Rumania', minLength: 9, maxLength: 9, mask: '000 000 000' },
+  '+31': { flag: '🇳🇱', name: 'Países Bajos', minLength: 9, maxLength: 9, mask: '0 0000 0000' },
+  '+32': { flag: '🇧🇪', name: 'Bélgica', minLength: 9, maxLength: 9, mask: '000 00 00 00' },
+  '+43': { flag: '🇦🇹', name: 'Austria', minLength: 4, maxLength: 13, mask: '000 0000 0000' },
+  '+46': { flag: '🇸🇪', name: 'Suecia', minLength: 7, maxLength: 10, mask: '00 000 00 00' },
+  '+47': { flag: '🇳🇴', name: 'Noruega', minLength: 8, maxLength: 8, mask: '000 00 000' },
+  '+45': { flag: '🇩🇰', name: 'Dinamarca', minLength: 8, maxLength: 8, mask: '00 00 00 00' },
+  '+358': { flag: '🇫🇮', name: 'Finlandia', minLength: 5, maxLength: 11, mask: '000 000000' },
+  '+30': { flag: '🇬🇷', name: 'Grecia', minLength: 10, maxLength: 10, mask: '000 0000 000' },
+  '+420': { flag: '🇨🇿', name: 'República Checa', minLength: 9, maxLength: 9, mask: '000 000 000' },
+  '+36': { flag: '🇭🇺', name: 'Hungría', minLength: 9, maxLength: 9, mask: '00 000 0000' },
+  '+353': { flag: '🇮🇪', name: 'Irlanda', minLength: 9, maxLength: 9, mask: '00 000 0000' },
+  '+380': { flag: '🇺🇦', name: 'Ucrania', minLength: 9, maxLength: 9, mask: '00 000 0000' },
+  '+7': { flag: '🇷🇺', name: 'Rusia / Kazajistán', minLength: 10, maxLength: 10, mask: '000 000 0000' },
+
+  // Asia, África y Oceanía
+  '+86': { flag: '🇨🇳', name: 'China', minLength: 11, maxLength: 11, mask: '000 0000 0000' },
+  '+81': { flag: '🇯🇵', name: 'Japón', minLength: 10, maxLength: 10, mask: '0000 000 000' },
+  '+82': { flag: '🇰🇷', name: 'Corea del Sur', minLength: 9, maxLength: 10, mask: '00 0000 0000' },
+  '+91': { flag: '🇮🇳', name: 'India', minLength: 10, maxLength: 10, mask: '00000 00000' },
+  '+61': { flag: '🇦🇺', name: 'Australia', minLength: 9, maxLength: 9, mask: '000 000 000' },
+  '+64': { flag: '🇳🇿', name: 'Nueva Zelanda', minLength: 8, maxLength: 10, mask: '00 000 0000' },
+  '+971': { flag: '🇦🇪', name: 'Emiratos Árabes Unidos', minLength: 9, maxLength: 9, mask: '00 000 0000' },
+  '+966': { flag: '🇸🇦', name: 'Arabia Saudita', minLength: 9, maxLength: 9, mask: '00 000 0000' },
+  '+972': { flag: '🇮🇱', name: 'Israel', minLength: 9, maxLength: 9, mask: '00 000 0000' },
+  '+90': { flag: '🇹🇷', name: 'Turquía', minLength: 10, maxLength: 10, mask: '000 000 0000' },
+  '+20': { flag: '🇪🇬', name: 'Egipto', minLength: 10, maxLength: 10, mask: '00 0000 0000' },
+  '+27': { flag: '🇿🇦', name: 'Sudáfrica', minLength: 9, maxLength: 9, mask: '00 000 0000' },
+  '+63': { flag: '🇵🇭', name: 'Filipinas', minLength: 10, maxLength: 10, mask: '000 000 0000' },
+  '+62': { flag: '🇮🇩', name: 'Indonesia', minLength: 9, maxLength: 12, mask: '000 0000 0000' },
+  '+84': { flag: '🇻🇳', name: 'Vietnam', minLength: 9, maxLength: 10, mask: '00 0000 0000' },
+  '+66': { flag: '🇹🇭', name: 'Tailandia', minLength: 9, maxLength: 9, mask: '00 000 0000' },
+  '+60': { flag: '🇲🇾', name: 'Malasia', minLength: 9, maxLength: 10, mask: '00 000 0000' },
+  '+65': { flag: '🇸🇬', name: 'Singapur', minLength: 8, maxLength: 8, mask: '0000 0000' },
 };
 
-// Helper dinámico para resolver datos de país y evitar mostrar "Otro"
-const getCountryData = (prefix: string) => {
+// Helper dinámico para resolver datos de país y evitar mostrar "Otro", cumpliendo el estándar ITU-T E.164 (máx 15 dígitos)
+const getCountryData = (prefix: string): CountryPhoneConfig => {
   if (prefixToCountryData[prefix]) {
     return prefixToCountryData[prefix];
   }
+  const prefixDigits = prefix.replace(/\D/g, '').length;
+  const maxDigits = Math.max(7, 15 - prefixDigits);
   return {
     flag: '🌐',
     name: `País (${prefix})`,
-    length: 10,
-    mask: '0000000000'
+    minLength: 4,
+    maxLength: maxDigits,
+    mask: '0000 0000 0000'
   };
 };
 
@@ -104,9 +157,9 @@ export function LoginForm({ redirectTo, prefixes = ['+502'] }: LoginFormProps) {
 
   const countryData = getCountryData(countryCode);
 
-  // Formateador dinámico según máscara del país
-  const formatPhoneNumber = (val: string, mask: string) => {
-    const raw = val.replace(/\D/g, '');
+  // Formateador dinámico sin truncamiento de dígitos válidos
+  const formatPhoneNumber = (val: string, mask: string, maxLength: number) => {
+    const raw = val.replace(/\D/g, '').slice(0, maxLength);
     let formatted = '';
     let rawIndex = 0;
     for (let i = 0; i < mask.length && rawIndex < raw.length; i++) {
@@ -117,11 +170,18 @@ export function LoginForm({ redirectTo, prefixes = ['+502'] }: LoginFormProps) {
         formatted += mask[i];
       }
     }
+    // Si quedan dígitos sin consumir por la máscara, agregarlos al final sin truncar
+    if (rawIndex < raw.length) {
+      if (formatted.length > 0 && !formatted.endsWith(' ')) {
+        formatted += ' ';
+      }
+      formatted += raw.slice(rawIndex);
+    }
     return formatted;
   };
 
   const handlePhoneInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatPhoneNumber(e.target.value, countryData.mask);
+    const formatted = formatPhoneNumber(e.target.value, countryData.mask, countryData.maxLength);
     setLocalNumber(formatted);
   };
 
@@ -217,6 +277,7 @@ export function LoginForm({ redirectTo, prefixes = ['+502'] }: LoginFormProps) {
                     disabled={isPending}
                     required
                     autoComplete="tel"
+                    maxLength={countryData.maxLength + 6}
                   />
                 </div>
               </div>
@@ -230,7 +291,7 @@ export function LoginForm({ redirectTo, prefixes = ['+502'] }: LoginFormProps) {
               <Button
                 type="submit"
                 loading={isPending}
-                disabled={localNumber.replace(/\D/g, '').length !== countryData.length}
+                disabled={localNumber.replace(/\D/g, '').length < countryData.minLength || localNumber.replace(/\D/g, '').length > countryData.maxLength}
                 variant="primary"
                 className="w-full !h-14 mt-4"
               >
