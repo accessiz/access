@@ -31,26 +31,37 @@ const MONTHS_SHORT = [
   'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'
 ];
 
-const formatScheduleDate = (dateStr: string) => {
+const formatScheduleDate = (dateStr: string, locale: string) => {
   const date = new Date(`${dateStr}T00:00:00`);
+  const isEn = locale === 'en';
   const dayOfWeek = date.getDay();
   const dayNumber = date.getDate();
   const monthIndex = date.getMonth();
 
-  const dayName = WEEKDAYS_SHORT[dayOfWeek];
-  const month = MONTHS_SHORT[monthIndex];
-  const fullDate = `${WEEKDAYS[dayOfWeek]}, ${dayNumber} de ${MONTHS[monthIndex]}`;
+  const dayName = isEn
+    ? date.toLocaleDateString('en-US', { weekday: 'short' })
+    : WEEKDAYS_SHORT[dayOfWeek];
+  const month = isEn
+    ? date.toLocaleDateString('en-US', { month: 'short' })
+    : MONTHS_SHORT[monthIndex];
+  const fullDayName = isEn
+    ? `${dayName}, ${month} ${dayNumber}`
+    : `${dayName}, ${dayNumber} de ${month}`;
+  const fullDate = isEn
+    ? date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
+    : `${WEEKDAYS[dayOfWeek]}, ${dayNumber} de ${MONTHS[monthIndex]}`;
 
   return {
     dayName,
     dayNumber,
     month,
+    fullDayName,
     fullDate,
   };
 };
 
 export function ApplyForm({ project, model }: ApplyFormProps) {
-  const { t } = useModelI18n();
+  const { t, locale } = useModelI18n();
 
   const sortedSchedule = React.useMemo(() => {
     if (!project.schedule) return [];
@@ -68,33 +79,43 @@ export function ApplyForm({ project, model }: ApplyFormProps) {
   const isMale = model.gender === 'Male';
   const isFemale = model.gender === 'Female';
 
+  const getGenderTargetLabel = React.useCallback(
+    (target?: 'Todos' | 'Hombres' | 'Mujeres' | null) => {
+      if (target === 'Hombres') return t.apply.men;
+      if (target === 'Mujeres') return t.apply.women;
+      return target?.toLowerCase() || '';
+    },
+    [t]
+  );
+
   const getScheduleGenderEligibility = React.useCallback(
     (scheduleItem: { gender_target?: 'Todos' | 'Hombres' | 'Mujeres' | null }) => {
       const target = scheduleItem.gender_target || project.gender_target || 'Todos';
       if (!hasAssignedGender) {
         return {
           isEligible: false,
-          label: 'Requiere género asignado',
+          label: t.apply.genderRequired,
         };
       }
       if (target === 'Hombres' && !isMale) {
         return {
           isEligible: false,
-          label: 'Solo para hombres',
+          label: t.apply.menOnly,
         };
       }
       if (target === 'Mujeres' && !isFemale) {
         return {
           isEligible: false,
-          label: 'Solo para mujeres',
+          label: t.apply.womenOnly,
         };
       }
+      const genderLabel = getGenderTargetLabel(target);
       return {
         isEligible: true,
-        label: target === 'Todos' ? null : `Solo ${target.toLowerCase()}`,
+        label: target === 'Todos' ? null : t.apply.onlyGender.replace('{gender}', genderLabel),
       };
     },
-    [hasAssignedGender, isMale, isFemale, project.gender_target]
+    [hasAssignedGender, isMale, isFemale, project.gender_target, t, getGenderTargetLabel]
   );
 
   const eligibleSchedules = React.useMemo(() => {
@@ -188,22 +209,25 @@ export function ApplyForm({ project, model }: ApplyFormProps) {
   }, [project.id]);
 
   const datesConsolidated = React.useMemo(() => {
-    if (sortedSchedule.length === 0) return 'No definido';
+    if (sortedSchedule.length === 0) return t.apply.notDefined;
     if (sortedSchedule.length === 1) {
-      return formatScheduleDate(sortedSchedule[0].date).fullDate;
+      return formatScheduleDate(sortedSchedule[0].date, locale).fullDate;
     }
-    const start = formatScheduleDate(sortedSchedule[0].date);
-    const end = formatScheduleDate(sortedSchedule[sortedSchedule.length - 1].date);
+    const start = formatScheduleDate(sortedSchedule[0].date, locale);
+    const end = formatScheduleDate(sortedSchedule[sortedSchedule.length - 1].date, locale);
     
     const year = new Date(sortedSchedule[0].date).getFullYear();
-    return `${start.dayNumber} al ${end.dayNumber} de ${start.month}, ${year}`;
-  }, [sortedSchedule]);
+    if (locale === 'en') {
+      return `${start.month} ${start.dayNumber} ${t.apply.to} ${end.month} ${end.dayNumber}, ${year}`;
+    }
+    return `${start.dayNumber} ${t.apply.to} ${end.dayNumber} ${t.apply.of} ${start.month}, ${year}`;
+  }, [sortedSchedule, locale, t]);
 
   const paymentStr = React.useMemo(() => {
     const fee = project.default_model_fee;
     const currency = (project.currency || 'GTQ').toUpperCase();
     if (!fee) return t.apply.feeTrade;
-    const typeLabel = project.default_fee_type === 'per_hour' ? '/h' : project.default_fee_type === 'fixed' ? '' : t.apply.feePerDay;
+    const typeLabel = project.default_fee_type === 'per_hour' ? '/h' : project.default_fee_type === 'fixed' ? '' : ` ${t.apply.feePerDay}`;
     return `${currency} ${fee.toLocaleString()} ${typeLabel}`;
   }, [project.default_model_fee, project.default_fee_type, project.currency, t]);
 
@@ -235,10 +259,10 @@ export function ApplyForm({ project, model }: ApplyFormProps) {
             </div>
             <div className="space-y-1">
               <h3 className="ds-text-sm font-bold text-[rgb(var(--ds-color-on-surface))] leading-tight">
-                Género no asignado en tu perfil
+                {t.apply.noGenderAssignedTitle}
               </h3>
               <p className="ds-text-xs text-[rgb(var(--ds-color-on-surface-variant))]/80 leading-relaxed font-medium">
-                Tu perfil no tiene un género registrado. Para poder postularte a proyectos y castings, por favor comunícate con la administración para configurarlo.
+                {t.apply.noGenderAssignedDesc}
               </p>
             </div>
           </div>
@@ -249,7 +273,7 @@ export function ApplyForm({ project, model }: ApplyFormProps) {
             className="w-full h-12 rounded-xl bg-[rgb(var(--ds-color-surface-container-lowest))] border border-[rgb(var(--ds-color-outline-variant))]/30 text-[rgb(var(--ds-color-on-surface))] hover:bg-[rgb(var(--ds-color-surface))] flex items-center justify-center gap-2 ds-text-xs font-bold transition-all duration-200 cursor-pointer shadow-xs active:scale-98"
           >
             <MessageCircle className="w-4 h-4 text-[rgb(var(--ds-color-primary))]" />
-            <span>Contactar al administrador por WhatsApp</span>
+            <span>{t.apply.contactAdminWhatsapp}</span>
           </a>
         </div>
       )}
@@ -264,11 +288,11 @@ export function ApplyForm({ project, model }: ApplyFormProps) {
             <div className="space-y-1">
               <h3 className="ds-text-sm font-bold text-[rgb(var(--ds-color-on-surface))] leading-tight">
                 {isProjectGenderIncompatible
-                  ? `Proyecto exclusivo para ${project.gender_target?.toLowerCase()}`
-                  : 'Sin fechas disponibles para tu género'}
+                  ? t.apply.projectExclusiveFor.replace('{gender}', getGenderTargetLabel(project.gender_target))
+                  : t.apply.noDatesAvailableForGender}
               </h3>
               <p className="ds-text-xs text-[rgb(var(--ds-color-on-surface-variant))]/80 leading-relaxed font-medium">
-                Esta convocatoria está segmentada exclusivamente para {project.gender_target ? project.gender_target.toLowerCase() : 'otro género'}. No es posible postularte a esta propuesta.
+                {t.apply.projectSegmentedFor.replace('{gender}', project.gender_target ? getGenderTargetLabel(project.gender_target) : t.apply.otherGender)}
               </p>
             </div>
           </div>
@@ -281,7 +305,16 @@ export function ApplyForm({ project, model }: ApplyFormProps) {
           <div className="flex items-center gap-1.5 text-[rgb(var(--ds-color-error))] font-bold ds-text-xs">
             <span className="h-2 w-2 rounded-full bg-[rgb(var(--ds-color-error))] animate-pulse"></span>
             <span>
-              Límite: {applyEnd.date.split('-')[2]} {['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'][parseInt(applyEnd.date.split('-')[1], 10) - 1]}, {applyEnd.time}
+              {t.apply.deadline}: {(() => {
+                const monthNum = parseInt(applyEnd.date.split('-')[1], 10) - 1;
+                const dayNum = applyEnd.date.split('-')[2];
+                const monthName = locale === 'en'
+                  ? ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][monthNum]
+                  : MONTHS_SHORT[monthNum];
+                return locale === 'en'
+                  ? `${monthName} ${dayNum}, ${applyEnd.time}`
+                  : `${dayNum} ${monthName}, ${applyEnd.time}`;
+              })()}
             </span>
           </div>
         )}
@@ -293,7 +326,7 @@ export function ApplyForm({ project, model }: ApplyFormProps) {
             </h2>
             {project.gender_target && project.gender_target !== 'Todos' && (
               <span className="px-2.5 py-1 rounded-full ds-text-xs font-bold bg-[rgb(var(--ds-color-surface-container-high))] text-[rgb(var(--ds-color-primary))] border border-[rgb(var(--ds-color-outline-variant))]/20 shrink-0">
-                Solo {project.gender_target.toLowerCase()}
+                {t.apply.onlyGender.replace('{gender}', getGenderTargetLabel(project.gender_target))}
               </span>
             )}
           </div>
@@ -309,11 +342,11 @@ export function ApplyForm({ project, model }: ApplyFormProps) {
       <div className="w-full bg-[rgb(var(--ds-color-surface-container))] border border-[rgb(var(--ds-color-outline-variant))]/20 rounded-3xl p-6 shadow-md space-y-4">
         <div className="flex flex-col gap-4">
           <div className="flex justify-between items-center">
-            <span className="ds-text-xs font-bold text-[rgb(var(--ds-color-on-surface-variant))]/50">Pago</span>
+            <span className="ds-text-xs font-bold text-[rgb(var(--ds-color-on-surface-variant))]/50">{t.apply.payment}</span>
             <span className="ds-text-sm font-bold text-[rgb(var(--ds-color-on-surface))]">{paymentStr}</span>
           </div>
           <div className="flex justify-between items-center border-t border-[rgb(var(--ds-color-outline-variant))]/10 pt-4">
-            <span className="ds-text-xs font-bold text-[rgb(var(--ds-color-on-surface-variant))]/50">Ubicación</span>
+            <span className="ds-text-xs font-bold text-[rgb(var(--ds-color-on-surface-variant))]/50">{t.apply.location}</span>
             <span className="ds-text-sm font-bold text-[rgb(var(--ds-color-on-surface))]">{project.location || 'Guatemala'}</span>
           </div>
           <div className="flex justify-between items-center border-t border-[rgb(var(--ds-color-outline-variant))]/10 pt-4">
@@ -333,8 +366,7 @@ export function ApplyForm({ project, model }: ApplyFormProps) {
           <div className="flex flex-col divide-y divide-[rgb(var(--ds-color-outline-variant))]/10 pt-2">
             {sortedSchedule.map((scheduleItem) => {
               const isChecked = selectedSchedules.includes(scheduleItem.id!);
-              const { dayName, dayNumber, month } = formatScheduleDate(scheduleItem.date);
-              const fullDayName = `${dayName}, ${dayNumber} de ${month}`;
+              const { fullDayName } = formatScheduleDate(scheduleItem.date, locale);
               const eligibility = getScheduleGenderEligibility(scheduleItem);
               const isDisabled = isDatesDisabled || !eligibility.isEligible;
 
@@ -371,7 +403,7 @@ export function ApplyForm({ project, model }: ApplyFormProps) {
                         )}
                       </div>
                       <span className="ds-text-xs text-[rgb(var(--ds-color-on-surface-variant))]/60 block mt-0.5">
-                        {project.hide_schedule ? 'Horario por definir' : `${scheduleItem.startTime} - ${scheduleItem.endTime}`}
+                        {project.hide_schedule ? t.apply.scheduleTBD : `${scheduleItem.startTime} - ${scheduleItem.endTime}`}
                       </span>
                     </div>
                   </div>
@@ -405,14 +437,14 @@ export function ApplyForm({ project, model }: ApplyFormProps) {
             </div>
             <div className="w-full space-y-1">
               <span className="block ds-text-sm font-bold leading-tight text-[rgb(var(--ds-color-on-surface))]">
-                Convocatoria finalizada
+                {t.apply.callFinished}
               </span>
               <span className="block ds-text-xs opacity-80 font-medium leading-relaxed max-w-[280px] mx-auto text-[rgb(var(--ds-color-on-surface-variant))]">
                 {localStatus === 'applied'
-                  ? 'El periodo para aplicar a esta propuesta ha terminado. Dejaste registrado que sí estabas disponible para este proyecto.'
+                  ? t.apply.callFinishedApplied
                   : localStatus === 'rejected'
-                  ? 'El periodo para aplicar a esta propuesta ha terminado. Dejaste registrado que no podías participar.'
-                  : 'El periodo para aplicar a esta propuesta ha terminado y no se registró ninguna respuesta.'}
+                  ? t.apply.callFinishedRejected
+                  : t.apply.callFinishedNone}
               </span>
             </div>
           </div>
@@ -432,12 +464,12 @@ export function ApplyForm({ project, model }: ApplyFormProps) {
                 </div>
                 <div className="w-full space-y-1">
                   <span className="block ds-text-sm font-bold leading-tight">
-                    {localStatus === 'applied' ? 'Propuesta aceptada' : 'Propuesta declinada'}
+                    {localStatus === 'applied' ? t.apply.proposalAccepted : t.apply.proposalDeclined}
                   </span>
                   <span className="block ds-text-xs opacity-80 font-medium leading-relaxed max-w-[280px] mx-auto">
                     {localStatus === 'applied'
-                      ? 'Ahora solo hay que esperar la confirmación del cliente.'
-                      : 'Marcaste que no puedes participar, pero puedes cambiar de opinión si lo deseas.'}
+                      ? t.apply.waitingClientConfirmation
+                      : t.apply.markedCannotParticipate}
                   </span>
                 </div>
                 {canApplyGlobally && (
@@ -446,7 +478,7 @@ export function ApplyForm({ project, model }: ApplyFormProps) {
                     onClick={() => setShowDecisionButtons(true)}
                     className="w-full mt-2 !bg-[rgb(var(--ds-color-surface))] !text-[rgb(var(--ds-color-on-surface))] !border-0 ds-text-xs font-bold"
                   >
-                    Cambiar de opinión
+                    {t.apply.changeMind}
                   </Button>
                 )}
               </div>
@@ -468,14 +500,14 @@ export function ApplyForm({ project, model }: ApplyFormProps) {
                       setModalState({
                         isOpen: true,
                         type: 'success',
-                        title: '¡Propuesta aceptada! 🎉',
-                        description: `Felicidades ${modelFirstName}, aplicaste para ${targetBrand}.\nHay que esperar la confirmación del cliente.`,
+                        title: t.apply.successModalTitle,
+                        description: t.apply.successModalDesc.replace('{name}', modelFirstName).replace('{brand}', targetBrand),
                       });
                     }
                   }}
                   className="w-full"
                 >
-                  <span>Aceptar</span>
+                  <span>{t.apply.accept}</span>
                 </Button>
               )}
 
@@ -490,14 +522,14 @@ export function ApplyForm({ project, model }: ApplyFormProps) {
                     setModalState({
                       isOpen: true,
                       type: 'rejected',
-                      title: 'Propuesta rechazada',
-                      description: `Declinaste la propuesta para ${targetBrand}.`,
+                      title: t.apply.rejectedModalTitle,
+                      description: t.apply.rejectedModalDesc.replace('{brand}', targetBrand),
                     });
                   }
                 }}
                 className="w-full !bg-[rgb(var(--ds-color-surface-container))] !border-[rgb(var(--ds-color-outline-variant))]/20 !text-[rgb(var(--ds-color-error))] hover:!bg-[rgb(var(--ds-color-surface-container-high))]"
               >
-                <span>Rechazar</span>
+                <span>{t.apply.reject}</span>
               </Button>
             </div>
           )}
@@ -523,7 +555,7 @@ export function ApplyForm({ project, model }: ApplyFormProps) {
                 variant="primary"
                 className="w-full !h-12 !rounded-xl ds-text-xs font-bold"
               >
-                Listo
+                {t.apply.done}
               </Button>
             </Link>
           </div>
