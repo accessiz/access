@@ -421,7 +421,22 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
     fd.set('apply_close_date', values.apply_close_date || '');
     fd.set('apply_close_time', values.apply_close_time || '');
     fd.set('hide_schedule', String(values.hide_schedule || false));
-    fd.set('gender_target', values.gender_target || 'Todos');
+
+    // Calculate global gender_target dynamically from schedule items
+    let computedGenderTarget = 'Todos';
+    if (values.schedule && values.schedule.length > 0) {
+      const targets = values.schedule.map(s => s.gender_target || 'Todos');
+      const allHombres = targets.every(t => t === 'Hombres');
+      const allMujeres = targets.every(t => t === 'Mujeres');
+      if (allHombres) {
+        computedGenderTarget = 'Hombres';
+      } else if (allMujeres) {
+        computedGenderTarget = 'Mujeres';
+      } else {
+        computedGenderTarget = 'Todos';
+      }
+    }
+    fd.set('gender_target', computedGenderTarget);
 
     // Project types
     if (values.project_types && values.project_types.length > 0) {
@@ -436,6 +451,7 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
         fd.set(`schedule.${index}.date`, item.date || '');
         fd.set(`schedule.${index}.startTime`, item.startTime || '09:00 AM');
         fd.set(`schedule.${index}.endTime`, item.endTime || '05:00 PM');
+        fd.set(`schedule.${index}.gender_target`, item.gender_target || 'Todos');
       });
     }
 
@@ -802,41 +818,6 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
                 id="project-location"
                 placeholder="Ej: Zona 10, Ciudad de Guatemala o locación específica"
                 {...form.register('location')}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Público Objetivo (Género)</Label>
-              <Controller
-                control={form.control}
-                name="gender_target"
-                render={({ field }) => (
-                  <div className="flex gap-2">
-                    {[
-                      { value: 'Todos', label: 'Todos' },
-                      { value: 'Hombres', label: 'Hombres' },
-                      { value: 'Mujeres', label: 'Mujeres' }
-                    ].map((opt) => {
-                      const isSelected = (field.value || 'Todos') === opt.value;
-                      return (
-                        <Button
-                          key={opt.value}
-                          type="button"
-                          variant={isSelected ? "default" : "outline"}
-                          size="sm"
-                          className={cn(
-                            "h-9 px-5 transition-all relative cursor-pointer font-medium",
-                            isSelected && "bg-purple text-white hover:bg-purple"
-                          )}
-                          onClick={() => field.onChange(opt.value)}
-                        >
-                          {opt.label}
-                        </Button>
-                      );
-                    })}
-                    <input type="hidden" name="gender_target" value={field.value || 'Todos'} />
-                  </div>
-                )}
               />
             </div>
 
