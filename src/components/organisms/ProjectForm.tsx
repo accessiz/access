@@ -675,19 +675,19 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
                         ].map((opt) => {
                           const isSelected = (field.value || 'Todos') === opt.value;
                           return (
-                            <button
+                            <Button
                               key={opt.value}
                               type="button"
+                              variant={isSelected ? "default" : "outline"}
+                              size="sm"
                               onClick={() => field.onChange(opt.value)}
                               className={cn(
-                                "h-9 flex-1 px-2 rounded-md text-xs font-semibold transition-all border cursor-pointer select-none",
-                                isSelected
-                                  ? "bg-purple text-white border-purple shadow-xs"
-                                  : "bg-background text-muted-foreground border-input hover:bg-accent hover:text-foreground"
+                                "h-9 flex-1 px-2 rounded-md text-xs font-semibold transition-all relative cursor-pointer select-none",
+                                isSelected && "bg-purple text-white hover:bg-purple border-purple shadow-xs"
                               )}
                             >
                               {opt.label}
-                            </button>
+                            </Button>
                           );
                         })}
                         <input
