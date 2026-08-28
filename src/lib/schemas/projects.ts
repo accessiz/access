@@ -19,6 +19,7 @@ const scheduleItemSchema = z.object({
   date: z.string().min(1, 'La fecha es obligatoria.'),
   startTime: z.string().regex(timeRegex, 'La hora de inicio no es válida (ej: 09:00 AM).'),
   endTime: z.string().regex(timeRegex, 'La hora de fin no es válida (ej: 05:00 PM).'),
+  gender_target: z.enum(['Todos', 'Hombres', 'Mujeres']).optional().nullable().default('Todos'),
 }).refine(data => {
   const startMinutes = timeToMinutes(data.startTime);
   const endMinutes = timeToMinutes(data.endTime);

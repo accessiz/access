@@ -54,6 +54,7 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
 
   // 2. ESTADOS DE FILTROS Y VISTA
   const [viewMode, setViewMode] = useState<'grid' | 'list' | 'single'>('grid');
+  const [groupBy, setGroupBy] = useState<'gender' | 'date'>('gender');
 
   const [filters, setFilters] = useState({
     query: '',
@@ -70,8 +71,11 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
     // Trigger Exit Animation (Show Content)
     startExitAnimation();
 
-    const savedView = readVersionedStorage<'list' | 'grid'>('session', getStorageKey(project.public_id, 'view'), CLIENT_VIEW_STORAGE_VERSION);
-    if (savedView === 'list' || savedView === 'grid') setViewMode(savedView);
+    const savedView = readVersionedStorage<'list' | 'grid' | 'single'>('session', getStorageKey(project.public_id, 'view'), CLIENT_VIEW_STORAGE_VERSION);
+    if (savedView === 'list' || savedView === 'grid' || savedView === 'single') setViewMode(savedView);
+
+    const savedGroupBy = readVersionedStorage<'gender' | 'date'>('session', getStorageKey(project.public_id, 'groupBy'), CLIENT_VIEW_STORAGE_VERSION);
+    if (savedGroupBy === 'gender' || savedGroupBy === 'date') setGroupBy(savedGroupBy);
 
     const savedFilters = readVersionedStorage<typeof filters>('session', getStorageKey(project.public_id, 'filters'), CLIENT_VIEW_STORAGE_VERSION);
     if (savedFilters) {
@@ -144,8 +148,9 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
   useEffect(() => {
     if (!isMounted) return;
     writeVersionedStorage('session', getStorageKey(project.public_id, 'view'), CLIENT_VIEW_STORAGE_VERSION, viewMode);
+    writeVersionedStorage('session', getStorageKey(project.public_id, 'groupBy'), CLIENT_VIEW_STORAGE_VERSION, groupBy);
     writeVersionedStorage('session', getStorageKey(project.public_id, 'filters'), CLIENT_VIEW_STORAGE_VERSION, filters);
-  }, [viewMode, filters, project.public_id, isMounted]);
+  }, [viewMode, groupBy, filters, project.public_id, isMounted]);
 
   // --- LÓGICA DE FILTRADO (useMemo) ---
   const filteredModels = useMemo(() => {
@@ -190,6 +195,66 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
     };
   }, [menModels, womenModels, otherModels]);
 
+  // --- AGRUPACIÓN POR FECHAS / DISPONIBILIDAD ---
+  const modelsByDate = useMemo(() => {
+    if (!project.schedule || project.schedule.length === 0) return [];
+
+    const sortedSched = [...project.schedule].sort((a, b) => {
+      const cmp = new Date(a.date).getTime() - new Date(b.date).getTime();
+      if (cmp !== 0) return cmp;
+      return (a.startTime || '').localeCompare(b.startTime || '');
+    });
+
+    return sortedSched.map((sched) => {
+      const availableModels = filteredModels.filter((m) => {
+        if (m.model_available_schedules && m.model_available_schedules.length > 0) {
+          return m.model_available_schedules.includes(sched.id!);
+        }
+        if (m.assignments && m.assignments.length > 0) {
+          return m.assignments.some((a) => a.schedule_id === sched.id);
+        }
+        return true;
+      });
+
+      return {
+        schedule: sched,
+        models: availableModels,
+      };
+    });
+  }, [project.schedule, filteredModels]);
+
+  // Subtítulo de disponibilidad para tarjetas/filas
+  const getModelAvailableDatesLabel = useMemo(() => {
+    return (model: GridModel) => {
+      if (!project.schedule || project.schedule.length <= 1) return null;
+
+      const availableScheds = project.schedule.filter((s) => {
+        if (model.model_available_schedules && model.model_available_schedules.length > 0) {
+          return model.model_available_schedules.includes(s.id!);
+        }
+        if (model.assignments && model.assignments.length > 0) {
+          return model.assignments.some((a) => a.schedule_id === s.id);
+        }
+        return true;
+      });
+
+      if (availableScheds.length === 0) return 'Sin fecha confirmada';
+      if (availableScheds.length === project.schedule.length) return 'Disponible todas las fechas';
+
+      const MONTHS_SHORT = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+      const shortDates = availableScheds.map((s) => {
+        try {
+          const d = new Date(`${s.date}T00:00:00`);
+          return `${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}`;
+        } catch {
+          return s.date;
+        }
+      });
+
+      return `Disponible: ${shortDates.join(', ')}`;
+    };
+  }, [project.schedule]);
+
   // --- HANDLERS ---
   const handleFilterChange = (newFilter: { key: string; value: string | null }) => {
     setFilters(prev => {
@@ -201,6 +266,10 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
 
   const handleViewChange = (view: 'list' | 'grid' | 'single') => {
     setViewMode(view);
+  };
+
+  const handleGroupByChange = (mode: 'gender' | 'date') => {
+    setGroupBy(mode);
   };
 
   // Sync initialModels logic
@@ -328,113 +397,192 @@ export default function ClientViewHandler({ project, initialModels, hasAccessCoo
         </section>
 
         <main className="w-full flex-1 space-y-8">
-          {/* TOOLBAR: Eliminada propiedad gender: null */}
           <ClientToolbar
             onFilterChange={handleFilterChange}
             onViewChange={handleViewChange}
+            onGroupByChange={handleGroupByChange}
+            hasSchedule={Boolean(project.schedule && project.schedule.length > 0)}
             currentFilters={{
               ...filters,
-              view: viewMode
+              view: viewMode,
+              groupBy
             }}
           />
 
           {/* CONTENIDO (SECCIONES DIVIDIDAS) */}
           <div className="min-h-100 space-y-16">
 
-            {/* SECCIÓN HOMBRES */}
-            {menModels.length > 0 && (
-              <section className="space-y-12">
-                <h2 className="text-display border-b pb-4 uppercase tracking-tighter">Hombres</h2>
-                {modelsByGenderAndCountry.men.map(([country, countryModels]) => (
-                  <div key={country} className="space-y-6">
-                    <h3 className="text-title flex items-center gap-3 text-muted-foreground/80 font-medium">
-                      <span className="h-px flex-1 bg-border/60"></span>
-                      <span className="uppercase tracking-widest text-label">{country}</span>
-                      <span className="h-px flex-1 bg-border/60"></span>
-                    </h3>
-                    {viewMode === 'list' ? (
-                      <ClientListView
-                        models={countryModels}
-                        projectId={project.public_id}
-                        realProjectId={project.id}
-                        onSelectionChange={handleSelectionChange}
-                      />
-                    ) : (
-                      <ClientGrid
-                        models={countryModels}
-                        projectId={project.public_id}
-                        realProjectId={project.id}
-                        onSelectionChange={handleSelectionChange}
-                        viewMode={viewMode === 'single' ? 'single' : 'grid'}
-                      />
-                    )}
-                  </div>
-                ))}
-              </section>
+            {/* MODO 1: AGRUPACIÓN POR FECHAS / DISPONIBILIDAD */}
+            {groupBy === 'date' && modelsByDate.length > 0 && (
+              <div className="space-y-16">
+                {modelsByDate.map(({ schedule, models: dateModels }) => {
+                  const fullDateTitle = (() => {
+                    const WEEKDAYS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+                    const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+                    try {
+                      const d = new Date(`${schedule.date}T00:00:00`);
+                      const dayOfWeek = WEEKDAYS[d.getDay()];
+                      const dayNumber = d.getDate();
+                      const month = MONTHS[d.getMonth()];
+                      return `${dayOfWeek}, ${dayNumber} de ${month}`;
+                    } catch {
+                      return schedule.date;
+                    }
+                  })();
+
+                  const timeInfo = !project.hide_schedule && schedule.startTime && schedule.endTime ? `${schedule.startTime} - ${schedule.endTime}` : null;
+                  const genderTargetInfo = schedule.gender_target && schedule.gender_target !== 'Todos' ? `Solo ${schedule.gender_target.toLowerCase()}` : null;
+
+                  return (
+                    <section key={schedule.id || schedule.date} className="space-y-6">
+                      <div className="border-b pb-4 flex flex-col sm:flex-row sm:items-baseline justify-between gap-2">
+                        <div>
+                          <h2 className="text-display tracking-tight capitalize">{fullDateTitle}</h2>
+                          <div className="flex items-center gap-3 text-label text-muted-foreground mt-1">
+                            {timeInfo && <span>{timeInfo}</span>}
+                            {genderTargetInfo && (
+                              <span className="font-semibold text-primary">({genderTargetInfo})</span>
+                            )}
+                          </div>
+                        </div>
+                        <span className="text-label text-muted-foreground font-medium shrink-0">
+                          {dateModels.length} {dateModels.length === 1 ? 'talento disponible' : 'talentos disponibles'}
+                        </span>
+                      </div>
+
+                      {dateModels.length === 0 ? (
+                        <div className="flex h-32 items-center justify-center rounded-lg border border-dashed">
+                          <p className="text-body text-muted-foreground">No hay talentos disponibles registrados para esta fecha.</p>
+                        </div>
+                      ) : viewMode === 'list' ? (
+                        <ClientListView
+                          models={dateModels}
+                          projectId={project.public_id}
+                          realProjectId={project.id}
+                          onSelectionChange={handleSelectionChange}
+                          getModelSubtitle={getModelAvailableDatesLabel}
+                        />
+                      ) : (
+                        <ClientGrid
+                          models={dateModels}
+                          projectId={project.public_id}
+                          realProjectId={project.id}
+                          onSelectionChange={handleSelectionChange}
+                          viewMode={viewMode === 'single' ? 'single' : 'grid'}
+                          getModelSubtitle={getModelAvailableDatesLabel}
+                        />
+                      )}
+                    </section>
+                  );
+                })}
+              </div>
             )}
 
-            {/* SECCIÓN MUJERES */}
-            {womenModels.length > 0 && (
-              <section className="space-y-12">
-                <h2 className="text-display border-b pb-4 uppercase tracking-tighter">Mujeres</h2>
-                {modelsByGenderAndCountry.women.map(([country, countryModels]) => (
-                  <div key={country} className="space-y-6">
-                    <h3 className="text-title flex items-center gap-3 text-muted-foreground/80 font-medium">
-                      <span className="h-px flex-1 bg-border/60"></span>
-                      <span className="uppercase tracking-widest text-label">{country}</span>
-                      <span className="h-px flex-1 bg-border/60"></span>
-                    </h3>
-                    {viewMode === 'list' ? (
-                      <ClientListView
-                        models={countryModels}
-                        projectId={project.public_id}
-                        realProjectId={project.id}
-                        onSelectionChange={handleSelectionChange}
-                      />
-                    ) : (
-                      <ClientGrid
-                        models={countryModels}
-                        projectId={project.public_id}
-                        realProjectId={project.id}
-                        onSelectionChange={handleSelectionChange}
-                        viewMode={viewMode === 'single' ? 'single' : 'grid'}
-                      />
-                    )}
-                  </div>
-                ))}
-              </section>
-            )}
+            {/* MODO 2: AGRUPACIÓN POR GÉNERO Y PAÍS */}
+            {groupBy === 'gender' && (
+              <>
+                {/* SECCIÓN HOMBRES */}
+                {menModels.length > 0 && (
+                  <section className="space-y-12">
+                    <h2 className="text-display border-b pb-4 uppercase tracking-tighter">Hombres</h2>
+                    {modelsByGenderAndCountry.men.map(([country, countryModels]) => (
+                      <div key={country} className="space-y-6">
+                        <h3 className="text-title flex items-center gap-3 text-muted-foreground/80 font-medium">
+                          <span className="h-px flex-1 bg-border/60"></span>
+                          <span className="uppercase tracking-widest text-label">{country}</span>
+                          <span className="h-px flex-1 bg-border/60"></span>
+                        </h3>
+                        {viewMode === 'list' ? (
+                          <ClientListView
+                            models={countryModels}
+                            projectId={project.public_id}
+                            realProjectId={project.id}
+                            onSelectionChange={handleSelectionChange}
+                            getModelSubtitle={getModelAvailableDatesLabel}
+                          />
+                        ) : (
+                          <ClientGrid
+                            models={countryModels}
+                            projectId={project.public_id}
+                            realProjectId={project.id}
+                            onSelectionChange={handleSelectionChange}
+                            viewMode={viewMode === 'single' ? 'single' : 'grid'}
+                            getModelSubtitle={getModelAvailableDatesLabel}
+                          />
+                        )}
+                      </div>
+                    ))}
+                  </section>
+                )}
 
-            {/* SECCIÓN OTROS */}
-            {otherModels.length > 0 && (
-              <section className="space-y-12">
-                <h2 className="text-display border-b pb-4 uppercase tracking-tighter">Otros</h2>
-                {modelsByGenderAndCountry.other.map(([country, countryModels]) => (
-                  <div key={country} className="space-y-6">
-                    <h3 className="text-title flex items-center gap-3 text-muted-foreground/80 font-medium">
-                      <span className="h-px flex-1 bg-border/60"></span>
-                      <span className="uppercase tracking-widest text-label">{country}</span>
-                      <span className="h-px flex-1 bg-border/60"></span>
-                    </h3>
-                    {viewMode === 'list' ? (
-                      <ClientListView
-                        models={countryModels}
-                        projectId={project.public_id}
-                        realProjectId={project.id}
-                        onSelectionChange={handleSelectionChange}
-                      />
-                    ) : (
-                      <ClientGrid
-                        models={countryModels}
-                        projectId={project.public_id}
-                        realProjectId={project.id}
-                        onSelectionChange={handleSelectionChange}
-                        viewMode={viewMode === 'single' ? 'single' : 'grid'}
-                      />
-                    )}
-                  </div>
-                ))}
-              </section>
+                {/* SECCIÓN MUJERES */}
+                {womenModels.length > 0 && (
+                  <section className="space-y-12">
+                    <h2 className="text-display border-b pb-4 uppercase tracking-tighter">Mujeres</h2>
+                    {modelsByGenderAndCountry.women.map(([country, countryModels]) => (
+                      <div key={country} className="space-y-6">
+                        <h3 className="text-title flex items-center gap-3 text-muted-foreground/80 font-medium">
+                          <span className="h-px flex-1 bg-border/60"></span>
+                          <span className="uppercase tracking-widest text-label">{country}</span>
+                          <span className="h-px flex-1 bg-border/60"></span>
+                        </h3>
+                        {viewMode === 'list' ? (
+                          <ClientListView
+                            models={countryModels}
+                            projectId={project.public_id}
+                            realProjectId={project.id}
+                            onSelectionChange={handleSelectionChange}
+                            getModelSubtitle={getModelAvailableDatesLabel}
+                          />
+                        ) : (
+                          <ClientGrid
+                            models={countryModels}
+                            projectId={project.public_id}
+                            realProjectId={project.id}
+                            onSelectionChange={handleSelectionChange}
+                            viewMode={viewMode === 'single' ? 'single' : 'grid'}
+                            getModelSubtitle={getModelAvailableDatesLabel}
+                          />
+                        )}
+                      </div>
+                    ))}
+                  </section>
+                )}
+
+                {/* SECCIÓN OTROS */}
+                {otherModels.length > 0 && (
+                  <section className="space-y-12">
+                    <h2 className="text-display border-b pb-4 uppercase tracking-tighter">Otros</h2>
+                    {modelsByGenderAndCountry.other.map(([country, countryModels]) => (
+                      <div key={country} className="space-y-6">
+                        <h3 className="text-title flex items-center gap-3 text-muted-foreground/80 font-medium">
+                          <span className="h-px flex-1 bg-border/60"></span>
+                          <span className="uppercase tracking-widest text-label">{country}</span>
+                          <span className="h-px flex-1 bg-border/60"></span>
+                        </h3>
+                        {viewMode === 'list' ? (
+                          <ClientListView
+                            models={countryModels}
+                            projectId={project.public_id}
+                            realProjectId={project.id}
+                            onSelectionChange={handleSelectionChange}
+                            getModelSubtitle={getModelAvailableDatesLabel}
+                          />
+                        ) : (
+                          <ClientGrid
+                            models={countryModels}
+                            projectId={project.public_id}
+                            realProjectId={project.id}
+                            onSelectionChange={handleSelectionChange}
+                            viewMode={viewMode === 'single' ? 'single' : 'grid'}
+                            getModelSubtitle={getModelAvailableDatesLabel}
+                          />
+                        )}
+                      </div>
+                    ))}
+                  </section>
+                )}
+              </>
             )}
 
             {/* MENSAJE DE VACÍO GLOBAL */}

@@ -228,8 +228,9 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
           date: item.date ? item.date.split('T')[0] : '',
           startTime: item.startTime || '09:00 AM',
           endTime: item.endTime || '05:00 PM',
+          gender_target: item.gender_target || (initialData as any)?.gender_target || 'Todos',
         }))
-        : [{ date: format(new Date(), 'yyyy-MM-dd'), startTime: '09:00 AM', endTime: '05:00 PM' }],
+        : [{ date: format(new Date(), 'yyyy-MM-dd'), startTime: '09:00 AM', endTime: '05:00 PM', gender_target: 'Todos' }],
       default_model_fee: initialData?.default_model_fee || null,
       default_fee_type: (initialData?.default_fee_type as 'per_day' | 'per_hour' | 'fixed') || 'per_day',
       default_model_payment_type: initialData?.default_model_payment_type || 'cash',
@@ -605,7 +606,7 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
             {fields.map((item, index) => (
               <div
                 key={item.id}
-                className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] items-end gap-4 p-4 rounded-md border bg-quaternary"
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)_auto] items-end gap-4 p-4 rounded-md border bg-quaternary"
               >
                 <div className="flex flex-col gap-2">
                   <Label>Fecha</Label>
@@ -660,13 +661,51 @@ export function ProjectForm({ initialData, onCancel }: ProjectFormProps) {
                     )}
                   />
                 </div>
+                <div className="flex flex-col gap-2">
+                  <Label>Género</Label>
+                  <Controller
+                    control={form.control}
+                    name={`schedule.${index}.gender_target`}
+                    render={({ field }) => (
+                      <div className="flex items-center gap-1">
+                        {[
+                          { value: 'Todos', label: 'Todos' },
+                          { value: 'Hombres', label: 'Hombres' },
+                          { value: 'Mujeres', label: 'Mujeres' },
+                        ].map((opt) => {
+                          const isSelected = (field.value || 'Todos') === opt.value;
+                          return (
+                            <button
+                              key={opt.value}
+                              type="button"
+                              onClick={() => field.onChange(opt.value)}
+                              className={cn(
+                                "h-9 flex-1 px-2 rounded-md text-xs font-semibold transition-all border cursor-pointer select-none",
+                                isSelected
+                                  ? "bg-purple text-white border-purple shadow-xs"
+                                  : "bg-background text-muted-foreground border-input hover:bg-accent hover:text-foreground"
+                              )}
+                            >
+                              {opt.label}
+                            </button>
+                          );
+                        })}
+                        <input
+                          type="hidden"
+                          name={`schedule.${index}.gender_target`}
+                          value={field.value || 'Todos'}
+                        />
+                      </div>
+                    )}
+                  />
+                </div>
                 <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} disabled={fields.length <= 1}>
                   <Trash2 className="h-4 w-4 text-destructive" />
                 </Button>
               </div>
             ))}
             {form.formState.errors.schedule?.root && <p className="text-label text-destructive">{form.formState.errors.schedule.root.message}</p>}
-            <Button type="button" variant="outline" onClick={() => append({ date: format(new Date(), 'yyyy-MM-dd'), startTime: '09:00 AM', endTime: '05:00 PM' })}>
+            <Button type="button" variant="outline" onClick={() => append({ date: format(new Date(), 'yyyy-MM-dd'), startTime: '09:00 AM', endTime: '05:00 PM', gender_target: 'Todos' })}>
               <Plus className="mr-2 h-4 w-4" /> Añadir fecha
             </Button>
 

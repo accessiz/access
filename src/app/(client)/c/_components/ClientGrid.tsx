@@ -20,6 +20,7 @@ interface ClientGridProps {
   realProjectId: string; // UUID real del proyecto para server actions
   onSelectionChange?: (modelId: string, selection: GridModel['selection']) => void;
   viewMode?: 'grid' | 'single'; // Optional: 'single' shows 1 column on mobile
+  getModelSubtitle?: (model: GridModel) => string | null;
 }
 
 // Componente de botones de aprobación rápida
@@ -112,7 +113,7 @@ import { writeVersionedStorage } from '@/lib/client-storage';
 
 const CLIENT_VIEW_STORAGE_VERSION = 1;
 
-export function ClientGrid({ models, projectId, realProjectId, onSelectionChange, viewMode = 'grid' }: ClientGridProps) {
+export function ClientGrid({ models, projectId, realProjectId, onSelectionChange, viewMode = 'grid', getModelSubtitle }: ClientGridProps) {
   // Estado local para selecciones (para feedback optimista)
   const [localSelections, setLocalSelections] = useState<Record<string, GridModel['selection']>>(() => {
     const initial: Record<string, GridModel['selection']> = {};
@@ -158,6 +159,7 @@ export function ClientGrid({ models, projectId, realProjectId, onSelectionChange
     <div className={gridClassName}>
       {models.map((model) => {
         const currentSelection = localSelections[model.id] || model.selection || 'pending';
+        const subtitle = getModelSubtitle ? getModelSubtitle(model) : null;
 
         return (
           <ClientTalentCard
@@ -168,6 +170,7 @@ export function ClientGrid({ models, projectId, realProjectId, onSelectionChange
             imageHref={`/c/${projectId}/${model.id}`}
             onImageClick={saveScrollPosition}
             showMobilePeekIcon
+            availableDatesLabel={subtitle}
             className={cn(
               'transition-all duration-300',
               currentSelection === 'rejected' && 'opacity-50'

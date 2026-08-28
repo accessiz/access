@@ -15,6 +15,7 @@ type Props = {
   imageHref?: string
   onImageClick?: () => void
   showMobilePeekIcon?: boolean
+  availableDatesLabel?: string | null
   className?: string
   children?: React.ReactNode
 }
@@ -26,6 +27,7 @@ export function ClientTalentCard({
   imageHref,
   onImageClick,
   showMobilePeekIcon,
+  availableDatesLabel,
   className,
   children,
 }: Props) {
@@ -80,6 +82,11 @@ export function ClientTalentCard({
       <div className="px-3 pb-3 flex-1">
         <div className="space-y-1">
           <div className="text-body sm:text-title font-medium text-foreground leading-tight line-clamp-2 sm:line-clamp-1">{title}</div>
+          {availableDatesLabel && (
+            <div className="text-label text-muted-foreground line-clamp-1">
+              {availableDatesLabel}
+            </div>
+          )}
           {children ? <div className="w-full">{children}</div> : null}
         </div>
       </div>

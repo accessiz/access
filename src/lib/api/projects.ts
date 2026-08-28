@@ -329,17 +329,44 @@ export async function getProjectById(idOrPublicId: string): Promise<Project | nu
     project_id: string;
   }
 
+  interface ScheduleItemJson {
+    id?: string;
+    date: string;
+    startTime: string;
+    endTime: string;
+    gender_target?: 'Todos' | 'Hombres' | 'Mujeres' | null;
+  }
+
   const project = data as typeof data & {
-    schedule?: { id: string; date: string; startTime: string; endTime: string }[];
+    schedule?: ScheduleItemJson[];
     project_schedule?: ProjectScheduleRow[];
   };
 
+  const rawJsonSchedule = (Array.isArray(data.schedule) ? data.schedule : []) as ScheduleItemJson[];
+
   if (project.project_schedule && project.project_schedule.length > 0) {
-    project.schedule = project.project_schedule.map((ps: ProjectScheduleRow) => ({
-      id: ps.id,
-      date: extractDateFromTimestampUTC(ps.start_time),
-      startTime: formatTimeTo12h(ps.start_time),
-      endTime: formatTimeTo12h(ps.end_time)
+    project.schedule = project.project_schedule.map((ps: ProjectScheduleRow) => {
+      const date = extractDateFromTimestampUTC(ps.start_time);
+      const startTime = formatTimeTo12h(ps.start_time);
+      const endTime = formatTimeTo12h(ps.end_time);
+
+      // Find matching item in rawJsonSchedule to get gender_target
+      const matchingJson = rawJsonSchedule.find(
+        (item) => item.date === date && (item.startTime === startTime || !item.startTime)
+      );
+
+      return {
+        id: ps.id,
+        date,
+        startTime,
+        endTime,
+        gender_target: matchingJson?.gender_target || (data.gender_target as ('Todos' | 'Hombres' | 'Mujeres' | null)) || 'Todos',
+      };
+    });
+  } else if (rawJsonSchedule.length > 0) {
+    project.schedule = rawJsonSchedule.map(item => ({
+      ...item,
+      gender_target: item.gender_target || (data.gender_target as ('Todos' | 'Hombres' | 'Mujeres' | null)) || 'Todos',
     }));
   }
 

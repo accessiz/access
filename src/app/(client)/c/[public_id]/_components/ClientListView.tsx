@@ -25,6 +25,7 @@ interface ClientListViewProps {
   projectId: string;
   realProjectId: string;
   onSelectionChange?: (modelId: string, selection: GridModel['selection']) => void;
+  getModelSubtitle?: (model: GridModel) => string | null;
 }
 
 function SelectionIconButtons({
@@ -103,7 +104,7 @@ function SelectionIconButtons({
   );
 }
 
-export function ClientListView({ models, projectId, realProjectId, onSelectionChange }: ClientListViewProps) {
+export function ClientListView({ models, projectId, realProjectId, onSelectionChange, getModelSubtitle }: ClientListViewProps) {
   // Guardar posición de scroll antes de navegar (igual que en Grid)
   const saveScrollPosition = () => {
     writeVersionedStorage('session', `client:${projectId}:scroll`, CLIENT_VIEW_STORAGE_VERSION, window.scrollY);
@@ -145,6 +146,7 @@ export function ClientListView({ models, projectId, realProjectId, onSelectionCh
         <div className="space-y-2 p-2">
           {models.map((model) => {
             const currentSelection = localSelections[model.id] || model.selection || 'pending';
+            const subtitle = getModelSubtitle ? getModelSubtitle(model) : null;
             return (
               <Link
                 key={model.id}
@@ -159,7 +161,12 @@ export function ClientListView({ models, projectId, realProjectId, onSelectionCh
 
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-3">
-                    <div className="min-w-0 truncate font-medium">{model.alias || 'Sin Alias'}</div>
+                    <div className="min-w-0">
+                      <div className="truncate font-medium leading-tight">{model.alias || 'Sin Alias'}</div>
+                      {subtitle && (
+                        <div className="text-label text-muted-foreground truncate mt-0.5">{subtitle}</div>
+                      )}
+                    </div>
 
                     <SelectionIconButtons
                       modelId={model.id}
@@ -189,6 +196,7 @@ export function ClientListView({ models, projectId, realProjectId, onSelectionCh
           <TableBody>
             {models.map((model) => {
               const currentSelection = localSelections[model.id] || model.selection || 'pending';
+              const subtitle = getModelSubtitle ? getModelSubtitle(model) : null;
               return (
                 <TableRow key={model.id} className="group cursor-pointer hover:bg-hover-overlay">
                   <TableCell>
@@ -201,6 +209,9 @@ export function ClientListView({ models, projectId, realProjectId, onSelectionCh
                   <TableCell className="font-medium">
                     <div className="flex flex-col">
                       <span>{model.alias || 'Sin Alias'}</span>
+                      {subtitle && (
+                        <span className="text-label text-muted-foreground">{subtitle}</span>
+                      )}
                     </div>
                   </TableCell>
 

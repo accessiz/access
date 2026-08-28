@@ -103,7 +103,7 @@ export interface Project extends DbProject {
   client?: Client | null;
   brand?: Brand | null;
   // Mantenemos compatibilidad con el formato UI, pero ahora viene de la tabla project_schedule
-  schedule: { id?: string, date: string, startTime: string, endTime: string }[] | null;
+  schedule: { id?: string, date: string, startTime: string, endTime: string, gender_target?: 'Todos' | 'Hombres' | 'Mujeres' | null }[] | null;
   // Opcionalmente podemos tener la relación directa si la necesitamos
   project_schedule?: DbProjectSchedule[];
   // Conteo de modelos asignados (calculado en queries)

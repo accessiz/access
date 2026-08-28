@@ -254,7 +254,7 @@ export async function applyToProject(
     // 1. Fetch project and model info
     const [{ data: project }, { data: model }] = await Promise.all([
       supabaseAdmin.from('projects').select('*').eq('id', projectId).single(),
-      supabaseAdmin.from('models').select('alias, full_name').eq('id', modelId).single(),
+      supabaseAdmin.from('models').select('alias, full_name, gender').eq('id', modelId).single(),
     ]);
 
     if (!project || !model) {
@@ -264,6 +264,54 @@ export async function applyToProject(
     // Check application deadline
     if (project.apply_end_at && new Date() > new Date(project.apply_end_at)) {
       return { success: false, error: 'este proyecto ya cerró. ya no puedes aplicar.' };
+    }
+
+    // Validación estricta de género si el modelo acepta participar
+    if (accept) {
+      if (!model.gender) {
+        return {
+          success: false,
+          error: 'Tu perfil no tiene género asignado. Por favor contacta al administrador para actualizarlo antes de aplicar.'
+        };
+      }
+
+      const isMale = model.gender === 'Male';
+      const isFemale = model.gender === 'Female';
+
+      // Verificar género global del proyecto si está restringido
+      if (project.gender_target === 'Hombres' && !isMale) {
+        return { success: false, error: 'Este proyecto es exclusivo para hombres.' };
+      }
+      if (project.gender_target === 'Mujeres' && !isFemale) {
+        return { success: false, error: 'Este proyecto es exclusivo para mujeres.' };
+      }
+
+      // Verificar las fechas seleccionadas si el proyecto tiene schedule con restricciones
+      const scheduleItems = Array.isArray(project.schedule) ? project.schedule : [];
+      if (scheduleItems.length > 0 && selectedSchedules.length > 0) {
+        const { data: projectSchedules } = await supabaseAdmin
+          .from('project_schedule')
+          .select('id, start_time')
+          .eq('project_id', projectId);
+
+        const idToDateMap = new Map((projectSchedules || []).map((ps: { id: string, start_time: string }) => [
+          ps.id,
+          ps.start_time.split('T')[0]
+        ]));
+
+        for (const schedId of selectedSchedules) {
+          const schedDate = idToDateMap.get(schedId);
+          const matchingItem = scheduleItems.find((si: any) => si.id === schedId || si.date === schedDate);
+          const targetGender = matchingItem?.gender_target || project.gender_target || 'Todos';
+
+          if (targetGender === 'Hombres' && !isMale) {
+            return { success: false, error: 'Una de las fechas seleccionadas es exclusiva para hombres.' };
+          }
+          if (targetGender === 'Mujeres' && !isFemale) {
+            return { success: false, error: 'Una de las fechas seleccionadas es exclusiva para mujeres.' };
+          }
+        }
+      }
     }
 
     const modelStatus = accept ? 'applied' : 'rejected';

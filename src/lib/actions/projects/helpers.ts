@@ -14,6 +14,7 @@ export interface FormDataScheduleEntry {
   date?: FormDataEntryValue | null;
   startTime?: FormDataEntryValue | null;
   endTime?: FormDataEntryValue | null;
+  gender_target?: FormDataEntryValue | null;
 }
 
 // Tipos para detección de cambios en schedule
@@ -114,7 +115,7 @@ export function extractScheduleFromFormData(formData: FormData): FormDataSchedul
   return Array.from(formData.keys())
     .filter(key => key.startsWith('schedule.'))
     .reduce((acc, key) => {
-      const match = key.match(/schedule\.(\d+)\.(date|startTime|endTime)/);
+      const match = key.match(/schedule\.(\d+)\.(date|startTime|endTime|gender_target)/);
       if (match) {
         const index = parseInt(match[1], 10);
         const field = match[2];
