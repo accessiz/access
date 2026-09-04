@@ -59,15 +59,15 @@ export default async function LoginPage() {
         </div>
       </main>
 
-      {/* Columna Derecha (Imagen - sin cambios) */}
+      {/* Columna Derecha (Imagen) */}
       <div className="hidden lg:block relative">
         <Image
-          src="/images/JMTS_13.jpg"
+          src="/images/sebas-villaverde-dsc-8648.jpg"
           alt="Imagen decorativa de la página de inicio de sesión"
           fill
           sizes="50vw"
           priority
-          className="object-cover"
+          className="object-cover object-top"
         />
         <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent" />
         <div className="absolute bottom-0 left-0 p-8 text-primary-foreground">

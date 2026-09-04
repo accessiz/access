@@ -3,6 +3,7 @@ import { getLoggedInModel, getActivePhonePrefixes } from '@/lib/actions/models_p
 import { LoginForm } from './_login-form/login-form';
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
+import Image from 'next/image';
 import Logo from '@/components/LogoDark';
 
 export const metadata: Metadata = {
@@ -20,16 +21,15 @@ export default function ModelLoginPage({ searchParams }: PageProps) {
       
       {/* SECCIÓN DE MARCA INMERSIVA (Columna Izquierda - Oculta en Móvil, Visible en Escritorio: 3 Columnas) */}
       <aside className="ds-grid-auth-aside bg-black p-12 flex-col justify-between text-white relative overflow-hidden">
-        {/* Video de fondo en loop */}
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-        >
-          <source src="/videos/abstract-purple-glowing-particle-flow-background.mp4" type="video/mp4" />
-        </video>
+        {/* Imagen de fondo inmersiva */}
+        <Image
+          src="/images/sebas-villaverde-dsc-8648.jpg"
+          alt="IZ Management Model"
+          fill
+          sizes="(min-width: 768px) 37.5vw, 100vw"
+          priority
+          className="object-cover object-top pointer-events-none"
+        />
 
         {/* Overlay oscuro sutil para legibilidad del logo */}
         <div className="absolute inset-0 bg-black/30 pointer-events-none"></div>
